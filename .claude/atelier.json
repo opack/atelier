@@ -1,0 +1,8 @@
+{
+  "chantiersDir": "docs/chantiers",
+  "decisionsDir": "docs/decisions",
+  "checks": [
+    { "name": "tests", "command": "npm test" }
+  ],
+  "checkTimeoutSeconds": 120
+}

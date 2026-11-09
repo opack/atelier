@@ -1,0 +1,8 @@
+{
+  "name": "atelier-marketplace",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test plugins/atelier/test/*.test.mjs"
+  }
+}

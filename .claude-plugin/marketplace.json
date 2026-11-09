@@ -1,0 +1,14 @@
+{
+  "name": "atelier",
+  "description": "Marketplace du plugin atelier : un process IA artisanal pour développer avec Claude Code.",
+  "owner": {
+    "name": "opack"
+  },
+  "plugins": [
+    {
+      "name": "atelier",
+      "source": "./plugins/atelier",
+      "description": "Process IA artisanal : chantiers, spec signée avant le code, tests d'abord, revue et bilan."
+    }
+  ]
+}

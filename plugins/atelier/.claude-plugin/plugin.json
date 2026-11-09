@@ -1,0 +1,9 @@
+{
+  "name": "atelier",
+  "version": "0.1.0",
+  "description": "Process IA artisanal : chantiers identifiés, spec signée avant le code, tests d'abord, revue indépendante et bilan versionné.",
+  "author": { "name": "opack" },
+  "repository": "https://github.com/opack/atelier",
+  "license": "MIT",
+  "keywords": ["process", "spec", "tdd", "review", "governance"]
+}
