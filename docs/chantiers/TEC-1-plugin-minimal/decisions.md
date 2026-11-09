@@ -19,3 +19,9 @@
 
 ## 2026-11-09 : le hook Stop ne lance les contrôles que si du code a changé hors des documents
 - Contexte : éviter de lancer la suite de tests à chaque fin de réponse purement conversationnelle ou documentaire.
+
+## 2026-11-09 : installation par la marketplace GitHub, déclaration au niveau projet par init
+- Contexte : installer et mettre à jour simplement, y compris pour une équipe.
+- Écarté : `--plugin-dir` comme mode normal, parce qu'il impose un clone local et une option à chaque lancement.
+- Conséquence : `/atelier:init` ajoute `extraKnownMarketplaces` et `enabledPlugins` au `.claude/settings.json` du projet ; script `npm run version:patch` à lancer avant chaque fusion, car Claude Code ne met à jour un plugin que si sa version change.
+- Vérifié en réel : installation depuis `opack/atelier#<branche>`, commande `atelier` disponible dans le PATH de la session, refus d'écriture par le hook dans une session `claude -p`.

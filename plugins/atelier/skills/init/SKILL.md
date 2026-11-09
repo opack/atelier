@@ -36,6 +36,17 @@ N'inclus que les contrôles qui existent et s'exécutent en moins de quelques mi
 
 ## 3. Dossiers et fichiers
 
+- Déclare le plugin au niveau du projet dans `.claude/settings.json` (fusionne avec l'existant, ne remplace rien), pour que toute personne qui ouvre le projet se voie proposer atelier automatiquement :
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "atelier": { "source": { "source": "github", "repo": "opack/atelier" } }
+  },
+  "enabledPlugins": { "atelier@atelier": true }
+}
+```
+
 - Crée `docs/chantiers/` et `docs/decisions/` (avec un `.gitkeep`).
 - Ajoute `.atelier/` au `.gitignore` (fichier local de débrayage).
 - Ajoute cette section au `CLAUDE.md` du projet (crée le fichier s'il n'existe pas), sans toucher au reste :

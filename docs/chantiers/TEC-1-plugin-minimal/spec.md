@@ -17,7 +17,7 @@ Construire le premier lot du plugin atelier : marketplace, commandes `init`, `ne
 Le process IA est documenté dans Notion mais rien ne l'applique : sans outil, la signature et les tests d'abord reposent sur la seule discipline. Construire le plugin tout de suite permet de l'affiner par l'usage réel sur envo-admin puis Envo, plutôt que sur papier.
 
 ## 3. Périmètre
-- Inclus : le premier lot ci-dessus, la CLI `atelier` (sans dépendance) et ses tests.
+- Inclus : le premier lot ci-dessus, la CLI `atelier` (sans dépendance) et ses tests, l'installation et la mise à jour par la marketplace GitHub.
 - Hors périmètre : `/atelier:fix`, `/atelier:slice`, `/atelier:discover`, index Notion, socle commun entre projets.
 
 ## 4. Impacts indirects

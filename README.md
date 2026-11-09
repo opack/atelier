@@ -14,6 +14,8 @@ Inspiré des principes de gouvernance de [Solario](https://solario.io/fr), ramen
 
 ## Installation
 
+Une fois pour toutes sur ta machine (deux commandes, depuis n'importe quel dossier) :
+
 ```bash
 claude plugin marketplace add opack/atelier
 ```
@@ -22,9 +24,25 @@ claude plugin marketplace add opack/atelier
 claude plugin install atelier@atelier
 ```
 
-Puis, dans le projet : `/atelier:init`.
+Puis, dans chaque projet : `/atelier:init`. Il déclare aussi le plugin dans le `.claude/settings.json` du projet : toute personne qui ouvre le projet se voit proposer atelier automatiquement, sans commande.
 
-Pour développer le plugin lui-même : `claude --plugin-dir <chemin>/atelier/plugins/atelier`, puis `/reload-plugins` après chaque modification.
+Pour tester une branche du plugin avant sa fusion, ajoute la référence : `claude plugin marketplace add "opack/atelier#<branche>"`.
+
+## Mise à jour
+
+```bash
+claude plugin marketplace update atelier && claude plugin update atelier@atelier
+```
+
+Puis redémarre Claude Code. Claude Code ne récupère une nouvelle version que si son numéro change : avant chaque fusion sur `main`, lance `npm run version:patch` (ou `version:minor`).
+
+## Développer le plugin
+
+```bash
+claude --plugin-dir <chemin>/atelier/plugins/atelier
+```
+
+Puis `/reload-plugins` après chaque modification. Tests : `npm test`. Validation : `claude plugin validate .`.
 
 ## Types de chantier
 
