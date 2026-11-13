@@ -4,7 +4,7 @@ Plugin Claude Code (et sa marketplace) qui outille un process de développement 
 
 ## Structure
 - `.claude-plugin/marketplace.json` : la marketplace (un seul plugin).
-- `plugins/atelier/` : le plugin. `skills/` (commandes `/atelier:*`), `agents/`, `hooks/hooks.json`, `templates/`, `bin/atelier` (CLI utilisée par les skills et les hooks), `lib/core.mjs` (logique pure, testée), `lib/cli.mjs` (entrées / sorties).
+- `plugins/atelier/` : le plugin. `skills/` (commandes `/atelier:*`, dont le cycle TDD `tests` puis `build`), `agents/`, `hooks/hooks.json`, `templates/`, `bin/atelier` (CLI utilisée par les skills et les hooks), `lib/core.mjs` (logique pure, testée), `lib/cli.mjs` (entrées / sorties).
 
 ## Commandes
 - Tests : `npm test` (node:test, aucune dépendance).

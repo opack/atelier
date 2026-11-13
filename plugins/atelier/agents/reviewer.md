@@ -19,7 +19,7 @@ Vérifie :
 4. **Accessibilité** : contrôles utilisables au clavier, rôles et libellés ARIA, contraste, textes localisés (aucune chaîne en dur si le projet est internationalisé).
 5. **Maintenabilité** : lisibilité, conventions du projet (`CLAUDE.md`, `.claude/rules/`), duplication alors qu'un utilitaire existe, code mort, sur-ingénierie (abstraction à un seul usage, option jamais utilisée).
 6. **Évolutivité** : frontières entre couches respectées, couplages nouveaux, choix difficiles à défaire non consignés dans le journal ou un ADR.
-7. **Pièges du code généré** : API ou options qui n'existent pas, dépendances ajoutées sans raison, tests supprimés, assouplis ou désactivés, `catch` muets, cas limites oubliés.
+7. **Pièges du code généré** : API ou options qui n'existent pas, dépendances ajoutées sans raison, tests supprimés, assouplis ou désactivés (en particulier tout test modifié après le commit `tests_commit` indiqué dans l'en-tête de la spec), implémentation qui surapprend les tests, `catch` muets, cas limites oubliés.
 8. **Livraison** : commits portant `[<ID>]`, aucun fichier hors périmètre.
 
 Réponds en français, en deux listes : **Bloquant** et **À discuter**. Chaque point : `fichier:ligne`, le problème, pourquoi c'est un problème, la correction proposée. Termine par une ligne de synthèse par dimension (OK / points ouverts). Si tout est bon, dis-le : ne fabrique pas de remarques.

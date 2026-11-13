@@ -25,3 +25,13 @@
 - Écarté : `--plugin-dir` comme mode normal, parce qu'il impose un clone local et une option à chaque lancement.
 - Conséquence : `/atelier:init` ajoute `extraKnownMarketplaces` et `enabledPlugins` au `.claude/settings.json` du projet ; script `npm run version:patch` à lancer avant chaque fusion, car Claude Code ne met à jour un plugin que si sa version change.
 - Vérifié en réel : installation depuis `opack/atelier#<branche>`, commande `atelier` disponible dans le PATH de la session, refus d'écriture par le hook dans une session `claude -p`.
+
+## 2026-11-13 : le cycle TDD est appliqué par les hooks, pas seulement décrit
+- Contexte : workflow Anthropic « write tests, commit; code, iterate, commit ». Les consignes en prose (« n'écris pas d'implémentation », « ne modifie pas les tests ») se perdent ; le hook ne se perd pas.
+- Conséquence : phase déduite de la spec (`tests_commit` absent → tests d'abord, présent → implémentation). Pendant les tests, seuls les fichiers de `testPaths` sont modifiables ; pendant l'implémentation, ils sont en lecture seule et le hook de fin détecte toute modification, même par shell ou commit.
+- Écarté : laisser l'agent créer des stubs pendant la phase tests, parce que c'est précisément ce qu'Anthropic demande d'éviter ; un import vers un module inexistant est un échec « pour la bonne raison ».
+- Écarté : lancer les contrôles en fin de tour pendant la phase tests, parce que des tests rouges y sont attendus et que l'agent bouclerait.
+- Limite connue : une implémentation codée en dur passe les tests ; seul le sous-agent `overfit-checker` (et la revue) peut l'attraper.
+
+## 2026-11-13 : commande `build` plutôt que `slice`
+- Contexte : l'étape 4 du TDD (implémenter jusqu'au vert, vérifier le surapprentissage, commiter) est le cœur du chantier ; elle couvre aussi la construction tranche par tranche prévue pour `slice`.

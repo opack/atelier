@@ -16,6 +16,11 @@ export const DEFAULT_CONFIG = {
   freePaths: ['docs/**', '.claude/**', '.atelier/**', 'CLAUDE.md', 'README.md', '.gitignore'],
   // Paths never editable by the agent.
   sensitivePaths: ['.env', '.env.*', '*.pem', '*.key', '**/secrets/**'],
+  // Chantier types that follow test-driven development: tests written, failing and
+  // committed before any implementation, then frozen while implementing.
+  testFirstTypes: ['FEAT', 'FIX', 'REF'],
+  // Paths considered as tests (test files, fixtures, snapshots).
+  testPaths: ['*.test.*', '*.spec.*', '*.snap', '**/__tests__/**', '**/__snapshots__/**', 'test/**', 'tests/**', 'e2e/**'],
 }
 
 const ID_PATTERN = new RegExp(`\\b(${CHANTIER_TYPES.join('|')})-(\\d+)\\b`, 'i')
@@ -273,7 +278,7 @@ export function checkSpec(text) {
 
 // ---------- Next step ----------
 
-export function nextStep(chantier) {
+export function nextStep(chantier, config = DEFAULT_CONFIG) {
   if (!chantier) {
     return 'Aucun chantier actif sur cette branche. Ouvrir un chantier : /atelier:new'
   }
@@ -295,10 +300,25 @@ export function nextStep(chantier) {
   if (needsPlan && !chantier.files.includes('plan.md')) {
     return 'Concevoir : /atelier:plan'
   }
-  if (type !== 'SPIKE' && type !== 'TEC' && chantier.spec.data.tests !== 'written') {
-    return 'Écrire les tests d’abord : /atelier:tests'
+  const phase = testDrivenPhase(chantier, config)
+  if (phase === 'writing-tests') {
+    return 'Tests d’abord : écrire les tests, vérifier qu’ils échouent, les commiter (aucune implémentation) : /atelier:tests'
   }
-  return 'Construire tranche par tranche (un commit par tranche), puis clôturer : /atelier:close'
+  return 'Implémenter jusqu’à ce que tous les tests passent, sans modifier les tests, puis commiter : /atelier:build ; ensuite clôturer : /atelier:close'
+}
+
+// ---------- Test-driven phases ----------
+
+// 'none'          : no test-first constraint (TEC, SPIKE, or test-first explicitly skipped).
+// 'writing-tests' : tests are being written; implementation code is forbidden.
+// 'implementing'  : tests are committed and frozen; only implementation code may change.
+export function testDrivenPhase(chantier, config) {
+  const data = chantier?.spec?.data ?? {}
+  const type = (data.type ?? '').toUpperCase()
+  if (!config.testFirstTypes.includes(type) || data.test_first === 'skipped') {
+    return 'none'
+  }
+  return data.tests_commit ? 'implementing' : 'writing-tests'
 }
 
 // ---------- Path rules for the guard hook ----------
@@ -364,6 +384,20 @@ export function decideWrite(context) {
     return {
       allowed: false,
       reason: `atelier : la spec de ${chantier.id} n’est pas signée (statut : ${status}). Termine-la puis signe-la avec /atelier:sign avant de modifier le code.`,
+    }
+  }
+  const isTestFile = matchesAny(relativePath, config.testPaths)
+  const phase = testDrivenPhase(chantier, config)
+  if (phase === 'writing-tests' && !isTestFile) {
+    return {
+      allowed: false,
+      reason: `atelier : ${chantier.id} est en phase « tests d’abord » (TDD). N’écris aucune implémentation, même factice : seulement des fichiers de test. Lance les tests, vérifie qu’ils échouent, fais-les relire et commiter (/atelier:tests). Si ce fichier est un test, ajoute son motif à « testPaths » dans .claude/atelier.json.`,
+    }
+  }
+  if (phase === 'implementing' && isTestFile) {
+    return {
+      allowed: false,
+      reason: `atelier : les tests de ${chantier.id} sont commités et figés. Ne les modifie pas : modifie l’implémentation jusqu’à ce qu’ils passent. Si un test est réellement faux, arrête-toi et signale-le ; le rouvrir se fait avec /atelier:tests, raison à l’appui.`,
     }
   }
   return { allowed: true }

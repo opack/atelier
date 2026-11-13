@@ -33,3 +33,4 @@ Les projets qui installent le plugin et lancent `/atelier:init` ne peuvent plus 
 Désinstaller le plugin ou supprimer `.claude/atelier.json` du projet concerné.
 
 ## Amendements
+- 2026-11-13 : ajout du cycle TDD « write tests, commit; code, iterate, commit » (Anthropic) appliqué par les hooks : phase tests d'abord (implémentation refusée), gel des tests à leur commit, phase implémentation (tests en lecture seule, contrôle de fin anti-modification), commande `/atelier:build`, sous-agent `overfit-checker`.

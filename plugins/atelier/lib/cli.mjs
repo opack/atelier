@@ -13,7 +13,9 @@ import {
   findProjectRoot,
   loadConfig,
   nextChantierId,
+  matchesAny,
   nextStep,
+  testDrivenPhase,
   parseFrontMatter,
   setFrontMatterValues,
   toProjectRelativePath,
@@ -28,7 +30,10 @@ const commands = {
   template: commandTemplate,
   sign: commandSign,
   'set-status': commandSetStatus,
-  'set-tests-written': commandSetTestsWritten,
+  'freeze-tests': commandFreezeTests,
+  'reopen-tests': commandReopenTests,
+  'skip-test-first': commandSkipTestFirst,
+  'tests-changed': commandTestsChanged,
   bypass: commandBypass,
   checks: commandChecks,
   'hook-guard': hookGuard,
@@ -133,12 +138,14 @@ function commandStatus(options) {
           title: chantier.spec?.data.title ?? null,
           type: chantier.spec?.data.type ?? null,
           status: chantier.spec?.data.status ?? null,
+          testDrivenPhase: chantier.spec ? testDrivenPhase(chantier, config) : null,
+          testsCommit: chantier.spec?.data.tests_commit || null,
           files: chantier.files,
           specProblems: chantier.spec ? checkSpec(readFileSync(join(chantier.directory, 'spec.md'), 'utf8')) : [],
         }
       : null,
     bypass,
-    nextStep: nextStep(chantier),
+    nextStep: nextStep(chantier, config),
   }
   if (options.includes('--json')) {
     console.log(JSON.stringify(summary, null, 2))
@@ -153,6 +160,13 @@ function formatStatus(summary) {
     const { id, title, type, status, files, specProblems } = summary.chantier
     lines.push(`Chantier : ${id}${title ? ` — ${title}` : ''} (${type ?? '?'}, ${status ?? 'pas de spec'})`)
     lines.push(`Documents : ${files.length ? files.join(', ') : 'aucun'}`)
+    const phaseLabels = {
+      'writing-tests': 'tests d’abord — aucune implémentation tant que les tests ne sont pas commités',
+      implementing: 'implémentation — tests figés, ne pas les modifier',
+    }
+    if (status === 'signed' && phaseLabels[summary.chantier.testDrivenPhase]) {
+      lines.push(`Phase TDD : ${phaseLabels[summary.chantier.testDrivenPhase]}`)
+    }
     if (status !== 'signed' && status !== 'done' && specProblems.length) {
       lines.push(`À compléter dans la spec : ${specProblems.length} point(s)`)
     }
@@ -212,9 +226,105 @@ function commandSetStatus([status]) {
   console.log(toProjectRelativePath(projectRoot, specPath))
 }
 
-function commandSetTestsWritten() {
+function git(projectRoot, gitArguments) {
+  return gitRaw(projectRoot, gitArguments).trim()
+}
+
+// Untrimmed output: `git status --porcelain` lines start with a significant space.
+function gitRaw(projectRoot, gitArguments) {
+  return execFileSync('git', gitArguments, { cwd: projectRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
+}
+
+function porcelainPaths(output) {
+  return output
+    .split('\n')
+    .filter((line) => line.length > 3)
+    .map((line) => line.slice(3).replace(/^.* -> /, '').trim())
+}
+
+// Test files changed in the working tree (uncommitted, including untracked).
+function uncommittedTestFiles(projectRoot, config) {
+  return porcelainPaths(gitRaw(projectRoot, ['status', '--porcelain', '--untracked-files=all']))
+    .filter((file) => matchesAny(file, config.testPaths))
+}
+
+// Test files changed since the tests were frozen (committed or not).
+function testFilesChangedSince(projectRoot, config, commit) {
+  const committed = git(projectRoot, ['diff', '--name-only', commit, '--'])
+    .split('\n')
+    .filter((file) => file && matchesAny(file, config.testPaths))
+  return [...new Set([...committed, ...uncommittedTestFiles(projectRoot, config)])]
+}
+
+function appendAmendment(specPath, text) {
+  const content = readFileSync(specPath, 'utf8').replace(/\s*$/, '')
+  writeFileSync(specPath, `${content}\n- ${today()} : ${text}\n`)
+}
+
+// Step 3 of the TDD workflow: the tests must be committed before implementation starts.
+function commandFreezeTests() {
   const projectRoot = findProjectRoot()
-  updateSpec(projectRoot, requireConfig(projectRoot), { tests: 'written' })
+  const config = requireConfig(projectRoot)
+  const chantier = requireActiveChantier(projectRoot, config)
+  if (testDrivenPhase(chantier, config) !== 'writing-tests') {
+    console.error('Ce chantier n’est pas en phase « tests d’abord ».')
+    process.exit(1)
+  }
+  const pending = uncommittedTestFiles(projectRoot, config)
+  if (pending.length) {
+    console.error(`Tests non commités, impossible de les figer :\n${pending.map((file) => `- ${file}`).join('\n')}\nCommite-les d’abord.`)
+    process.exit(2)
+  }
+  const commit = git(projectRoot, ['rev-parse', '--short', 'HEAD'])
+  const lastCommitFiles = git(projectRoot, ['show', '--name-only', '--format=', 'HEAD']).split('\n')
+  if (!lastCommitFiles.some((file) => file && matchesAny(file, config.testPaths))) {
+    console.error('Le dernier commit ne contient aucun fichier de test. Commite les tests (et seulement les tests) avant de les figer.')
+    process.exit(2)
+  }
+  updateSpec(projectRoot, config, { tests_commit: commit })
+  console.log(`Tests figés au commit ${commit}. Phase suivante : implémentation, sans modifier les tests (/atelier:build).`)
+}
+
+function commandReopenTests(reasonWords) {
+  const reason = reasonWords.join(' ').trim()
+  if (!reason) {
+    console.error('Usage : atelier reopen-tests <raison>')
+    process.exit(1)
+  }
+  const projectRoot = findProjectRoot()
+  const { specPath } = updateSpec(projectRoot, requireConfig(projectRoot), { tests_commit: '' })
+  appendAmendment(specPath, `tests rouverts : ${reason}`)
+  console.log('Tests rouverts. Retour en phase « tests d’abord » : aucune implémentation jusqu’au prochain commit des tests.')
+}
+
+function commandSkipTestFirst(reasonWords) {
+  const reason = reasonWords.join(' ').trim()
+  if (!reason) {
+    console.error('Usage : atelier skip-test-first <raison>')
+    process.exit(1)
+  }
+  const projectRoot = findProjectRoot()
+  const { specPath } = updateSpec(projectRoot, requireConfig(projectRoot), { test_first: 'skipped' })
+  appendAmendment(specPath, `tests d’abord non applicables : ${reason}`)
+  console.log('Contrainte « tests d’abord » levée pour ce chantier, raison tracée dans la spec.')
+}
+
+function commandTestsChanged() {
+  const projectRoot = findProjectRoot()
+  const config = requireConfig(projectRoot)
+  const chantier = requireActiveChantier(projectRoot, config)
+  const commit = chantier.spec.data.tests_commit
+  if (!commit) {
+    console.log('Tests pas encore figés.')
+    return
+  }
+  const changed = testFilesChangedSince(projectRoot, config, commit)
+  if (changed.length === 0) {
+    console.log(`Aucun test modifié depuis le commit ${commit}.`)
+    return
+  }
+  console.log(`Tests modifiés depuis le commit ${commit} :\n${changed.map((file) => `- ${file}`).join('\n')}`)
+  process.exitCode = 2
 }
 
 function commandBypass([mode, ...reasonWords]) {
@@ -306,19 +416,35 @@ function hookGuard() {
 }
 
 // Runs the checks when the agent wants to stop, but only if code changed outside the docs.
+// Stop hook. While implementing, the frozen tests must be untouched and every check green:
+// the agent keeps iterating until then (TDD step 4). While writing tests, failing tests are
+// the expected outcome, so the checks are not run.
 function hookGate() {
   const input = readStandardInput()
   const projectRoot = input.cwd ? findProjectRoot(input.cwd) : findProjectRoot()
   const config = loadConfig(projectRoot)
-  if (!config || config.checks.length === 0) {
+  if (!config) {
+    return
+  }
+  const { chantier } = activeChantier(projectRoot, config)
+  const phase = chantier?.spec?.data?.status === 'signed' ? testDrivenPhase(chantier, config) : 'none'
+  if (phase === 'writing-tests') {
+    return
+  }
+  if (phase === 'implementing') {
+    const testsCommit = chantier.spec.data.tests_commit
+    const changedTests = testFilesChangedSince(projectRoot, config, testsCommit)
+    if (changedTests.length) {
+      console.error(`atelier : des tests figés ont été modifiés (${changedTests.join(', ')}). Restaure-les (git checkout ${testsCommit} -- <fichier>) et corrige l’implémentation. Si un test est réellement faux, arrête-toi et signale-le à l’utilisateur au lieu de le modifier.`)
+      process.exit(2)
+    }
+  }
+  if (config.checks.length === 0) {
     return
   }
   let changedFiles = []
   try {
-    changedFiles = execFileSync('git', ['status', '--porcelain'], { cwd: projectRoot, encoding: 'utf8' })
-      .split('\n')
-      .map((line) => line.slice(3).trim())
-      .filter(Boolean)
+    changedFiles = porcelainPaths(gitRaw(projectRoot, ['status', '--porcelain', '--untracked-files=all']))
   } catch {
     return
   }
@@ -328,7 +454,7 @@ function hookGate() {
   }
   const failure = runChecks(projectRoot, config)
   if (failure) {
-    console.error(`atelier : le contrôle « ${failure.check.name} » échoue (${failure.check.command}). Corrige avant de terminer.\n\n${failure.output}`)
+    console.error(`atelier : le contrôle « ${failure.check.name} » échoue (${failure.check.command}). Continue à corriger l’implémentation jusqu’à ce que tout passe, sans modifier les tests.\n\n${failure.output}`)
     process.exit(2)
   }
 }
@@ -344,7 +470,7 @@ function hookSessionStart() {
     branch,
     chantier: chantier ? { id: chantier.id, title: chantier.spec?.data.title, type: chantier.spec?.data.type, status: chantier.spec?.data.status, files: chantier.files } : null,
     bypass: readBypass(projectRoot, branch),
-    nextStep: nextStep(chantier),
+    nextStep: nextStep(chantier, config),
   }
   const statusText = summary.chantier
     ? formatStatus({ ...summary, chantier: { ...summary.chantier, specProblems: [] } })

@@ -32,4 +32,4 @@ Attends que l'utilisateur challenge et valide.
 1. `atelier template plan` → `plan.md` dans le dossier du chantier, rempli avec la version validée.
 2. Pour chaque choix tranché pendant la discussion : une entrée datée dans `decisions.md` (créé depuis `atelier template decisions` s'il n'existe pas), avec l'option écartée et la raison.
 3. Commite : `docs(chantiers): [<ID>] plan`.
-4. Suite : `/atelier:tests` (sauf `TEC` et `SPIKE`). Conseille de repartir d'un contexte propre : le plan porte la mémoire, pas la conversation.
+4. Suite : `/atelier:tests` (sauf `TEC` et `SPIKE` : `/atelier:build`). Conseille de repartir d'un contexte propre : le plan porte la mémoire, pas la conversation.

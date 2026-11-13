@@ -48,10 +48,10 @@ Puis `/reload-plugins` après chaque modification. Tests : `npm test`. Validatio
 
 | Type | Pour | Étapes |
 |---|---|---|
-| `FEAT` | Fonctionnalité à créer ou améliorer | spec → signature → plan → tests → tranches → clôture |
-| `FIX` | Correction d'un bug | spec → signature → test de non-régression → correction → clôture |
-| `REF` | Restructuration, comportement inchangé | spec → signature → plan → tests de caractérisation → tranches → clôture |
-| `TEC` | Technique sans impact utilisateur direct (CI, outillage, dépendances, config, sécurité, migration…) | spec → signature → tranches → clôture |
+| `FEAT` | Fonctionnalité à créer ou améliorer | spec → signature → plan → tests → build → clôture |
+| `FIX` | Correction d'un bug | spec → signature → test de non-régression → build → clôture |
+| `REF` | Restructuration, comportement inchangé | spec → signature → plan → tests de caractérisation → build → clôture |
+| `TEC` | Technique sans impact utilisateur direct (CI, outillage, dépendances, config, sécurité, migration…) | spec → signature → build → clôture |
 | `SPIKE` | Exploration bornée dans le temps, code jetable | spec → signature → exploration → clôture |
 
 Identifiants : `<TYPE>-<numéro>`, avec un compteur unique par projet (qui continue l'historique existant). Branche `<type>/<ID>-<slug>`, commits `<prefix>(<scope>): [<ID>] …`, PR `[<ID>] <titre>`.
@@ -64,15 +64,28 @@ Identifiants : `<TYPE>-<numéro>`, avec un compteur unique par projet (qui conti
 | `/atelier:new [type] [description, lien Notion ou Sentry]` | Ouvre un chantier : identifiant, branche, dossier, spec construite en posant des questions sur les manques. |
 | `/atelier:sign` | Relecture critique par un agent séparé, puis signature sur ta confirmation explicite. |
 | `/atelier:plan` | Conception : approche, fichiers, tranches → `plan.md`, décisions → `decisions.md`. |
-| `/atelier:tests` | Tests d'abord : un test par critère d'acceptation, qui échoue pour la bonne raison ; arrêt pour relecture. |
+| `/atelier:tests` | TDD, étapes 1 à 3 : tests écrits depuis les critères d'acceptation, **aucune implémentation**, échec vérifié, relecture, commit puis gel des tests. |
+| `/atelier:build [tranche]` | TDD, étapes 4 et 5 : implémentation jusqu'à ce que tout passe **sans modifier les tests**, vérification anti-surapprentissage par un sous-agent indépendant, commit après validation. |
 | `/atelier:status` | Où en est le chantier et quelle est la prochaine étape. |
 | `/atelier:close` | Contrôles, revue indépendante, `bilan.md`, ton verdict, proposition de PR. |
 | `/atelier:off <raison>` | Débrayage d'urgence de production : autorise le code sans spec, tracé. |
 
+## Le cycle TDD
+
+atelier suit le workflow « write tests, commit; code, iterate, commit » recommandé par Anthropic ([Claude Code: Best practices for agentic coding](https://www.anthropic.com/engineering/claude-code-best-practices)), et le fait respecter par les hooks pour les chantiers `FEAT`, `FIX` et `REF` :
+
+1. **Tests d'abord** (`/atelier:tests`) : seuls les fichiers de test sont modifiables. Toute écriture d'implémentation, même factice, est refusée.
+2. Les tests sont lancés et doivent **échouer pour la bonne raison**.
+3. Après relecture, les tests sont **commités** puis **figés** (`atelier freeze-tests` refuse s'ils ne sont pas commités).
+4. **Implémentation** (`/atelier:build`) : les tests sont en lecture seule. L'agent itère jusqu'à ce que tout passe ; un sous-agent indépendant vérifie que l'implémentation ne surapprend pas les tests.
+5. **Commit** de l'implémentation après validation.
+
+Un test réellement faux se rouvre explicitement (`atelier reopen-tests <raison>`, tracé dans la spec). Un chantier où les tests d'abord n'ont pas de sens se déclare (`atelier skip-test-first <raison>`, tracé aussi).
+
 ## Ce que font les hooks
 
-- **Avant chaque écriture** : refuse les modifications de code sans chantier signé, la réécriture d'une spec signée et les fichiers sensibles (`.env`, clés).
-- **Avant de terminer** : si du code a changé, lance les contrôles de `.claude/atelier.json` ; l'agent continue tant qu'ils échouent.
+- **Avant chaque écriture** : refuse les modifications de code sans chantier signé, toute implémentation pendant l'écriture des tests, toute modification des tests une fois figés, la réécriture d'une spec signée et les fichiers sensibles (`.env`, clés).
+- **Avant de terminer** : pendant l'implémentation, refuse tout test modifié depuis son gel (même par une commande shell ou un commit) ; si du code a changé, lance les contrôles de `.claude/atelier.json` et l'agent continue tant qu'ils échouent. Pendant l'écriture des tests, des tests rouges sont attendus : rien n'est lancé.
 - **Au démarrage d'une session** : rappelle le chantier actif, son statut et la prochaine étape.
 
 Les hooks ne font rien dans un projet sans `.claude/atelier.json`.
@@ -91,4 +104,4 @@ L'état du chantier vit dans l'en-tête de `spec.md` (`status: draft | signed | 
 
 ## Pas encore disponible
 
-`/atelier:fix` (voie rapide depuis Sentry), `/atelier:slice`, `/atelier:discover`, index Notion des chantiers, socle commun partagé entre projets. Ils seront ajoutés quand l'usage les réclamera.
+`/atelier:fix` (voie rapide depuis Sentry), `/atelier:discover`, index Notion des chantiers, socle commun partagé entre projets. Ils seront ajoutés quand l'usage les réclamera.

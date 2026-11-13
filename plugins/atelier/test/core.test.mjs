@@ -14,6 +14,7 @@ import {
   nextStep,
   parseFrontMatter,
   setFrontMatterValues,
+  testDrivenPhase,
 } from '../lib/core.mjs'
 
 const templatesDirectory = fileURLToPath(new URL('../templates/', import.meta.url))
@@ -27,6 +28,8 @@ function template(name) {
 
 const signedChantier = { id: 'FEAT-12', directory: '/p/docs/chantiers/FEAT-12-x', spec: { data: { status: 'signed', type: 'FEAT' } }, files: ['spec.md'] }
 const draftChantier = { ...signedChantier, spec: { data: { status: 'draft', type: 'FEAT' } } }
+const implementingChantier = { ...signedChantier, spec: { data: { status: 'signed', type: 'FEAT', tests_commit: 'abc1234' } } }
+const signedTec = { ...signedChantier, id: 'TEC-3', spec: { data: { status: 'signed', type: 'TEC' } } }
 
 function decide(overrides) {
   return decideWrite({ relativePath: 'src/app.ts', toolName: 'Edit', config: DEFAULT_CONFIG, chantier: signedChantier, bypass: null, existingSpec: null, ...overrides })
@@ -109,8 +112,8 @@ describe('write guard', () => {
     assert.match(decision.reason, /pas signée/)
   })
 
-  it('allows code edits once the spec is signed', () => {
-    assert.equal(decide({}).allowed, true)
+  it('allows code edits once the spec is signed, for a chantier without test-first', () => {
+    assert.equal(decide({ chantier: signedTec }).allowed, true)
   })
 
   it('always allows documentation and configuration paths', () => {
@@ -148,15 +151,44 @@ describe('path patterns', () => {
   })
 })
 
+describe('test-driven phases', () => {
+  it('applies test-first to FEAT, FIX and REF only, unless explicitly skipped', () => {
+    assert.equal(testDrivenPhase(signedChantier, DEFAULT_CONFIG), 'writing-tests')
+    assert.equal(testDrivenPhase(implementingChantier, DEFAULT_CONFIG), 'implementing')
+    assert.equal(testDrivenPhase(signedTec, DEFAULT_CONFIG), 'none')
+    const skipped = { ...signedChantier, spec: { data: { status: 'signed', type: 'FIX', test_first: 'skipped' } } }
+    assert.equal(testDrivenPhase(skipped, DEFAULT_CONFIG), 'none')
+  })
+
+  it('forbids any implementation code while writing tests', () => {
+    const decision = decide({ chantier: signedChantier, relativePath: 'src/budget.ts' })
+    assert.equal(decision.allowed, false)
+    assert.match(decision.reason, /aucune implémentation/)
+  })
+
+  it('allows test files while writing tests', () => {
+    for (const relativePath of ['src/budget.test.ts', 'src/Budget.spec.js', 'tests/e2e/flow.ts', 'src/__tests__/a.ts']) {
+      assert.equal(decide({ chantier: signedChantier, relativePath }).allowed, true, relativePath)
+    }
+  })
+
+  it('freezes the tests while implementing', () => {
+    const decision = decide({ chantier: implementingChantier, relativePath: 'src/budget.test.ts' })
+    assert.equal(decision.allowed, false)
+    assert.match(decision.reason, /figés/)
+    assert.equal(decide({ chantier: implementingChantier, relativePath: 'src/budget.ts' }).allowed, true)
+  })
+})
+
 describe('next step', () => {
   it('follows the process order', () => {
     assert.match(nextStep(null), /\/atelier:new/)
     assert.match(nextStep(draftChantier), /\/atelier:sign/)
     assert.match(nextStep(signedChantier), /\/atelier:plan/)
     assert.match(nextStep({ ...signedChantier, files: ['spec.md', 'plan.md'] }), /\/atelier:tests/)
-    const testsWritten = { ...signedChantier, spec: { data: { status: 'signed', type: 'FEAT', tests: 'written' } }, files: ['spec.md', 'plan.md'] }
-    assert.match(nextStep(testsWritten), /\/atelier:close/)
+    assert.match(nextStep({ ...implementingChantier, files: ['spec.md', 'plan.md'] }), /\/atelier:build/)
     const signedFix = { ...signedChantier, spec: { data: { status: 'signed', type: 'FIX' } } }
     assert.match(nextStep(signedFix), /\/atelier:tests/)
+    assert.match(nextStep(signedTec), /\/atelier:build/)
   })
 })
