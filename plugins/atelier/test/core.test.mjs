@@ -26,10 +26,10 @@ function template(name) {
     .replaceAll('{{DATE}}', '2026-11-09')
 }
 
-const signedChantier = { id: 'FEAT-12', directory: '/p/docs/chantiers/FEAT-12-x', spec: { data: { status: 'signed', type: 'FEAT' } }, files: ['spec.md'] }
-const draftChantier = { ...signedChantier, spec: { data: { status: 'draft', type: 'FEAT' } } }
-const implementingChantier = { ...signedChantier, spec: { data: { status: 'signed', type: 'FEAT', tests_commit: 'abc1234' } } }
-const signedTec = { ...signedChantier, id: 'TEC-3', spec: { data: { status: 'signed', type: 'TEC' } } }
+const signedChantier = { id: 'FEAT-12', directory: '/p/docs/chantiers/FEAT-12-x', spec: { data: { status: 'signed', type: 'FEAT', tdd: 'yes' } }, files: ['spec.md'] }
+const draftChantier = { ...signedChantier, spec: { data: { status: 'draft', type: 'FEAT', tdd: 'yes' } } }
+const implementingChantier = { ...signedChantier, spec: { data: { status: 'signed', type: 'FEAT', tdd: 'yes', tests_commit: 'abc1234' } } }
+const signedTec = { ...signedChantier, id: 'TEC-3', spec: { data: { status: 'signed', type: 'TEC', tdd: 'no' } } }
 
 function decide(overrides) {
   return decideWrite({ relativePath: 'src/app.ts', toolName: 'Edit', config: DEFAULT_CONFIG, chantier: signedChantier, bypass: null, existingSpec: null, ...overrides })
@@ -81,7 +81,8 @@ describe('spec completeness', () => {
       .replace('## 3. Points', 'Afficher le total.\n\n## 3. Points')
       .replace('## 6. Non-fonctionnel', '- [ ] CA-1 : Étant donné un budget, quand je l’ouvre, alors je vois le total.\n\n## 6. Non-fonctionnel')
       .replace('- Sécurité / autorisation :', '- Sécurité / autorisation : lecture réservée au propriétaire')
-    assert.deepEqual(checkSpec(spec), [])
+    assert.ok(checkSpec(spec).some((problem) => problem.includes('« tdd »')), 'the TDD decision is mandatory')
+    assert.deepEqual(checkSpec(spec.replace(/^tdd:.*$/m, 'tdd: no')), [])
   })
 
   it('requires numbered criteria and flags unfinished text', () => {
@@ -97,7 +98,7 @@ describe('spec completeness', () => {
   })
 
   it('rejects an unknown type', () => {
-    assert.match(checkSpec('---\nid: X-1\ntype: CHORE\ntitle: t\n---\n')[0], /type « CHORE » inconnu/)
+    assert.ok(checkSpec('---\nid: X-1\ntype: CHORE\ntitle: t\ntdd: no\n---\n').some((problem) => /type « CHORE » inconnu/.test(problem)))
   })
 })
 
@@ -152,12 +153,15 @@ describe('path patterns', () => {
 })
 
 describe('test-driven phases', () => {
-  it('applies test-first to FEAT, FIX and REF only, unless explicitly skipped', () => {
-    assert.equal(testDrivenPhase(signedChantier, DEFAULT_CONFIG), 'writing-tests')
-    assert.equal(testDrivenPhase(implementingChantier, DEFAULT_CONFIG), 'implementing')
-    assert.equal(testDrivenPhase(signedTec, DEFAULT_CONFIG), 'none')
-    const skipped = { ...signedChantier, spec: { data: { status: 'signed', type: 'FIX', test_first: 'skipped' } } }
-    assert.equal(testDrivenPhase(skipped, DEFAULT_CONFIG), 'none')
+  it('follows the human decision in the spec, whatever the type', () => {
+    assert.equal(testDrivenPhase(signedChantier), 'writing-tests')
+    assert.equal(testDrivenPhase(implementingChantier), 'implementing')
+    assert.equal(testDrivenPhase(signedTec), 'none')
+    const featWithoutTdd = { ...signedChantier, spec: { data: { status: 'signed', type: 'FEAT', tdd: 'no' } } }
+    assert.equal(testDrivenPhase(featWithoutTdd), 'none')
+    assert.equal(decide({ chantier: featWithoutTdd, relativePath: 'src/budget.ts' }).allowed, true)
+    const tecWithTdd = { ...signedTec, spec: { data: { status: 'signed', type: 'TEC', tdd: 'yes' } } }
+    assert.equal(testDrivenPhase(tecWithTdd), 'writing-tests')
   })
 
   it('forbids any implementation code while writing tests', () => {
@@ -187,7 +191,7 @@ describe('next step', () => {
     assert.match(nextStep(signedChantier), /\/atelier:plan/)
     assert.match(nextStep({ ...signedChantier, files: ['spec.md', 'plan.md'] }), /\/atelier:tests/)
     assert.match(nextStep({ ...implementingChantier, files: ['spec.md', 'plan.md'] }), /\/atelier:build/)
-    const signedFix = { ...signedChantier, spec: { data: { status: 'signed', type: 'FIX' } } }
+    const signedFix = { ...signedChantier, spec: { data: { status: 'signed', type: 'FIX', tdd: 'yes' } } }
     assert.match(nextStep(signedFix), /\/atelier:tests/)
     assert.match(nextStep(signedTec), /\/atelier:build/)
   })

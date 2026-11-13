@@ -3,6 +3,7 @@ id: {{ID}}
 type: FIX
 title: {{TITLE}}
 status: draft
+tdd:                 # yes | no : décision humaine, obligatoire avant signature
 created_at: {{DATE}}
 source:
 signed_by:

@@ -16,12 +16,13 @@ export const DEFAULT_CONFIG = {
   freePaths: ['docs/**', '.claude/**', '.atelier/**', 'CLAUDE.md', 'README.md', '.gitignore'],
   // Paths never editable by the agent.
   sensitivePaths: ['.env', '.env.*', '*.pem', '*.key', '**/secrets/**'],
-  // Chantier types that follow test-driven development: tests written, failing and
-  // committed before any implementation, then frozen while implementing.
-  testFirstTypes: ['FEAT', 'FIX', 'REF'],
   // Paths considered as tests (test files, fixtures, snapshots).
   testPaths: ['*.test.*', '*.spec.*', '*.snap', '**/__tests__/**', '**/__snapshots__/**', 'test/**', 'tests/**', 'e2e/**'],
 }
+
+// Recommended answer to "should this chantier follow TDD?", per type. Only a suggestion:
+// the human always decides, in the `tdd` field of the spec header.
+export const TDD_RECOMMENDATION = { FEAT: 'yes', FIX: 'yes', REF: 'yes', TEC: 'no', SPIKE: 'no' }
 
 const ID_PATTERN = new RegExp(`\\b(${CHANTIER_TYPES.join('|')})-(\\d+)\\b`, 'i')
 
@@ -248,6 +249,9 @@ export function checkSpec(text) {
       problems.push(`En-tête : « ${key} » manquant.`)
     }
   }
+  if (!['yes', 'no'].includes(data.tdd)) {
+    problems.push('En-tête : « tdd » doit valoir yes ou no. C’est une décision humaine : ce chantier suit-il le TDD (tests écrits, commités et figés avant l’implémentation) ?')
+  }
   const type = (data.type ?? '').toUpperCase()
   const required = REQUIRED_SECTIONS[type]
   if (!required) {
@@ -278,7 +282,7 @@ export function checkSpec(text) {
 
 // ---------- Next step ----------
 
-export function nextStep(chantier, config = DEFAULT_CONFIG) {
+export function nextStep(chantier) {
   if (!chantier) {
     return 'Aucun chantier actif sur cette branche. Ouvrir un chantier : /atelier:new'
   }
@@ -300,22 +304,24 @@ export function nextStep(chantier, config = DEFAULT_CONFIG) {
   if (needsPlan && !chantier.files.includes('plan.md')) {
     return 'Concevoir : /atelier:plan'
   }
-  const phase = testDrivenPhase(chantier, config)
+  const phase = testDrivenPhase(chantier)
   if (phase === 'writing-tests') {
     return 'Tests d’abord : écrire les tests, vérifier qu’ils échouent, les commiter (aucune implémentation) : /atelier:tests'
   }
-  return 'Implémenter jusqu’à ce que tous les tests passent, sans modifier les tests, puis commiter : /atelier:build ; ensuite clôturer : /atelier:close'
+  if (phase === 'implementing') {
+    return 'Implémenter jusqu’à ce que tous les tests passent, sans modifier les tests, puis commiter : /atelier:build ; ensuite clôturer : /atelier:close'
+  }
+  return 'Implémenter (sans TDD pour ce chantier), puis commiter : /atelier:build ; ensuite clôturer : /atelier:close'
 }
 
 // ---------- Test-driven phases ----------
 
-// 'none'          : no test-first constraint (TEC, SPIKE, or test-first explicitly skipped).
-// 'writing-tests' : tests are being written; implementation code is forbidden.
-// 'implementing'  : tests are committed and frozen; only implementation code may change.
-export function testDrivenPhase(chantier, config) {
+// 'none'          : the chantier does not follow TDD (`tdd: no`, decided by the human).
+// 'writing-tests' : TDD, tests are being written; implementation code is forbidden.
+// 'implementing'  : TDD, tests are committed and frozen; only implementation code may change.
+export function testDrivenPhase(chantier) {
   const data = chantier?.spec?.data ?? {}
-  const type = (data.type ?? '').toUpperCase()
-  if (!config.testFirstTypes.includes(type) || data.test_first === 'skipped') {
+  if (data.tdd !== 'yes') {
     return 'none'
   }
   return data.tests_commit ? 'implementing' : 'writing-tests'
@@ -387,7 +393,7 @@ export function decideWrite(context) {
     }
   }
   const isTestFile = matchesAny(relativePath, config.testPaths)
-  const phase = testDrivenPhase(chantier, config)
+  const phase = testDrivenPhase(chantier)
   if (phase === 'writing-tests' && !isTestFile) {
     return {
       allowed: false,

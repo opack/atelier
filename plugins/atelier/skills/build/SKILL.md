@@ -12,6 +12,7 @@ Tranche demandée : `$ARGUMENTS` (sinon : la prochaine tranche non faite de `pla
 ## 0. Préalables
 
 - `atelier status --json` : spec **signée**. Si `testDrivenPhase` vaut `writing-tests`, arrête-toi : les tests ne sont pas encore écrits et commités, propose `/atelier:tests`.
+- Si `testDrivenPhase` vaut `none` (`tdd: no`), suis la section « Sans TDD » en fin de document à la place des étapes 1 et 2.
 - Lis la spec, `plan.md` et `decisions.md` s'ils existent, puis les tests figés du chantier.
 
 ## 1. Implémenter jusqu'à ce que tous les tests passent
@@ -40,3 +41,10 @@ Seulement après son accord :
 1. Vérifie `atelier tests-changed` : aucun test ne doit avoir changé depuis leur commit.
 2. Commite la tranche : `<prefix>(<scope>): [<ID>] <description>` (un commit par tranche).
 3. S'il reste des tranches dans le plan, propose la suivante (`/atelier:build <tranche>`). Sinon : `/atelier:close`.
+
+## Sans TDD (`tdd: no`)
+
+1. Implémente la tranche, en respectant la spec, `plan.md` et les conventions du projet.
+2. Ajoute des tests **seulement là où ils ont de la valeur** (logique non triviale, cas limite fragile, bug évité). Pas de test pour le principe ; ne crée pas de test redondant avec ceux qui existent.
+3. Lance `atelier checks` et continue jusqu'à ce que tout soit vert.
+4. Puis l'étape 3 ci-dessus : résumé, validation de l'utilisateur, commit.

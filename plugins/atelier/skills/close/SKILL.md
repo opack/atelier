@@ -11,7 +11,7 @@ disable-model-invocation: true
 
 - `atelier status --json` : il faut une spec signée (ou un débrayage actif).
 - `atelier checks` : tous les contrôles doivent être verts. Sinon, corrige ou arrête-toi avec l'utilisateur.
-- `atelier tests-changed` (FEAT, FIX, REF) : aucun test ne doit avoir été modifié depuis leur commit. Sinon, arrête-toi : c'est un point bloquant à expliquer à l'utilisateur.
+- `atelier tests-changed` (si `tdd: yes`) : aucun test ne doit avoir été modifié depuis leur commit. Sinon, arrête-toi : c'est un point bloquant à expliquer à l'utilisateur.
 - Vérifie que le travail est commité, et que chaque commit du chantier porte `[<ID>]`.
 
 ## 2. Revue indépendante

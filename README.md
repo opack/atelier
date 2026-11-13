@@ -48,9 +48,9 @@ Puis `/reload-plugins` après chaque modification. Tests : `npm test`. Validatio
 
 | Type | Pour | Étapes |
 |---|---|---|
-| `FEAT` | Fonctionnalité à créer ou améliorer | spec → signature → plan → tests → build → clôture |
-| `FIX` | Correction d'un bug | spec → signature → test de non-régression → build → clôture |
-| `REF` | Restructuration, comportement inchangé | spec → signature → plan → tests de caractérisation → build → clôture |
+| `FEAT` | Fonctionnalité à créer ou améliorer | spec → signature → plan → (tests si TDD) → build → clôture |
+| `FIX` | Correction d'un bug | spec → signature → (test de non-régression si TDD) → build → clôture |
+| `REF` | Restructuration, comportement inchangé | spec → signature → plan → (tests de caractérisation si TDD) → build → clôture |
 | `TEC` | Technique sans impact utilisateur direct (CI, outillage, dépendances, config, sécurité, migration…) | spec → signature → build → clôture |
 | `SPIKE` | Exploration bornée dans le temps, code jetable | spec → signature → exploration → clôture |
 
@@ -70,9 +70,11 @@ Identifiants : `<TYPE>-<numéro>`, avec un compteur unique par projet (qui conti
 | `/atelier:close` | Contrôles, revue indépendante, `bilan.md`, ton verdict, proposition de PR. |
 | `/atelier:off <raison>` | Débrayage d'urgence de production : autorise le code sans spec, tracé. |
 
-## Le cycle TDD
+## Le cycle TDD, quand il est pertinent
 
-atelier suit le workflow « write tests, commit; code, iterate, commit » recommandé par Anthropic ([Claude Code: Best practices for agentic coding](https://www.anthropic.com/engineering/claude-code-best-practices)), et le fait respecter par les hooks pour les chantiers `FEAT`, `FIX` et `REF` :
+Pour chaque chantier, **tu décides** s'il suit le TDD : champ `tdd: yes | no` dans l'en-tête de la spec, **obligatoire avant signature**. `/atelier:new` te pose la question avec une recommandation (plutôt oui pour la logique métier, un bug reproductible ou un refactor sensible ; plutôt non pour de la configuration, une montée de version, du texte, de la mise en page ou une exploration). « Non » ne veut pas dire « aucun test » : seulement pas de phase imposée, et pas de test pour le principe.
+
+Quand c'est oui, atelier suit le workflow « write tests, commit; code, iterate, commit » recommandé par Anthropic ([Claude Code: Best practices for agentic coding](https://www.anthropic.com/engineering/claude-code-best-practices)) et le fait respecter par les hooks :
 
 1. **Tests d'abord** (`/atelier:tests`) : seuls les fichiers de test sont modifiables. Toute écriture d'implémentation, même factice, est refusée.
 2. Les tests sont lancés et doivent **échouer pour la bonne raison**.
@@ -80,11 +82,11 @@ atelier suit le workflow « write tests, commit; code, iterate, commit » recomm
 4. **Implémentation** (`/atelier:build`) : les tests sont en lecture seule. L'agent itère jusqu'à ce que tout passe ; un sous-agent indépendant vérifie que l'implémentation ne surapprend pas les tests.
 5. **Commit** de l'implémentation après validation.
 
-Un test réellement faux se rouvre explicitement (`atelier reopen-tests <raison>`, tracé dans la spec). Un chantier où les tests d'abord n'ont pas de sens se déclare (`atelier skip-test-first <raison>`, tracé aussi).
+Un test réellement faux se rouvre explicitement (`atelier reopen-tests <raison>`) ; la décision TDD peut changer en cours de chantier (`atelier set-tdd <yes|no> <raison>`). Les deux sont tracés dans la spec.
 
 ## Ce que font les hooks
 
-- **Avant chaque écriture** : refuse les modifications de code sans chantier signé, toute implémentation pendant l'écriture des tests, toute modification des tests une fois figés, la réécriture d'une spec signée et les fichiers sensibles (`.env`, clés).
+- **Avant chaque écriture** : refuse les modifications de code sans chantier signé, en TDD : toute implémentation pendant l'écriture des tests et toute modification des tests une fois figés, la réécriture d'une spec signée et les fichiers sensibles (`.env`, clés).
 - **Avant de terminer** : pendant l'implémentation, refuse tout test modifié depuis son gel (même par une commande shell ou un commit) ; si du code a changé, lance les contrôles de `.claude/atelier.json` et l'agent continue tant qu'ils échouent. Pendant l'écriture des tests, des tests rouges sont attendus : rien n'est lancé.
 - **Au démarrage d'une session** : rappelle le chantier actif, son statut et la prochaine étape.
 

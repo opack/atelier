@@ -3,6 +3,7 @@ id: {{ID}}
 type: SPIKE
 title: {{TITLE}}
 status: draft
+tdd:                 # yes | no : décision humaine, obligatoire avant signature
 created_at: {{DATE}}
 signed_by:
 signed_at:

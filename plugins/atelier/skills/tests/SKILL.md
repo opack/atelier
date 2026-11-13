@@ -10,14 +10,15 @@ description: Étapes 1 à 3 du TDD pour le chantier actif — écrire les tests 
 
 ## 0. Préalables
 
-- `atelier status --json` : il faut une spec **signée**, et `testDrivenPhase` doit valoir `writing-tests`. Si la phase vaut `implementing`, les tests sont déjà figés : propose `/atelier:build`. Si elle vaut `none`, le chantier n'est pas soumis aux tests d'abord (TEC, SPIKE ou exception tracée).
+- `atelier status --json` : il faut une spec **signée**, et `testDrivenPhase` doit valoir `writing-tests`. Si la phase vaut `implementing`, les tests sont déjà figés : propose `/atelier:build`. Si elle vaut `none`, l'utilisateur a choisi de ne pas mener ce chantier en TDD (`tdd: no`) : dis-le et propose `/atelier:build`.
 - Repère le framework de tests et les conventions du projet : emplacement, nommage, utilitaires de test existants. La commande de tests est dans `.claude/atelier.json`.
-- Si un test ne peut vraiment pas être écrit (ex. rendu purement visuel), ne contourne pas : propose à l'utilisateur `atelier skip-test-first <raison>`, qui trace l'exception dans la spec.
+- Si en cours de route le TDD s'avère inadapté (ex. rendu purement visuel), ne contourne pas : propose à l'utilisateur `atelier set-tdd no <raison>`, tracé dans la spec. C'est sa décision.
 
 ## 1. Écrire les tests à partir des paires entrée / sortie attendues
 
 Pars des critères d'acceptation de la spec : chaque `CA-x` donne une situation (entrée) et un résultat attendu (sortie).
 
+- **Pas de test pour le principe** : un test par comportement qui compte, pas de test redondant ni de test de détail d'implémentation.
 - **FEAT** : au moins un test par `CA-x`. Le nom du test cite l'identifiant (`CA-2 : refuse un montant négatif`).
 - **FIX** : un test qui reproduit le bug, lié au `CA` de non-régression.
 - **REF** : des **tests de caractérisation** qui figent le comportement actuel. Exception à la règle suivante : eux doivent **passer** dès maintenant, puisque le code existe et ne doit pas changer de comportement.

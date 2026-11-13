@@ -32,7 +32,7 @@ const commands = {
   'set-status': commandSetStatus,
   'freeze-tests': commandFreezeTests,
   'reopen-tests': commandReopenTests,
-  'skip-test-first': commandSkipTestFirst,
+  'set-tdd': commandSetTdd,
   'tests-changed': commandTestsChanged,
   bypass: commandBypass,
   checks: commandChecks,
@@ -138,14 +138,14 @@ function commandStatus(options) {
           title: chantier.spec?.data.title ?? null,
           type: chantier.spec?.data.type ?? null,
           status: chantier.spec?.data.status ?? null,
-          testDrivenPhase: chantier.spec ? testDrivenPhase(chantier, config) : null,
+          testDrivenPhase: chantier.spec ? testDrivenPhase(chantier) : null,
           testsCommit: chantier.spec?.data.tests_commit || null,
           files: chantier.files,
           specProblems: chantier.spec ? checkSpec(readFileSync(join(chantier.directory, 'spec.md'), 'utf8')) : [],
         }
       : null,
     bypass,
-    nextStep: nextStep(chantier, config),
+    nextStep: nextStep(chantier),
   }
   if (options.includes('--json')) {
     console.log(JSON.stringify(summary, null, 2))
@@ -266,7 +266,7 @@ function commandFreezeTests() {
   const projectRoot = findProjectRoot()
   const config = requireConfig(projectRoot)
   const chantier = requireActiveChantier(projectRoot, config)
-  if (testDrivenPhase(chantier, config) !== 'writing-tests') {
+  if (testDrivenPhase(chantier) !== 'writing-tests') {
     console.error('Ce chantier n’est pas en phase « tests d’abord ».')
     process.exit(1)
   }
@@ -297,16 +297,24 @@ function commandReopenTests(reasonWords) {
   console.log('Tests rouverts. Retour en phase « tests d’abord » : aucune implémentation jusqu’au prochain commit des tests.')
 }
 
-function commandSkipTestFirst(reasonWords) {
-  const reason = reasonWords.join(' ').trim()
-  if (!reason) {
-    console.error('Usage : atelier skip-test-first <raison>')
+// Records the human decision on TDD. After signature, the change is traced as an amendment.
+function commandSetTdd([value, ...reasonWords]) {
+  if (!['yes', 'no'].includes(value)) {
+    console.error('Usage : atelier set-tdd <yes|no> [raison]')
     process.exit(1)
   }
   const projectRoot = findProjectRoot()
-  const { specPath } = updateSpec(projectRoot, requireConfig(projectRoot), { test_first: 'skipped' })
-  appendAmendment(specPath, `tests d’abord non applicables : ${reason}`)
-  console.log('Contrainte « tests d’abord » levée pour ce chantier, raison tracée dans la spec.')
+  const config = requireConfig(projectRoot)
+  const chantier = requireActiveChantier(projectRoot, config)
+  const wasSigned = chantier.spec.data.status === 'signed'
+  const { specPath } = updateSpec(projectRoot, config, { tdd: value })
+  const reason = reasonWords.join(' ').trim()
+  if (wasSigned) {
+    appendAmendment(specPath, `TDD ${value === 'yes' ? 'activé' : 'désactivé'}${reason ? ` : ${reason}` : ''}`)
+  }
+  console.log(value === 'yes'
+    ? 'Chantier en TDD : tests écrits, commités et figés avant l’implémentation.'
+    : 'Chantier sans TDD : pas de phase tests d’abord imposée.')
 }
 
 function commandTestsChanged() {
@@ -427,7 +435,7 @@ function hookGate() {
     return
   }
   const { chantier } = activeChantier(projectRoot, config)
-  const phase = chantier?.spec?.data?.status === 'signed' ? testDrivenPhase(chantier, config) : 'none'
+  const phase = chantier?.spec?.data?.status === 'signed' ? testDrivenPhase(chantier) : 'none'
   if (phase === 'writing-tests') {
     return
   }
@@ -470,7 +478,7 @@ function hookSessionStart() {
     branch,
     chantier: chantier ? { id: chantier.id, title: chantier.spec?.data.title, type: chantier.spec?.data.type, status: chantier.spec?.data.status, files: chantier.files } : null,
     bypass: readBypass(projectRoot, branch),
-    nextStep: nextStep(chantier, config),
+    nextStep: nextStep(chantier),
   }
   const statusText = summary.chantier
     ? formatStatus({ ...summary, chantier: { ...summary.chantier, specProblems: [] } })

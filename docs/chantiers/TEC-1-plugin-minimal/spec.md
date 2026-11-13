@@ -3,6 +3,7 @@ id: TEC-1
 type: TEC
 title: Plugin atelier minimal
 status: draft
+tdd: no
 created_at: 2026-11-09
 signed_by:
 signed_at:
@@ -34,3 +35,4 @@ Désinstaller le plugin ou supprimer `.claude/atelier.json` du projet concerné.
 
 ## Amendements
 - 2026-11-13 : ajout du cycle TDD « write tests, commit; code, iterate, commit » (Anthropic) appliqué par les hooks : phase tests d'abord (implémentation refusée), gel des tests à leur commit, phase implémentation (tests en lecture seule, contrôle de fin anti-modification), commande `/atelier:build`, sous-agent `overfit-checker`.
+- 2026-11-13 : TDD décidé chantier par chantier (`tdd: yes | no` obligatoire avant signature), au lieu d'être imposé par type. Ce chantier : `tdd: no`, les tests ont été écrits en même temps que le code.

@@ -58,10 +58,25 @@ Règles d'écriture :
 - Laisse les commentaires du template en place : ils guident les relectures suivantes.
 - Ne tranche pas le périmètre à la place de l'utilisateur : propose, il décide.
 
-## 5. Vérifier
+## 5. Décider : TDD ou pas ?
+
+Cette décision appartient à l'utilisateur : **pose toujours la question**, même si tout le reste de la spec est complet, sauf s'il y a déjà répondu (champ `tdd` renseigné ou réponse explicite dans la conversation).
+
+Formule-la avec ta recommandation, en une ou deux lignes : « Faut-il mener ce chantier en TDD (tests écrits, commités et figés avant l'implémentation) ? Je recommande oui / non, parce que … ».
+
+Repères pour recommander :
+- **Oui** quand le comportement se décrit en paires entrée / sortie vérifiables : logique métier, calculs, règles d'autorisation, transformations de données, bug reproductible, refactor d'un code sensible.
+- **Non** quand un test coûterait plus qu'il ne protège : configuration, montée de version, changement de texte ou de mise en page, prototype, exploration, câblage trivial déjà couvert ailleurs.
+- Par défaut selon le type : `FEAT`, `FIX`, `REF` → plutôt oui ; `TEC`, `SPIKE` → plutôt non. Le contenu du chantier prime sur le type.
+
+« Non » ne veut pas dire « aucun test » : des tests peuvent être ajoutés là où ils ont de la valeur, simplement sans phase imposée. Pas de test pour le principe.
+
+Enregistre la réponse : `atelier set-tdd yes` ou `atelier set-tdd no [raison]`.
+
+## 6. Vérifier
 
 Lance `atelier check-spec docs/chantiers/<ID>-<slug>/spec.md`. Tant qu'il reste des points, traite-les avec l'utilisateur ou note ceux qu'il choisit de laisser pour plus tard.
 
-## 6. Fin
+## 7. Fin
 
 Ne commite pas encore : la spec est commitée à la signature. Indique : `/atelier:sign` quand la spec te convient.

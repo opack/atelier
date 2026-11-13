@@ -35,3 +35,9 @@
 
 ## 2026-11-13 : commande `build` plutôt que `slice`
 - Contexte : l'étape 4 du TDD (implémenter jusqu'au vert, vérifier le surapprentissage, commiter) est le cœur du chantier ; elle couvre aussi la construction tranche par tranche prévue pour `slice`.
+
+## 2026-11-13 : le TDD est une décision humaine par chantier, pas une règle par type
+- Contexte : beaucoup de chantiers (config, montée de version, texte, mise en page, exploration, FEAT simples) ne gagnent rien à des tests d'abord ; imposer le TDD par type mène à des tests inutiles.
+- Décision : champ `tdd: yes | no` obligatoire dans l'en-tête de la spec avant signature ; `/atelier:new` pose toujours la question avec une recommandation (type et contenu) ; les hooks TDD ne s'appliquent que si `tdd: yes`. Modifiable en cours de chantier par `atelier set-tdd`, tracé en amendement.
+- Écarté : une valeur par défaut silencieuse par type, parce que l'humain doit toujours trancher ; et `skip-test-first`, remplacé par `set-tdd no`.
+- « Non » ne veut pas dire « aucun test » : des tests là où ils ont de la valeur, pas de test pour le principe.
