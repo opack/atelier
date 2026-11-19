@@ -48,7 +48,7 @@ N'inclus que les contrôles qui existent et s'exécutent en moins de quelques mi
 ```
 
 - Crée `docs/chantiers/` et `docs/decisions/` (avec un `.gitkeep`).
-- Ajoute `.atelier/` au `.gitignore` (fichier local de débrayage).
+- Ajoute `.atelier/` au `.gitignore` (état local : débrayage, état du hook de fin).
 - Ajoute cette section au `CLAUDE.md` du projet (crée le fichier s'il n'existe pas), sans toucher au reste :
 
 ```markdown

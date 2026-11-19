@@ -3,7 +3,7 @@
 
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
-import { basename, join, relative, sep } from 'node:path'
+import nodePath, { basename, join } from 'node:path'
 
 export const CHANTIER_TYPES = ['FEAT', 'FIX', 'REF', 'TEC', 'SPIKE']
 
@@ -70,7 +70,9 @@ export function loadConfig(projectRoot) {
     return null
   }
   const userConfig = JSON.parse(readFileSync(path, 'utf8'))
-  return { ...DEFAULT_CONFIG, ...userConfig }
+  // Paths are compared without case where the file system usually ignores it.
+  const ignoreCase = ['win32', 'darwin'].includes(process.platform)
+  return { ...DEFAULT_CONFIG, ignoreCase, ...userConfig }
 }
 
 // ---------- Front matter ----------
@@ -337,7 +339,10 @@ function globToRegExp(pattern) {
   return new RegExp(`^${escaped}$`)
 }
 
-export function matchesAny(relativePath, patterns) {
+export function matchesAny(relativePath, patterns, ignoreCase = false) {
+  if (ignoreCase) {
+    return matchesAny(relativePath.toLowerCase(), patterns.map((pattern) => pattern.toLowerCase()))
+  }
   const name = basename(relativePath)
   return patterns.some((pattern) => {
     const prefix = pattern.slice(0, -3)
@@ -352,28 +357,91 @@ export function matchesAny(relativePath, patterns) {
   })
 }
 
-export function toProjectRelativePath(projectRoot, filePath) {
-  return relative(projectRoot, filePath).split(sep).join('/')
+// Path of a file relative to the project, with forward slashes, or null when the file is
+// outside the project (including another drive on Windows).
+export function toProjectRelativePath(projectRoot, filePath, pathApi = nodePath) {
+  const relativePath = pathApi.relative(projectRoot, filePath)
+  if (relativePath === '..' || relativePath.startsWith(`..${pathApi.sep}`) || pathApi.isAbsolute(relativePath)) {
+    return null
+  }
+  return relativePath.split(pathApi.sep).join('/')
 }
 
-// Decides whether the agent may write a file. Returns { allowed, reason }.
-// `context` = { relativePath, toolName, config, chantier, bypass, existingSpec }.
+// Text of a file after an Edit, MultiEdit or Write, with normalized line endings, or null when
+// it cannot be known (the edit does not apply, so the tool itself will fail).
+export function applyToolEdit(currentText, toolName, toolInput) {
+  const unixLines = (text) => String(text ?? '').replace(/\r\n/g, '\n')
+  if (toolName === 'Write') {
+    return unixLines(toolInput.content)
+  }
+  const edits = { Edit: [toolInput], MultiEdit: toolInput.edits }[toolName]
+  if (!edits || currentText === null) {
+    return null
+  }
+  let text = unixLines(currentText)
+  for (const edit of edits) {
+    const oldText = unixLines(edit.old_string)
+    const newText = unixLines(edit.new_string)
+    if (!oldText || !text.includes(oldText)) {
+      return null
+    }
+    text = edit.replace_all ? text.replaceAll(oldText, () => newText) : text.replace(oldText, () => newText)
+  }
+  return text
+}
+
+// Spec header fields written only by the atelier command (sign, set-status, freeze-tests, reopen-tests).
+export const COMMAND_SPEC_FIELDS = ['status', 'signed_by', 'signed_at', 'done_at', 'tests_commit']
+
+// Why a write to a spec file is refused, or null. `existingSpec` and `proposedSpec` are the
+// parsed spec before and after the write (null when absent or unknown).
+function specWriteRefusal(toolName, existingSpec, proposedSpec) {
+  const before = existingSpec?.data ?? {}
+  const status = before.status || 'draft'
+  if (toolName === 'Write' && ['signed', 'done'].includes(status)) {
+    return 'atelier : cette spec est signée, elle ne se réécrit pas. Modifie-la avec des éditions ciblées et ajoute une entrée datée dans la section « Amendements ».'
+  }
+  if (!proposedSpec) {
+    return null
+  }
+  const after = proposedSpec.data
+  const valueOf = (data, field) => (field === 'status' ? data.status || 'draft' : data[field] ?? '')
+  const changedFields = COMMAND_SPEC_FIELDS.filter((field) => valueOf(before, field) !== valueOf(after, field))
+  if (changedFields.length) {
+    return `atelier : ${changedFields.map((field) => `« ${field} »`).join(', ')} ne se modifie(nt) que par la commande atelier (la signature passe par /atelier:sign, sur accord explicite de l’utilisateur).`
+  }
+  if (status !== 'draft' && (before.tdd ?? '') !== (after.tdd ?? '')) {
+    return `atelier : la spec n’est plus en brouillon (statut : ${status}) ; « tdd » ne change plus que par « atelier set-tdd <yes|no> <raison> », tracé en amendement.`
+  }
+  return null
+}
+
+// Decides whether the agent may write a file. Returns { allowed, reason }. The rules apply in order.
+// `context` = { relativePath (null outside the project), toolName, config, chantier, bypass,
+// fileExists, existingSpec, proposedSpec } where the specs are the parsed spec file before and
+// after the write (see specWriteRefusal).
 export function decideWrite(context) {
-  const { relativePath, toolName, config, chantier, bypass, existingSpec } = context
-  if (relativePath.startsWith('..')) {
+  const { relativePath, toolName, config, chantier, bypass, fileExists, existingSpec, proposedSpec } = context
+  if (relativePath === null) {
     return { allowed: true }
   }
-  if (matchesAny(relativePath, config.sensitivePaths)) {
+  const matches = (patterns) => matchesAny(relativePath, patterns, config.ignoreCase)
+  if (matches(config.sensitivePaths)) {
     return { allowed: false, reason: `atelier : « ${relativePath} » est un fichier sensible, jamais modifié par l’agent.` }
   }
-  const isSpecFile = relativePath.startsWith(`${config.chantiersDir}/`) && relativePath.endsWith('/spec.md')
-  if (isSpecFile && toolName === 'Write' && ['signed', 'done'].includes(existingSpec?.data?.status)) {
+  if (matches(['.atelier/**']) || (fileExists && matches(['.claude/atelier.json']))) {
     return {
       allowed: false,
-      reason: 'atelier : cette spec est signée, elle ne se réécrit pas. Modifie-la avec des éditions ciblées et ajoute une entrée datée dans la section « Amendements ».',
+      reason: `atelier : « ${relativePath} » fait partie de l’état d’atelier ; seuls l’utilisateur et la commande atelier le modifient (débrayage : /atelier:off). Si un changement est nécessaire, demande-le à l’utilisateur.`,
     }
   }
-  if (matchesAny(relativePath, config.freePaths)) {
+  if (matches([`${config.chantiersDir}/**`]) && matches(['spec.md'])) {
+    const refusal = specWriteRefusal(toolName, existingSpec, proposedSpec)
+    if (refusal) {
+      return { allowed: false, reason: refusal }
+    }
+  }
+  if (matches(config.freePaths)) {
     return { allowed: true }
   }
   if (bypass) {
@@ -385,19 +453,25 @@ export function decideWrite(context) {
       reason: 'atelier : aucun chantier actif sur cette branche. Ouvre un chantier avec /atelier:new (ou, en urgence de production seulement, /atelier:off <raison>).',
     }
   }
-  const status = chantier.spec?.data?.status ?? 'draft'
+  const status = chantier.spec?.data?.status || 'draft'
+  if (['done', 'abandoned'].includes(status)) {
+    return {
+      allowed: false,
+      reason: `atelier : ${chantier.id} est clos (statut : ${status}). Pour modifier le code, ouvre un nouveau chantier avec /atelier:new.`,
+    }
+  }
   if (status !== 'signed') {
     return {
       allowed: false,
       reason: `atelier : la spec de ${chantier.id} n’est pas signée (statut : ${status}). Termine-la puis signe-la avec /atelier:sign avant de modifier le code.`,
     }
   }
-  const isTestFile = matchesAny(relativePath, config.testPaths)
+  const isTestFile = matches(config.testPaths)
   const phase = testDrivenPhase(chantier)
   if (phase === 'writing-tests' && !isTestFile) {
     return {
       allowed: false,
-      reason: `atelier : ${chantier.id} est en phase « tests d’abord » (TDD). N’écris aucune implémentation, même factice : seulement des fichiers de test. Lance les tests, vérifie qu’ils échouent, fais-les relire et commiter (/atelier:tests). Si ce fichier est un test, ajoute son motif à « testPaths » dans .claude/atelier.json.`,
+      reason: `atelier : ${chantier.id} est en phase « tests d’abord » (TDD). N’écris aucune implémentation, même factice : seulement des fichiers de test. Lance les tests, vérifie qu’ils échouent, fais-les relire et commiter (/atelier:tests). Si ce fichier est un test, demande à l’utilisateur d’ajouter son motif à « testPaths » dans .claude/atelier.json.`,
     }
   }
   if (phase === 'implementing' && isTestFile) {
@@ -407,4 +481,53 @@ export function decideWrite(context) {
     }
   }
   return { allowed: true }
+}
+
+// ---------- Stop hook ----------
+
+// Decides what happens when the agent wants to stop. Returns { block, message, state }: when
+// `block` is true the agent keeps working on `message`; otherwise `message`, if any, is for the user.
+// `state` ({ lastGreen, lastBlock, reportedUnsigned }) is persisted between calls.
+// `context` = { config, chantier, bypass, changedFiles (uncommitted), changedTests (frozen tests
+// modified since tests_commit), tree (identifies the working tree content, null when unknown),
+// state, runChecks (returns the first failing check as { check, output }, or null) }.
+export function decideStop(context) {
+  const { config, chantier, bypass, changedFiles, changedTests, tree, runChecks } = context
+  const state = { ...context.state }
+  const signed = chantier?.spec?.data?.status === 'signed'
+  const phase = signed ? testDrivenPhase(chantier) : 'none'
+  if (phase === 'writing-tests') {
+    return { block: false, state }
+  }
+  // Blocking again on an unchanged working tree means the agent is stuck: let it stop.
+  const block = (message) => {
+    if (tree !== null && state.lastBlock === tree) {
+      return { block: false, message: `atelier : l’agent s’est arrêté sans parvenir à régler ce problème.\n\n${message}`, state }
+    }
+    return { block: true, message, state: { ...state, lastBlock: tree } }
+  }
+  const pass = (newState = state) => ({ block: false, state: { ...newState, lastBlock: null } })
+  if (phase === 'implementing' && changedTests.length) {
+    return block(`atelier : des tests figés ont été modifiés (${changedTests.join(', ')}). Restaure-les (git checkout ${chantier.spec.data.tests_commit} -- <fichier>) et corrige l’implémentation. Si un test est réellement faux, arrête-toi et signale-le à l’utilisateur au lieu de le modifier.`)
+  }
+  const ignoredPaths = [...config.freePaths, `${config.chantiersDir}/**`, '.atelier/**']
+  const codeFiles = changedFiles.filter((file) => !matchesAny(file, ignoredPaths, config.ignoreCase))
+  if (codeFiles.length === 0) {
+    return pass()
+  }
+  if (!signed && !bypass && tree !== null && state.reportedUnsigned !== tree) {
+    return {
+      block: true,
+      message: `atelier : du code a changé sans chantier signé (${codeFiles.join(', ')}). Si c’est toi, par une commande shell par exemple, signale-le à l’utilisateur : ce code n’aurait pas dû être écrit avant la signature de la spec. Sinon, ignore ce message.`,
+      state: { ...state, reportedUnsigned: tree },
+    }
+  }
+  if (config.checks.length === 0 || (tree !== null && state.lastGreen === tree)) {
+    return pass()
+  }
+  const failure = runChecks()
+  if (!failure) {
+    return pass({ ...state, lastGreen: tree })
+  }
+  return block(`atelier : le contrôle « ${failure.check.name} » échoue (${failure.check.command}). Continue à corriger l’implémentation jusqu’à ce que tout passe, sans modifier les tests.\n\n${failure.output}`)
 }

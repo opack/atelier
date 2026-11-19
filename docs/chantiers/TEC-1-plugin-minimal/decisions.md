@@ -41,3 +41,18 @@
 - Décision : champ `tdd: yes | no` obligatoire dans l'en-tête de la spec avant signature ; `/atelier:new` pose toujours la question avec une recommandation (type et contenu) ; les hooks TDD ne s'appliquent que si `tdd: yes`. Modifiable en cours de chantier par `atelier set-tdd`, tracé en amendement.
 - Écarté : une valeur par défaut silencieuse par type, parce que l'humain doit toujours trancher ; et `skip-test-first`, remplacé par `set-tdd no`.
 - « Non » ne veut pas dire « aucun test » : des tests là où ils ont de la valeur, pas de test pour le principe.
+
+## 2026-11-19 : état d'atelier et champs d'en-tête hors de portée des outils d'édition
+- Contexte : relecture critique avant signature ; `.claude/**` et `.atelier/**` étaient des chemins libres, donc l'agent pouvait débrayer ou désactiver atelier, et passer lui-même une spec à `signed` par un `Edit`.
+- Conséquence : `.atelier/**` refusé, `.claude/atelier.json` refusé une fois créé ; les champs `status`, `signed_by`, `signed_at`, `done_at`, `tests_commit` (et `tdd` après signature) comparés avant et après l'édition simulée (`applyToolEdit`), fins de ligne normalisées pour qu'un fichier CRLF ne fasse pas échouer la simulation.
+- Écarté : bloquer le shell, parce qu'aucune analyse de commande n'est fiable ; c'est une limite assumée (spec §5).
+
+## 2026-11-19 : hook de fin piloté par un identifiant de l'arbre de travail
+- Contexte : remplace la décision du 09/11 (« seulement si du code a changé hors des documents ») : exclusion de tous les chemins libres, et trois besoins nouveaux (ne pas relancer les contrôles sur un état déjà vert, signaler une seule fois du code sans chantier signé, sortir d'une boucle sans progrès).
+- Décision : l'arbre de travail est identifié par `git write-tree` sur un index séparé (`.atelier/gate-index`), qui ne touche pas l'index réel ; l'état du hook est dans `.atelier/gate.json`. Un blocage répété sur un arbre inchangé laisse l'agent s'arrêter et montre l'échec à l'utilisateur.
+- Écarté : `stop_hook_active`, parce qu'il n'autorise qu'une relance forcée et casse l'itération du TDD ; une pathspec d'exclusion de `.atelier`, que git refuse quand le dossier est ignoré (trouvé à l'essai de bout en bout).
+- Conséquence : la logique est dans `decideStop` (`core.mjs`), testée ; `cli.mjs` ne fait que lire, exécuter et afficher.
+
+## 2026-11-19 : casse ignorée sous Windows et macOS
+- Contexte : la spec vise Windows ; macOS a par défaut le même système de fichiers insensible à la casse, avec le même risque de fausse correspondance.
+- Conséquence : `ignoreCase` déduit de la plateforme dans `loadConfig`, surchargeable dans `.claude/atelier.json`.

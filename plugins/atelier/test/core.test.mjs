@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import path, { join } from 'node:path'
 import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import {
   DEFAULT_CONFIG,
+  applyToolEdit,
   checkSpec,
   chantierIdFromText,
+  decideStop,
   decideWrite,
   highestChantierNumber,
   matchesAny,
@@ -15,6 +17,7 @@ import {
   parseFrontMatter,
   setFrontMatterValues,
   testDrivenPhase,
+  toProjectRelativePath,
 } from '../lib/core.mjs'
 
 const templatesDirectory = fileURLToPath(new URL('../templates/', import.meta.url))
@@ -139,7 +142,130 @@ describe('write guard', () => {
   })
 
   it('ignores files outside the project', () => {
-    assert.equal(decide({ chantier: null, relativePath: '../other/file.ts' }).allowed, true)
+    assert.equal(decide({ chantier: null, relativePath: null }).allowed, true)
+  })
+
+  it('protects the atelier state: .atelier always, the configuration once created', () => {
+    assert.equal(decide({ relativePath: '.atelier/bypass.json', bypass: { reason: 'x' } }).allowed, false)
+    assert.equal(decide({ relativePath: '.claude/atelier.json', fileExists: false }).allowed, true)
+    assert.equal(decide({ relativePath: '.claude/atelier.json', fileExists: true }).allowed, false)
+    assert.equal(decide({ relativePath: '.claude/settings.json', fileExists: true }).allowed, true)
+  })
+
+  it('keeps the spec header fields written by the command out of reach of the agent', () => {
+    const relativePath = 'docs/chantiers/FEAT-12-x/spec.md'
+    const draft = parseFrontMatter('---\nid: FEAT-12\nstatus: draft\ntdd: yes\nsigned_by:\n---\n')
+    const signed = parseFrontMatter('---\nid: FEAT-12\nstatus: signed\ntdd: yes\nsigned_by: Ana\n---\n')
+    const write = (existingSpec, proposedText) => decide({ relativePath, existingSpec, proposedSpec: parseFrontMatter(proposedText) })
+    assert.equal(write(draft, '---\nid: FEAT-12\nstatus: signed\ntdd: yes\nsigned_by:\n---\n').allowed, false, 'self-signature')
+    assert.equal(write(draft, '---\nid: FEAT-12\nstatus: draft\ntdd: no\nsigned_by:\n---\n').allowed, true, 'tdd while draft')
+    assert.equal(write(signed, '---\nid: FEAT-12\nstatus: signed\ntdd: no\nsigned_by: Ana\n---\n').allowed, false, 'tdd after signature')
+    assert.equal(write(signed, '---\nid: FEAT-12\nstatus: signed\ntdd: yes\nsigned_by: Ana\ntests_commit: abc\n---\n').allowed, false, 'freezing by hand')
+    assert.equal(write(signed, '---\nstatus: signed\n---\n').allowed, false, 'signed_by removed')
+    assert.equal(write(null, '---\nid: FEAT-12\nstatus: draft\ntdd: yes\nsigned_by:\nsigned_at:\n---\n').allowed, true, 'new spec')
+  })
+
+  it('blocks code edits once the chantier is closed', () => {
+    const decision = decide({ chantier: { ...signedTec, spec: { data: { status: 'done', type: 'TEC', tdd: 'no' } } } })
+    assert.equal(decision.allowed, false)
+    assert.match(decision.reason, /nouveau chantier/)
+  })
+
+  it('compares paths without case when the file system ignores it', () => {
+    const config = { ...DEFAULT_CONFIG, ignoreCase: true }
+    assert.equal(decide({ chantier: null, config, relativePath: 'Docs/notes.md' }).allowed, true)
+    assert.equal(decide({ config, relativePath: '.ATELIER/bypass.json' }).allowed, false)
+    assert.equal(decide({ chantier: null, relativePath: 'Docs/notes.md' }).allowed, false)
+  })
+})
+
+describe('project relative paths', () => {
+  it('tells files outside the project apart, other drives and case included on Windows', () => {
+    assert.equal(toProjectRelativePath('C:\\proj', 'C:\\proj\\src\\a.ts', path.win32), 'src/a.ts')
+    assert.equal(toProjectRelativePath('C:\\Proj', 'c:\\proj\\src\\a.ts', path.win32), 'src/a.ts')
+    assert.equal(toProjectRelativePath('C:\\proj', 'D:\\proj\\src\\a.ts', path.win32), null)
+    assert.equal(toProjectRelativePath('C:\\proj', 'C:\\other\\a.ts', path.win32), null)
+    assert.equal(toProjectRelativePath('/proj', '/proj/..cache/a.ts', path.posix), '..cache/a.ts')
+  })
+})
+
+describe('tool edits', () => {
+  it('computes the text after Edit, MultiEdit and Write', () => {
+    assert.equal(applyToolEdit('a\r\nb\r\nb', 'Edit', { old_string: 'b', new_string: '$&c' }), 'a\n$&c\nb')
+    assert.equal(applyToolEdit('a\nb\nb', 'Edit', { old_string: 'b', new_string: 'c', replace_all: true }), 'a\nc\nc')
+    assert.equal(applyToolEdit('a\nb', 'MultiEdit', { edits: [{ old_string: 'a', new_string: 'x' }, { old_string: 'x\nb', new_string: 'y' }] }), 'y')
+    assert.equal(applyToolEdit(null, 'Write', { content: 'new' }), 'new')
+  })
+
+  it('returns null when the edit cannot apply', () => {
+    assert.equal(applyToolEdit('a', 'Edit', { old_string: 'z', new_string: 'y' }), null)
+    assert.equal(applyToolEdit(null, 'Edit', { old_string: 'a', new_string: 'y' }), null)
+    assert.equal(applyToolEdit('a', 'NotebookEdit', {}), null)
+  })
+})
+
+describe('stop hook', () => {
+  const checksConfig = { ...DEFAULT_CONFIG, checks: [{ name: 'tests', command: 'npm test' }] }
+  const failure = { check: checksConfig.checks[0], output: '1 failing' }
+
+  function stop(overrides) {
+    let checksRun = 0
+    const { runChecksResult = null, ...rest } = overrides
+    const decision = decideStop({
+      config: checksConfig,
+      chantier: signedTec,
+      bypass: null,
+      changedFiles: ['src/app.ts'],
+      changedTests: [],
+      tree: 'tree-1',
+      state: {},
+      runChecks: () => { checksRun += 1; return runChecksResult },
+      ...rest,
+    })
+    return { ...decision, checksRun }
+  }
+
+  it('runs nothing while writing tests', () => {
+    const decision = stop({ chantier: signedChantier, runChecksResult: failure })
+    assert.equal(decision.block, false)
+    assert.equal(decision.checksRun, 0)
+  })
+
+  it('blocks when frozen tests were modified', () => {
+    const decision = stop({ chantier: implementingChantier, changedTests: ['src/budget.test.ts'] })
+    assert.equal(decision.block, true)
+    assert.match(decision.message, /git checkout abc1234/)
+  })
+
+  it('reports code changed without a signed chantier once per working tree', () => {
+    const first = stop({ chantier: draftChantier })
+    assert.equal(first.block, true)
+    assert.match(first.message, /sans chantier signé/)
+    assert.equal(stop({ chantier: draftChantier, state: first.state }).block, false)
+    assert.equal(stop({ chantier: draftChantier, state: first.state, tree: 'tree-2' }).block, true)
+    assert.equal(stop({ chantier: draftChantier, bypass: { reason: 'x' } }).block, false)
+  })
+
+  it('ignores free paths, chantier documents and atelier state', () => {
+    const decision = stop({ changedFiles: ['README.md', 'docs/decisions/0001.md', '.atelier/gate.json'], runChecksResult: failure })
+    assert.equal(decision.block, false)
+    assert.equal(decision.checksRun, 0)
+  })
+
+  it('keeps the agent working while a check fails, and skips a tree already green', () => {
+    assert.equal(stop({ runChecksResult: failure }).block, true)
+    const green = stop({})
+    assert.equal(green.block, false)
+    assert.equal(green.state.lastGreen, 'tree-1')
+    assert.equal(stop({ state: green.state, runChecksResult: failure }).checksRun, 0)
+  })
+
+  it('lets a stuck agent stop and tells the user, but keeps a progressing agent working', () => {
+    const first = stop({ runChecksResult: failure })
+    const stuck = stop({ state: first.state, runChecksResult: failure })
+    assert.equal(stuck.block, false)
+    assert.match(stuck.message, /sans parvenir/)
+    assert.equal(stop({ state: first.state, tree: 'tree-2', runChecksResult: failure }).block, true)
   })
 })
 

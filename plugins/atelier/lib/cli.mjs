@@ -3,12 +3,14 @@
 
 import { execFileSync, spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
   activeChantier,
+  applyToolEdit,
   checkSpec,
   collectUsedIdentifiers,
+  decideStop,
   decideWrite,
   findProjectRoot,
   loadConfig,
@@ -242,17 +244,20 @@ function porcelainPaths(output) {
     .map((line) => line.slice(3).replace(/^.* -> /, '').trim())
 }
 
-// Test files changed in the working tree (uncommitted, including untracked).
-function uncommittedTestFiles(projectRoot, config) {
+// Files changed in the working tree (uncommitted, including untracked).
+function uncommittedFiles(projectRoot) {
   return porcelainPaths(gitRaw(projectRoot, ['status', '--porcelain', '--untracked-files=all']))
-    .filter((file) => matchesAny(file, config.testPaths))
+}
+
+function uncommittedTestFiles(projectRoot, config) {
+  return uncommittedFiles(projectRoot).filter((file) => matchesAny(file, config.testPaths, config.ignoreCase))
 }
 
 // Test files changed since the tests were frozen (committed or not).
 function testFilesChangedSince(projectRoot, config, commit) {
   const committed = git(projectRoot, ['diff', '--name-only', commit, '--'])
     .split('\n')
-    .filter((file) => file && matchesAny(file, config.testPaths))
+    .filter((file) => file && matchesAny(file, config.testPaths, config.ignoreCase))
   return [...new Set([...committed, ...uncommittedTestFiles(projectRoot, config)])]
 }
 
@@ -277,7 +282,7 @@ function commandFreezeTests() {
   }
   const commit = git(projectRoot, ['rev-parse', '--short', 'HEAD'])
   const lastCommitFiles = git(projectRoot, ['show', '--name-only', '--format=', 'HEAD']).split('\n')
-  if (!lastCommitFiles.some((file) => file && matchesAny(file, config.testPaths))) {
+  if (!lastCommitFiles.some((file) => file && matchesAny(file, config.testPaths, config.ignoreCase))) {
     console.error('Le dernier commit ne contient aucun fichier de test. Commite les tests (et seulement les tests) avant de les figer.')
     process.exit(2)
   }
@@ -399,18 +404,20 @@ function hookGuard() {
   if (!config || !filePath) {
     return
   }
-  const relativePath = toProjectRelativePath(projectRoot, filePath)
   const { branch, chantier } = activeChantier(projectRoot, config)
-  const existingSpec = existsSync(filePath) && filePath.endsWith('spec.md')
-    ? parseFrontMatter(readFileSync(filePath, 'utf8'))
-    : null
+  const fileExists = existsSync(filePath)
+  const isSpec = basename(filePath).toLowerCase() === 'spec.md'
+  const currentText = isSpec && fileExists ? readFileSync(filePath, 'utf8') : null
+  const proposedText = isSpec ? applyToolEdit(currentText, input.tool_name, input.tool_input) : null
   const decision = decideWrite({
-    relativePath,
+    relativePath: toProjectRelativePath(projectRoot, filePath),
     toolName: input.tool_name,
     config,
     chantier,
     bypass: readBypass(projectRoot, branch),
-    existingSpec,
+    fileExists,
+    existingSpec: currentText === null ? null : parseFrontMatter(currentText),
+    proposedSpec: proposedText === null ? null : parseFrontMatter(proposedText),
   })
   if (!decision.allowed) {
     console.log(JSON.stringify({
@@ -423,10 +430,21 @@ function hookGuard() {
   }
 }
 
-// Runs the checks when the agent wants to stop, but only if code changed outside the docs.
-// Stop hook. While implementing, the frozen tests must be untouched and every check green:
-// the agent keeps iterating until then (TDD step 4). While writing tests, failing tests are
-// the expected outcome, so the checks are not run.
+function gateStatePath(projectRoot) {
+  return join(projectRoot, '.atelier', 'gate.json')
+}
+
+// Identifies the content of the working tree (tracked and untracked files, `.atelier/` excluded),
+// through a separate index kept in `.atelier/` so that the real index is never touched.
+function workingTreeId(projectRoot) {
+  const env = { ...process.env, GIT_INDEX_FILE: join(projectRoot, '.atelier', 'gate-index') }
+  // No exclude pathspec: git rejects it when `.atelier/` is ignored, as /atelier:init does.
+  execFileSync('git', ['add', '--all'], { cwd: projectRoot, env, stdio: 'ignore' })
+  execFileSync('git', ['rm', '-r', '--cached', '--quiet', '--ignore-unmatch', '.atelier'], { cwd: projectRoot, env, stdio: 'ignore' })
+  return execFileSync('git', ['write-tree'], { cwd: projectRoot, env, encoding: 'utf8' }).trim()
+}
+
+// Stop hook: the decision itself is decideStop (lib/core.mjs).
 function hookGate() {
   const input = readStandardInput()
   const projectRoot = input.cwd ? findProjectRoot(input.cwd) : findProjectRoot()
@@ -434,36 +452,36 @@ function hookGate() {
   if (!config) {
     return
   }
-  const { chantier } = activeChantier(projectRoot, config)
-  const phase = chantier?.spec?.data?.status === 'signed' ? testDrivenPhase(chantier) : 'none'
-  if (phase === 'writing-tests') {
-    return
-  }
-  if (phase === 'implementing') {
-    const testsCommit = chantier.spec.data.tests_commit
-    const changedTests = testFilesChangedSince(projectRoot, config, testsCommit)
-    if (changedTests.length) {
-      console.error(`atelier : des tests figés ont été modifiés (${changedTests.join(', ')}). Restaure-les (git checkout ${testsCommit} -- <fichier>) et corrige l’implémentation. Si un test est réellement faux, arrête-toi et signale-le à l’utilisateur au lieu de le modifier.`)
-      process.exit(2)
-    }
-  }
-  if (config.checks.length === 0) {
-    return
-  }
-  let changedFiles = []
+  const { branch, chantier } = activeChantier(projectRoot, config)
+  const statePath = gateStatePath(projectRoot)
+  mkdirSync(dirname(statePath), { recursive: true })
+  let changedFiles
+  let tree
   try {
-    changedFiles = porcelainPaths(gitRaw(projectRoot, ['status', '--porcelain', '--untracked-files=all']))
+    changedFiles = uncommittedFiles(projectRoot)
+    tree = workingTreeId(projectRoot)
   } catch {
     return
   }
-  const codeChanged = changedFiles.some((file) => !file.startsWith(`${config.chantiersDir}/`) && !file.startsWith('.atelier/'))
-  if (!codeChanged) {
-    return
-  }
-  const failure = runChecks(projectRoot, config)
-  if (failure) {
-    console.error(`atelier : le contrôle « ${failure.check.name} » échoue (${failure.check.command}). Continue à corriger l’implémentation jusqu’à ce que tout passe, sans modifier les tests.\n\n${failure.output}`)
+  const decision = decideStop({
+    config,
+    chantier,
+    bypass: readBypass(projectRoot, branch),
+    changedFiles,
+    changedTests: testDrivenPhase(chantier) === 'implementing'
+      ? testFilesChangedSince(projectRoot, config, chantier.spec.data.tests_commit)
+      : [],
+    tree,
+    state: existsSync(statePath) ? JSON.parse(readFileSync(statePath, 'utf8')) : {},
+    runChecks: () => runChecks(projectRoot, config),
+  })
+  writeFileSync(statePath, JSON.stringify(decision.state, null, 2))
+  if (decision.block) {
+    console.error(decision.message)
     process.exit(2)
+  }
+  if (decision.message) {
+    console.log(JSON.stringify({ systemMessage: decision.message }))
   }
 }
 

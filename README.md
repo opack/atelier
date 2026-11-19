@@ -86,11 +86,11 @@ Un test réellement faux se rouvre explicitement (`atelier reopen-tests <raison>
 
 ## Ce que font les hooks
 
-- **Avant chaque écriture** : refuse les modifications de code sans chantier signé, en TDD : toute implémentation pendant l'écriture des tests et toute modification des tests une fois figés, la réécriture d'une spec signée et les fichiers sensibles (`.env`, clés).
-- **Avant de terminer** : pendant l'implémentation, refuse tout test modifié depuis son gel (même par une commande shell ou un commit) ; si du code a changé, lance les contrôles de `.claude/atelier.json` et l'agent continue tant qu'ils échouent. Pendant l'écriture des tests, des tests rouges sont attendus : rien n'est lancé.
+- **Avant chaque écriture** (outils d'édition) : refuse les modifications de code sans chantier signé (branche sans chantier, spec en brouillon ou chantier clos) ; en TDD, toute implémentation pendant l'écriture des tests et toute modification des tests une fois figés. Refuse aussi, toujours : les fichiers sensibles (`.env`, clés), l'état d'atelier (`.atelier/`, et `.claude/atelier.json` une fois créé), la réécriture d'une spec signée et la modification des champs d'en-tête réservés à la commande (`status`, `signed_by`, `signed_at`, `done_at`, `tests_commit`, et `tdd` après signature).
+- **Avant de terminer** : pendant l'implémentation, refuse tout test modifié depuis son gel (même par une commande shell ou un commit) ; signale une fois du code modifié sans chantier signé (écriture par le shell) ; si du code a changé hors des chemins libres, lance les contrôles de `.claude/atelier.json`, sauf sur un état déjà passé au vert, et l'agent continue tant qu'ils échouent. Si l'agent bute sans rien changer, il est autorisé à s'arrêter et l'échec t'est montré. Pendant l'écriture des tests, des tests rouges sont attendus : rien n'est lancé.
 - **Au démarrage d'une session** : rappelle le chantier actif, son statut et la prochaine étape.
 
-Les hooks ne font rien dans un projet sans `.claude/atelier.json`.
+Les hooks ne font rien dans un projet sans `.claude/atelier.json`. Ce sont des garde-fous contre l'oubli, pas une barrière contre un agent qui chercherait à les contourner : une écriture par le shell n'est détectée qu'en fin de tour, et rien n'est annulé.
 
 ## Dossier de chantier
 
