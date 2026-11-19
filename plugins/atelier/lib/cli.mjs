@@ -10,6 +10,7 @@ import {
   applyToolEdit,
   checkSpec,
   collectUsedIdentifiers,
+  configPath,
   decideStop,
   decideWrite,
   findProjectRoot,
@@ -19,6 +20,7 @@ import {
   nextStep,
   testDrivenPhase,
   parseFrontMatter,
+  parsePorcelainPaths,
   setFrontMatterValues,
   toProjectRelativePath,
 } from './core.mjs'
@@ -203,6 +205,11 @@ function commandSign() {
   const projectRoot = findProjectRoot()
   const config = requireConfig(projectRoot)
   const chantier = requireActiveChantier(projectRoot, config)
+  const status = chantier.spec.data.status || 'draft'
+  if (status !== 'draft') {
+    console.error(`Signature refusée : la spec de ${chantier.id} est déjà « ${status} ». Seule une spec en brouillon se signe.`)
+    process.exit(2)
+  }
   const problems = checkSpec(readFileSync(join(chantier.directory, 'spec.md'), 'utf8'))
   if (problems.length) {
     console.error(`Spec incomplète, signature refusée :\n${problems.map((problem) => `- ${problem}`).join('\n')}`)
@@ -217,9 +224,10 @@ function commandSign() {
 }
 
 function commandSetStatus([status]) {
-  const allowedStatuses = ['draft', 'signed', 'done', 'abandoned']
+  // `signed` only through `atelier sign`, which checks the spec and records who signed.
+  const allowedStatuses = ['draft', 'done', 'abandoned']
   if (!allowedStatuses.includes(status)) {
-    console.error(`Statut attendu : ${allowedStatuses.join(', ')}`)
+    console.error(`Statut attendu : ${allowedStatuses.join(', ')} (pour signer : atelier sign)`)
     process.exit(1)
   }
   const projectRoot = findProjectRoot()
@@ -237,16 +245,14 @@ function gitRaw(projectRoot, gitArguments) {
   return execFileSync('git', gitArguments, { cwd: projectRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
 }
 
-function porcelainPaths(output) {
-  return output
-    .split('\n')
-    .filter((line) => line.length > 3)
-    .map((line) => line.slice(3).replace(/^.* -> /, '').trim())
+// File list printed by a git command run with -z (NUL-separated, never quoted).
+function gitPaths(projectRoot, gitArguments) {
+  return gitRaw(projectRoot, gitArguments).split('\0').filter(Boolean)
 }
 
 // Files changed in the working tree (uncommitted, including untracked).
 function uncommittedFiles(projectRoot) {
-  return porcelainPaths(gitRaw(projectRoot, ['status', '--porcelain', '--untracked-files=all']))
+  return parsePorcelainPaths(gitRaw(projectRoot, ['status', '--porcelain', '-z', '--untracked-files=all']))
 }
 
 function uncommittedTestFiles(projectRoot, config) {
@@ -255,9 +261,8 @@ function uncommittedTestFiles(projectRoot, config) {
 
 // Test files changed since the tests were frozen (committed or not).
 function testFilesChangedSince(projectRoot, config, commit) {
-  const committed = git(projectRoot, ['diff', '--name-only', commit, '--'])
-    .split('\n')
-    .filter((file) => file && matchesAny(file, config.testPaths, config.ignoreCase))
+  const committed = gitPaths(projectRoot, ['diff', '--name-only', '-z', commit, '--'])
+    .filter((file) => matchesAny(file, config.testPaths, config.ignoreCase))
   return [...new Set([...committed, ...uncommittedTestFiles(projectRoot, config)])]
 }
 
@@ -281,8 +286,8 @@ function commandFreezeTests() {
     process.exit(2)
   }
   const commit = git(projectRoot, ['rev-parse', '--short', 'HEAD'])
-  const lastCommitFiles = git(projectRoot, ['show', '--name-only', '--format=', 'HEAD']).split('\n')
-  if (!lastCommitFiles.some((file) => file && matchesAny(file, config.testPaths, config.ignoreCase))) {
+  const lastCommitFiles = gitPaths(projectRoot, ['show', '--name-only', '-z', '--format=', 'HEAD'])
+  if (!lastCommitFiles.some((file) => matchesAny(file, config.testPaths, config.ignoreCase))) {
     console.error('Le dernier commit ne contient aucun fichier de test. Commite les tests (et seulement les tests) avant de les figer.')
     process.exit(2)
   }
@@ -396,9 +401,31 @@ function commandChecks() {
 
 // ---------- Hooks ----------
 
+function denyWrite(reason) {
+  console.log(JSON.stringify({
+    hookSpecificOutput: {
+      hookEventName: 'PreToolUse',
+      permissionDecision: 'deny',
+      permissionDecisionReason: reason,
+    },
+  }))
+}
+
+// PreToolUse hook. A failure must not let the write through: in a project using atelier,
+// the write is refused with the error.
 function hookGuard() {
   const input = readStandardInput()
   const projectRoot = input.cwd ? findProjectRoot(input.cwd) : findProjectRoot()
+  try {
+    guardWrite(input, projectRoot)
+  } catch (error) {
+    if (existsSync(configPath(projectRoot))) {
+      denyWrite(`atelier : impossible de vérifier cette écriture (${error.message}). Vérifie .claude/atelier.json et .atelier/, ou signale-le à l’utilisateur.`)
+    }
+  }
+}
+
+function guardWrite(input, projectRoot) {
   const config = loadConfig(projectRoot)
   const filePath = input.tool_input?.file_path ?? input.tool_input?.notebook_path
   if (!config || !filePath) {
@@ -420,13 +447,7 @@ function hookGuard() {
     proposedSpec: proposedText === null ? null : parseFrontMatter(proposedText),
   })
   if (!decision.allowed) {
-    console.log(JSON.stringify({
-      hookSpecificOutput: {
-        hookEventName: 'PreToolUse',
-        permissionDecision: 'deny',
-        permissionDecisionReason: decision.reason,
-      },
-    }))
+    denyWrite(decision.reason)
   }
 }
 
@@ -444,10 +465,19 @@ function workingTreeId(projectRoot) {
   return execFileSync('git', ['write-tree'], { cwd: projectRoot, env, encoding: 'utf8' }).trim()
 }
 
-// Stop hook: the decision itself is decideStop (lib/core.mjs).
+// Stop hook: the decision itself is decideStop (lib/core.mjs). A failure does not block the
+// agent, but the user is told that the end-of-turn checks did not run.
 function hookGate() {
   const input = readStandardInput()
   const projectRoot = input.cwd ? findProjectRoot(input.cwd) : findProjectRoot()
+  try {
+    gate(projectRoot)
+  } catch (error) {
+    console.log(JSON.stringify({ systemMessage: `atelier : contrôle de fin de tour impossible (${error.message}).` }))
+  }
+}
+
+function gate(projectRoot) {
   const config = loadConfig(projectRoot)
   if (!config) {
     return
@@ -455,23 +485,15 @@ function hookGate() {
   const { branch, chantier } = activeChantier(projectRoot, config)
   const statePath = gateStatePath(projectRoot)
   mkdirSync(dirname(statePath), { recursive: true })
-  let changedFiles
-  let tree
-  try {
-    changedFiles = uncommittedFiles(projectRoot)
-    tree = workingTreeId(projectRoot)
-  } catch {
-    return
-  }
   const decision = decideStop({
     config,
     chantier,
     bypass: readBypass(projectRoot, branch),
-    changedFiles,
+    changedFiles: uncommittedFiles(projectRoot),
+    tree: workingTreeId(projectRoot),
     changedTests: testDrivenPhase(chantier) === 'implementing'
       ? testFilesChangedSince(projectRoot, config, chantier.spec.data.tests_commit)
       : [],
-    tree,
     state: existsSync(statePath) ? JSON.parse(readFileSync(statePath, 'utf8')) : {},
     runChecks: () => runChecks(projectRoot, config),
   })

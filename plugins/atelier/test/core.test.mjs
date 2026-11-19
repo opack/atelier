@@ -15,6 +15,7 @@ import {
   nextChantierId,
   nextStep,
   parseFrontMatter,
+  parsePorcelainPaths,
   setFrontMatterValues,
   testDrivenPhase,
   toProjectRelativePath,
@@ -138,7 +139,7 @@ describe('write guard', () => {
     const path = 'docs/chantiers/FEAT-12-x/spec.md'
     const existingSpec = { data: { status: 'signed' } }
     assert.equal(decide({ relativePath: path, toolName: 'Write', existingSpec }).allowed, false)
-    assert.equal(decide({ relativePath: path, toolName: 'Edit', existingSpec }).allowed, true)
+    assert.equal(decide({ relativePath: path, toolName: 'Edit', existingSpec, proposedSpec: existingSpec }).allowed, true)
   })
 
   it('ignores files outside the project', () => {
@@ -165,6 +166,14 @@ describe('write guard', () => {
     assert.equal(write(null, '---\nid: FEAT-12\nstatus: draft\ntdd: yes\nsigned_by:\nsigned_at:\n---\n').allowed, true, 'new spec')
   })
 
+  it('refuses a spec edit that cannot be replayed, since it cannot be checked', () => {
+    const relativePath = 'docs/chantiers/FEAT-12-x/spec.md'
+    const existingSpec = parseFrontMatter('---\nstatus: draft\n---\n')
+    const decision = decide({ relativePath, toolName: 'Edit', existingSpec, proposedSpec: null })
+    assert.equal(decision.allowed, false)
+    assert.match(decision.reason, /édition exacte/)
+  })
+
   it('blocks code edits once the chantier is closed', () => {
     const decision = decide({ chantier: { ...signedTec, spec: { data: { status: 'done', type: 'TEC', tdd: 'no' } } } })
     assert.equal(decision.allowed, false)
@@ -186,6 +195,14 @@ describe('project relative paths', () => {
     assert.equal(toProjectRelativePath('C:\\proj', 'D:\\proj\\src\\a.ts', path.win32), null)
     assert.equal(toProjectRelativePath('C:\\proj', 'C:\\other\\a.ts', path.win32), null)
     assert.equal(toProjectRelativePath('/proj', '/proj/..cache/a.ts', path.posix), '..cache/a.ts')
+  })
+})
+
+describe('git output', () => {
+  it('reads unquoted paths, non-ASCII and renames included', () => {
+    const output = ' M docs/notes/réunion.md\0?? src/a b.ts\0R  src/new.ts\0src/old.ts\0'
+    assert.deepEqual(parsePorcelainPaths(output), ['docs/notes/réunion.md', 'src/a b.ts', 'src/new.ts'])
+    assert.deepEqual(parsePorcelainPaths(''), [])
   })
 })
 
@@ -265,6 +282,12 @@ describe('stop hook', () => {
     const stuck = stop({ state: first.state, runChecksResult: failure })
     assert.equal(stuck.block, false)
     assert.match(stuck.message, /sans parvenir/)
+    assert.match(stuck.message, /1 failing/)
+    assert.equal(stuck.checksRun, 0, 'a tree known to fail is not checked again')
+    const later = stop({ state: stuck.state, runChecksResult: failure })
+    assert.equal(later.block, false)
+    assert.equal(later.message, undefined, 'the user is told once')
+    assert.equal(later.checksRun, 0)
     assert.equal(stop({ state: first.state, tree: 'tree-2', runChecksResult: failure }).block, true)
   })
 })

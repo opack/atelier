@@ -79,7 +79,8 @@ Toute la logique de décision des hooks se trouve dans `lib/core.mjs`, sous form
 ## 5. Limites connues
 Atelier est un garde-fou contre l'oubli, pas une barrière contre un agent qui chercherait à le contourner. Voici ce qu'un agent peut encore faire :
 - écrire par le shell : rien ne l'empêche a priori. Le contrôle de fin de tour le détecte (§4, règles 2 et 3), mais n'annule rien ;
-- par le shell également, supprimer `.claude/atelier.json`, écrire `.atelier/bypass.json`, lancer `atelier sign` sans accord, ou désactiver le plugin dans `.claude/settings.json` ;
+- par le shell également, supprimer `.claude/atelier.json`, écrire `.atelier/bypass.json` ou lancer `atelier sign` sans accord ;
+- désactiver le plugin ou ses hooks dans `.claude/settings*.json`, par le shell ou par une simple édition : ces fichiers restent modifiables, parce que `/atelier:init` y déclare le plugin et qu'ils portent aussi les réglages propres au projet ;
 - écrire une implémentation codée en dur qui passe les tests : seuls `overfit-checker` et la revue peuvent la repérer.
 
 ## 6. Impacts indirects
@@ -124,3 +125,4 @@ Dans les deux cas, `docs/chantiers/` et `docs/decisions/` restent comme historiq
   - commande `/atelier:build` et sous-agent `overfit-checker`.
 - 2026-11-13 : le TDD est décidé chantier par chantier (`tdd: yes | no`, obligatoire avant signature) au lieu d'être imposé par type. Ce chantier est en `tdd: no`, car les tests ont été écrits en même temps que le code.
 - 2026-11-19 : l'essai réel sur envo-admin ne conditionne plus la clôture ni la fusion de TEC-1. Décision de l'utilisateur : terminer TEC-1 puis TEC-2 (documentation de la méthode, à mettre à jour après ce chantier), puis tester le plugin en conditions réelles ; les corrections éventuelles feront l'objet de nouveaux chantiers.
+- 2026-11-19 : revue avant clôture : `.claude/settings*.json` reste modifiable par les outils d'édition, ce qui permet de désactiver atelier ; c'est ajouté aux limites connues (§5) plutôt que protégé, parce que `/atelier:init` et les réglages du projet ont besoin d'y écrire.

@@ -13,7 +13,7 @@ export const DEFAULT_CONFIG = {
   checks: [],
   checkTimeoutSeconds: 300,
   // Paths editable without a signed chantier.
-  freePaths: ['docs/**', '.claude/**', '.atelier/**', 'CLAUDE.md', 'README.md', '.gitignore'],
+  freePaths: ['docs/**', '.claude/**', 'CLAUDE.md', 'README.md', '.gitignore'],
   // Paths never editable by the agent.
   sensitivePaths: ['.env', '.env.*', '*.pem', '*.key', '**/secrets/**'],
   // Paths considered as tests (test files, fixtures, snapshots).
@@ -367,6 +367,24 @@ export function toProjectRelativePath(projectRoot, filePath, pathApi = nodePath)
   return relativePath.split(pathApi.sep).join('/')
 }
 
+// Paths listed by `git status --porcelain -z`: NUL-separated and never quoted, so non-ASCII
+// names come out as they are. A rename or copy is followed by its original path, skipped.
+export function parsePorcelainPaths(output) {
+  const entries = output.split('\0')
+  const paths = []
+  for (let index = 0; index < entries.length; index += 1) {
+    const entry = entries[index]
+    if (entry.length < 4) {
+      continue
+    }
+    paths.push(entry.slice(3))
+    if (/[RC]/.test(entry.slice(0, 2))) {
+      index += 1
+    }
+  }
+  return paths
+}
+
 // Text of a file after an Edit, MultiEdit or Write, with normalized line endings, or null when
 // it cannot be known (the edit does not apply, so the tool itself will fail).
 export function applyToolEdit(currentText, toolName, toolInput) {
@@ -402,7 +420,10 @@ function specWriteRefusal(toolName, existingSpec, proposedSpec) {
     return 'atelier : cette spec est signée, elle ne se réécrit pas. Modifie-la avec des éditions ciblées et ajoute une entrée datée dans la section « Amendements ».'
   }
   if (!proposedSpec) {
-    return null
+    // An edit that cannot be replayed exactly cannot be checked: refuse rather than trust it.
+    return existingSpec && ['Edit', 'MultiEdit'].includes(toolName)
+      ? 'atelier : impossible de vérifier cette édition de la spec (texte introuvable tel quel). Relis le fichier et refais une édition exacte.'
+      : null
   }
   const after = proposedSpec.data
   const valueOf = (data, field) => (field === 'status' ? data.status || 'draft' : data[field] ?? '')
@@ -499,12 +520,16 @@ export function decideStop(context) {
   if (phase === 'writing-tests') {
     return { block: false, state }
   }
-  // Blocking again on an unchanged working tree means the agent is stuck: let it stop.
+  // Blocking again on an unchanged working tree means the agent is stuck: let it stop, and tell
+  // the user once.
   const block = (message) => {
     if (tree !== null && state.lastBlock === tree) {
-      return { block: false, message: `atelier : l’agent s’est arrêté sans parvenir à régler ce problème.\n\n${message}`, state }
+      if (state.reportedStuck === tree) {
+        return { block: false, state }
+      }
+      return { block: false, message: `atelier : l’agent s’est arrêté sans parvenir à régler ce problème.\n\n${message}`, state: { ...state, reportedStuck: tree } }
     }
-    return { block: true, message, state: { ...state, lastBlock: tree } }
+    return { block: true, message, state: { ...state, lastBlock: tree, lastMessage: message } }
   }
   const pass = (newState = state) => ({ block: false, state: { ...newState, lastBlock: null } })
   if (phase === 'implementing' && changedTests.length) {
@@ -524,6 +549,10 @@ export function decideStop(context) {
   }
   if (config.checks.length === 0 || (tree !== null && state.lastGreen === tree)) {
     return pass()
+  }
+  if (tree !== null && state.lastBlock === tree) {
+    // Already known to fail on this exact tree: no need to run the checks again.
+    return block(state.lastMessage)
   }
   const failure = runChecks()
   if (!failure) {
