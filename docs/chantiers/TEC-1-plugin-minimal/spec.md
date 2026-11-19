@@ -2,11 +2,12 @@
 id: TEC-1
 type: TEC
 title: Plugin atelier minimal
-status: signed
+status: done
 tdd: no
 created_at: 2026-11-09
 signed_by: Opack
 signed_at: 2026-11-19
+done_at: 2026-11-19
 ---
 
 # TEC-1 Plugin atelier minimal
