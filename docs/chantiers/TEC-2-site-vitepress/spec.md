@@ -18,7 +18,8 @@ Un site VitePress (`site/`) qui présente la méthode atelier de façon didactiq
 La méthode vit dans des pages Notion difficiles à parcourir et à partager. Un site versionné avec le plugin reste aligné sur lui (les templates sont repris des fichiers du plugin) et se lit sans compte Notion.
 
 ## 3. Périmètre
-- Inclus : contenu de la méthode, référence des commandes, hooks, configuration, templates et glossaire ; recherche locale ; workflow de déploiement.
+- Inclus : contenu de la méthode, référence des commandes, hooks, configuration, templates et glossaire ; garanties et limites du plugin ; retour arrière d'une installation ; recherche locale ; workflow de déploiement.
+- Le site décrit le comportement du plugin tel que fusionné dans `main` (TEC-1, version 0.1.1).
 - Hors périmètre : le pitch d'entretien et l'état de la pratique personnelle, qui restent dans Notion.
 
 ## 5. Vérification

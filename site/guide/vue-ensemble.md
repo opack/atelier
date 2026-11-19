@@ -33,6 +33,8 @@ Chaque passage d’étape a une **porte** :
 
 C’est la règle centrale : **les hooks font les contrôles, les commandes portent les décisions humaines.** Jamais l’inverse.
 
+Ces contrôles sont des garde-fous contre l’oubli, pas une barrière : voir [Garanties et limites](../reference/limites).
+
 ## Les variantes
 
 Tous les chantiers ne prennent pas toutes les étapes :

@@ -48,7 +48,9 @@ Pour un `FIX`, s’y ajoute la cause réelle (confirmée ou non) et les autres e
 
 ## 4. Verdict
 
-Vous rendez le verdict : **accepté**, **accepté avec exceptions** (lesquelles), ou **refusé** (que reprendre). Il est inscrit dans le bilan avec votre nom et la date.
+Vous rendez le verdict : **accepté**, **accepté avec exceptions** (lesquelles), ou **refusé** (que reprendre). Il est inscrit dans le bilan avec votre nom et la date, et le chantier passe en `done` (`atelier set-status done`).
+
+Un chantier clos rebloque le code sur sa branche : toute modification ultérieure est un nouveau chantier.
 
 ## 5. PR
 

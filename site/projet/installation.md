@@ -18,7 +18,7 @@ claude plugin install atelier@atelier
 
 `init` fait l’état des lieux, puis, après votre accord :
 
-1. **Configure les contrôles** dans `.claude/atelier.json` à partir de vos scripts (types, lint, tests). Il vérifie que la commande de tests teste vraiment quelque chose.
+1. **Configure les contrôles** dans `.claude/atelier.json` à partir de vos scripts (types, lint, tests). Il vérifie que la commande de tests teste vraiment quelque chose. Ensuite, ce fichier est le vôtre : l’agent peut le créer, pas le modifier.
 2. **Crée** `docs/chantiers/` et `docs/decisions/`.
 3. **Ajoute** `.atelier/` au `.gitignore` (fichier local du débrayage).
 4. **Ajoute** une section « Process » au `CLAUDE.md`.
@@ -40,6 +40,16 @@ Puis redémarrez Claude Code.
 claude plugin marketplace add "opack/atelier#<branche>"
 ```
 
-## Désinstaller
+## Retour arrière
 
-Supprimez `.claude/atelier.json` du projet pour désactiver les hooks, ou désinstallez le plugin. Les documents de chantier restent : ce sont de simples fichiers Markdown.
+**Pour désactiver atelier** dans un projet : supprimez `.claude/atelier.json`. Les hooks ne font alors plus rien.
+
+**Pour le retirer complètement** :
+
+1. supprimez `.claude/atelier.json` ;
+2. retirez les entrées `extraKnownMarketplaces` et `enabledPlugins` d’atelier dans `.claude/settings.json` ;
+3. retirez la section « Process (atelier) » du `CLAUDE.md` ;
+4. retirez la ligne `.atelier/` du `.gitignore`, et supprimez le dossier `.atelier/` ;
+5. désinstallez le plugin : `claude plugin uninstall atelier@atelier`.
+
+`docs/chantiers/` et `docs/decisions/` restent : c’est l’historique du projet, de simples fichiers Markdown.

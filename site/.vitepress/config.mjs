@@ -76,6 +76,7 @@ export default defineConfig({
           { text: 'Commandes', link: '/reference/commandes' },
           { text: 'Hooks et configuration', link: '/reference/configuration' },
           { text: 'Templates', link: '/reference/templates' },
+          { text: 'Garanties et limites', link: '/reference/limites' },
           { text: 'Glossaire', link: '/reference/glossaire' },
         ],
       },

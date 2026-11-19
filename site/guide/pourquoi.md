@@ -35,6 +35,10 @@ atelier est d’abord une **méthode** : tout ce site peut s’appliquer à la m
 La gouvernance est inspirée de [Solario](https://solario.io/fr) (« usine logicielle IA gouvernée »), ramenée à l’échelle d’un développeur ou d’une petite équipe : des fichiers Markdown et git, pas une plateforme. Le cycle TDD reprend le workflow « write tests, commit; code, iterate, commit » des [bonnes pratiques Anthropic](https://www.anthropic.com/engineering/claude-code-best-practices).
 :::
 
+::: warning Garde-fou, pas barrière
+Les hooks empêchent d’oublier une étape, pas de la contourner délibérément : une écriture par le shell n’est détectée qu’en fin de tour, et rien n’est annulé. Voir [Garanties et limites](../reference/limites).
+:::
+
 ## À qui s’adresse atelier ?
 
 - Au **développeur seul** qui veut garder la maîtrise de ce que l’agent produit.

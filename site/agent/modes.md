@@ -20,4 +20,4 @@ Tous les moments d’un chantier ne demandent pas le même agent.
 
 Réservé à un environnement **jetable** : conteneur ou branche isolée, sans secret de production, sans accès qui permettrait de casser quelque chose d’important. Jamais sur votre machine avec des accès à la production.
 
-Même en mode automatique, les hooks d’atelier continuent de s’appliquer : pas de code sans spec signée, tests figés en TDD, contrôles avant de terminer.
+Même en mode automatique, les hooks d’atelier continuent de s’appliquer : pas de code sans spec signée, tests figés en TDD, contrôles avant de terminer. Ce sont des garde-fous, pas une barrière : en mode automatique, l’agent peut aussi agir par le shell, ce qui n’est détecté qu’en fin de tour ([Garanties et limites](../reference/limites)).

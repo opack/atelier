@@ -32,9 +32,13 @@ Si un test semble faux, l’agent **s’arrête et vous l’explique**. À vous 
 
 ## Les contrôles automatiques
 
-Avant que l’agent ne rende la main, le hook de fin lance les contrôles de `.claude/atelier.json` (types, lint, tests) si du code a changé. Rouge : l’agent continue.
+Avant que l’agent ne rende la main, le hook de fin lance les contrôles de `.claude/atelier.json` (types, lint, tests) si du code a changé hors des chemins libres. Rouge : l’agent continue.
 
-C’est ce qui remplace « je relance les tests moi-même plutôt que de croire le compte rendu de l’agent ». Gardez tout de même la CI comme dernière barrière.
+- Un état déjà passé au vert n’est pas recontrôlé.
+- **Anti-boucle** : si l’agent bute sans rien changer, il est autorisé à s’arrêter, et l’échec vous est montré une fois. Un état connu comme rouge n’est pas recontrôlé.
+- Du code modifié par le shell sans chantier signé est signalé, une fois par état de l’arbre de travail.
+
+C’est ce qui remplace « je relance les tests moi-même plutôt que de croire le compte rendu de l’agent ». Gardez tout de même la CI comme dernière barrière : atelier est un garde-fou, pas une barrière ([Garanties et limites](../reference/limites)).
 
 ## Le journal en cours de route
 

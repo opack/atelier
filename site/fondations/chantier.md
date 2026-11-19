@@ -25,7 +25,11 @@ Le type de chantier est indépendant du préfixe de commit : un chantier `TEC` p
 
 ## Le chantier actif
 
-atelier déduit le chantier en cours **du nom de la branche**. Sur `main`, il n’y a pas de chantier actif : le code y est bloqué. C’est voulu : on ne travaille pas directement sur la branche principale.
+atelier déduit le chantier en cours **du nom de la branche**. Le code est bloqué :
+
+- sur une branche sans chantier (`main`, HEAD détachée) : on ne travaille pas directement sur la branche principale ;
+- tant que la spec est en brouillon ;
+- une fois le chantier clos (`done` ou `abandoned`) : une nouvelle modification, c’est un nouveau chantier.
 
 ## L’état du chantier
 
@@ -43,5 +47,7 @@ signed_at: 2026-11-18
 tests_commit: 8cfa4be # posé au gel des tests, si TDD
 ---
 ```
+
+Les champs `status`, `signed_by`, `signed_at`, `done_at` et `tests_commit` ne changent que par la commande `atelier`, et `tdd` aussi une fois la spec signée : l’agent ne peut pas les modifier avec ses outils d’édition.
 
 Supprimer le plugin ne fait rien perdre : tout est lisible dans git.

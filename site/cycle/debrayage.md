@@ -12,6 +12,7 @@ La production est en panne et chaque minute compte. Le débrayage autorise à co
 - Chaque commit porte le trailer `Atelier-Bypass: <raison>`.
 - `/atelier:status` vous rappelle qu’il reste à écrire la spec et le bilan.
 - `/atelier:close` lève le débrayage.
+- Le débrayage est stocké dans `.atelier/bypass.json`, que les outils d’édition de l’agent ne peuvent pas écrire : il passe par la commande, avec votre accord.
 
 ## Ce que ça ne fait pas
 

@@ -16,7 +16,7 @@
 
 ## Ligne de commande `atelier`
 
-Utilisée par les commandes et les hooks, disponible aussi dans votre terminal Claude Code.
+Utilisée par les commandes et les hooks, disponible aussi dans votre terminal Claude Code. C’est le seul moyen prévu de modifier l’état d’un chantier (statut, signature, TDD après signature, gel des tests) : les outils d’édition de l’agent ne le peuvent pas.
 
 | Commande | Rôle |
 |---|---|
@@ -24,13 +24,13 @@ Utilisée par les commandes et les hooks, disponible aussi dans votre terminal C
 | `atelier next-id <TYPE>` | Prochain identifiant du projet. |
 | `atelier template <nom>` | Affiche un template (`spec-feat`, `plan`, `bilan`…). |
 | `atelier check-spec <fichier>` | Liste ce qui manque dans une spec. |
-| `atelier sign` | Signe la spec du chantier actif (refuse si incomplète). |
+| `atelier sign` | Signe la spec du chantier actif. Refuse si elle est incomplète ou n’est pas en brouillon. |
 | `atelier set-tdd <yes\|no> [raison]` | Enregistre la décision TDD, tracée après signature. |
 | `atelier freeze-tests` | Fige les tests commités (TDD). |
 | `atelier reopen-tests <raison>` | Rouvre les tests, raison tracée. |
 | `atelier tests-changed` | Liste les tests modifiés depuis leur gel. |
 | `atelier checks` | Lance les contrôles configurés. |
-| `atelier set-status <statut>` | Change le statut (`draft`, `signed`, `done`, `abandoned`). |
+| `atelier set-status <statut>` | Passe le chantier en `draft`, `done` ou `abandoned`. La signature ne passe que par `atelier sign`. |
 | `atelier bypass on <raison>` / `off` | Active ou lève le débrayage. |
 
 ## Sous-agents
@@ -40,3 +40,7 @@ Utilisée par les commandes et les hooks, disponible aussi dans votre terminal C
 | `spec-critic` | Avant signature | Relit la spec sans voir la conversation : ambiguïtés, cas limites, critères invérifiables. |
 | `overfit-checker` | Après le passage au vert | Vérifie que le code résout la spec et ne surapprend pas les tests. |
 | `reviewer` | À la clôture | Revue indépendante en sept dimensions, sans rien modifier. |
+
+::: info `/atelier:slice`
+Longtemps prévue pour implémenter tranche par tranche, elle a été abandonnée : `/atelier:build` couvre ce besoin.
+:::

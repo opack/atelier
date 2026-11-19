@@ -78,4 +78,4 @@ La raison est tracée dans la spec, et on repasse par `/atelier:tests`.
 atelier set-tdd no "rendu purement visuel, test sans valeur"
 ```
 
-Tracé aussi. C’est votre décision, pas celle de l’agent.
+Tracé aussi. C’est votre décision, pas celle de l’agent : tant que la spec est en brouillon, le champ `tdd` se modifie librement ; une fois signée, seule cette commande peut le changer, et elle l’inscrit dans les amendements.

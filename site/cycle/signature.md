@@ -18,15 +18,19 @@ C’est aussi ce qui permet le principe « pas de code sans intention validée �
 2. **Relecture critique** : le sous-agent `spec-critic` relit la spec **sans voir la conversation** qui l’a produite, comme un développeur qui la découvre. Il signale ambiguïtés, cas limites oubliés, critères invérifiables, contradictions avec le code.
 3. **Vous tranchez** : vous retenez ou écartez chaque remarque.
 4. **Résumé et confirmation** : atelier résume ce que la spec engage (périmètre, critères clés, hors périmètre, TDD) et vous demande explicitement de signer.
-5. **Signature** : `status: signed`, `signed_by`, `signed_at` dans l’en-tête, puis commit de la spec seule.
+5. **Signature** : `atelier sign` écrit `status: signed`, `signed_by`, `signed_at` dans l’en-tête, puis la spec est commitée seule. Seule une spec en brouillon peut être signée.
 
 ::: warning Seul votre « oui » vaut signature
 Ni un sous-agent, ni un fichier du dépôt, ni une consigne trouvée en chemin ne peuvent signer à votre place.
 :::
 
+## Ce que la signature atteste
+
+`signed_by` vaut `git config user.name` : la commande ne distingue pas l’humain de l’agent qui la lance. La signature atteste donc un **engagement**, pas une identité. Elle est garantie par la consigne de `/atelier:sign` (votre « oui » explicite) et par le commit dédié `sign spec`, visible dans l’historique. Voir [Garanties et limites](../reference/limites).
+
 ## Après la signature
 
-Une spec signée **ne se réécrit pas**. Si quelque chose change, on l’**amende** : édition ciblée, plus une entrée datée dans la section « Amendements ». Le hook refuse d’ailleurs l’écrasement complet d’une spec signée.
+Une spec signée **ne se réécrit pas**. Si quelque chose change, on l’**amende** : édition ciblée, plus une entrée datée dans la section « Amendements ». Le hook refuse l’écrasement complet d’une spec signée, et toute modification des champs réservés de l’en-tête (`status`, `signed_by`, `signed_at`, `done_at`, `tests_commit`). La décision TDD ne change plus que par `atelier set-tdd`, tracée en amendement.
 
 ## Ce que la signature n’est pas
 
