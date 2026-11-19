@@ -1,0 +1,10 @@
+{
+  "name": "atelier-marketplace",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test plugins/atelier/test/*.test.mjs",
+    "version:patch": "node scripts/bump-version.mjs patch",
+    "version:minor": "node scripts/bump-version.mjs minor"
+  }
+}
