@@ -105,7 +105,7 @@ Sans `.claude/atelier.json`, le plugin n'a aucun effet.
   - en TDD : implémentation refusée en phase tests, gel refusé tant que les tests ne sont pas commités, fin de tour bloquée si un test figé est modifié par le shell, `set-tdd` tracé en amendement après signature.
 
   Le résultat de cet essai est consigné dans le bilan.
-- Un essai réel sur envo-admin : `/atelier:init`, puis un premier chantier mené jusqu'à `/atelier:close`. La clôture et la fusion de TEC-1 attendent cet essai.
+- ~~Un essai réel sur envo-admin : `/atelier:init`, puis un premier chantier mené jusqu'à `/atelier:close`. La clôture et la fusion de TEC-1 attendent cet essai.~~ Sorti de ce chantier (voir Amendements).
 
 ## 8. Retour arrière
 - **Désactiver atelier dans un projet** : supprimer `.claude/atelier.json`.
@@ -123,3 +123,4 @@ Dans les deux cas, `docs/chantiers/` et `docs/decisions/` restent comme historiq
   - phase implémentation : tests en lecture seule, contrôle de fin de tour qui détecte toute modification des tests ;
   - commande `/atelier:build` et sous-agent `overfit-checker`.
 - 2026-11-13 : le TDD est décidé chantier par chantier (`tdd: yes | no`, obligatoire avant signature) au lieu d'être imposé par type. Ce chantier est en `tdd: no`, car les tests ont été écrits en même temps que le code.
+- 2026-11-19 : l'essai réel sur envo-admin ne conditionne plus la clôture ni la fusion de TEC-1. Décision de l'utilisateur : terminer TEC-1 puis TEC-2 (documentation de la méthode, à mettre à jour après ce chantier), puis tester le plugin en conditions réelles ; les corrections éventuelles feront l'objet de nouveaux chantiers.
