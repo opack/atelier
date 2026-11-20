@@ -282,6 +282,111 @@ export function checkSpec(text) {
   return problems
 }
 
+// ---------- Amendments ----------
+
+const AMENDMENTS_HEADING = /^## Amendements[ \t]*$/
+const SECTION_END = /^#{1,2}\s/
+const ENTRY_START = /^- \d{4}-\d{2}-\d{2} : /
+
+// Line ranges [start, end) of every `## Amendements` section, heading included, in LF lines.
+function amendmentSectionRanges(lines) {
+  const ranges = []
+  for (let start = 0; start < lines.length; start += 1) {
+    if (!AMENDMENTS_HEADING.test(lines[start])) {
+      continue
+    }
+    let end = start + 1
+    while (end < lines.length && !SECTION_END.test(lines[end])) {
+      end += 1
+    }
+    ranges.push([start, end])
+  }
+  return ranges
+}
+
+// Reads the `## Amendements` section of a spec (or of its body).
+// Returns { sectionCount, entries, rest }: `entries` are the dated first-level list items with
+// their indented continuation lines (HTML comments of the section ignored); `rest` is the text
+// outside the entries — the rest of the file, plus any other text of the section, which counts
+// as spec body. With several sections, only `sectionCount` is meaningful.
+export function parseAmendments(text) {
+  const lines = text.replace(/\r\n/g, '\n').split('\n')
+  const ranges = amendmentSectionRanges(lines)
+  if (ranges.length !== 1) {
+    return { sectionCount: ranges.length, entries: [], rest: lines.join('\n') }
+  }
+  const [start, end] = ranges[0]
+  const sectionText = lines.slice(start + 1, end).join('\n').replace(/<!--[\s\S]*?-->/g, '')
+  const entries = []
+  const otherLines = []
+  let current = null
+  for (const line of sectionText.split('\n').map((candidate) => candidate.trimEnd())) {
+    if (ENTRY_START.test(line)) {
+      current = [line]
+      entries.push(current)
+    } else if (!line) {
+      continue
+    } else if (current && /^\s/.test(line)) {
+      current.push(line)
+    } else {
+      current = null
+      otherLines.push(line)
+    }
+  }
+  const rest = [...lines.slice(0, start + 1), ...otherLines, ...lines.slice(end)].join('\n')
+  return { sectionCount: 1, entries: entries.map((entryLines) => entryLines.join('\n')), rest }
+}
+
+// Adds `- <entry>` at the end of the `## Amendements` section, wherever it is, or creates the
+// section at the end of the file. Keeps the file's line endings.
+export function appendAmendmentEntry(text, entry) {
+  const lineEnding = text.includes('\r\n') ? '\r\n' : '\n'
+  const lines = text.replace(/\r\n/g, '\n').split('\n')
+  const [range] = amendmentSectionRanges(lines)
+  let result
+  if (!range) {
+    result = `${lines.join('\n').replace(/\s*$/, '')}\n\n## Amendements\n- ${entry}\n`
+  } else {
+    // After the last non-blank line of the section, so that blank lines before the next heading stay.
+    let last = range[1] - 1
+    while (last > range[0] && !lines[last].trim()) {
+      last -= 1
+    }
+    result = [...lines.slice(0, last + 1), `- ${entry}`, ...lines.slice(last + 1)].join('\n')
+  }
+  return result.replace(/\n/g, lineEnding)
+}
+
+// Fixed labels of the entries written by the atelier command.
+export function reopenTestsEntry(date, commit, reason) {
+  return `${date} : tests rouverts (gel quitté : ${commit}) : ${reason}`
+}
+
+export function refreezeTestsEntry(date, commit) {
+  return `${date} : tests regelés : ${commit}`
+}
+
+// Whether freezing the tests now is a refreeze: the last "tests rouverts" entry comes after the
+// last "tests regelés" entry (or there is none). Position decides, not dates. The pre-0.2.0
+// format (`tests rouverts : <raison>`) starts the same way.
+export function isRefreeze(entries) {
+  const lastIndexOf = (label) => entries.findLastIndex((entry) => entry.replace(ENTRY_START, '').startsWith(label))
+  const lastReopen = lastIndexOf('tests rouverts')
+  return lastReopen >= 0 && lastReopen > lastIndexOf('tests regelés')
+}
+
+// Why `atelier reopen-tests` is refused for this chantier, or null.
+export function reopenTestsRefusal(chantier) {
+  const data = chantier?.spec?.data ?? {}
+  if (data.tdd !== 'yes') {
+    return `${chantier?.id ?? 'Ce chantier'} ne suit pas le TDD (tdd: ${data.tdd || '?'}) : il n’a pas de tests figés à rouvrir. Ajoute ou modifie les tests avec le code (/atelier:build).`
+  }
+  if (!data.tests_commit) {
+    return `Les tests de ${chantier.id} ne sont pas figés : ils s’écrivent encore, rien à rouvrir (/atelier:write-tests).`
+  }
+  return null
+}
+
 // ---------- Next step ----------
 
 export function nextStep(chantier) {

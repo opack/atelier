@@ -27,3 +27,9 @@
 - Refus de la CLI (`reopen-tests`, `set-reviewed`, `set-status draft`) écrits comme fonctions pures dans `core.mjs`, testées sans dépôt git. Écarté : tests d'intégration sur des dépôts temporaires (lents, fragiles sous Windows) ; le vrai git est couvert par le rejeu de bout en bout.
 - « Aucun changement de code non commité » dans `close-check` utilise le même ensemble de chemins que la détection des commits de code (`.claude/**` compte comme du code). C'est la lecture la plus cohérente de la spec ; pas d'amendement.
 - Playwright lancé hors du projet (dossier temporaire), pour garder `site/` sans dépendance de test.
+
+## 2026-11-20 : tranche 1, lecture de la section « Amendements »
+- La section s'arrête au titre suivant de niveau 1 ou 2 ; un `###` à l'intérieur compte comme du texte hors entrée, donc comme du corps.
+- Une ligne blanche entre deux entrées est ignorée ; une ligne indentée après une entrée (même après une ligne blanche) en est la suite. Espaces de fin de ligne ignorés.
+- `appendAmendmentEntry` insère après la dernière ligne non vide de la section (les lignes blanches avant le titre suivant restent) et garde les fins de ligne du fichier. Avec plusieurs sections, la première est utilisée : la garde refuse de toute façon une section en double.
+- Écarté : vérifier que la date d'une entrée existe au calendrier (la spec demande « au bon format » seulement).

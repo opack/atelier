@@ -7,6 +7,7 @@ import { basename, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
   activeChantier,
+  appendAmendmentEntry,
   applyToolEdit,
   checkSpec,
   collectUsedIdentifiers,
@@ -14,13 +15,18 @@ import {
   decideStop,
   decideWrite,
   findProjectRoot,
+  isRefreeze,
   loadConfig,
   nextChantierId,
   matchesAny,
   nextStep,
   testDrivenPhase,
+  parseAmendments,
   parseFrontMatter,
   parsePorcelainPaths,
+  refreezeTestsEntry,
+  reopenTestsEntry,
+  reopenTestsRefusal,
   setFrontMatterValues,
   toProjectRelativePath,
 } from './core.mjs'
@@ -266,9 +272,8 @@ function testFilesChangedSince(projectRoot, config, commit) {
   return [...new Set([...committed, ...uncommittedTestFiles(projectRoot, config)])]
 }
 
-function appendAmendment(specPath, text) {
-  const content = readFileSync(specPath, 'utf8').replace(/\s*$/, '')
-  writeFileSync(specPath, `${content}\n- ${today()} : ${text}\n`)
+function appendAmendment(specPath, entry) {
+  writeFileSync(specPath, appendAmendmentEntry(readFileSync(specPath, 'utf8'), entry))
 }
 
 // Step 3 of the TDD workflow: the tests must be committed before implementation starts.
@@ -291,7 +296,10 @@ function commandFreezeTests() {
     console.error('Le dernier commit ne contient aucun fichier de test. Commite les tests (et seulement les tests) avant de les figer.')
     process.exit(2)
   }
-  updateSpec(projectRoot, config, { tests_commit: commit })
+  const { specPath } = updateSpec(projectRoot, config, { tests_commit: commit })
+  if (isRefreeze(parseAmendments(chantier.spec.body).entries)) {
+    appendAmendment(specPath, refreezeTestsEntry(today(), commit))
+  }
   console.log(`Tests figés au commit ${commit}. Phase suivante : implémentation, sans modifier les tests (/atelier:build).`)
 }
 
@@ -302,8 +310,15 @@ function commandReopenTests(reasonWords) {
     process.exit(1)
   }
   const projectRoot = findProjectRoot()
-  const { specPath } = updateSpec(projectRoot, requireConfig(projectRoot), { tests_commit: '' })
-  appendAmendment(specPath, `tests rouverts : ${reason}`)
+  const config = requireConfig(projectRoot)
+  const chantier = requireActiveChantier(projectRoot, config)
+  const refusal = reopenTestsRefusal(chantier)
+  if (refusal) {
+    console.error(`Réouverture refusée : ${refusal}`)
+    process.exit(2)
+  }
+  const { specPath } = updateSpec(projectRoot, config, { tests_commit: '' })
+  appendAmendment(specPath, reopenTestsEntry(today(), chantier.spec.data.tests_commit, reason))
   console.log('Tests rouverts. Retour en phase « tests d’abord » : aucune implémentation jusqu’au prochain commit des tests.')
 }
 
@@ -320,7 +335,7 @@ function commandSetTdd([value, ...reasonWords]) {
   const { specPath } = updateSpec(projectRoot, config, { tdd: value })
   const reason = reasonWords.join(' ').trim()
   if (wasSigned) {
-    appendAmendment(specPath, `TDD ${value === 'yes' ? 'activé' : 'désactivé'}${reason ? ` : ${reason}` : ''}`)
+    appendAmendment(specPath, `${today()} : TDD ${value === 'yes' ? 'activé' : 'désactivé'}${reason ? ` : ${reason}` : ''}`)
   }
   console.log(value === 'yes'
     ? 'Chantier en TDD : tests écrits, commités et figés avant l’implémentation.'

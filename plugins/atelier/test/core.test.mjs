@@ -5,17 +5,23 @@ import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import {
   DEFAULT_CONFIG,
+  appendAmendmentEntry,
   applyToolEdit,
   checkSpec,
   chantierIdFromText,
   decideStop,
   decideWrite,
   highestChantierNumber,
+  isRefreeze,
   matchesAny,
   nextChantierId,
   nextStep,
+  parseAmendments,
   parseFrontMatter,
   parsePorcelainPaths,
+  refreezeTestsEntry,
+  reopenTestsEntry,
+  reopenTestsRefusal,
   setFrontMatterValues,
   testDrivenPhase,
   toProjectRelativePath,
@@ -330,6 +336,74 @@ describe('test-driven phases', () => {
     assert.equal(decision.allowed, false)
     assert.match(decision.reason, /figés/)
     assert.equal(decide({ chantier: implementingChantier, relativePath: 'src/budget.ts' }).allowed, true)
+  })
+})
+
+describe('amendments section', () => {
+  const spec = '---\nid: FEAT-12\n---\n# T\n\n## 1. Contexte\nTexte.\n\n## Amendements\n<!-- Après signature : une entrée datée. -->\n- 2026-11-01 : critère ajouté\n  suite indentée\n\n## Annexe\nFin.\n'
+
+  it('reads dated entries with their continuation lines, comments ignored', () => {
+    const { sectionCount, entries, rest } = parseAmendments(spec)
+    assert.equal(sectionCount, 1)
+    assert.deepEqual(entries, ['- 2026-11-01 : critère ajouté\n  suite indentée'])
+    assert.equal(rest, '---\nid: FEAT-12\n---\n# T\n\n## 1. Contexte\nTexte.\n\n## Amendements\n## Annexe\nFin.\n')
+  })
+
+  it('counts undated lines of the section as body, and tells duplicate or absent sections apart', () => {
+    const undated = parseAmendments('## Amendements\n- hier : oubli\n- 2026-11-01 : ok\n')
+    assert.deepEqual(undated.entries, ['- 2026-11-01 : ok'])
+    assert.match(undated.rest, /- hier : oubli/)
+    assert.equal(parseAmendments('## Amendements\n\n## Amendements\n').sectionCount, 2)
+    assert.equal(parseAmendments('## Amendement\n- 2026-11-01 : x\n').sectionCount, 0)
+  })
+
+  it('adds an entry at the end of the section, even in the middle of the file', () => {
+    const updated = appendAmendmentEntry(spec, '2026-11-20 : tests regelés : abc1234')
+    assert.equal(updated, spec.replace('  suite indentée\n', '  suite indentée\n- 2026-11-20 : tests regelés : abc1234\n'))
+    assert.equal(
+      appendAmendmentEntry('# T\r\n\r\n## Amendements\r\n<!-- x -->\r\n', '2026-11-20 : y'),
+      '# T\r\n\r\n## Amendements\r\n<!-- x -->\r\n- 2026-11-20 : y\r\n',
+      'line endings kept',
+    )
+  })
+
+  it('creates the section when it is missing', () => {
+    assert.equal(appendAmendmentEntry('# T\n\n## 1. Quoi\nX.\n\n', '2026-11-20 : y'), '# T\n\n## 1. Quoi\nX.\n\n## Amendements\n- 2026-11-20 : y\n')
+  })
+
+  it('writes entries with fixed labels', () => {
+    assert.equal(reopenTestsEntry('2026-11-20', 'abc1234', 'cas oublié'), '2026-11-20 : tests rouverts (gel quitté : abc1234) : cas oublié')
+    assert.equal(refreezeTestsEntry('2026-11-20', 'def5678'), '2026-11-20 : tests regelés : def5678')
+  })
+})
+
+describe('refreeze detection', () => {
+  const entries = (...texts) => parseAmendments(`## Amendements\n${texts.map((text) => `- ${text}`).join('\n')}\n`).entries
+
+  it('adds no entry on a first freeze', () => {
+    assert.equal(isRefreeze(entries()), false)
+    assert.equal(isRefreeze(entries('2026-11-01 : critère ajouté')), false)
+  })
+
+  it('recognizes a refreeze after a reopening, old format included', () => {
+    assert.equal(isRefreeze(entries(reopenTestsEntry('2026-11-02', 'abc', 'oubli'))), true)
+    assert.equal(isRefreeze(entries('2026-11-02 : tests rouverts : oubli')), true, 'pre-0.2.0 format')
+    assert.equal(isRefreeze(entries(reopenTestsEntry('2026-11-02', 'abc', 'oubli'), refreezeTestsEntry('2026-11-03', 'def'))), false)
+  })
+
+  it('decides by position, not by date, for entries of the same day', () => {
+    const reopen = reopenTestsEntry('2026-11-02', 'abc', 'x')
+    const refreeze = refreezeTestsEntry('2026-11-02', 'def')
+    assert.equal(isRefreeze(entries(reopen, refreeze)), false)
+    assert.equal(isRefreeze(entries(reopen, refreeze, reopenTestsEntry('2026-11-02', 'def', 'y'))), true)
+  })
+})
+
+describe('reopen tests', () => {
+  it('refuses a chantier without TDD or whose tests are not frozen', () => {
+    assert.match(reopenTestsRefusal(signedTec), /ne suit pas le TDD/)
+    assert.match(reopenTestsRefusal(signedChantier), /pas figés/)
+    assert.equal(reopenTestsRefusal(implementingChantier), null)
   })
 })
 
