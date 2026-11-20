@@ -2,13 +2,14 @@
 id: TEC-6
 type: TEC
 title: Reconnaître un chantier hors branche <type>/<ID>-<slug>
-status: signed
+status: done
 tdd: yes
 created_at: 2026-11-20
 signed_by: Opack
 signed_at: 2026-11-20
 tests_commit: 2dd24e6
 reviewed_commit: 1573f096364e6bd1eac4c52bc696f56d2eb25046
+done_at: 2026-11-20
 ---
 
 # TEC-6 Reconnaître un chantier hors branche <type>/<ID>-<slug>
