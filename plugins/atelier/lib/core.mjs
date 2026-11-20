@@ -120,15 +120,7 @@ export function chantierIdFromText(text) {
 }
 
 export function currentBranch(projectRoot) {
-  try {
-    return execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
-      cwd: projectRoot,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim()
-  } catch {
-    return null
-  }
+  return gitOutput(projectRoot, ['rev-parse', '--abbrev-ref', 'HEAD'])
 }
 
 export function findChantierDirectory(projectRoot, config, chantierId) {
@@ -185,7 +177,7 @@ export function defaultBaseRef(projectRoot) {
 }
 
 export function branchCommitSubjects(projectRoot, base) {
-  const output = gitOutput(projectRoot, ['log', '--format=%s', `${base}..HEAD`])
+  const output = gitOutput(projectRoot, ['log', '-n', '200', '--format=%s', `${base}..HEAD`])
   return output ? output.split('\n') : []
 }
 
