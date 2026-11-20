@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path, { join } from 'node:path'
@@ -983,5 +983,463 @@ describe('default branch resolved through origin/HEAD', () => {
     assert.equal(branch, 'claude/empty')
     assert.equal(chantier, null)
     assert.equal(source, null)
+  })
+})
+
+// ---------- FEAT-4: relations between chantiers, EPIC type ----------
+
+// Bodies that satisfy the required sections, so that only relation problems remain.
+const completeBodies = {
+  TEC: '## 1. Quoi\nFaire X.\n\n## 2. Pourquoi\nParce que.\n\n## 3. Vérification\n- Lancer les tests.\n',
+  EPIC: "## 1. Vision\nUn module de gestion client.\n\n## 2. Pourquoi\nLes clients sont gérés à la main.\n\n## 3. Critères d'acceptation globaux\n- CA-1 : un client se crée et se contacte.\n\n## 4. Cadre\nAPI REST commune.\n\n## 5. Hors périmètre\nFacturation.\n",
+}
+
+function specText({ id, type = id.split('-')[0], status = 'signed', tdd = 'no', relations = {}, body = completeBodies[type] ?? '' }) {
+  const header = { id, type, title: `Essai ${id}`, status, tdd, ...relations }
+  return `---\n${Object.entries(header).map(([key, value]) => `${key}: ${value}`).join('\n')}\n---\n\n# ${id}\n\n${body}`
+}
+
+function chantierDirectoryOf(directory, id) {
+  return join(directory, 'docs', 'chantiers', `${id}-x`)
+}
+
+// Writes `docs/chantiers/<id>-x/spec.md` (and the extra `files`), returns the spec path.
+function writeChantier(directory, { files = {}, ...spec }) {
+  const chantierDirectory = chantierDirectoryOf(directory, spec.id)
+  mkdirSync(chantierDirectory, { recursive: true })
+  writeFileSync(join(chantierDirectory, 'spec.md'), specText(spec))
+  for (const [name, content] of Object.entries(files)) {
+    writeFileSync(join(chantierDirectory, name), content)
+  }
+  return join(chantierDirectory, 'spec.md')
+}
+
+// `main` holds the merged chantiers; each entry of `branches` is a branch created from main with
+// its own chantiers committed; `checkout` is the branch left checked out.
+function makeChantiersRepository({ main = [], branches = {}, checkout = 'main' }) {
+  const directory = makeRepository('main')
+  main.forEach((spec) => writeChantier(directory, spec))
+  git(directory, 'add', '.')
+  commit(directory, 'chore: chantiers')
+  for (const [branch, specs] of Object.entries(branches)) {
+    git(directory, 'switch', '-q', '-c', branch, 'main')
+    specs.forEach((spec) => writeChantier(directory, spec))
+    git(directory, 'add', '.')
+    commit(directory, `docs(chantiers): [${chantierIdFromText(branch)}] spec`)
+  }
+  git(directory, 'switch', '-q', checkout)
+  return directory
+}
+
+function atelierRun(directory, ...cliArguments) {
+  const result = spawnSync(process.execPath, [atelierBin, ...cliArguments], {
+    cwd: directory,
+    encoding: 'utf8',
+    env: { ...process.env, CLAUDE_PROJECT_DIR: directory },
+  })
+  return { status: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` }
+}
+
+function specData(directory, id) {
+  return parseFrontMatter(readFileSync(join(chantierDirectoryOf(directory, id), 'spec.md'), 'utf8')).data
+}
+
+// Asserts that one line of `output` matches every pattern.
+function assertLine(output, patterns, label = patterns.join(' + ')) {
+  const line = output.split(/\r?\n/).find((candidate) => patterns.every((pattern) => pattern.test(candidate)))
+  assert.ok(line, `${label} : aucune ligne ne correspond dans\n${output}`)
+}
+
+const epicPlan = { 'plan.md': '# Plan : EPIC-5\n\n## Lots\n- FEAT-6, FEAT-7\n' }
+
+describe('FEAT-4 relations read from the spec header', () => {
+  it('CA-1 : lit les relations en listes normalisées (espaces, casse, doublons), vides si absentes', () => {
+    const relations = core.parseRelations({
+      rel_parent: 'epic-5',
+      rel_depends_on: 'FEAT-12,  tec-15',
+      rel_origin: 'SPIKE-3, spike-3',
+      rel_replaces: '',
+    })
+    assert.deepEqual(relations, { parent: ['EPIC-5'], dependsOn: ['FEAT-12', 'TEC-15'], origin: ['SPIKE-3'], replaces: [] })
+    assert.deepEqual(core.parseRelations({ id: 'FEAT-1' }), { parent: [], dependsOn: [], origin: [], replaces: [] })
+  })
+})
+
+describe('FEAT-4 children of an EPIC across branches', () => {
+  it('CA-2 : enfants découverts dans l’arbre courant et sur les autres branches, statut jugé dans l’arbre courant', () => {
+    const directory = makeChantiersRepository({
+      main: [
+        { id: 'EPIC-5', files: epicPlan },
+        { id: 'FEAT-6', status: 'done', relations: { rel_parent: 'EPIC-5' } },
+        { id: 'TEC-8' },
+      ],
+      branches: {
+        'feat/FEAT-7-x': [{ id: 'FEAT-7', status: 'done', relations: { rel_parent: 'EPIC-5' } }],
+        'epic/EPIC-5-x': [],
+      },
+      checkout: 'epic/EPIC-5-x',
+    })
+    const children = JSON.parse(atelier(directory, 'status', '--json')).chantier.relations.children
+    assert.deepEqual(children.map((child) => child.id).sort(), ['FEAT-6', 'FEAT-7'])
+    assert.equal(children.find((child) => child.id === 'FEAT-6').closed, true)
+    assert.equal(children.find((child) => child.id === 'FEAT-7').closed, false, 'done sur sa branche seulement : ouvert')
+  })
+
+  it('CA-2 : un enfant présent seulement sur une branche distante connue est découvert', () => {
+    const origin = temporaryDirectory('atelier-feat4-origin-')
+    git(origin, 'init', '-q', '--bare', '-b', 'main')
+    const directory = makeChantiersRepository({
+      main: [{ id: 'EPIC-5', files: epicPlan }],
+      branches: { 'feat/FEAT-16-x': [{ id: 'FEAT-16', relations: { rel_parent: 'EPIC-5' } }], 'epic/EPIC-5-x': [] },
+    })
+    git(directory, 'remote', 'add', 'origin', origin)
+    git(directory, 'push', '-q', 'origin', 'main', 'feat/FEAT-16-x')
+    git(directory, 'fetch', '-q', 'origin')
+    git(directory, 'branch', '-q', '-D', 'feat/FEAT-16-x')
+    git(directory, 'switch', '-q', 'epic/EPIC-5-x')
+    const children = JSON.parse(atelier(directory, 'status', '--json')).chantier.relations.children
+    assert.deepEqual(children.map((child) => child.id), ['FEAT-16'])
+    assert.equal(children[0].closed, false)
+  })
+})
+
+describe('FEAT-4 dependencies checked at close', () => {
+  it('CA-3 : refuse la clôture tant qu’une dépendance n’est pas done dans l’arbre courant, en la nommant avec son statut', () => {
+    const directory = makeChantiersRepository({
+      main: [{ id: 'TEC-8' }, { id: 'TEC-12', status: 'abandoned' }],
+      branches: {
+        'tec/TEC-9-y': [{ id: 'TEC-9', status: 'done' }],
+        'spike/SPIKE-13-x': [{ id: 'SPIKE-13', relations: { rel_depends_on: 'TEC-8, TEC-12, TEC-9' } }],
+      },
+      checkout: 'spike/SPIKE-13-x',
+    })
+    const { status, output } = atelierRun(directory, 'set-status', 'done')
+    assert.notEqual(status, 0)
+    assertLine(output, [/TEC-8/, /signed/])
+    assertLine(output, [/TEC-12/, /abandoned/])
+    assertLine(output, [/TEC-9/, /fusionn/], 'clos seulement sur une branche non fusionnée : inviter à fusionner')
+    assert.equal(specData(directory, 'SPIKE-13').status, 'signed')
+  })
+
+  it('CA-4 : laisse clore quand toutes les dépendances sont done dans l’arbre courant', () => {
+    const directory = makeChantiersRepository({
+      main: [{ id: 'TEC-10', status: 'done' }],
+      branches: { 'spike/SPIKE-13-x': [{ id: 'SPIKE-13', relations: { rel_depends_on: 'TEC-10' } }] },
+      checkout: 'spike/SPIKE-13-x',
+    })
+    const { status, output } = atelierRun(directory, 'set-status', 'done')
+    assert.equal(status, 0, output)
+    assert.equal(specData(directory, 'SPIKE-13').status, 'done')
+  })
+})
+
+describe('FEAT-4 relations checked before signature', () => {
+  // main: EPIC-5 (open), EPIC-15 (done), EPIC-34 (child of EPIC-33), TEC-32 (depends on TEC-31);
+  // FEAT-7 only on its branch.
+  const directory = makeChantiersRepository({
+    main: [
+      { id: 'EPIC-5' },
+      { id: 'EPIC-15', status: 'done' },
+      { id: 'EPIC-34', relations: { rel_parent: 'EPIC-33' } },
+      { id: 'TEC-32', relations: { rel_depends_on: 'TEC-31' } },
+    ],
+    branches: { 'feat/FEAT-7-x': [{ id: 'FEAT-7' }] },
+  })
+  const check = (spec) => atelierRun(directory, 'check-spec', writeChantier(directory, { status: 'draft', ...spec }))
+
+  it('CA-5 : accepte des relations valides, une dépendance présente seulement sur une branche et une origine historique', () => {
+    const { status, output } = check({ id: 'TEC-30', relations: { rel_parent: 'EPIC-5', rel_depends_on: 'FEAT-7', rel_origin: 'BUG-421', rel_replaces: 'FEA-26' } })
+    assert.equal(status, 0, output)
+  })
+
+  it('CA-5 : signale un parent ou une dépendance introuvable dans toutes les branches', () => {
+    const { status, output } = check({ id: 'TEC-30', relations: { rel_parent: 'EPIC-98', rel_depends_on: 'FEAT-99' } })
+    assert.equal(status, 2)
+    assertLine(output, [/EPIC-98/, /introuvable/])
+    assertLine(output, [/FEAT-99/, /introuvable/])
+  })
+
+  it('CA-5 : signale un identifiant mal formé dans n’importe quel champ rel_*', () => {
+    const { status, output } = check({ id: 'TEC-30', relations: { rel_origin: 'ticket 12', rel_replaces: 'FEAT-' } })
+    assert.equal(status, 2)
+    assertLine(output, [/ticket 12/, /mal formé/])
+    assertLine(output, [/FEAT-/, /mal formé/])
+  })
+
+  it('CA-5 : signale plusieurs parents, un parent qui n’est pas un EPIC, un EPIC clos', () => {
+    assertLine(check({ id: 'TEC-30', relations: { rel_parent: 'EPIC-5, EPIC-34' } }).output, [/rel_parent/, /plusieurs|un seul|une seule/])
+    assertLine(check({ id: 'TEC-30', relations: { rel_parent: 'FEAT-7' } }).output, [/FEAT-7/, /EPIC/])
+    assertLine(check({ id: 'TEC-30', relations: { rel_parent: 'EPIC-15' } }).output, [/EPIC-15/, /clos/])
+  })
+
+  it('CA-5 : signale une auto-référence et un cycle sur rel_depends_on comme sur rel_parent', () => {
+    assertLine(check({ id: 'TEC-30', relations: { rel_depends_on: 'TEC-30' } }).output, [/TEC-30/, /lui-même|auto-référence/])
+    assertLine(check({ id: 'TEC-31', relations: { rel_depends_on: 'TEC-32' } }).output, [/cycle/, /TEC-31/, /TEC-32/])
+    assertLine(check({ id: 'EPIC-33', relations: { rel_parent: 'EPIC-34' } }).output, [/cycle/, /EPIC-33/, /EPIC-34/])
+  })
+
+  it('CA-5 : ces manques bloquent la signature', () => {
+    const signDirectory = makeChantiersRepository({
+      branches: { 'tec/TEC-40-x': [{ id: 'TEC-40', status: 'draft', relations: { rel_depends_on: 'FEAT-99' } }] },
+      checkout: 'tec/TEC-40-x',
+    })
+    const { status, output } = atelierRun(signDirectory, 'sign')
+    assert.notEqual(status, 0)
+    assertLine(output, [/FEAT-99/, /introuvable/])
+    assert.equal(specData(signDirectory, 'TEC-40').status, 'draft')
+  })
+
+  it('décision : sans .claude/atelier.json, check-spec ne vérifie pas les relations et le dit', () => {
+    const bare = temporaryDirectory('atelier-feat4-noconfig-')
+    const path = join(bare, 'spec.md')
+    writeFileSync(path, specText({ id: 'TEC-30', status: 'draft', relations: { rel_depends_on: 'FEAT-99' } }))
+    const { status, output } = atelierRun(bare, 'check-spec', path)
+    assert.equal(status, 0, output)
+    assert.match(output, /relations/i)
+  })
+})
+
+describe('FEAT-4 EPIC type', () => {
+  it('CA-6 : next-id EPIC suit le compteur unique ; epic/EPIC-7-x et [EPIC-7] désignent EPIC-7', () => {
+    assert.equal(nextChantierId('EPIC', ['FEAT-12-x', '[BUG-421] FIX']), 'EPIC-422')
+    assert.equal(chantierIdFromText('epic/EPIC-7-x'), 'EPIC-7')
+    assert.equal(core.chantierIdFromCommitSubjects(['docs(chantiers): [EPIC-7] plan']), 'EPIC-7')
+    const directory = makeChantiersRepository({ branches: { 'epic/EPIC-7-x': [{ id: 'EPIC-7' }] }, checkout: 'epic/EPIC-7-x' })
+    assert.equal(atelier(directory, 'next-id', 'EPIC').trim(), 'EPIC-8')
+    assert.equal(JSON.parse(atelier(directory, 'status', '--json')).chantier.id, 'EPIC-7')
+  })
+
+  it('CA-7 : le template spec-epic porte tdd: no et les sections exigées avant signature', () => {
+    const epicTemplate = template('spec-epic')
+    assert.equal(parseFrontMatter(epicTemplate).data.tdd, 'no')
+    const sections = ['Vision', 'Pourquoi', "Critères d'acceptation globaux", 'Cadre', 'Hors périmètre']
+    const problems = checkSpec(epicTemplate)
+    for (const section of sections) {
+      assert.match(epicTemplate, new RegExp(`^## (\\d+\\. )?${section}`, 'm'), section)
+      assert.ok(problems.some((problem) => problem.includes(section)), `section vide signalée : ${section}`)
+    }
+    assert.deepEqual(checkSpec(specText({ id: 'EPIC-5', status: 'draft' })), [])
+    const withoutFrame = specText({ id: 'EPIC-5', status: 'draft', body: completeBodies.EPIC.replace(/## 4\. Cadre\n.*\n\n/, '') })
+    assert.ok(checkSpec(withoutFrame).some((problem) => problem.includes('Cadre')))
+  })
+
+  it('CA-7 : check-spec signale un EPIC en tdd: yes', () => {
+    assert.ok(checkSpec(specText({ id: 'EPIC-5', status: 'draft', tdd: 'yes' })).some((problem) => /tdd/.test(problem) && /EPIC/.test(problem)))
+  })
+
+  it('CA-7 : le template plan-epic décrit le découpage', () => {
+    const directory = makeRepository('main')
+    const plan = atelier(directory, 'template', 'plan-epic')
+    for (const word of [/lot/i, /type/i, /ordre/i, /dépendance/i]) {
+      assert.match(plan, word)
+    }
+  })
+
+  it('CA-7 : set-tdd yes est refusé sur un EPIC', () => {
+    const directory = makeChantiersRepository({ branches: { 'epic/EPIC-5-x': [{ id: 'EPIC-5' }] }, checkout: 'epic/EPIC-5-x' })
+    const { status, output } = atelierRun(directory, 'set-tdd', 'yes', 'essai')
+    assert.notEqual(status, 0)
+    assert.match(output, /EPIC/, 'refusé parce que c’est un EPIC')
+    assert.equal(specData(directory, 'EPIC-5').tdd, 'no')
+  })
+
+  it('CA-8 : sur un EPIC signé, aucune écriture hors des chemins libres ; docs/ et le débrayage restent permis', () => {
+    const epic = { id: 'EPIC-5', directory: '/p/docs/chantiers/EPIC-5-x', spec: { data: { status: 'signed', type: 'EPIC', tdd: 'no' } }, files: ['spec.md', 'plan.md'] }
+    for (const relativePath of ['src/app.ts', 'src/app.test.ts']) {
+      const decision = decide({ chantier: epic, relativePath })
+      assert.equal(decision.allowed, false, relativePath)
+      assert.match(decision.reason, /EPIC/)
+      assert.match(decision.reason, /implémente/)
+    }
+    assert.equal(decide({ chantier: epic, relativePath: 'docs/notes.md' }).allowed, true)
+    assert.equal(decide({ chantier: epic, bypass: { reason: 'urgence' } }).allowed, true)
+  })
+})
+
+describe('FEAT-4 closing an EPIC', () => {
+  const epicOn = (main, branches = {}) => makeChantiersRepository({
+    main: [{ id: 'EPIC-5', files: epicPlan }, ...main],
+    branches: { ...branches, 'epic/EPIC-5-x': [] },
+    checkout: 'epic/EPIC-5-x',
+  })
+
+  it('CA-9 : refuse avec la liste des enfants ouverts, sans exiger de revue', () => {
+    const directory = epicOn(
+      [{ id: 'FEAT-6', status: 'done', relations: { rel_parent: 'EPIC-5' } }, { id: 'TEC-18', relations: { rel_parent: 'EPIC-5' } }],
+      { 'feat/FEAT-7-x': [{ id: 'FEAT-7', status: 'done', relations: { rel_parent: 'EPIC-5' } }] },
+    )
+    const { status, output } = atelierRun(directory, 'set-status', 'done')
+    assert.notEqual(status, 0)
+    assertLine(output, [/TEC-18/])
+    assertLine(output, [/FEAT-7/, /feat\/FEAT-7-x/], 'l’enfant qui ne vit que sur sa branche est nommé avec sa branche')
+    assert.doesNotMatch(output, /revue|\/atelier:review/i)
+    assert.equal(specData(directory, 'EPIC-5').status, 'signed')
+  })
+
+  it('CA-9 : refuse sans enfant done (aucun enfant, ou tous abandonnés)', () => {
+    for (const main of [[], [{ id: 'FEAT-6', status: 'abandoned', relations: { rel_parent: 'EPIC-5' } }, { id: 'FEAT-17', status: 'abandoned', relations: { rel_parent: 'EPIC-5' } }]]) {
+      const directory = epicOn(main)
+      const { status, output } = atelierRun(directory, 'set-status', 'done')
+      assert.notEqual(status, 0, `${main.length} enfant(s)`)
+      assert.match(output, /enfant/, 'refusé faute d’enfant done')
+      assert.equal(specData(directory, 'EPIC-5').status, 'signed', output)
+    }
+  })
+
+  it('CA-9 : permet la clôture quand tous les enfants sont clos et au moins un est done, sans revue enregistrée', () => {
+    const directory = epicOn([
+      { id: 'FEAT-6', status: 'done', relations: { rel_parent: 'EPIC-5' } },
+      { id: 'FEAT-17', status: 'abandoned', relations: { rel_parent: 'EPIC-5' } },
+    ])
+    const { status, output } = atelierRun(directory, 'set-status', 'done')
+    assert.equal(status, 0, output)
+    assert.equal(specData(directory, 'EPIC-5').status, 'done')
+  })
+
+  it('CA-9 : un EPIC enfant ouvert bloque la clôture de son EPIC parent', () => {
+    const directory = makeChantiersRepository({
+      main: [
+        { id: 'EPIC-21', files: epicPlan },
+        { id: 'EPIC-20', relations: { rel_parent: 'EPIC-21' } },
+        { id: 'FEAT-22', status: 'done', relations: { rel_parent: 'EPIC-20' } },
+      ],
+      branches: { 'epic/EPIC-21-x': [] },
+      checkout: 'epic/EPIC-21-x',
+    })
+    const { status, output } = atelierRun(directory, 'set-status', 'done')
+    assert.notEqual(status, 0)
+    assertLine(output, [/EPIC-20/])
+  })
+
+  it('CA-9 : l’abandon reste permis avec des enfants ouverts, qui sont listés', () => {
+    const directory = epicOn([{ id: 'TEC-18', relations: { rel_parent: 'EPIC-5' } }])
+    const { status, output } = atelierRun(directory, 'set-status', 'abandoned')
+    assert.equal(status, 0, output)
+    assert.match(output, /TEC-18/)
+    assert.equal(specData(directory, 'EPIC-5').status, 'abandoned')
+  })
+})
+
+describe('FEAT-4 next step of an EPIC', () => {
+  const nextStepOf = (directory) => JSON.parse(atelier(directory, 'status', '--json')).nextStep
+
+  it('CA-10 : concevoir le découpage sans plan, puis les enfants ouverts et leur nombre, puis la clôture ; jamais la revue', () => {
+    const withoutPlan = makeChantiersRepository({ branches: { 'epic/EPIC-5-x': [{ id: 'EPIC-5' }] }, checkout: 'epic/EPIC-5-x' })
+    const open = makeChantiersRepository({
+      main: [{ id: 'EPIC-5', files: epicPlan }, { id: 'FEAT-6', status: 'done', relations: { rel_parent: 'EPIC-5' } }],
+      branches: { 'feat/FEAT-7-x': [{ id: 'FEAT-7', relations: { rel_parent: 'EPIC-5' } }], 'epic/EPIC-5-x': [] },
+      checkout: 'epic/EPIC-5-x',
+    })
+    const closed = makeChantiersRepository({
+      main: [{ id: 'EPIC-5', files: epicPlan }, { id: 'FEAT-6', status: 'done', relations: { rel_parent: 'EPIC-5' } }],
+      branches: { 'epic/EPIC-5-x': [] },
+      checkout: 'epic/EPIC-5-x',
+    })
+    const steps = { withoutPlan: nextStepOf(withoutPlan), open: nextStepOf(open), closed: nextStepOf(closed) }
+    assert.match(steps.withoutPlan, /\/atelier:plan/)
+    assert.match(steps.open, /\b1\b/)
+    assert.match(steps.open, /FEAT-7/)
+    assert.doesNotMatch(steps.open, /FEAT-6/)
+    assert.match(steps.closed, /\/atelier:close/)
+    for (const [name, step] of Object.entries(steps)) {
+      assert.doesNotMatch(step, /\/atelier:review/, name)
+    }
+  })
+})
+
+describe('FEAT-4 relations shown by status', () => {
+  it('CA-11 : affiche parent, dépendances avec leur statut, origine, remplacement', () => {
+    const directory = makeChantiersRepository({
+      main: [{ id: 'EPIC-5' }, { id: 'TEC-8' }, { id: 'TEC-10', status: 'done' }, { id: 'FEAT-3', status: 'abandoned' }],
+      branches: {
+        'feat/FEAT-11-x': [{
+          id: 'FEAT-11',
+          relations: { rel_parent: 'EPIC-5', rel_depends_on: 'TEC-8, TEC-10', rel_origin: 'BUG-421', rel_replaces: 'FEAT-3' },
+        }],
+      },
+      checkout: 'feat/FEAT-11-x',
+    })
+    const text = atelier(directory, 'status')
+    assertLine(text, [/^Parent :/, /EPIC-5/])
+    assertLine(text, [/^Dépendances :/, /TEC-8[^,]*signed/, /TEC-10[^,]*done/])
+    assertLine(text, [/^Origine :/, /BUG-421/])
+    assertLine(text, [/^Remplace :/, /FEAT-3/])
+    const relations = JSON.parse(atelier(directory, 'status', '--json')).chantier.relations
+    assert.deepEqual(relations.dependsOn.map(({ id, status, closed }) => ({ id, status, closed })), [
+      { id: 'TEC-8', status: 'signed', closed: false },
+      { id: 'TEC-10', status: 'done', closed: true },
+    ])
+  })
+
+  it('CA-11 : pour un EPIC, affiche ses enfants directs calculés avec leur statut', () => {
+    const directory = makeChantiersRepository({
+      main: [
+        { id: 'EPIC-5', files: epicPlan },
+        { id: 'FEAT-6', status: 'done', relations: { rel_parent: 'EPIC-5' } },
+        { id: 'EPIC-20', relations: { rel_parent: 'EPIC-5' } },
+        { id: 'FEAT-22', relations: { rel_parent: 'EPIC-20' } },
+      ],
+      branches: { 'feat/FEAT-7-x': [{ id: 'FEAT-7', relations: { rel_parent: 'EPIC-5' } }], 'epic/EPIC-5-x': [] },
+      checkout: 'epic/EPIC-5-x',
+    })
+    const text = atelier(directory, 'status')
+    assertLine(text, [/^Enfants :/, /FEAT-6[^,]*done/, /EPIC-20[^,]*signed/, /FEAT-7/])
+    assert.doesNotMatch(text, /FEAT-22/, 'enfants directs seulement')
+  })
+
+  it('compatibilité : un chantier sans rel_* s’affiche comme avant', () => {
+    const directory = makeChantiersRepository({ branches: { 'tec/TEC-8-x': [{ id: 'TEC-8' }] }, checkout: 'tec/TEC-8-x' })
+    assert.doesNotMatch(atelier(directory, 'status'), /^(Parent|Dépendances|Origine|Remplace|Enfants) :/m)
+  })
+})
+
+describe('FEAT-4 process section of CLAUDE.md', () => {
+  const processLines = () => template('process').split(/\r?\n/).filter((line) => line.trim())
+
+  it('CA-12 : le template de la section Process existe et parle de l’EPIC et des relations', () => {
+    assert.ok(processLines().includes('## Process (atelier)'))
+    assert.ok(processLines().some((line) => /EPIC/.test(line) && /rel_/.test(line)))
+  })
+
+  it('CA-12 : liste toutes les lignes quand la section est absente', () => {
+    const directory = makeRepository('main')
+    writeFileSync(join(directory, 'CLAUDE.md'), '# Projet\n\nRien sur le process.\n')
+    const { status, output } = atelierRun(directory, 'check-process')
+    assert.equal(status, 2)
+    for (const line of processLines()) {
+      assert.ok(output.includes(line.trim()), line)
+    }
+  })
+
+  it('CA-12 : liste seulement les lignes manquantes ; rien quand tout y est, ajouts du projet compris', () => {
+    const directory = makeRepository('main')
+    const lines = processLines()
+    const [, missing] = lines.filter((line) => line.startsWith('- '))
+    const complete = `# Projet\n\n${lines.join('\n')}\n- Règle propre au projet.\n\n## Autre\nTexte.\n`
+    writeFileSync(join(directory, 'CLAUDE.md'), complete)
+    const ok = atelierRun(directory, 'check-process')
+    assert.equal(ok.status, 0, ok.output)
+    writeFileSync(join(directory, 'CLAUDE.md'), complete.replace(`${missing}\n`, ''))
+    const partial = atelierRun(directory, 'check-process')
+    assert.equal(partial.status, 2)
+    assert.ok(partial.output.includes(missing.trim()))
+    for (const line of lines.filter((candidate) => candidate !== missing)) {
+      assert.ok(!partial.output.includes(line.trim()), `présente, non signalée : ${line}`)
+    }
+  })
+})
+
+describe('FEAT-4 site', () => {
+  const site = (relativePath) => readFileSync(fileURLToPath(new URL(`../../../site/${relativePath}`, import.meta.url)), 'utf8')
+
+  // The build itself (`npm run build` in site/) is checked by hand at review: it needs the site's
+  // dependencies and takes too long for the test suite.
+  it('CA-13 : six types dont l’EPIC ; templates spec-epic et plan-epic inclus', () => {
+    const types = site('fondations/types.md')
+    assert.match(types, /Six types/)
+    assert.match(types, /^## EPIC/m)
+    const templates = site('reference/templates.md')
+    assert.match(templates, /@include: [^\n]*templates\/spec-epic\.md/)
+    assert.match(templates, /@include: [^\n]*templates\/plan-epic\.md/)
   })
 })
