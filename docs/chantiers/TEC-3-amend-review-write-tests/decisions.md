@@ -33,3 +33,8 @@
 - Une ligne blanche entre deux entrées est ignorée ; une ligne indentée après une entrée (même après une ligne blanche) en est la suite. Espaces de fin de ligne ignorés.
 - `appendAmendmentEntry` insère après la dernière ligne non vide de la section (les lignes blanches avant le titre suivant restent) et garde les fins de ligne du fichier. Avec plusieurs sections, la première est utilisée : la garde refuse de toute façon une section en double.
 - Écarté : vérifier que la date d'une entrée existe au calendrier (la spec demande « au bon format » seulement).
+
+## 2026-11-20 : tranche 2, garde sur la spec non brouillon
+- Version commitée lue par `git ls-files --with-tree=HEAD -- ":(icase,literal)<chemin>"`, puis `git rev-parse --verify --quiet HEAD:<chemin>` et `git show`. `--with-tree` retrouve aussi une spec retirée de l'index (`git rm --cached`) ; `literal` évite qu'un `*` du chemin soit lu comme un motif. Pas encore de commit (`HEAD` absent) ou fichier absent de `HEAD` : le fichier actuel sert de référence ; toute autre sortie de git : refus. Écarté : `git ls-tree`, qui refuse `:(icase)`.
+- Champs d'en-tête comparés à la référence : les clés lues par `parseFrontMatter` (lignes `clé: valeur`). Une ligne d'en-tête qui n'est pas de cette forme n'est pas comparée ; limite assumée, l'en-tête des templates n'en contient pas.
+- Le contrôle des champs réservés reste fait en premier et s'applique aussi en brouillon, comme avant ; les règles propres à la spec non brouillon (champs figés, entrées) viennent ensuite.

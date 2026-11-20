@@ -28,6 +28,7 @@ import {
   reopenTestsEntry,
   reopenTestsRefusal,
   setFrontMatterValues,
+  setStatusRefusal,
   toProjectRelativePath,
 } from './core.mjs'
 
@@ -237,8 +238,14 @@ function commandSetStatus([status]) {
     process.exit(1)
   }
   const projectRoot = findProjectRoot()
+  const config = requireConfig(projectRoot)
+  const refusal = setStatusRefusal(requireActiveChantier(projectRoot, config), status)
+  if (refusal) {
+    console.error(`Statut refusé : ${refusal}`)
+    process.exit(2)
+  }
   const values = status === 'done' ? { status, done_at: today() } : { status }
-  const { specPath } = updateSpec(projectRoot, requireConfig(projectRoot), values)
+  const { specPath } = updateSpec(projectRoot, config, values)
   console.log(toProjectRelativePath(projectRoot, specPath))
 }
 
@@ -254,6 +261,32 @@ function gitRaw(projectRoot, gitArguments) {
 // File list printed by a git command run with -z (NUL-separated, never quoted).
 function gitPaths(projectRoot, gitArguments) {
   return gitRaw(projectRoot, gitArguments).split('\0').filter(Boolean)
+}
+
+// Whether a git object or ref exists: false when git says it does not, an error for anything else.
+function gitObjectExists(projectRoot, name) {
+  const result = spawnSync('git', ['rev-parse', '--verify', '--quiet', name], { cwd: projectRoot, encoding: 'utf8' })
+  if (result.status === 0) {
+    return true
+  }
+  if (result.status === 1 && !result.stderr?.trim()) {
+    return false
+  }
+  throw new Error(result.error?.message || result.stderr?.trim() || `git rev-parse ${name}`)
+}
+
+// Text of a file as committed in HEAD, or null when it is absent from HEAD (or there is no
+// commit yet). The path is resolved without case first, as the file system may ignore it.
+function committedFileText(projectRoot, relativePath) {
+  if (!gitObjectExists(projectRoot, 'HEAD^{commit}')) {
+    return null
+  }
+  const candidates = gitPaths(projectRoot, ['ls-files', '-z', '--with-tree=HEAD', '--', `:(icase,literal)${relativePath}`])
+  const path = candidates.find((candidate) => candidate === relativePath) ?? candidates[0]
+  if (!path || !gitObjectExists(projectRoot, `HEAD:${path}`)) {
+    return null
+  }
+  return gitRaw(projectRoot, ['show', `HEAD:${path}`])
 }
 
 // Files changed in the working tree (uncommitted, including untracked).
@@ -448,11 +481,21 @@ function guardWrite(input, projectRoot) {
   }
   const { branch, chantier } = activeChantier(projectRoot, config)
   const fileExists = existsSync(filePath)
+  const relativePath = toProjectRelativePath(projectRoot, filePath)
   const isSpec = basename(filePath).toLowerCase() === 'spec.md'
   const currentText = isSpec && fileExists ? readFileSync(filePath, 'utf8') : null
   const proposedText = isSpec ? applyToolEdit(currentText, input.tool_name, input.tool_input) : null
+  let committedText = null
+  let committedSpecError = null
+  if (isSpec && relativePath !== null && matchesAny(relativePath, [`${config.chantiersDir}/**`], config.ignoreCase)) {
+    try {
+      committedText = committedFileText(projectRoot, relativePath)
+    } catch (error) {
+      committedSpecError = error.message
+    }
+  }
   const decision = decideWrite({
-    relativePath: toProjectRelativePath(projectRoot, filePath),
+    relativePath,
     toolName: input.tool_name,
     config,
     chantier,
@@ -460,6 +503,8 @@ function guardWrite(input, projectRoot) {
     fileExists,
     existingSpec: currentText === null ? null : parseFrontMatter(currentText),
     proposedSpec: proposedText === null ? null : parseFrontMatter(proposedText),
+    committedSpec: committedText === null ? null : parseFrontMatter(committedText),
+    committedSpecError,
   })
   if (!decision.allowed) {
     denyWrite(decision.reason)

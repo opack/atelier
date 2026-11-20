@@ -23,6 +23,7 @@ import {
   reopenTestsEntry,
   reopenTestsRefusal,
   setFrontMatterValues,
+  setStatusRefusal,
   testDrivenPhase,
   toProjectRelativePath,
 } from '../lib/core.mjs'
@@ -191,6 +192,105 @@ describe('write guard', () => {
     assert.equal(decide({ chantier: null, config, relativePath: 'Docs/notes.md' }).allowed, true)
     assert.equal(decide({ config, relativePath: '.ATELIER/bypass.json' }).allowed, false)
     assert.equal(decide({ chantier: null, relativePath: 'Docs/notes.md' }).allowed, false)
+  })
+})
+
+describe('write guard on a spec that is no longer a draft', () => {
+  const relativePath = 'docs/chantiers/FEAT-12-x/spec.md'
+  const signedText = '---\nid: FEAT-12\ntype: FEAT\ntitle: Budget\nstatus: signed\ntdd: yes\nsigned_by: Ana\n---\n# FEAT-12\n\n## 1. Contexte\nTexte initial.\n\n## Amendements\n<!-- Après signature : une entrée datée. -->\n- 2026-11-01 : critère ajouté\n'
+  const newEntry = '- 2026-11-01 : critère ajouté\n- 2026-11-20 : contexte précisé\n'
+
+  // Edits `text` (the committed spec by default) and asks the guard, the committed spec as reference.
+  function edit(edits, { current = signedText, committed = signedText, toolName = 'MultiEdit', ...overrides } = {}) {
+    const proposed = applyToolEdit(current, toolName, toolName === 'MultiEdit' ? { edits } : edits)
+    return decide({
+      relativePath,
+      toolName,
+      existingSpec: current === null ? null : parseFrontMatter(current),
+      proposedSpec: proposed === null ? null : parseFrontMatter(proposed),
+      committedSpec: committed === null ? null : parseFrontMatter(committed),
+      ...overrides,
+    })
+  }
+  const body = { old_string: 'Texte initial.', new_string: 'Texte corrigé.' }
+  const entry = { old_string: '- 2026-11-01 : critère ajouté\n', new_string: newEntry }
+
+  it('refuses a body or title change without a new dated entry', () => {
+    const bodyOnly = edit([body])
+    assert.equal(bodyOnly.allowed, false)
+    assert.match(bodyOnly.reason, /Amendements/)
+    assert.match(bodyOnly.reason, /même faite par l’utilisateur/)
+    assert.equal(edit([{ old_string: 'title: Budget', new_string: 'title: Budget mensuel' }]).allowed, false, 'title')
+    assert.equal(edit([body, { old_string: '- 2026-11-01 : critère ajouté\n', new_string: '- 2026-11-01 : critère ajouté\n- hier : oubli\n' }]).allowed, false, 'undated entry')
+  })
+
+  it('accepts a body change with a new dated entry, also over several edits', () => {
+    assert.equal(edit([entry, body]).allowed, true)
+    const withEntry = applyToolEdit(signedText, 'Edit', entry)
+    assert.equal(edit([body], { current: withEntry }).allowed, true, 'entry written by an earlier edit, not committed yet')
+    assert.equal(edit([body], { current: withEntry, committed: withEntry }).allowed, false, 'once committed, the entry no longer covers a new change')
+  })
+
+  it('keeps existing entries untouched and in front', () => {
+    assert.equal(edit([{ old_string: 'critère ajouté', new_string: 'critère retiré' }]).allowed, false, 'modified')
+    assert.equal(edit([{ old_string: '- 2026-11-01 : critère ajouté\n', new_string: '- 2026-11-20 : nouvelle\n' }]).allowed, false, 'deleted')
+    const inserted = edit([body, { old_string: '- 2026-11-01 : critère ajouté\n', new_string: '- 2026-11-20 : nouvelle\n- 2026-11-01 : critère ajouté\n' }])
+    assert.equal(inserted.allowed, false, 'inserted before')
+    assert.match(inserted.reason, /à la fin/)
+  })
+
+  it('refuses a second Amendements section, and counts a renamed one as body', () => {
+    assert.match(edit([entry, { old_string: '## 1. Contexte', new_string: '## Amendements\n\n## 1. Contexte' }]).reason, /plusieurs sections/)
+    assert.equal(edit([{ old_string: '## Amendements', new_string: '## Amendements (historique)' }]).allowed, false)
+  })
+
+  it('creates the section with the first entry', () => {
+    const withoutSection = signedText.replace(/\n## Amendements[\s\S]*$/, '\n')
+    assert.equal(edit([body, { old_string: 'Texte corrigé.\n', new_string: 'Texte corrigé.\n\n## Amendements\n- 2026-11-20 : x\n' }],{ current: withoutSection, committed: withoutSection }).allowed, true)
+  })
+
+  it('freezes id, type and tdd, and every field written by the command', () => {
+    for (const [field, value] of [['id: FEAT-12', 'id: FEAT-13'], ['type: FEAT', 'type: FIX'], ['tdd: yes', 'tdd: no']]) {
+      assert.equal(edit([entry, { old_string: field, new_string: value }]).allowed, false, field)
+    }
+    assert.match(edit([entry, { old_string: 'signed_by: Ana', new_string: 'signed_by: Ana\nreviewed_commit: abc' }]).reason, /reviewed_commit/)
+  })
+
+  it('refuses a full rewrite, abandoned spec and spec deleted from disk included', () => {
+    const abandoned = signedText.replace('status: signed', 'status: abandoned')
+    assert.equal(edit({ content: abandoned }, { toolName: 'Write', current: abandoned, committed: abandoned }).allowed, false)
+    assert.equal(edit({ content: signedText }, { toolName: 'Write', current: null }).allowed, false, 'deleted from disk, signed in HEAD')
+    assert.equal(edit(body, { toolName: 'Edit', current: null }).allowed, false)
+  })
+
+  it('refuses when the committed spec cannot be read', () => {
+    const decision = edit([entry, body], { committedSpecError: 'fatal: bad object' })
+    assert.equal(decision.allowed, false)
+    assert.match(decision.reason, /bad object/)
+  })
+
+  it('normalizes line endings and leaves a draft free', () => {
+    const crlf = signedText.replace(/\n/g, '\r\n')
+    assert.equal(edit([{ old_string: 'Texte initial.', new_string: 'Texte initial.' }], { current: crlf }).allowed, true)
+    assert.equal(edit([body], { current: crlf }).allowed, false)
+    assert.equal(edit([entry, body], { current: crlf, committed: crlf }).allowed, true)
+    const draft = signedText.replace('status: signed', 'status: draft').replace('signed_by: Ana', 'signed_by:')
+    assert.equal(edit([body, { old_string: 'tdd: yes', new_string: 'tdd: no' }], { current: draft, committed: draft }).allowed, true)
+    assert.equal(edit({ content: 'x' }, { toolName: 'Write', current: draft, committed: draft }).allowed, true)
+    assert.equal(edit([body], { current: draft, committed: null }).allowed, true, 'never committed')
+  })
+
+  it('guards a spec path written with another case', () => {
+    const config = { ...DEFAULT_CONFIG, ignoreCase: true }
+    assert.equal(edit([body], { relativePath: 'Docs/Chantiers/FEAT-12-x/SPEC.md', config }).allowed, false)
+  })
+
+  it('never puts a spec that is no longer a draft back to draft', () => {
+    for (const status of ['signed', 'done', 'abandoned']) {
+      assert.match(setStatusRefusal({ ...signedChantier, spec: { data: { status } } }, 'draft'), /brouillon/, status)
+    }
+    assert.equal(setStatusRefusal(draftChantier, 'draft'), null)
+    assert.equal(setStatusRefusal(signedChantier, 'abandoned'), null)
   })
 })
 
