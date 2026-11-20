@@ -827,3 +827,62 @@ describe('chantier source shown to the user', () => {
     assert.doesNotMatch(atelier(directory, 'hook-session-start'), /déduit des commits/)
   })
 })
+
+// A repository whose origin (local bare repository) holds `main` and the given extra branches.
+function makeRepositoryWithOrigin(extraBranches = []) {
+  const origin = temporaryDirectory('atelier-tec6-origin-')
+  git(origin, 'init', '-q', '--bare', '-b', 'main')
+  const directory = makeRepository('main')
+  git(directory, 'remote', 'add', 'origin', origin)
+  for (const [branch, subject] of extraBranches) {
+    git(directory, 'switch', '-q', '-c', branch, 'main')
+    commit(directory, subject)
+  }
+  git(directory, 'push', '-q', 'origin', 'main', ...extraBranches.map(([branch]) => branch))
+  git(directory, 'fetch', '-q', 'origin')
+  return directory
+}
+
+describe('default branch resolved through origin/HEAD', () => {
+  const config = { ...DEFAULT_CONFIG, chantiersDir: 'docs/chantiers' }
+
+  it('V-7 : avec origin/HEAD vers origin/main, déduit le chantier sur une branche non conforme', () => {
+    const directory = makeRepositoryWithOrigin()
+    git(directory, 'remote', 'set-head', 'origin', 'main')
+    git(directory, 'switch', '-q', '-c', 'claude/x', 'main')
+    addChantierSpec(directory, 'TEC-9', 'x')
+    const { chantier, source } = activeChantier(directory, config)
+    assert.equal(chantier?.id, 'TEC-9')
+    assert.equal(source, 'commits')
+  })
+
+  it('V-8 : origin/HEAD vers develop : aucun chantier sur develop, déduction depuis develop ailleurs', () => {
+    // develop carries a merged chantier commit that main does not have.
+    const directory = makeRepositoryWithOrigin([['develop', 'feat(x): [TEC-7] merged work']])
+    git(directory, 'remote', 'set-head', 'origin', 'develop')
+
+    git(directory, 'switch', '-q', 'develop')
+    assert.deepEqual(
+      (({ chantier, source }) => ({ chantier, source }))(activeChantier(directory, config)),
+      { chantier: null, source: null },
+    )
+
+    git(directory, 'switch', '-q', '-c', 'claude/empty', 'develop')
+    assert.equal(activeChantier(directory, config).chantier, null, 'la base est origin/develop, pas origin/main')
+
+    git(directory, 'switch', '-q', '-c', 'claude/x', 'develop')
+    addChantierSpec(directory, 'TEC-9', 'x')
+    const { chantier, source } = activeChantier(directory, config)
+    assert.equal(chantier?.id, 'TEC-9')
+    assert.equal(source, 'commits')
+  })
+
+  it('V-9 : une branche non conforme sans commit propre n’a pas de chantier', () => {
+    const directory = makeDeductionRepository()
+    git(directory, 'switch', '-q', '-c', 'claude/empty', 'main')
+    const { branch, chantier, source } = activeChantier(directory, config)
+    assert.equal(branch, 'claude/empty')
+    assert.equal(chantier, null)
+    assert.equal(source, null)
+  })
+})
