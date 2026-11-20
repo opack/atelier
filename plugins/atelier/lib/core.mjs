@@ -378,6 +378,9 @@ export function isRefreeze(entries) {
 // Why `atelier reopen-tests` is refused for this chantier, or null.
 export function reopenTestsRefusal(chantier) {
   const data = chantier?.spec?.data ?? {}
+  if (specStatus(chantier?.spec) !== 'signed') {
+    return `La spec de ${chantier?.id ?? 'ce chantier'} n’est pas signée (statut : ${specStatus(chantier?.spec)}) : ses tests ne se rouvrent pas.`
+  }
   if (data.tdd !== 'yes') {
     return `${chantier?.id ?? 'Ce chantier'} ne suit pas le TDD (tdd: ${data.tdd || '?'}) : il n’a pas de tests figés à rouvrir. Ajoute ou modifie les tests avec le code (/atelier:build).`
   }
@@ -391,11 +394,10 @@ export function reopenTestsRefusal(chantier) {
 
 // Files that count as code for the review: everything outside the free paths, the chantier
 // documents and the atelier state. `.claude/**` is not free here, so that checks and hooks
-// cannot be weakened after the review. Tests count as code.
+// cannot be weakened after the review, whatever the free path patterns. Tests count as code.
 export function reviewCodeFiles(files, config) {
-  const freePaths = config.freePaths.filter((pattern) => !pattern.toLowerCase().startsWith('.claude/'))
-  const ignoredPaths = [...freePaths, `${config.chantiersDir}/**`, '.atelier/**']
-  return files.filter((file) => !matchesAny(file, ignoredPaths, config.ignoreCase))
+  const ignoredPaths = [...config.freePaths, `${config.chantiersDir}/**`, '.atelier/**']
+  return files.filter((file) => matchesAny(file, ['.claude/**'], config.ignoreCase) || !matchesAny(file, ignoredPaths, config.ignoreCase))
 }
 
 // Why the review recorded in the spec no longer covers the chantier, as a list (empty when it is
@@ -470,13 +472,16 @@ export function setReviewedRefusal({ chantier, uncommittedCode, specUncommitted,
 // reviewFacts (see reviewProblems), uncommittedCode (code files changed and not committed),
 // checksFailure (first failing check as { check }, or null) }. A SPIKE (throwaway code, never
 // merged) skips everything related to the review.
-export function closeProblems({ chantier, reviewFacts, uncommittedCode, checksFailure }) {
+// `uncommittedError` is the git error met while listing uncommitted files, if any.
+export function closeProblems({ chantier, reviewFacts, uncommittedCode, uncommittedError, checksFailure }) {
   if (specStatus(chantier?.spec) !== 'signed') {
     return [`La spec de ${chantier?.id ?? 'ce chantier'} n’est pas signée (statut : ${specStatus(chantier?.spec)}).`]
   }
   const type = (chantier.spec.data.type ?? '').toUpperCase()
   const problems = type === 'SPIKE' ? [] : reviewProblems(reviewFacts)
-  if (uncommittedCode.length) {
+  if (uncommittedError) {
+    problems.push(`Impossible de lister les fichiers non commités (${uncommittedError}).`)
+  } else if (uncommittedCode.length) {
     problems.push(`Du code n’est pas commité (${uncommittedCode.join(', ')}).`)
   }
   if (testDrivenPhase(chantier) === 'writing-tests') {
@@ -641,7 +646,7 @@ const specStatus = (spec) => spec?.data?.status || 'draft'
 // while reading it, if any.
 function specWriteRefusal(toolName, existingSpec, proposedSpec, committedSpec, committedSpecError) {
   if (committedSpecError) {
-    return `atelier : impossible de lire la version commitée de la spec (${committedSpecError}), donc de vérifier cette écriture. Signale-le à l’utilisateur.`
+    return `atelier : impossible de lire la version commitée de la spec (${committedSpecError}), donc de vérifier cette écriture, même pour une spec en brouillon. Signale-le à l’utilisateur.`
   }
   const guarded = specStatus(existingSpec) !== 'draft' || (committedSpec && specStatus(committedSpec) !== 'draft')
   if (toolName === 'Write' && guarded) {

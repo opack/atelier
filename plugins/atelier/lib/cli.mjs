@@ -470,10 +470,18 @@ function commandSetReviewed() {
 
 // Deterministic checks before closing (see closeProblems in lib/core.mjs). Runs the project checks.
 function closeCheckProblems(projectRoot, config, chantier) {
+  let uncommittedCode = []
+  let uncommittedError = null
+  try {
+    uncommittedCode = reviewCodeFiles(uncommittedFiles(projectRoot), config)
+  } catch (error) {
+    uncommittedError = error.message
+  }
   return closeProblems({
     chantier,
     reviewFacts: reviewFacts(projectRoot, config, chantier),
-    uncommittedCode: reviewCodeFiles(uncommittedFiles(projectRoot), config),
+    uncommittedCode,
+    uncommittedError,
     checksFailure: runChecks(projectRoot, config),
   })
 }

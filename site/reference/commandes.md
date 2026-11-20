@@ -31,7 +31,7 @@ Utilisée par les commandes `/atelier:*` et par les hooks : l’agent la lance p
 | `atelier sign` | Signe la spec du chantier actif. Refuse si elle est incomplète ou n’est pas en brouillon. |
 | `atelier set-tdd <yes\|no> [raison]` | Enregistre la décision TDD, tracée après signature. |
 | `atelier freeze-tests` | Fige les tests commités (TDD) ; trace le regel après une réouverture. |
-| `atelier reopen-tests <raison>` | Rouvre les tests figés, raison tracée. Refusée sans TDD ou si les tests ne sont pas figés. |
+| `atelier reopen-tests <raison>` | Rouvre les tests figés, raison tracée. Refusée si la spec n’est pas signée, sans TDD ou si les tests ne sont pas figés. |
 | `atelier tests-changed` | Liste les tests modifiés depuis leur gel. |
 | `atelier checks` | Lance les contrôles configurés. |
 | `atelier set-reviewed` | Enregistre le commit revu (`reviewed_commit`). Refusée sans spec signée, avec du code ou une spec non commités, ou en TDD si les tests ne sont pas figés ou ont changé. |

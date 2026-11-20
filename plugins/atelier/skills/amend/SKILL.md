@@ -19,7 +19,7 @@ Une spec signée est un engagement. L'amender, c'est corriger une erreur ou fair
 ## 1. Modifier la spec
 
 1. **D'abord**, ajoute une entrée à la fin de la section `## Amendements` (crée la section en fin de spec si elle manque) : une ligne `- AAAA-MM-JJ : <quoi>, <pourquoi>`, à la date du jour. Les lignes de suite éventuelles sont indentées. Ne modifie ni ne supprime les entrées existantes.
-2. **Puis** modifie la spec par **éditions ciblées**, jamais en la réécrivant. Le hook d'atelier refuse toute modification du corps sans nouvelle entrée, toute réécriture complète, et tout changement de `id`, `type`, `tdd` ou des champs écrits par la commande. Pour changer `tdd` : `atelier set-tdd <yes|no> <raison>`, puis commit de la spec seule (`docs(chantiers): [<ID>] set tdd`).
+2. **Puis** modifie la spec par **éditions ciblées**, jamais en la réécrivant. Le hook d'atelier refuse toute modification du corps sans nouvelle entrée, toute réécriture complète, et tout changement de `id`, `type`, `tdd` ou des champs écrits par la commande. Pour changer `tdd` : `atelier set-tdd <yes|no> <raison>`, qui ajoute lui-même son entrée d'amendement. **Ne commite rien à cette étape** : ce changement part avec le reste dans le commit d'accord de l'étape 3, ou est annulé avec lui.
 
 ## 2. Montrer l'impact
 

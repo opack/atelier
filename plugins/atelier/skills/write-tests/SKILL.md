@@ -67,7 +67,7 @@ Les tests sont la spécification exécutable du chantier. **Arrête-toi et deman
 Seulement quand l'utilisateur s'en déclare satisfait :
 1. Commite **les tests seuls** : `test(<scope>): [<ID>] add failing tests for CA-1..CA-n` (ou `add characterization tests` pour un REF ; après une réouverture, une description de ce qui change, ex. `cover CA-4 empty budget`).
 2. Fige-les : `atelier freeze-tests`. La commande refuse s'il reste des tests non commités ou si le dernier commit ne contient pas de test. Après une réouverture, elle ajoute à la spec l'entrée « tests regelés : <hash> ».
-3. Si la spec a changé (regel), commite-la aussitôt seule : `docs(chantiers): [<ID>] freeze tests`. Aucune entrée écrite par la commande ne reste non commitée.
+3. La commande écrit `tests_commit` dans la spec (et l'entrée de regel le cas échéant) : commite aussitôt la spec seule, à chaque gel : `docs(chantiers): [<ID>] freeze tests`. Rien de ce qu'écrit la commande ne reste non commité.
 4. Indique la suite : `/atelier:build`. Conseille de repartir d'un contexte propre : les tests et le plan portent la mémoire.
 
 Une fois figés, les tests ne sont plus modifiables par l'agent jusqu'à la prochaine réouverture par cette commande.

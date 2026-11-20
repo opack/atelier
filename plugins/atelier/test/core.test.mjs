@@ -273,6 +273,7 @@ describe('write guard on a spec that is no longer a draft', () => {
     const decision = edit([entry, body], { committedSpecError: 'fatal: bad object' })
     assert.equal(decision.allowed, false)
     assert.match(decision.reason, /bad object/)
+    assert.match(decision.reason, /brouillon/)
   })
 
   it('normalizes line endings and leaves a draft free', () => {
@@ -289,6 +290,7 @@ describe('write guard on a spec that is no longer a draft', () => {
   it('guards a spec path written with another case', () => {
     const config = { ...DEFAULT_CONFIG, ignoreCase: true }
     assert.equal(edit([body], { relativePath: 'Docs/Chantiers/FEAT-12-x/SPEC.md', config }).allowed, false)
+    assert.equal(edit([entry, body], { relativePath: 'Docs/Chantiers/FEAT-12-x/SPEC.md', config }).allowed, true, 'with a new entry')
   })
 
   it('never puts a spec that is no longer a draft back to draft', () => {
@@ -333,6 +335,7 @@ describe('close decision', () => {
 
   it('refuses uncommitted code, red checks, tests not frozen, an unsigned spec', () => {
     refused({ uncommittedCode: ['src/a.ts'] }, /pas commité/)
+    refused({ uncommittedError: 'fatal: not a git repository' }, /non commités \(fatal: not a git repository\)/)
     refused({ checksFailure: { check: { name: 'tests', command: 'npm test' } } }, /« tests » échoue/)
     refused({ chantier: signedChantier, reviewFacts: reviewed }, /pas figés/)
     refused({ chantier: draftChantier }, /pas signée/)
@@ -556,6 +559,13 @@ describe('reopen tests', () => {
     assert.match(reopenTestsRefusal(signedChantier), /pas figés/)
     assert.equal(reopenTestsRefusal(implementingChantier), null)
   })
+
+  it('refuses a chantier that is no longer signed', () => {
+    for (const status of ['draft', 'done', 'abandoned']) {
+      const chantier = { ...implementingChantier, spec: { data: { ...implementingChantier.spec.data, status } } }
+      assert.match(reopenTestsRefusal(chantier), /pas signée/, status)
+    }
+  })
 })
 
 describe('next step', () => {
@@ -614,6 +624,11 @@ describe('review state', () => {
     const files = ['src/a.ts', 'src/a.test.ts', '.claude/atelier.json', '.claude/settings.json', 'docs/notes.md', 'README.md', 'docs/chantiers/TEC-3-x/spec.md', '.atelier/gate.json']
     assert.deepEqual(reviewCodeFiles(files, DEFAULT_CONFIG), ['src/a.ts', 'src/a.test.ts', '.claude/atelier.json', '.claude/settings.json'])
     assert.deepEqual(reviewCodeFiles(['.CLAUDE/atelier.json', 'DOCS/x.md'], { ...DEFAULT_CONFIG, ignoreCase: true }), ['.CLAUDE/atelier.json'])
+  })
+
+  it('keeps .claude as code even when a free path pattern covers it', () => {
+    const config = { ...DEFAULT_CONFIG, freePaths: [...DEFAULT_CONFIG.freePaths, '**/*.json', '**/*.md'] }
+    assert.deepEqual(reviewCodeFiles(['.claude/settings.json', '.claude/agents/x.md', 'package.json', 'src/a.ts'], config), ['.claude/settings.json', '.claude/agents/x.md', 'src/a.ts'])
   })
 
   it('tells an amendment since the review from an unchanged list of entries', () => {
