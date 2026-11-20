@@ -2,11 +2,11 @@
 id: TEC-6
 type: TEC
 title: Reconnaître un chantier hors branche <type>/<ID>-<slug>
-status: signed
+status: draft
 tdd: yes
 created_at: 2026-11-20
-signed_by: Claude
-signed_at: 2026-11-20
+signed_by:
+signed_at:
 ---
 
 # TEC-6 Reconnaître un chantier hors branche <type>/<ID>-<slug>
