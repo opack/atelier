@@ -2,11 +2,12 @@
 id: TEC-2
 type: TEC
 title: Site VitePress de la méthode
-status: signed
+status: done
 tdd: no
 created_at: 2026-11-18
 signed_by: Opack
 signed_at: 2026-11-20
+done_at: 2026-11-20
 ---
 
 # TEC-2 Site VitePress de la méthode
