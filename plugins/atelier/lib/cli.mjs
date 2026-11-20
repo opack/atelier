@@ -7,6 +7,7 @@ import { basename, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
   activeChantier,
+  amendmentsDiffer,
   appendAmendmentEntry,
   applyToolEdit,
   checkSpec,
@@ -27,7 +28,11 @@ import {
   refreezeTestsEntry,
   reopenTestsEntry,
   reopenTestsRefusal,
+  reviewCodeFiles,
+  reviewProblems,
+  reviewState,
   setFrontMatterValues,
+  setReviewedRefusal,
   setStatusRefusal,
   toProjectRelativePath,
 } from './core.mjs'
@@ -44,6 +49,7 @@ const commands = {
   'freeze-tests': commandFreezeTests,
   'reopen-tests': commandReopenTests,
   'set-tdd': commandSetTdd,
+  'set-reviewed': commandSetReviewed,
   'tests-changed': commandTestsChanged,
   bypass: commandBypass,
   checks: commandChecks,
@@ -139,6 +145,7 @@ function commandStatus(options) {
   }
   const { branch, chantier } = activeChantier(projectRoot, config)
   const bypass = readBypass(projectRoot, branch)
+  const review = reviewSummary(projectRoot, config, chantier)
   const summary = {
     installed: true,
     branch,
@@ -151,18 +158,30 @@ function commandStatus(options) {
           status: chantier.spec?.data.status ?? null,
           testDrivenPhase: chantier.spec ? testDrivenPhase(chantier) : null,
           testsCommit: chantier.spec?.data.tests_commit || null,
+          ...review,
           files: chantier.files,
           specProblems: chantier.spec ? checkSpec(readFileSync(join(chantier.directory, 'spec.md'), 'utf8')) : [],
         }
       : null,
     bypass,
-    nextStep: nextStep(chantier),
+    nextStep: nextStep(chantier, review.reviewState),
   }
   if (options.includes('--json')) {
     console.log(JSON.stringify(summary, null, 2))
     return
   }
   console.log(formatStatus(summary))
+}
+
+// State of the review, as shown by `status` and the session start reminder.
+function reviewSummary(projectRoot, config, chantier) {
+  const facts = reviewFacts(projectRoot, config, chantier)
+  const state = reviewState(facts)
+  return {
+    reviewedCommit: facts.reviewedCommit,
+    reviewState: state,
+    reviewProblems: state === 'stale' ? reviewProblems(facts) : [],
+  }
 }
 
 function formatStatus(summary) {
@@ -177,6 +196,12 @@ function formatStatus(summary) {
     }
     if (status === 'signed' && phaseLabels[summary.chantier.testDrivenPhase]) {
       lines.push(`Phase TDD : ${phaseLabels[summary.chantier.testDrivenPhase]}`)
+    }
+    const { reviewedCommit, reviewState: state, reviewProblems: problems = [] } = summary.chantier
+    if (reviewedCommit) {
+      lines.push(state === 'current'
+        ? `Revue : commit ${reviewedCommit.slice(0, 7)}, à jour (aucun code commité depuis)`
+        : `Revue : commit ${reviewedCommit.slice(0, 7)}, obsolète\n${problems.map((problem) => `  - ${problem}`).join('\n')}`)
     }
     if (status !== 'signed' && status !== 'done' && specProblems.length) {
       lines.push(`À compléter dans la spec : ${specProblems.length} point(s)`)
@@ -275,18 +300,52 @@ function gitObjectExists(projectRoot, name) {
   throw new Error(result.error?.message || result.stderr?.trim() || `git rev-parse ${name}`)
 }
 
-// Text of a file as committed in HEAD, or null when it is absent from HEAD (or there is no
-// commit yet). The path is resolved without case first, as the file system may ignore it.
-function committedFileText(projectRoot, relativePath) {
-  if (!gitObjectExists(projectRoot, 'HEAD^{commit}')) {
+// Text of a file as committed in `commit` (HEAD by default), or null when it is absent from that
+// commit (or there is no commit yet). The path is resolved without case first, as the file
+// system may ignore it.
+function committedFileText(projectRoot, relativePath, commit = 'HEAD') {
+  if (!gitObjectExists(projectRoot, `${commit}^{commit}`)) {
     return null
   }
-  const candidates = gitPaths(projectRoot, ['ls-files', '-z', '--with-tree=HEAD', '--', `:(icase,literal)${relativePath}`])
+  const candidates = gitPaths(projectRoot, ['ls-files', '-z', `--with-tree=${commit}`, '--', `:(icase,literal)${relativePath}`])
   const path = candidates.find((candidate) => candidate === relativePath) ?? candidates[0]
-  if (!path || !gitObjectExists(projectRoot, `HEAD:${path}`)) {
+  if (!path || !gitObjectExists(projectRoot, `${commit}:${path}`)) {
     return null
   }
-  return gitRaw(projectRoot, ['show', `HEAD:${path}`])
+  return gitRaw(projectRoot, ['show', `${commit}:${path}`])
+}
+
+// What git says about the review recorded in the spec (see reviewProblems in lib/core.mjs).
+// Any git error makes the review stale rather than failing.
+function reviewFacts(projectRoot, config, chantier) {
+  const reviewedCommit = chantier?.spec?.data.reviewed_commit || null
+  if (!reviewedCommit) {
+    return { reviewedCommit }
+  }
+  try {
+    if (!gitObjectExists(projectRoot, `${reviewedCommit}^{commit}`)) {
+      return { reviewedCommit, found: false }
+    }
+    const ancestry = spawnSync('git', ['merge-base', '--is-ancestor', reviewedCommit, 'HEAD'], { cwd: projectRoot, encoding: 'utf8' })
+    if (ancestry.status === 1) {
+      return { reviewedCommit, found: true, isAncestor: false }
+    }
+    if (ancestry.status !== 0) {
+      throw new Error(ancestry.error?.message || ancestry.stderr?.trim() || 'git merge-base')
+    }
+    const filesSince = gitPaths(projectRoot, ['log', '--name-only', '-z', '--no-renames', '--diff-merges=first-parent', '--format=', `${reviewedCommit}..HEAD`])
+    const specPath = toProjectRelativePath(projectRoot, join(chantier.directory, 'spec.md'))
+    const reviewedSpec = committedFileText(projectRoot, specPath, reviewedCommit)
+    return {
+      reviewedCommit,
+      found: true,
+      isAncestor: true,
+      codeFilesSince: [...new Set(reviewCodeFiles(filesSince, config))],
+      amendmentsChanged: reviewedSpec === null || amendmentsDiffer(readFileSync(join(chantier.directory, 'spec.md'), 'utf8'), reviewedSpec),
+    }
+  } catch (error) {
+    return { reviewedCommit, gitError: error.message }
+  }
 }
 
 // Files changed in the working tree (uncommitted, including untracked).
@@ -373,6 +432,30 @@ function commandSetTdd([value, ...reasonWords]) {
   console.log(value === 'yes'
     ? 'Chantier en TDD : tests écrits, commités et figés avant l’implémentation.'
     : 'Chantier sans TDD : pas de phase tests d’abord imposée.')
+}
+
+// Records the reviewed commit (full hash of HEAD) once the review has no blocking point left.
+function commandSetReviewed() {
+  const projectRoot = findProjectRoot()
+  const config = requireConfig(projectRoot)
+  const chantier = requireActiveChantier(projectRoot, config)
+  const uncommitted = uncommittedFiles(projectRoot)
+  const specPath = toProjectRelativePath(projectRoot, join(chantier.directory, 'spec.md'))
+  const refusal = setReviewedRefusal({
+    chantier,
+    uncommittedCode: reviewCodeFiles(uncommitted, config),
+    specUncommitted: uncommitted.some((file) => (config.ignoreCase ? file.toLowerCase() === specPath.toLowerCase() : file === specPath)),
+    changedTests: testDrivenPhase(chantier) === 'implementing'
+      ? testFilesChangedSince(projectRoot, config, chantier.spec.data.tests_commit)
+      : [],
+  })
+  if (refusal) {
+    console.error(`Revue non enregistrée : ${refusal}`)
+    process.exit(2)
+  }
+  const commit = git(projectRoot, ['rev-parse', 'HEAD'])
+  updateSpec(projectRoot, config, { reviewed_commit: commit })
+  console.log(`Revue enregistrée au commit ${commit}. Commite la spec : docs(chantiers): [${chantier.id}] review`)
 }
 
 function commandTestsChanged() {
@@ -574,11 +657,12 @@ function hookSessionStart() {
     return
   }
   const { branch, chantier } = activeChantier(projectRoot, config)
+  const review = reviewSummary(projectRoot, config, chantier)
   const summary = {
     branch,
-    chantier: chantier ? { id: chantier.id, title: chantier.spec?.data.title, type: chantier.spec?.data.type, status: chantier.spec?.data.status, files: chantier.files } : null,
+    chantier: chantier ? { id: chantier.id, title: chantier.spec?.data.title, type: chantier.spec?.data.type, status: chantier.spec?.data.status, files: chantier.files, ...review } : null,
     bypass: readBypass(projectRoot, branch),
-    nextStep: nextStep(chantier),
+    nextStep: nextStep(chantier, review.reviewState),
   }
   const statusText = summary.chantier
     ? formatStatus({ ...summary, chantier: { ...summary.chantier, specProblems: [] } })

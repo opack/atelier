@@ -387,9 +387,87 @@ export function reopenTestsRefusal(chantier) {
   return null
 }
 
+// ---------- Review ----------
+
+// Files that count as code for the review: everything outside the free paths, the chantier
+// documents and the atelier state. `.claude/**` is not free here, so that checks and hooks
+// cannot be weakened after the review. Tests count as code.
+export function reviewCodeFiles(files, config) {
+  const freePaths = config.freePaths.filter((pattern) => !pattern.toLowerCase().startsWith('.claude/'))
+  const ignoredPaths = [...freePaths, `${config.chantiersDir}/**`, '.atelier/**']
+  return files.filter((file) => !matchesAny(file, ignoredPaths, config.ignoreCase))
+}
+
+// Why the review recorded in the spec no longer covers the chantier, as a list (empty when it is
+// current). `facts` = { reviewedCommit, gitError, found, isAncestor, codeFilesSince,
+// amendmentsChanged }, read from git by the command.
+export function reviewProblems(facts) {
+  const { reviewedCommit, gitError, found, isAncestor, codeFilesSince = [], amendmentsChanged } = facts
+  if (!reviewedCommit) {
+    return ['Aucune revue enregistrée (reviewed_commit absent).']
+  }
+  const commit = reviewedCommit.slice(0, 7)
+  if (gitError) {
+    return [`Revue obsolète : impossible d’évaluer le commit revu ${commit} (${gitError}).`]
+  }
+  if (!found) {
+    return [`Revue obsolète : le commit revu ${commit} est introuvable (rebase ?).`]
+  }
+  if (!isAncestor) {
+    return [`Revue obsolète : le commit revu ${commit} n’est plus un ancêtre de HEAD (rebase ?).`]
+  }
+  const problems = []
+  if (codeFilesSince.length) {
+    problems.push(`Revue obsolète : du code a été commité depuis le commit revu ${commit} (${codeFilesSince.join(', ')}).`)
+  }
+  if (amendmentsChanged) {
+    problems.push(`Revue obsolète : la spec a été amendée depuis le commit revu ${commit}.`)
+  }
+  return problems
+}
+
+// 'none' (no review recorded), 'current' or 'stale'.
+export function reviewState(facts) {
+  if (!facts.reviewedCommit) {
+    return 'none'
+  }
+  return reviewProblems(facts).length ? 'stale' : 'current'
+}
+
+// Whether the amendment entries differ between two versions of the spec text.
+export function amendmentsDiffer(text, otherText) {
+  const entries = (candidate) => parseAmendments(parseFrontMatter(candidate).body)
+  const [one, other] = [entries(text), entries(otherText)]
+  return one.sectionCount !== other.sectionCount || one.entries.join('\0') !== other.entries.join('\0')
+}
+
+// Why `atelier set-reviewed` is refused, or null. `context` = { chantier, uncommittedCode (code
+// files changed and not committed), specUncommitted, changedTests (frozen tests changed since
+// tests_commit) }.
+export function setReviewedRefusal({ chantier, uncommittedCode, specUncommitted, changedTests }) {
+  if (specStatus(chantier?.spec) !== 'signed') {
+    return `la spec de ${chantier?.id ?? 'ce chantier'} n’est pas signée.`
+  }
+  if (uncommittedCode.length) {
+    return `du code n’est pas commité (${uncommittedCode.join(', ')}). La revue porte sur un commit : commite d’abord.`
+  }
+  if (specUncommitted) {
+    return 'la spec a des changements non commités. Commite-la d’abord.'
+  }
+  const phase = testDrivenPhase(chantier)
+  if (phase === 'writing-tests') {
+    return 'les tests ne sont pas figés (/atelier:write-tests).'
+  }
+  if (phase === 'implementing' && changedTests.length) {
+    return `des tests ont changé depuis leur gel (${changedTests.join(', ')}).`
+  }
+  return null
+}
+
 // ---------- Next step ----------
 
-export function nextStep(chantier) {
+// `review` is the state of the review ('none', 'current' or 'stale'), computed by the command.
+export function nextStep(chantier, review = 'none') {
   if (!chantier) {
     return 'Aucun chantier actif sur cette branche. Ouvrir un chantier : /atelier:new'
   }
@@ -413,12 +491,21 @@ export function nextStep(chantier) {
   }
   const phase = testDrivenPhase(chantier)
   if (phase === 'writing-tests') {
-    return 'Tests d’abord : écrire les tests, vérifier qu’ils échouent, les commiter (aucune implémentation) : /atelier:tests'
+    return 'Tests d’abord : écrire les tests, vérifier qu’ils échouent, les commiter (aucune implémentation) : /atelier:write-tests'
   }
-  if (phase === 'implementing') {
-    return 'Implémenter jusqu’à ce que tous les tests passent, sans modifier les tests, puis commiter : /atelier:build ; ensuite clôturer : /atelier:close'
+  const build = phase === 'implementing'
+    ? 'Implémenter jusqu’à ce que tous les tests passent, sans modifier les tests, puis commiter : /atelier:build'
+    : 'Implémenter (sans TDD pour ce chantier), puis commiter : /atelier:build'
+  if (type === 'SPIKE') {
+    return `${build} ; ensuite clôturer : /atelier:close`
   }
-  return 'Implémenter (sans TDD pour ce chantier), puis commiter : /atelier:build ; ensuite clôturer : /atelier:close'
+  if (review === 'current') {
+    return 'Revue à jour : clôturer (bilan, verdict) : /atelier:close'
+  }
+  if (review === 'stale') {
+    return 'Le code ou la spec a changé depuis la revue : refaire relire : /atelier:review'
+  }
+  return `${build} ; ensuite faire relire : /atelier:review`
 }
 
 // ---------- Test-driven phases ----------

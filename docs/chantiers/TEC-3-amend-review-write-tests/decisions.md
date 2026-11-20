@@ -38,3 +38,10 @@
 - Version commitée lue par `git ls-files --with-tree=HEAD -- ":(icase,literal)<chemin>"`, puis `git rev-parse --verify --quiet HEAD:<chemin>` et `git show`. `--with-tree` retrouve aussi une spec retirée de l'index (`git rm --cached`) ; `literal` évite qu'un `*` du chemin soit lu comme un motif. Pas encore de commit (`HEAD` absent) ou fichier absent de `HEAD` : le fichier actuel sert de référence ; toute autre sortie de git : refus. Écarté : `git ls-tree`, qui refuse `:(icase)`.
 - Champs d'en-tête comparés à la référence : les clés lues par `parseFrontMatter` (lignes `clé: valeur`). Une ligne d'en-tête qui n'est pas de cette forme n'est pas comparée ; limite assumée, l'en-tête des templates n'en contient pas.
 - Le contrôle des champs réservés reste fait en premier et s'applique aussi en brouillon, comme avant ; les règles propres à la spec non brouillon (champs figés, entrées) viennent ensuite.
+
+## 2026-11-20 : tranche 3, état de la revue
+- `reviewState` ne reçoit pas le type du chantier, contrairement au plan : il décrit des faits (revue absente, à jour, obsolète) ; l'exemption du `SPIKE` est appliquée par `nextStep` (et le sera par la clôture). Un `SPIKE` revu puis modifié affiche donc une revue obsolète dans `status`, sans conséquence sur la prochaine étape.
+- Les raisons d'obsolescence viennent d'une seule fonction, `reviewProblems`, que `close-check` réutilisera ; `status --json` les expose aussi (`reviewProblems`), en plus de `reviewedCommit` et `reviewState` demandés par la spec.
+- Le code non commité n'entre pas dans l'état de la revue (il concerne le travail en cours, pas le commit revu) ; `close-check` le vérifie à part.
+- Spec absente du commit revu : comptée comme amendée (revue obsolète).
+- Les messages de `nextStep` renvoient déjà vers `/atelier:write-tests` ; le skill est renommé en tranche 5.

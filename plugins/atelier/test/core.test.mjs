@@ -5,6 +5,7 @@ import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import {
   DEFAULT_CONFIG,
+  amendmentsDiffer,
   appendAmendmentEntry,
   applyToolEdit,
   checkSpec,
@@ -22,7 +23,11 @@ import {
   refreezeTestsEntry,
   reopenTestsEntry,
   reopenTestsRefusal,
+  reviewCodeFiles,
+  reviewProblems,
+  reviewState,
   setFrontMatterValues,
+  setReviewedRefusal,
   setStatusRefusal,
   testDrivenPhase,
   toProjectRelativePath,
@@ -512,10 +517,73 @@ describe('next step', () => {
     assert.match(nextStep(null), /\/atelier:new/)
     assert.match(nextStep(draftChantier), /\/atelier:sign/)
     assert.match(nextStep(signedChantier), /\/atelier:plan/)
-    assert.match(nextStep({ ...signedChantier, files: ['spec.md', 'plan.md'] }), /\/atelier:tests/)
-    assert.match(nextStep({ ...implementingChantier, files: ['spec.md', 'plan.md'] }), /\/atelier:build/)
+    assert.match(nextStep({ ...signedChantier, files: ['spec.md', 'plan.md'] }), /\/atelier:write-tests/)
+    assert.match(nextStep({ ...implementingChantier, files: ['spec.md', 'plan.md'] }), /\/atelier:build.*\/atelier:review/)
     const signedFix = { ...signedChantier, spec: { data: { status: 'signed', type: 'FIX', tdd: 'yes' } } }
-    assert.match(nextStep(signedFix), /\/atelier:tests/)
-    assert.match(nextStep(signedTec), /\/atelier:build/)
+    assert.match(nextStep(signedFix), /\/atelier:write-tests/)
+    assert.match(nextStep(signedTec), /\/atelier:build.*\/atelier:review/)
+  })
+
+  it('goes to close once the review is current, back to review when it is stale', () => {
+    assert.match(nextStep(signedTec, 'current'), /\/atelier:close/)
+    assert.doesNotMatch(nextStep(signedTec, 'current'), /\/atelier:review/)
+    assert.match(nextStep(signedTec, 'stale'), /\/atelier:review/)
+    assert.match(nextStep({ ...signedChantier, files: ['spec.md', 'plan.md'] }, 'current'), /\/atelier:write-tests/, 'tests reopened after the review')
+  })
+
+  it('takes a SPIKE from build to close, without review', () => {
+    const spike = { ...signedTec, id: 'SPIKE-4', spec: { data: { status: 'signed', type: 'SPIKE', tdd: 'no' } } }
+    for (const review of ['none', 'stale', 'current']) {
+      assert.match(nextStep(spike, review), /\/atelier:build.*\/atelier:close/, review)
+      assert.doesNotMatch(nextStep(spike, review), /\/atelier:review/, review)
+    }
+  })
+})
+
+describe('review state', () => {
+  const current = { reviewedCommit: 'a'.repeat(40), found: true, isAncestor: true, codeFilesSince: [], amendmentsChanged: false }
+
+  it('is none without a reviewed commit, current when nothing changed since', () => {
+    assert.equal(reviewState({ reviewedCommit: null }), 'none')
+    assert.equal(reviewState(current), 'current')
+    assert.deepEqual(reviewProblems(current), [])
+  })
+
+  it('is stale after code, a rebase, a lost commit, an amendment or a git error', () => {
+    const cases = {
+      code: [{ codeFilesSince: ['src/a.ts'] }, /src\/a\.ts/],
+      'not an ancestor': [{ isAncestor: false }, /ancêtre/],
+      'commit not found': [{ found: false, isAncestor: undefined }, /introuvable/],
+      amendment: [{ amendmentsChanged: true }, /amendée/],
+      'git error': [{ gitError: 'fatal: bad object' }, /bad object/],
+    }
+    for (const [name, [overrides, message]] of Object.entries(cases)) {
+      const facts = { ...current, ...overrides }
+      assert.equal(reviewState(facts), 'stale', name)
+      assert.match(reviewProblems(facts).join('\n'), message, name)
+    }
+  })
+
+  it('counts tests and .claude as code, but not documentation, chantier documents or atelier state', () => {
+    const files = ['src/a.ts', 'src/a.test.ts', '.claude/atelier.json', '.claude/settings.json', 'docs/notes.md', 'README.md', 'docs/chantiers/TEC-3-x/spec.md', '.atelier/gate.json']
+    assert.deepEqual(reviewCodeFiles(files, DEFAULT_CONFIG), ['src/a.ts', 'src/a.test.ts', '.claude/atelier.json', '.claude/settings.json'])
+    assert.deepEqual(reviewCodeFiles(['.CLAUDE/atelier.json', 'DOCS/x.md'], { ...DEFAULT_CONFIG, ignoreCase: true }), ['.CLAUDE/atelier.json'])
+  })
+
+  it('tells an amendment since the review from an unchanged list of entries', () => {
+    const spec = '---\nid: TEC-3\n---\n# T\n\n## Amendements\n<!-- x -->\n- 2026-11-01 : a\n'
+    assert.equal(amendmentsDiffer(spec, spec.replace(/\n/g, '\r\n').replace('# T', '# T modifié')), false)
+    assert.equal(amendmentsDiffer(spec, `${spec}- 2026-11-20 : b\n`), true)
+  })
+
+  it('records a review only on a signed, committed chantier with frozen, unchanged tests', () => {
+    const clean = { chantier: signedTec, uncommittedCode: [], specUncommitted: false, changedTests: [] }
+    assert.equal(setReviewedRefusal(clean), null)
+    assert.equal(setReviewedRefusal({ ...clean, chantier: implementingChantier }), null)
+    assert.match(setReviewedRefusal({ ...clean, chantier: draftChantier }), /pas signée/)
+    assert.match(setReviewedRefusal({ ...clean, uncommittedCode: ['src/a.ts'] }), /src\/a\.ts/)
+    assert.match(setReviewedRefusal({ ...clean, specUncommitted: true }), /spec/)
+    assert.match(setReviewedRefusal({ ...clean, chantier: signedChantier }), /pas figés/)
+    assert.match(setReviewedRefusal({ ...clean, chantier: implementingChantier, changedTests: ['src/a.test.ts'] }), /a\.test\.ts/)
   })
 })
