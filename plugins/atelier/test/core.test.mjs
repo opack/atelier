@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import path, { join } from 'node:path'
-import { describe, it } from 'node:test'
+import { after, describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import {
   DEFAULT_CONFIG,
+  activeChantier,
   amendmentsDiffer,
   appendAmendmentEntry,
   applyToolEdit,
@@ -33,6 +36,7 @@ import {
   testDrivenPhase,
   toProjectRelativePath,
 } from '../lib/core.mjs'
+import * as core from '../lib/core.mjs'
 
 const templatesDirectory = fileURLToPath(new URL('../templates/', import.meta.url))
 
@@ -299,6 +303,77 @@ describe('write guard on a spec that is no longer a draft', () => {
     }
     assert.equal(setStatusRefusal(draftChantier, 'draft'), null)
     assert.equal(setStatusRefusal(signedChantier, 'abandoned'), null)
+  })
+})
+
+describe('write guard on a spec whose committed version is a draft', () => {
+  const relativePath = 'docs/chantiers/TEC-5-x/spec.md'
+  const draftText = '---\nid: TEC-5\ntype: TEC\ntitle: Brouillon\nstatus: draft\ntdd: no\nsigned_by:\nsigned_at:\n---\n# TEC-5\n\n## 1. Quoi\nTexte initial.\n\n## Amendements\n<!-- Après signature : une entrée datée. -->\n'
+  const signedText = draftText.replace('status: draft', 'status: signed').replace('signed_by:', 'signed_by: Ana').replace('signed_at:', 'signed_at: 2026-11-20')
+  const body = { old_string: 'Texte initial.', new_string: 'Texte corrigé.' }
+  const entry = { old_string: '<!-- Après signature : une entrée datée. -->\n', new_string: '<!-- Après signature : une entrée datée. -->\n- 2026-11-21 : quoi précisé\n' }
+
+  // Asks the guard for one write on `current`, with `committed` as the version in HEAD (null: absent).
+  function write(current, committed, toolName, input) {
+    const proposed = applyToolEdit(current, toolName, input)
+    return decide({
+      relativePath,
+      toolName,
+      existingSpec: parseFrontMatter(current),
+      proposedSpec: proposed === null ? null : parseFrontMatter(proposed),
+      committedSpec: committed === null ? null : parseFrontMatter(committed),
+    })
+  }
+
+  // [label, working version, tool, input, expected]; each case is checked with a committed draft (V-1, V-2)
+  // and with no committed spec at all (V-3): the committed draft must change nothing.
+  const reserved = [
+    ['status', 'status: draft', 'status: signed'],
+    ['signed_by', 'signed_by:', 'signed_by: Ana'],
+    ['signed_at', 'signed_at:', 'signed_at: 2026-11-20'],
+    ['done_at', 'signed_at:', 'signed_at:\ndone_at: 2026-11-21'],
+    ['tests_commit', 'signed_at:', 'signed_at:\ntests_commit: abc'],
+    ['reviewed_commit', 'signed_at:', 'signed_at:\nreviewed_commit: abc'],
+  ]
+  const cases = [
+    ['V-1 draft: full rewrite', draftText, 'Write', { content: draftText.replace('Texte initial.', 'Tout réécrit.') }, true],
+    ['V-1 draft: body edit', draftText, 'Edit', body, true],
+    ['V-1 draft: tdd and title edits', draftText, 'MultiEdit', { edits: [{ old_string: 'tdd: no', new_string: 'tdd: yes' }, { old_string: 'title: Brouillon', new_string: 'title: Autre' }] }, true],
+    ...reserved.map(([field, from, to]) => [`V-1 draft: reserved field ${field}`, draftText, 'Edit', { old_string: from, new_string: to }, false]),
+    ['V-2 signed, not committed: full rewrite', signedText, 'Write', { content: signedText }, false],
+    ['V-2 signed, not committed: body edit without entry', signedText, 'Edit', body, false],
+    ['V-2 signed, not committed: body edit with a new entry', signedText, 'MultiEdit', { edits: [entry, body] }, true],
+    ['V-2 signed, not committed: back to draft', signedText, 'MultiEdit', { edits: [entry, { old_string: 'status: signed', new_string: 'status: draft' }] }, false],
+  ]
+
+  for (const [label, current, toolName, input, expected] of cases) {
+    it(label, () => {
+      const withDraft = write(current, draftText, toolName, input)
+      assert.equal(withDraft.allowed, expected, 'committed draft')
+      assert.deepEqual(withDraft, write(current, null, toolName, input), 'V-3: same decision as with no committed spec')
+    })
+  }
+
+  it('V-2/V-3 takes the signed working version as reference, not an older committed draft', () => {
+    // Draft committed, then touched up by the critical review and signed without committing in between.
+    const olderDraft = draftText.replace('Texte initial.', 'Texte du premier brouillon.')
+    const noChange = { old_string: 'Texte initial.', new_string: 'Texte initial.' }
+    for (const [label, toolName, input, expected] of [
+      ['edit leaving the body as signed', 'Edit', noChange, true],
+      ['body edit without entry', 'Edit', body, false],
+      ['body edit with a new entry', 'MultiEdit', { edits: [entry, body] }, true],
+      ['full rewrite', 'Write', { content: signedText }, false],
+    ]) {
+      const withDraft = write(signedText, olderDraft, toolName, input)
+      assert.equal(withDraft.allowed, expected, label)
+      assert.deepEqual(withDraft, write(signedText, null, toolName, input), `${label}: same decision as with no committed spec`)
+    }
+  })
+
+  it('names the reserved field and the amendment rule in its refusals', () => {
+    assert.match(write(draftText, draftText, 'Edit', { old_string: 'status: draft', new_string: 'status: signed' }).reason, /« status »/)
+    assert.match(write(signedText, draftText, 'Edit', body).reason, /Amendements/)
+    assert.match(write(signedText, draftText, 'Write', { content: signedText }).reason, /ne se réécrit pas/)
   })
 })
 
@@ -646,5 +721,267 @@ describe('review state', () => {
     assert.match(setReviewedRefusal({ ...clean, specUncommitted: true }), /spec/)
     assert.match(setReviewedRefusal({ ...clean, chantier: signedChantier }), /pas figés/)
     assert.match(setReviewedRefusal({ ...clean, chantier: implementingChantier, changedTests: ['src/a.test.ts'] }), /a\.test\.ts/)
+  })
+})
+
+// ---------- TEC-6: chantier deduced from the branch's own commits ----------
+
+describe('chantier id from commit subjects', () => {
+  it('V-1 : rend l’identifiant du commit le plus récent qui en porte un', () => {
+    assert.equal(
+      core.chantierIdFromCommitSubjects(['wip', 'docs(chantiers): [TEC-5] spec draft', 'docs(chantiers): [TEC-4] spec draft']),
+      'TEC-5',
+    )
+  })
+
+  it('V-2 : crochets obligatoires, casse ignorée, type inconnu ignoré, liste vide', () => {
+    assert.equal(core.chantierIdFromCommitSubjects(['merge after FEAT-4']), null)
+    assert.equal(core.chantierIdFromCommitSubjects(['fix(x): [feat-12] typo']), 'FEAT-12')
+    assert.equal(core.chantierIdFromCommitSubjects(['chore: [JIRA-3] bump']), null)
+    assert.equal(core.chantierIdFromCommitSubjects(['chore: [JIRA-3] bump', 'docs: [SPIKE-2] notes']), 'SPIKE-2')
+    assert.equal(core.chantierIdFromCommitSubjects([]), null)
+  })
+})
+
+const atelierBin = fileURLToPath(new URL('../bin/atelier', import.meta.url))
+const gitIdentity = ['-c', 'user.name=Test', '-c', 'user.email=test@example.com', '-c', 'commit.gpgsign=false']
+
+const temporaryDirectories = []
+after(() => temporaryDirectories.forEach((directory) => rmSync(directory, { recursive: true, force: true })))
+
+function temporaryDirectory(prefix) {
+  const directory = mkdtempSync(join(tmpdir(), prefix))
+  temporaryDirectories.push(directory)
+  return directory
+}
+
+function git(directory, ...gitArguments) {
+  return execFileSync('git', [...gitIdentity, ...gitArguments], { cwd: directory, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
+}
+
+function commit(directory, subject) {
+  git(directory, 'commit', '--allow-empty', '-q', '-m', subject)
+}
+
+// A repository with atelier installed and a first commit on `defaultBranch`.
+function makeRepository(defaultBranch = 'main') {
+  const directory = temporaryDirectory('atelier-tec6-')
+  git(directory, 'init', '-q', '-b', defaultBranch)
+  mkdirSync(join(directory, '.claude'))
+  writeFileSync(join(directory, '.claude', 'atelier.json'), JSON.stringify({ chantiersDir: 'docs/chantiers' }))
+  git(directory, 'add', '.')
+  commit(directory, 'chore: init')
+  return directory
+}
+
+function addChantierSpec(directory, id, slug) {
+  const chantierDirectory = join(directory, 'docs', 'chantiers', `${id}-${slug}`)
+  mkdirSync(chantierDirectory, { recursive: true })
+  writeFileSync(join(chantierDirectory, 'spec.md'), `---\nid: ${id}\ntype: TEC\ntitle: Essai ${id}\nstatus: draft\ntdd: yes\n---\n\n# ${id}\n`)
+  git(directory, 'add', '.')
+  commit(directory, `docs(chantiers): [${id}] spec draft`)
+}
+
+function atelier(directory, ...cliArguments) {
+  return execFileSync(process.execPath, [atelierBin, ...cliArguments], {
+    cwd: directory,
+    encoding: 'utf8',
+    env: { ...process.env, CLAUDE_PROJECT_DIR: directory },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  })
+}
+
+// main ← claude/x (commit [TEC-9] + its chantier folder) ← tec/TEC-8-y (no own commit)
+function makeDeductionRepository() {
+  const directory = makeRepository('main')
+  git(directory, 'switch', '-q', '-c', 'claude/x')
+  addChantierSpec(directory, 'TEC-9', 'x')
+  git(directory, 'branch', 'tec/TEC-8-y')
+  return directory
+}
+
+describe('active chantier deduced from commits', () => {
+  const config = { ...DEFAULT_CONFIG, chantiersDir: 'docs/chantiers' }
+
+  it('V-3 : sur une branche non conforme, déduit le chantier du commit [<ID>]', () => {
+    const directory = makeDeductionRepository()
+    const { branch, chantier, source } = activeChantier(directory, config)
+    assert.equal(branch, 'claude/x')
+    assert.equal(chantier?.id, 'TEC-9')
+    assert.ok(chantier.directory, 'le dossier du chantier déduit est trouvé')
+    assert.equal(chantier.spec?.data.status, 'draft')
+    assert.equal(source, 'commits')
+  })
+
+  it('V-3 : sur la branche par défaut, aucun chantier', () => {
+    const directory = makeDeductionRepository()
+    git(directory, 'switch', '-q', 'main')
+    const { chantier, source } = activeChantier(directory, config)
+    assert.equal(chantier, null)
+    assert.equal(source, null)
+  })
+
+  it('V-3 : le nom de branche reste prioritaire sur les commits', () => {
+    const directory = makeDeductionRepository()
+    git(directory, 'switch', '-q', 'tec/TEC-8-y')
+    const { chantier, source } = activeChantier(directory, config)
+    assert.equal(chantier?.id, 'TEC-8')
+    assert.equal(source, 'branch')
+  })
+
+  it('V-4 : sans branche par défaut identifiable, aucun chantier et aucune erreur', () => {
+    const directory = makeRepository('trunk')
+    git(directory, 'switch', '-q', '-c', 'claude/x')
+    addChantierSpec(directory, 'TEC-9', 'x')
+    const { branch, chantier, source } = activeChantier(directory, config)
+    assert.equal(branch, 'claude/x')
+    assert.equal(chantier, null)
+    assert.equal(source, null)
+  })
+
+  it('V-4 : HEAD détachée, aucun chantier déduit', () => {
+    const directory = makeDeductionRepository()
+    git(directory, 'switch', '-q', '--detach', 'claude/x')
+    const { chantier } = activeChantier(directory, config)
+    assert.equal(chantier, null)
+  })
+
+  it('V-5 : un main local en avance sur origin/main n’a pas de chantier actif', () => {
+    const origin = temporaryDirectory('atelier-tec6-origin-')
+    git(origin, 'init', '-q', '--bare', '-b', 'main')
+    const directory = makeRepository('main')
+    git(directory, 'remote', 'add', 'origin', origin)
+    git(directory, 'push', '-q', 'origin', 'main')
+    git(directory, 'fetch', '-q', 'origin')
+    addChantierSpec(directory, 'TEC-9', 'x')
+    // Without refs/remotes/origin/HEAD (as in cloud clones), then with it.
+    assert.equal(activeChantier(directory, config).chantier, null)
+    git(directory, 'remote', 'set-head', 'origin', 'main')
+    assert.equal(activeChantier(directory, config).chantier, null)
+  })
+
+  it('V-5 : avec une origine, la base est origin/main pour une branche non conforme', () => {
+    const origin = temporaryDirectory('atelier-tec6-origin-')
+    git(origin, 'init', '-q', '--bare', '-b', 'main')
+    const directory = makeRepository('main')
+    git(directory, 'remote', 'add', 'origin', origin)
+    git(directory, 'push', '-q', 'origin', 'main')
+    git(directory, 'fetch', '-q', 'origin')
+    git(directory, 'switch', '-q', '-c', 'claude/x')
+    addChantierSpec(directory, 'TEC-9', 'x')
+    const { chantier, source } = activeChantier(directory, config)
+    assert.equal(chantier?.id, 'TEC-9')
+    assert.equal(source, 'commits')
+  })
+})
+
+describe('chantier source shown to the user', () => {
+  it('V-6 : status --json expose chantierSource', () => {
+    const directory = makeDeductionRepository()
+    assert.equal(JSON.parse(atelier(directory, 'status', '--json')).chantierSource, 'commits')
+    git(directory, 'switch', '-q', 'tec/TEC-8-y')
+    assert.equal(JSON.parse(atelier(directory, 'status', '--json')).chantierSource, 'branch')
+    git(directory, 'switch', '-q', 'main')
+    assert.equal(JSON.parse(atelier(directory, 'status', '--json')).chantierSource, null)
+  })
+
+  it('V-6 : status et le hook de démarrage signalent un chantier déduit des commits', () => {
+    const directory = makeDeductionRepository()
+    assert.match(atelier(directory, 'status'), /TEC-9.*\(déduit des commits\)/)
+    assert.match(atelier(directory, 'hook-session-start'), /TEC-9.*\(déduit des commits\)/)
+  })
+
+  it('V-6 : rien de tel quand le chantier vient du nom de branche', () => {
+    const directory = makeDeductionRepository()
+    git(directory, 'switch', '-q', 'tec/TEC-8-y')
+    assert.doesNotMatch(atelier(directory, 'status'), /déduit des commits/)
+    assert.doesNotMatch(atelier(directory, 'hook-session-start'), /déduit des commits/)
+  })
+})
+
+// A repository whose origin (local bare repository) holds `main` and the given extra branches.
+function makeRepositoryWithOrigin(extraBranches = []) {
+  const origin = temporaryDirectory('atelier-tec6-origin-')
+  git(origin, 'init', '-q', '--bare', '-b', 'main')
+  const directory = makeRepository('main')
+  git(directory, 'remote', 'add', 'origin', origin)
+  for (const [branch, subject] of extraBranches) {
+    git(directory, 'switch', '-q', '-c', branch, 'main')
+    commit(directory, subject)
+  }
+  git(directory, 'push', '-q', 'origin', 'main', ...extraBranches.map(([branch]) => branch))
+  git(directory, 'fetch', '-q', 'origin')
+  return directory
+}
+
+describe('default branch resolved through origin/HEAD', () => {
+  const config = { ...DEFAULT_CONFIG, chantiersDir: 'docs/chantiers' }
+
+  it('V-7 : avec origin/HEAD vers origin/main, déduit le chantier sur une branche non conforme', () => {
+    const directory = makeRepositoryWithOrigin()
+    git(directory, 'remote', 'set-head', 'origin', 'main')
+    git(directory, 'switch', '-q', '-c', 'claude/x', 'main')
+    addChantierSpec(directory, 'TEC-9', 'x')
+    const { chantier, source } = activeChantier(directory, config)
+    assert.equal(chantier?.id, 'TEC-9')
+    assert.equal(source, 'commits')
+  })
+
+  it('V-8 : origin/HEAD vers develop : aucun chantier sur develop, déduction depuis develop ailleurs', () => {
+    // develop carries a merged chantier commit that main does not have.
+    const directory = makeRepositoryWithOrigin([['develop', 'feat(x): [TEC-7] merged work']])
+    git(directory, 'remote', 'set-head', 'origin', 'develop')
+
+    git(directory, 'switch', '-q', 'develop')
+    assert.deepEqual(
+      (({ chantier, source }) => ({ chantier, source }))(activeChantier(directory, config)),
+      { chantier: null, source: null },
+    )
+
+    git(directory, 'switch', '-q', '-c', 'claude/empty', 'develop')
+    assert.equal(activeChantier(directory, config).chantier, null, 'la base est origin/develop, pas origin/main')
+
+    git(directory, 'switch', '-q', '-c', 'claude/x', 'develop')
+    addChantierSpec(directory, 'TEC-9', 'x')
+    const { chantier, source } = activeChantier(directory, config)
+    assert.equal(chantier?.id, 'TEC-9')
+    assert.equal(source, 'commits')
+  })
+
+  it('V-10 : la garde d’écriture applique les règles du chantier déduit des commits', () => {
+    const directory = makeDeductionRepository()
+    const guard = () => execFileSync(process.execPath, [atelierBin, 'hook-guard'], {
+      cwd: directory,
+      encoding: 'utf8',
+      env: { ...process.env, CLAUDE_PROJECT_DIR: directory },
+      input: JSON.stringify({
+        cwd: directory,
+        tool_name: 'Write',
+        tool_input: { file_path: join(directory, 'src', 'app.js'), content: 'export const a = 1\n' },
+      }),
+    })
+
+    // Draft spec: code is refused, with the deduced chantier named.
+    const draftDecision = JSON.parse(guard()).hookSpecificOutput
+    assert.equal(draftDecision.permissionDecision, 'deny')
+    assert.match(draftDecision.permissionDecisionReason, /TEC-9/)
+
+    // Signed spec (no TDD), committed on the same imposed branch: code is allowed.
+    writeFileSync(
+      join(directory, 'docs', 'chantiers', 'TEC-9-x', 'spec.md'),
+      '---\nid: TEC-9\ntype: TEC\ntitle: Essai TEC-9\nstatus: signed\ntdd: no\nsigned_by: Test\nsigned_at: 2026-11-20\n---\n\n# TEC-9\n',
+    )
+    git(directory, 'add', '.')
+    commit(directory, 'docs(chantiers): [TEC-9] sign spec')
+    assert.equal(guard().trim(), '')
+  })
+
+  it('V-9 : une branche non conforme sans commit propre n’a pas de chantier', () => {
+    const directory = makeDeductionRepository()
+    git(directory, 'switch', '-q', '-c', 'claude/empty', 'main')
+    const { branch, chantier, source } = activeChantier(directory, config)
+    assert.equal(branch, 'claude/empty')
+    assert.equal(chantier, null)
+    assert.equal(source, null)
   })
 })

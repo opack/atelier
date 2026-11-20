@@ -9,7 +9,8 @@ Le **chantier** est l’unité de travail d’atelier : une modification du logi
 Format `<TYPE>-<numéro>` : `FEAT-412`, `FIX-431`, `TEC-437`.
 
 - Le **compteur est unique par projet**, tous types confondus. `FIX-431` peut suivre `FEAT-430`.
-- Sans identifiant fourni, `/atelier:new` prend le numéro suivant le plus grand déjà utilisé, y compris dans l’historique git (les anciens préfixes comme `FEA-26` ou `BUG-421` comptent).
+- Sans identifiant fourni, `/atelier:new` récupère d’abord le remote (`git fetch`), puis prend le numéro suivant le plus grand déjà utilisé, y compris dans l’historique git de toutes les branches (les anciens préfixes comme `FEA-26` ou `BUG-421` comptent).
+- Le commit du brouillon (`docs(chantiers): [<ID>] spec draft`), poussé dès l’ouverture, **réserve le numéro** : les autres le voient après leur propre `git fetch`. Un numéro réservé reste pris, même si le chantier est abandonné ou renuméroté.
 
 ## Partout le même identifiant
 
@@ -25,9 +26,13 @@ Le type de chantier est indépendant du préfixe de commit : un chantier `TEC` p
 
 ## Le chantier actif
 
-atelier déduit le chantier en cours **du nom de la branche**. Le code est bloqué :
+atelier déduit le chantier en cours **du nom de la branche** (`<type>/<ID>-<slug>`).
 
-- sur une branche sans chantier (`main`, HEAD détachée) : on ne travaille pas directement sur la branche principale ;
+Quand la branche est imposée et ne porte pas d’identifiant (session Claude Code cloud sur `claude/...`, convention d’équipe comme `feature/JIRA-123`), atelier lit **les commits propres à la branche** : le chantier actif est celui du commit `[<ID>]` le plus récent entre la branche par défaut (`origin/HEAD`, sinon `origin/main`, `origin/master`, `main`, `master`) et `HEAD`. `atelier status` l’indique par « (déduit des commits) ». Le chantier n’est reconnu qu’après son premier commit `[<ID>]`. Le nom de branche, s’il porte un identifiant, reste prioritaire ; sur la branche par défaut, aucune déduction.
+
+Le code est bloqué :
+
+- sur une branche sans chantier (`main`, HEAD détachée, branche sans commit `[<ID>]`) : on ne travaille pas directement sur la branche principale ;
 - tant que la spec est en brouillon ;
 - une fois le chantier clos (`done` ou `abandoned`) : une nouvelle modification, c’est un nouveau chantier.
 
