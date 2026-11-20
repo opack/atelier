@@ -12,7 +12,7 @@ Arguments reçus : `$ARGUMENTS`
 ## 1. Préalables
 
 - Lance `atelier status --json`. Si `installed` vaut `false`, arrête-toi et propose `/atelier:init`.
-- Si un chantier est actif (nom de branche ou commits de la branche), demande s'il faut en ouvrir un nouveau ou continuer celui-ci.
+- Si un chantier est actif (nom de branche ou commits de la branche), demande s'il faut en ouvrir un nouveau ou continuer celui-ci. Si tu continues un chantier dont la spec est en brouillon, toute retouche de la spec est commitée et poussée comme en §7, avec le même message.
 - Si le dépôt a des modifications non commitées, signale-le avant de changer de branche.
 
 ## 2. Type
@@ -29,9 +29,10 @@ Déduis le type des arguments s'il est donné ou évident, sinon demande-le :
 
 ## 3. Identifiant, branche, dossier
 
-1. Si l'utilisateur a fourni un identifiant, utilise-le. Sinon : `atelier next-id <TYPE>`.
+1. Si l'utilisateur a fourni un identifiant, utilise-le. Sinon, récupère d'abord le remote pour voir les identifiants déjà pris ailleurs : `git fetch --quiet <remote>`, puis `atelier next-id <TYPE>`. Si le fetch échoue, signale-le (l'identifiant peut entrer en collision avec un chantier non récupéré) sans bloquer.
+   - **Remote** (ici et en §7) : celui de la branche de suivi de la branche courante, sinon `origin`, sinon le seul remote existant. S'il y en a plusieurs sans qu'aucune de ces règles ne tranche, demande. Sans remote : ni fetch ni push.
 2. Slug : 2 à 5 mots du titre, en minuscules, sans accents, séparés par des tirets.
-3. Branche : `git switch -c <type en minuscules>/<ID>-<slug>` depuis la branche par défaut à jour. Si tu n'es pas sur la branche par défaut (branche imposée, par exemple `claude/...` dans une session cloud), demande s'il faut rester sur la branche courante. Si oui, ne crée pas de branche et rappelle que le chantier n'y est reconnu qu'après le premier commit `[<ID>]` (le commit du brouillon).
+3. Branche : `git switch --no-track -c <type en minuscules>/<ID>-<slug> <point de départ>`, le point de départ étant la branche par défaut à jour. `--no-track` est indispensable : partie de `<remote>/<branche par défaut>`, la branche la suivrait sinon, et le push du §7 enverrait le brouillon sur la branche par défaut. Si tu n'es pas sur la branche par défaut (branche imposée, par exemple `claude/...` dans une session cloud), demande s'il faut rester sur la branche courante. Si oui, ne crée pas de branche : le chantier y sera reconnu dès le commit du brouillon `[<ID>]` (§7).
 4. Dossier : `docs/chantiers/<ID>-<slug>/` (ou le `chantiersDir` de la configuration).
 5. Spec : `atelier template spec-<type en minuscules>` ; remplace `{{ID}}`, `{{TITLE}}`, `{{DATE}}` (AAAA-MM-JJ) et écris `spec.md`.
 
@@ -79,4 +80,18 @@ Lance `atelier check-spec docs/chantiers/<ID>-<slug>/spec.md`. Tant qu'il reste 
 
 ## 7. Fin
 
-Ne commite pas encore : la spec est commitée à la signature. Indique : `/atelier:sign` quand la spec te convient.
+Commite la spec seule, même en brouillon :
+
+```
+git add <dossier du chantier>/spec.md
+git commit -m "docs(chantiers): [<ID>] spec draft" -- <dossier du chantier>/spec.md
+```
+
+Le `--` limite le commit à la spec, même si d'autres fichiers étaient déjà dans l'index.
+
+Puis pousse-le, sauf si l'utilisateur le refuse explicitement : le sujet de ce commit, visible de tous après un `git fetch`, **réserve l'identifiant**, quel que soit le nom de la branche distante.
+- Si la branche courante suit une branche distante **autre que la branche par défaut** (par exemple une branche imposée par l'environnement) : `git push <remote> HEAD:<nom distant>`, où `<nom distant>` est `git config branch.<branche>.merge` sans `refs/heads/` (jamais la sortie de `@{u}`, préfixée par le remote : elle créerait une branche distante `origin/…`). Garde cette forme explicite : un `git push` nu est refusé quand les noms local et distant diffèrent.
+- Sinon (pas de suivi, ou suivi de la branche par défaut) : `git push -u <remote> <branche>`. **Ne pousse jamais le brouillon sur la branche par défaut.**
+- Si le push échoue, dis-le : l'identifiant n'est pas réservé tant que le commit n'est pas poussé.
+
+Indique ensuite : `/atelier:sign` quand la spec te convient.

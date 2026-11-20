@@ -7,7 +7,7 @@ atelier est un plugin Claude Code : ces commandes se lancent **dans une session 
 | Commande | Étape | Rôle |
 |---|---|---|
 | `/atelier:init` | Projet | Installe atelier : contrôles, dossiers, section Process du `CLAUDE.md`, déclaration du plugin. |
-| `/atelier:new [type] [source]` | Intention | Ouvre un chantier : identifiant, branche, dossier, spec construite en questionnant les manques, décision TDD. |
+| `/atelier:new [type] [source]` | Intention | Ouvre un chantier : identifiant (après `git fetch`), branche, dossier, spec construite en questionnant les manques, décision TDD, commit et push du brouillon (qui réserve l’identifiant). |
 | `/atelier:sign` | Signature | Complétude, relecture critique, signature sur votre confirmation explicite. |
 | `/atelier:plan` | Conception | Approche, fichiers, tranches → `plan.md` ; décisions → `decisions.md`. |
 | `/atelier:amend <changement>` | Après signature | Modifie la spec signée : entrée datée, impact sur les critères, votre nouvel accord, commit. |
