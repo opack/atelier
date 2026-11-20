@@ -107,3 +107,7 @@ L'état du chantier vit dans l'en-tête de `spec.md` (`status: draft | signed | 
 ## Pas encore disponible
 
 `/atelier:fix` (voie rapide depuis Sentry), `/atelier:discover`, index Notion des chantiers, socle commun partagé entre projets. Ils seront ajoutés quand l'usage les réclamera.
+
+## Documentation
+
+La méthode est présentée en détail sur le site : <https://opack.github.io/atelier/> (sources dans `site/`, `npm run dev` dans ce dossier pour le prévisualiser).

@@ -4,6 +4,7 @@ Plugin Claude Code (et sa marketplace) qui outille un process de développement 
 
 ## Structure
 - `.claude-plugin/marketplace.json` : la marketplace (un seul plugin).
+- `site/` : le site VitePress de la méthode (`npm run dev` / `npm run build` dans `site/`). La page Référence > Templates inclut les fichiers de `plugins/atelier/templates/` au build : à mettre à jour si un template est ajouté ou renommé.
 - `plugins/atelier/` : le plugin. `skills/` (commandes `/atelier:*`, dont le cycle TDD `tests` puis `build`), `agents/`, `hooks/hooks.json`, `templates/`, `bin/atelier` (CLI utilisée par les skills et les hooks), `lib/core.mjs` (logique pure, testée), `lib/cli.mjs` (entrées / sorties).
 
 ## Commandes
