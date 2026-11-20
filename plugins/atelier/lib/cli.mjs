@@ -11,6 +11,7 @@ import {
   appendAmendmentEntry,
   applyToolEdit,
   checkSpec,
+  closeProblems,
   collectUsedIdentifiers,
   configPath,
   decideStop,
@@ -50,6 +51,7 @@ const commands = {
   'reopen-tests': commandReopenTests,
   'set-tdd': commandSetTdd,
   'set-reviewed': commandSetReviewed,
+  'close-check': commandCloseCheck,
   'tests-changed': commandTestsChanged,
   bypass: commandBypass,
   checks: commandChecks,
@@ -264,10 +266,18 @@ function commandSetStatus([status]) {
   }
   const projectRoot = findProjectRoot()
   const config = requireConfig(projectRoot)
-  const refusal = setStatusRefusal(requireActiveChantier(projectRoot, config), status)
+  const chantier = requireActiveChantier(projectRoot, config)
+  const refusal = setStatusRefusal(chantier, status)
   if (refusal) {
     console.error(`Statut refusé : ${refusal}`)
     process.exit(2)
+  }
+  if (status === 'done') {
+    const problems = closeCheckProblems(projectRoot, config, chantier)
+    if (problems.length) {
+      console.error(formatCloseProblems(problems))
+      process.exit(2)
+    }
   }
   const values = status === 'done' ? { status, done_at: today() } : { status }
   const { specPath } = updateSpec(projectRoot, config, values)
@@ -456,6 +466,32 @@ function commandSetReviewed() {
   const commit = git(projectRoot, ['rev-parse', 'HEAD'])
   updateSpec(projectRoot, config, { reviewed_commit: commit })
   console.log(`Revue enregistrée au commit ${commit}. Commite la spec : docs(chantiers): [${chantier.id}] review`)
+}
+
+// Deterministic checks before closing (see closeProblems in lib/core.mjs). Runs the project checks.
+function closeCheckProblems(projectRoot, config, chantier) {
+  return closeProblems({
+    chantier,
+    reviewFacts: reviewFacts(projectRoot, config, chantier),
+    uncommittedCode: reviewCodeFiles(uncommittedFiles(projectRoot), config),
+    checksFailure: runChecks(projectRoot, config),
+  })
+}
+
+function formatCloseProblems(problems) {
+  return `Clôture refusée :\n${problems.map((problem) => `- ${problem}`).join('\n')}\nCorrige, puis refais relire : /atelier:review`
+}
+
+function commandCloseCheck() {
+  const projectRoot = findProjectRoot()
+  const config = requireConfig(projectRoot)
+  const problems = closeCheckProblems(projectRoot, config, requireActiveChantier(projectRoot, config))
+  if (problems.length) {
+    console.error(formatCloseProblems(problems))
+    process.exitCode = 2
+    return
+  }
+  console.log('Clôture possible : revue à jour, travail commité, contrôles verts.')
 }
 
 function commandTestsChanged() {

@@ -10,6 +10,7 @@ import {
   applyToolEdit,
   checkSpec,
   chantierIdFromText,
+  closeProblems,
   decideStop,
   decideWrite,
   highestChantierNumber,
@@ -296,6 +297,51 @@ describe('write guard on a spec that is no longer a draft', () => {
     }
     assert.equal(setStatusRefusal(draftChantier, 'draft'), null)
     assert.equal(setStatusRefusal(signedChantier, 'abandoned'), null)
+  })
+})
+
+describe('close decision', () => {
+  const reviewed = { reviewedCommit: 'a'.repeat(40), found: true, isAncestor: true, codeFilesSince: [], amendmentsChanged: false }
+  const nominal = { chantier: signedTec, reviewFacts: reviewed, uncommittedCode: [], checksFailure: null }
+  const spike = { ...signedTec, id: 'SPIKE-4', spec: { data: { status: 'signed', type: 'SPIKE', tdd: 'no' } } }
+  const refused = (overrides, message, label = JSON.stringify(overrides)) => {
+    const problems = closeProblems({ ...nominal, ...overrides })
+    assert.ok(problems.length, label)
+    assert.match(problems.join('\n'), message, label)
+  }
+  const since = (files) => ({ reviewFacts: { ...reviewed, codeFilesSince: reviewCodeFiles(files, DEFAULT_CONFIG) } })
+
+  it('accepts a current review, with documentation committed after it', () => {
+    assert.deepEqual(closeProblems(nominal), [])
+    assert.deepEqual(closeProblems({ ...nominal, ...since(['docs/chantiers/TEC-3-x/bilan.md', 'README.md']) }), [])
+  })
+
+  it('refuses without review, or after code or tests committed since the review', () => {
+    refused({ reviewFacts: { reviewedCommit: null } }, /Aucune revue/)
+    refused(since(['src/a.ts']), /src\/a\.ts/)
+    refused(since(['src/a.test.ts']), /a\.test\.ts/)
+    refused(since(['src/merged.ts']), /merged\.ts/, 'conflict resolved in a merge: listed by git log --diff-merges=first-parent')
+    refused(since(['src/old.ts', 'docs/old.ts']), /src\/old\.ts/, 'renamed to a free path: listed as delete plus add (--no-renames)')
+    refused(since(['.claude/atelier.json']), /\.claude\/atelier\.json/)
+  })
+
+  it('refuses a stale review: rebase, lost commit, amendment', () => {
+    refused({ reviewFacts: { ...reviewed, isAncestor: false } }, /ancêtre/)
+    refused({ reviewFacts: { ...reviewed, found: false } }, /introuvable/)
+    refused({ reviewFacts: { ...reviewed, amendmentsChanged: true } }, /amendée/)
+  })
+
+  it('refuses uncommitted code, red checks, tests not frozen, an unsigned spec', () => {
+    refused({ uncommittedCode: ['src/a.ts'] }, /pas commité/)
+    refused({ checksFailure: { check: { name: 'tests', command: 'npm test' } } }, /« tests » échoue/)
+    refused({ chantier: signedChantier, reviewFacts: reviewed }, /pas figés/)
+    refused({ chantier: draftChantier }, /pas signée/)
+  })
+
+  it('lets a SPIKE close without review, or after changes since its review, other checks still applied', () => {
+    assert.deepEqual(closeProblems({ ...nominal, chantier: spike, reviewFacts: { reviewedCommit: null } }), [])
+    assert.deepEqual(closeProblems({ ...nominal, chantier: spike, reviewFacts: { ...reviewed, isAncestor: false, codeFilesSince: ['src/a.ts'], amendmentsChanged: true } }), [])
+    refused({ chantier: spike, reviewFacts: { reviewedCommit: null }, uncommittedCode: ['src/a.ts'] }, /pas commité/)
   })
 })
 

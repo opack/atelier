@@ -45,3 +45,8 @@
 - Le code non commité n'entre pas dans l'état de la revue (il concerne le travail en cours, pas le commit revu) ; `close-check` le vérifie à part.
 - Spec absente du commit revu : comptée comme amendée (revue obsolète).
 - Les messages de `nextStep` renvoient déjà vers `/atelier:write-tests` ; le skill est renommé en tranche 5.
+
+## 2026-11-20 : tranche 4, clôture
+- `close-check` lance les contrôles même quand un autre problème est déjà trouvé : la liste donnée à l'utilisateur est complète en un seul passage. Écarté : s'arrêter au premier problème (plus rapide, mais oblige à relancer pour découvrir le suivant).
+- En TDD, la clôture vérifie que les tests sont figés, comme le demande la spec ; un test modifié après le gel est déjà couvert par la revue (un test commité après la revue la rend obsolète) et par le hook de fin.
+- `set-status done` vérifie d'abord le refus de statut (`setStatusRefusal`), puis les mêmes problèmes que `close-check`, par la même fonction.

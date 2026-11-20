@@ -464,6 +464,30 @@ export function setReviewedRefusal({ chantier, uncommittedCode, specUncommitted,
   return null
 }
 
+// ---------- Close ----------
+
+// Why the chantier cannot be closed, as a list (empty when it can). `context` = { chantier,
+// reviewFacts (see reviewProblems), uncommittedCode (code files changed and not committed),
+// checksFailure (first failing check as { check }, or null) }. A SPIKE (throwaway code, never
+// merged) skips everything related to the review.
+export function closeProblems({ chantier, reviewFacts, uncommittedCode, checksFailure }) {
+  if (specStatus(chantier?.spec) !== 'signed') {
+    return [`La spec de ${chantier?.id ?? 'ce chantier'} n’est pas signée (statut : ${specStatus(chantier?.spec)}).`]
+  }
+  const type = (chantier.spec.data.type ?? '').toUpperCase()
+  const problems = type === 'SPIKE' ? [] : reviewProblems(reviewFacts)
+  if (uncommittedCode.length) {
+    problems.push(`Du code n’est pas commité (${uncommittedCode.join(', ')}).`)
+  }
+  if (testDrivenPhase(chantier) === 'writing-tests') {
+    problems.push('Les tests ne sont pas figés (/atelier:write-tests).')
+  }
+  if (checksFailure) {
+    problems.push(`Le contrôle « ${checksFailure.check.name} » échoue (${checksFailure.check.command}).`)
+  }
+  return problems
+}
+
 // ---------- Next step ----------
 
 // `review` is the state of the review ('none', 'current' or 'stale'), computed by the command.
