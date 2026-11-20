@@ -948,6 +948,34 @@ describe('default branch resolved through origin/HEAD', () => {
     assert.equal(source, 'commits')
   })
 
+  it('V-10 : la garde d’écriture applique les règles du chantier déduit des commits', () => {
+    const directory = makeDeductionRepository()
+    const guard = () => execFileSync(process.execPath, [atelierBin, 'hook-guard'], {
+      cwd: directory,
+      encoding: 'utf8',
+      env: { ...process.env, CLAUDE_PROJECT_DIR: directory },
+      input: JSON.stringify({
+        cwd: directory,
+        tool_name: 'Write',
+        tool_input: { file_path: join(directory, 'src', 'app.js'), content: 'export const a = 1\n' },
+      }),
+    })
+
+    // Draft spec: code is refused, with the deduced chantier named.
+    const draftDecision = JSON.parse(guard()).hookSpecificOutput
+    assert.equal(draftDecision.permissionDecision, 'deny')
+    assert.match(draftDecision.permissionDecisionReason, /TEC-9/)
+
+    // Signed spec (no TDD), committed on the same imposed branch: code is allowed.
+    writeFileSync(
+      join(directory, 'docs', 'chantiers', 'TEC-9-x', 'spec.md'),
+      '---\nid: TEC-9\ntype: TEC\ntitle: Essai TEC-9\nstatus: signed\ntdd: no\nsigned_by: Test\nsigned_at: 2026-11-20\n---\n\n# TEC-9\n',
+    )
+    git(directory, 'add', '.')
+    commit(directory, 'docs(chantiers): [TEC-9] sign spec')
+    assert.equal(guard().trim(), '')
+  })
+
   it('V-9 : une branche non conforme sans commit propre n’a pas de chantier', () => {
     const directory = makeDeductionRepository()
     git(directory, 'switch', '-q', '-c', 'claude/empty', 'main')
