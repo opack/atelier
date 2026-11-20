@@ -69,7 +69,7 @@ Mêmes refus qu'aujourd'hui (spec non signée, code non commité, tests non fig�
 - `SPIKE` : pas de revue, donc pas de passage automatique de tranche ; `build` enchaîne les tranches comme aujourd'hui.
 - `EPIC` (FEAT-4) : ses lots sont des chantiers, pas des tranches ; non concerné.
 
-**Affichage.** `atelier status` (texte et `--json` : `slice`, `sliceCount`) et la prochaine étape indiquent la tranche : « Tranche 2/3 : tests d'abord … ». Le rappel de début de session aussi.
+**Affichage.** `atelier status` (texte et `--json` : `slice`, `sliceCount`) et la prochaine étape indiquent la tranche : « Tranche 2/3 : tests d'abord (/atelier:write-tests) ». Le rappel de début de session aussi.
 
 **Compatibilité avec les chantiers en cours.** Un chantier signé sans champ `slice` dont `tests_commit` ou `reviewed_commit` est déjà renseigné a été mené selon l'ancien modèle : il est traité comme une tranche unique, quel que soit son plan, et se termine comme aujourd'hui. Pour que la règle ne capture pas les nouveaux chantiers, la première commande qui écrit `tests_commit` ou `reviewed_commit` sur un chantier qui a un plan à plusieurs tranches écrit aussi `slice: 1`. Aucune migration.
 
