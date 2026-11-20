@@ -32,6 +32,7 @@ Utilisée par les commandes et les hooks, disponible aussi dans votre terminal C
 | `atelier checks` | Lance les contrôles configurés. |
 | `atelier set-status <statut>` | Passe le chantier en `draft`, `done` ou `abandoned`. La signature ne passe que par `atelier sign`. |
 | `atelier bypass on <raison>` / `off` | Active ou lève le débrayage. |
+| `atelier hook-guard`, `hook-gate`, `hook-session-start` | Réservées aux hooks, voir [Hooks et configuration](./configuration). |
 
 ## Sous-agents
 
@@ -39,8 +40,4 @@ Utilisée par les commandes et les hooks, disponible aussi dans votre terminal C
 |---|---|---|
 | `spec-critic` | Avant signature | Relit la spec sans voir la conversation : ambiguïtés, cas limites, critères invérifiables. |
 | `overfit-checker` | Après le passage au vert | Vérifie que le code résout la spec et ne surapprend pas les tests. |
-| `reviewer` | À la clôture | Revue indépendante en sept dimensions, sans rien modifier. |
-
-::: info `/atelier:slice`
-Longtemps prévue pour implémenter tranche par tranche, elle a été abandonnée : `/atelier:build` couvre ce besoin.
-:::
+| `reviewer` | À la clôture | Revue indépendante en huit dimensions, sans rien modifier. |

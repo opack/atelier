@@ -6,7 +6,7 @@
 
 Sans signature, le périmètre se décide implicitement pendant que l’agent code. La signature force le moment où **vous** tranchez : ce qu’on fait, ce qu’on ne fait pas, comment on saura que c’est fini.
 
-C’est aussi ce qui permet le principe « pas de code sans intention validée » : tant que la spec n’est pas signée, le hook d’atelier **refuse toute modification hors de `docs/`**.
+C’est aussi ce qui permet le principe « pas de code sans intention validée » : tant que la spec n’est pas signée, le hook d’atelier **refuse toute modification hors des [chemins libres](../reference/configuration#claude-atelier-json)** (`docs/`, `CLAUDE.md`… par défaut).
 
 ## Avec atelier
 

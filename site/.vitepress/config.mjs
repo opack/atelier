@@ -87,12 +87,30 @@ export default defineConfig({
     returnToTopLabel: 'Haut de page',
     sidebarMenuLabel: 'Menu',
     darkModeSwitchLabel: 'Thème',
+    lightModeSwitchTitle: 'Passer au thème clair',
+    darkModeSwitchTitle: 'Passer au thème sombre',
+    skipToContentLabel: 'Aller au contenu',
+    notFound: { title: 'PAGE INTROUVABLE', quote: 'Cette page n’existe pas, ou plus.', linkLabel: 'Retour à l’accueil', linkText: 'Retour à l’accueil' },
     search: {
       provider: 'local',
       options: {
         translations: {
-          button: { buttonText: 'Rechercher' },
-          modal: { noResultsText: 'Aucun résultat pour', footer: { selectText: 'choisir', navigateText: 'naviguer', closeText: 'fermer' } },
+          button: { buttonText: 'Rechercher', buttonAriaLabel: 'Rechercher' },
+          modal: {
+            displayDetails: 'Afficher la liste détaillée',
+            resetButtonTitle: 'Effacer la recherche',
+            backButtonTitle: 'Fermer la recherche',
+            noResultsText: 'Aucun résultat pour',
+            footer: {
+              selectText: 'choisir',
+              selectKeyAriaLabel: 'Entrée',
+              navigateText: 'naviguer',
+              navigateUpKeyAriaLabel: 'Flèche haut',
+              navigateDownKeyAriaLabel: 'Flèche bas',
+              closeText: 'fermer',
+              closeKeyAriaLabel: 'Échap',
+            },
+          },
         },
       },
     },

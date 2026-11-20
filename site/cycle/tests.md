@@ -39,7 +39,7 @@ test('CA-2 : refuse un montant négatif', () => { … })
 Le code est importé depuis l’endroit où il **devra** exister, même s’il n’existe pas encore.
 
 ::: danger Aucune implémentation, même factice
-Pas de stub, pas de mock de la fonctionnalité à construire, pas de valeur codée en dur. Le hook d’atelier **refuse toute écriture hors des fichiers de test** pendant cette phase.
+Pas de stub, pas de mock de la fonctionnalité à construire, pas de valeur codée en dur. Le hook d’atelier **refuse toute écriture hors des fichiers de test et des [chemins libres](../reference/configuration#claude-atelier-json)** pendant cette phase.
 :::
 
 ### Étape 2 : confirmer qu’ils échouent pour la bonne raison
@@ -54,7 +54,7 @@ L’agent présente un tableau : test, critère couvert, résultat, raison. Un t
 Les tests sont la spécification exécutable : **relisez-les**. Puis :
 
 1. commit des tests seuls ;
-2. `atelier freeze-tests` : refuse s’il reste des tests non commités, et note le commit dans la spec (`tests_commit`).
+2. `atelier freeze-tests` : refuse s’il reste des tests non commités ou si le dernier commit ne contient aucun test, et note le commit dans la spec (`tests_commit`).
 
 À partir de là, les tests sont **figés** : l’agent ne peut plus les modifier.
 

@@ -43,7 +43,7 @@ En cas d’erreur, ce hook **ne bloque pas**, mais le signale.
 
 ## Au démarrage d’une session
 
-Rappelle le chantier actif, son statut, la phase TDD et la prochaine étape.
+Rappelle la branche, le chantier actif, son statut, ses documents et la prochaine étape.
 
 ## `.claude/atelier.json`
 

@@ -27,6 +27,7 @@ Le sous-agent `reviewer` relit le diff **sans avoir participé à l’écriture 
 | Maintenabilité | Conventions, duplication, code mort, sur-ingénierie |
 | Évolutivité | Frontières entre couches, couplages, choix difficiles à défaire |
 | Pièges du code généré | API inventées, dépendances ajoutées, tests affaiblis |
+| Livraison | Commits portant l’identifiant du chantier, aucun fichier hors périmètre |
 
 Ses remarques sont classées **bloquant** / **à discuter**, avec `fichier:ligne`. Les points bloquants sont corrigés, ou acceptés explicitement comme exceptions.
 

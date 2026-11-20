@@ -9,7 +9,7 @@ Tout ce qui fait la méthode est versionné :
 - le `CLAUDE.md` et les règles `.claude/rules/` ;
 - le plugin, déclaré dans `.claude/settings.json` : chacun se le voit proposer en ouvrant le projet ;
 - les templates de spec, de bilan, la checklist de revue ;
-- le socle commun.
+- le socle commun (à venir).
 
 ## Un seul standard de revue
 
