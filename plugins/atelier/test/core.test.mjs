@@ -1387,6 +1387,18 @@ describe('FEAT-4 relations shown by status', () => {
     assert.doesNotMatch(text, /FEAT-22/, 'enfants directs seulement')
   })
 
+  it('CA-10, CA-11 : le hook de démarrage affiche les enfants d’un EPIC et sa prochaine étape', () => {
+    const directory = makeChantiersRepository({
+      main: [{ id: 'EPIC-5', files: epicPlan }, { id: 'FEAT-6', status: 'done', relations: { rel_parent: 'EPIC-5' } }],
+      branches: { 'feat/FEAT-7-x': [{ id: 'FEAT-7', relations: { rel_parent: 'EPIC-5' } }], 'epic/EPIC-5-x': [] },
+      checkout: 'epic/EPIC-5-x',
+    })
+    const reminder = atelier(directory, 'hook-session-start')
+    assertLine(reminder, [/^Enfants :/, /FEAT-6[^,]*done/, /FEAT-7/])
+    assertLine(reminder, [/^Prochaine étape :/, /\b1\b/, /FEAT-7/])
+    assert.doesNotMatch(reminder, /\/atelier:review/)
+  })
+
   it('compatibilité : un chantier sans rel_* s’affiche comme avant', () => {
     const directory = makeChantiersRepository({ branches: { 'tec/TEC-8-x': [{ id: 'TEC-8' }] }, checkout: 'tec/TEC-8-x' })
     assert.doesNotMatch(atelier(directory, 'status'), /^(Parent|Dépendances|Origine|Remplace|Enfants) :/m)
