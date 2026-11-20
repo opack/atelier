@@ -38,7 +38,7 @@ Quand le nom de la branche courante ne porte pas d'identifiant de chantier, `act
     - `activeChantier(projectRoot, config)` (signature inchangée) rend `{ branch, chantier, source }` : identifiant du nom de branche s'il y en a un (`source: "branch"`) ; sinon, hors branche par défaut, identifiant déduit des commits (`source: "commits"`) ; `source: null` quand aucun chantier n'est trouvé.
   - Partie git de `plugins/atelier/lib/core.mjs` (à côté de `currentBranch`) :
     - `defaultBaseRef(projectRoot)` : première référence existante parmi `refs/remotes/origin/HEAD`, `origin/main`, `origin/master`, `main`, `master` ; `null` si aucune ;
-    - `branchCommitSubjects(projectRoot, base)` : sujets de `git log --format=%s <base>..HEAD`, du plus récent au plus ancien ; `[]` en cas d'erreur git ;
+    - `branchCommitSubjects(projectRoot, base)` : sujets de `git log -n 200 --format=%s <base>..HEAD`, du plus récent au plus ancien ; `[]` en cas d'erreur git. La borne évite de lire des milliers de sujets sur une branche longue ; un chantier dont le dernier commit `[<ID>]` est plus ancien que les 200 derniers commits propres n'est pas reconnu ;
     - pas de déduction (comportement actuel) si : aucune base trouvée, HEAD détachée, erreur git, ou branche courante égale à la branche par défaut (nom court de la base résolue, `main` ou `master`). Ce dernier cas couvre un `main` local en avance sur `origin/main`.
   - `plugins/atelier/lib/cli.mjs` : `atelier status --json` expose `chantierSource` à la racine (`"branch"`, `"commits"` ou `null`) ; `formatStatus` et `hook-session-start` ajoutent « (déduit des commits) » après l'identifiant quand la source est `commits`, pour que l'utilisateur ne soit pas surpris.
   - `plugins/atelier/skills/new/SKILL.md` :
@@ -65,7 +65,7 @@ Question si manquant : qu'est-ce qui pourrait changer pour l'utilisateur malgré
 - **Plusieurs chantiers sur une même branche imposée** : une branche et une PR pour deux chantiers, contraire à « un chantier, une branche, une PR ». Limite documentée ; recommandation : une session (donc une branche) par chantier.
 - **Plusieurs identifiants sur une même branche** (renumérotation, comme TEC-4 → TEC-5) : le plus récent gagne. Un agent pourrait changer de chantier actif en commitant `[<autre ID>]` ; il le peut déjà en changeant de branche, ce n'est pas une nouvelle faille.
 - **Branche créée depuis une branche de chantier non fusionnée** : les commits du parent comptent ; sans commit propre, c'est le chantier du parent. Acceptable et documenté.
-- **Performance** : un `git log` borné de plus par appel de hook, seulement sur une branche non conforme. `refs/remotes/origin/HEAD` est absent des clones cloud (constaté ici), d'où la liste de repli.
+- **Performance** : seulement sur une branche non conforme, par appel de hook : jusqu'à 5 `git rev-parse` pour trouver la base (arrêt au premier candidat trouvé), 1 `git log` borné à 200 sujets, et 1 `git rev-parse --abbrev-ref` si la base est `origin/HEAD`. `refs/remotes/origin/HEAD` est absent des clones cloud (constaté ici), d'où la liste de repli.
 
 ## 5. Vérification
 <!-- Comment prouve-t-on que ça marche : CI verte, test de règles, déploiement sur un environnement, mesure avant / après. -->
@@ -76,6 +76,9 @@ Question si manquant : qu'est-ce qui pourrait changer pour l'utilisateur malgré
   - V-4 : même dépôt sans branche par défaut identifiable : aucun chantier, sans erreur ;
   - V-5 : dépôt avec une origine (dépôt nu local) et un `main` local en avance sur `origin/main` d'un commit `[TEC-9]` : sur `main`, aucun chantier ;
   - V-6 : `formatStatus` affiche « (déduit des commits) » quand `chantierSource` vaut `commits`, et ne l'affiche pas pour `branch`.
+  - V-7 : dépôt avec une origine et `refs/remotes/origin/HEAD` vers `origin/main` (`git remote set-head`) : sur `claude/x` portant un commit `[TEC-9]`, `activeChantier` rend `TEC-9` avec la source `commits` ;
+  - V-8 : `refs/remotes/origin/HEAD` vers une autre branche que `main` (ex. `origin/develop`) : sur `develop`, aucun chantier ; sur `claude/x` créée depuis `develop` avec un commit `[TEC-9]`, `TEC-9` avec la source `commits` ;
+  - V-9 : branche non conforme sans commit propre (`<base>..HEAD` vide) : aucun chantier, source `null`.
 - Essai manuel dans ce dépôt, sur une branche `claude/...` portant un commit `[TEC-6]` : `atelier status` affiche TEC-6 et sa source.
 - `claude plugin validate ./plugins/atelier` passe ; `npm run build` dans `site/` passe.
 
@@ -85,3 +88,4 @@ Question si manquant : qu'est-ce qui pourrait changer pour l'utilisateur malgré
 
 ## Amendements
 <!-- Après signature : une entrée datée par modification de la spec. -->
+- 2026-11-20 : §3 et §4, `git log` borné à 200 sujets et coût git réel décrit (jusqu'à 5 `rev-parse` pour trouver la base, 1 `log`, 1 `rev-parse --abbrev-ref` si la base est `origin/HEAD`) ; §5, ajout de V-7 à V-9 (déduction via `origin/HEAD`, `origin/HEAD` vers une autre branche que `main`, branche sans commit propre). Pourquoi : la revue a relevé une sortie de `git log` non bornée, un coût sous-estimé et trois cas réels sans test.
