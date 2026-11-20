@@ -44,6 +44,17 @@ Une spec signée ne repasse jamais en brouillon : sinon, il suffirait de la repa
 
 La détection des commits de code depuis la revue utilise `git log --diff-merges=first-parent`, qui demande git 2.31 ou plus récent.
 
+### Le chantier déduit des commits
+
+Sur une branche dont le nom ne porte pas d’identifiant, le chantier actif vient du commit `[<ID>]` le plus récent propre à la branche (voir [Le chantier actif](../fondations/chantier#le-chantier-actif)). Ce choix a des limites :
+
+- **Fusion par squash ou rebase** : les commits d’origine restent propres à la branche. Si la session continue sur la même branche imposée, l’ancien chantier (clos) reste actif jusqu’au prochain commit `[<ID>]`.
+- **Branches longues** (`develop`, `release/*`) : elles contiennent les commits des chantiers déjà fusionnés ; le chantier déduit est le dernier fusionné, souvent clos. L’écriture reste bloquée, mais le motif affiché est « clos » plutôt que « aucun chantier ».
+- **Référence distante périmée** : si `origin/main` n’a pas été rafraîchi (`git fetch`) alors que la branche part d’un `main` plus récent, les commits de chantiers déjà fusionnés comptent comme propres à la branche. Même effet que pour les branches longues.
+- **Plusieurs chantiers sur une même branche imposée** : le plus récent gagne, et une seule PR mêle deux chantiers. Ouvrez plutôt une session (donc une branche) par chantier.
+- **Identifiant présent par hasard dans un nom de branche imposé** (`users/bob/fix-12-crash`, `claude/spike-2-…`) : le nom est lu comme portant `FIX-12` ou `SPIKE-2`, et il l’emporte sur les commits. `/atelier:new` crée alors une branche `<type>/<ID>-<slug>` au lieu de proposer de rester sur la branche imposée.
+- **Branche créée depuis une branche de chantier non fusionnée** : sans commit propre, elle hérite du chantier de sa branche parente.
+
 ### La qualité de l’implémentation
 
 En TDD, une implémentation codée en dur passe les tests :

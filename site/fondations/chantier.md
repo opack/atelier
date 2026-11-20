@@ -26,9 +26,13 @@ Le type de chantier est indépendant du préfixe de commit : un chantier `TEC` p
 
 ## Le chantier actif
 
-atelier déduit le chantier en cours **du nom de la branche**. Le code est bloqué :
+atelier déduit le chantier en cours **du nom de la branche** (`<type>/<ID>-<slug>`).
 
-- sur une branche sans chantier (`main`, HEAD détachée) : on ne travaille pas directement sur la branche principale ;
+Quand la branche est imposée et ne porte pas d’identifiant (session Claude Code cloud sur `claude/...`, convention d’équipe comme `feature/JIRA-123`), atelier lit **les commits propres à la branche** : le chantier actif est celui du commit `[<ID>]` le plus récent entre la branche par défaut (`origin/HEAD`, sinon `origin/main`, `origin/master`, `main`, `master`) et `HEAD`. `atelier status` l’indique par « (déduit des commits) ». Le chantier n’est reconnu qu’après son premier commit `[<ID>]`. Le nom de branche, s’il porte un identifiant, reste prioritaire ; sur la branche par défaut, aucune déduction.
+
+Le code est bloqué :
+
+- sur une branche sans chantier (`main`, HEAD détachée, branche sans commit `[<ID>]`) : on ne travaille pas directement sur la branche principale ;
 - tant que la spec est en brouillon ;
 - une fois le chantier clos (`done` ou `abandoned`) : une nouvelle modification, c’est un nouveau chantier.
 

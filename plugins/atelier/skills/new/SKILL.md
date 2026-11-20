@@ -12,7 +12,7 @@ Arguments reçus : `$ARGUMENTS`
 ## 1. Préalables
 
 - Lance `atelier status --json`. Si `installed` vaut `false`, arrête-toi et propose `/atelier:init`.
-- Si la branche courante porte déjà un chantier, demande s'il faut en ouvrir un nouveau ou continuer celui-ci. Si tu continues un chantier dont la spec est en brouillon, toute retouche de la spec est commitée et poussée comme en §7, avec le même message.
+- Si un chantier est actif (nom de branche ou commits de la branche), demande s'il faut en ouvrir un nouveau ou continuer celui-ci. Si tu continues un chantier dont la spec est en brouillon, toute retouche de la spec est commitée et poussée comme en §7, avec le même message.
 - Si le dépôt a des modifications non commitées, signale-le avant de changer de branche.
 
 ## 2. Type
@@ -32,9 +32,12 @@ Déduis le type des arguments s'il est donné ou évident, sinon demande-le :
 1. Si l'utilisateur a fourni un identifiant, utilise-le. Sinon, récupère d'abord le remote pour voir les identifiants déjà pris ailleurs : `git fetch --quiet <remote>`, puis `atelier next-id <TYPE>`. Si le fetch échoue, signale-le (l'identifiant peut entrer en collision avec un chantier non récupéré) sans bloquer.
    - **Remote** (ici et en §7) : celui de la branche de suivi de la branche courante, sinon `origin`, sinon le seul remote existant. S'il y en a plusieurs sans qu'aucune de ces règles ne tranche, demande. Sans remote : ni fetch ni push.
 2. Slug : 2 à 5 mots du titre, en minuscules, sans accents, séparés par des tirets.
-3. Branche : `git switch --no-track -c <type en minuscules>/<ID>-<slug> <point de départ>`, le point de départ étant la branche par défaut à jour (demande si tu n'es pas sur la branche par défaut). `--no-track` est indispensable : partie de `<remote>/<branche par défaut>`, la branche la suivrait sinon, et le push du §7 enverrait le brouillon sur la branche par défaut.
+3. Branche : `git switch --no-track -c <type en minuscules>/<ID>-<slug> <point de départ>`, le point de départ étant la branche par défaut à jour. `--no-track` est indispensable : partie de `<remote>/<branche par défaut>`, la branche la suivrait sinon, et le push du §7 enverrait le brouillon sur la branche par défaut. Si tu n'es pas sur la branche par défaut :
+   - si le nom de la branche courante porte un identifiant (`chantierSource` vaut `"branch"` dans `atelier status --json`), crée la branche comme ci-dessus sans poser de question : sur cette branche, son nom l'emporterait toujours et le nouveau chantier ne serait jamais reconnu ;
+   - sinon (branche imposée, par exemple `claude/...` dans une session cloud), demande s'il faut rester sur la branche courante. Si oui, ne crée pas de branche, et commite puis pousse le brouillon dès qu'il est écrit (étape 6).
 4. Dossier : `docs/chantiers/<ID>-<slug>/` (ou le `chantiersDir` de la configuration).
 5. Spec : `atelier template spec-<type en minuscules>` ; remplace `{{ID}}`, `{{TITLE}}`, `{{DATE}}` (AAAA-MM-JJ) et écris `spec.md`.
+6. **Si tu es resté sur une branche imposée** (sans identifiant dans son nom) : commite et pousse le brouillon tout de suite, exactement comme en §7 (même message, même push). Sur une telle branche, atelier ne reconnaît le chantier qu'à son commit `[<ID>]` : sans lui, `atelier set-tdd` (§5) refuserait, ou écrirait dans la spec d'un chantier précédent de la branche. Dis-le à l'utilisateur en une phrase. Ensuite, chaque retouche de la spec est commitée et poussée comme en §7 : un conteneur éphémère perd ce qui n'est pas poussé.
 
 ## 4. Remplir la spec
 
@@ -80,7 +83,7 @@ Lance `atelier check-spec docs/chantiers/<ID>-<slug>/spec.md`. Tant qu'il reste 
 
 ## 7. Fin
 
-Commite la spec seule, même en brouillon :
+Commite la spec seule, même en brouillon (si tout est déjà commité et poussé, étape 6 du §3, il n'y a rien à faire) :
 
 ```
 git add <dossier du chantier>/spec.md
