@@ -3,7 +3,7 @@ id: FEAT-4
 type: FEAT
 title: Relations entre chantiers et type EPIC
 status: draft
-tdd:                 # yes | no : décision humaine, obligatoire avant signature
+tdd: yes
 created_at: 2026-11-20
 signed_by:
 signed_at:
@@ -42,6 +42,12 @@ Questions si manquant : qu'est-ce qui est hors périmètre ? Quelle est la plus 
 - Clôture possible seulement quand tous ses chantiers enfants sont clos.
 - Étapes : spec → signature → plan → (chantiers enfants) → clôture.
 
+**Proposer un EPIC au bon moment**, sans que l'utilisateur ait à y penser :
+- `/atelier:new` : si la demande couvre plusieurs livrables indépendants (types différents, ou plusieurs PR inévitables), proposer d'ouvrir d'abord un EPIC puis les chantiers rattachés ; à l'inverse, un EPIC demandé pour un seul livrable est un FEAT, et le dire.
+- `/atelier:plan` d'un FEAT ou d'un REF : si le découpage produit des tranches qui ne tiennent pas dans un seul chantier, signaler que le périmètre a la taille d'un EPIC, sans forcer.
+- Section « Process (atelier) » du `CLAUDE.md` : une ligne sur l'EPIC et les relations, pour que les discussions hors commande (cadrage) y pensent aussi. `/atelier:init` relancé sur un projet déjà installé propose de mettre cette section à jour quand elle diffère de la version courante.
+- Rattachement après coup : ajouter `rel_parent` à une spec signée passe par un amendement ; un chantier déjà clos n'est pas rattaché, l'EPIC le cite dans son contexte comme travail antérieur.
+
 **Site** : six types dans `fondations/types.md` (sans présenter l'EPIC comme une exception), une section sur les relations entre chantiers, le template de spec EPIC dans Référence > Templates, les commandes concernées mises à jour.
 
 Hors périmètre :
@@ -55,7 +61,8 @@ Hors périmètre :
 - `plugins/atelier/lib/core.mjs` : `CHANTIER_TYPES`, `ID_PATTERN` (dérivé des types : les branches `epic/EPIC-n-…` deviennent des chantiers actifs), `TDD_RECOMMENDATION`, `REQUIRED_SECTIONS`, `nextStep`, `decideWrite` ; nouvelles fonctions pures : lecture des `rel_*`, enfants et dépendants calculés, vérification de clôture.
 - `plugins/atelier/lib/cli.mjs` : `status` (affichage des relations), `set-status done` (vérifications), `check-spec`.
 - `plugins/atelier/templates/spec-epic.md` (nouveau), éventuellement le plan.
-- Skills : `new` (type EPIC, `tdd: no`, questions de relation), `plan` (découpage d'un EPIC), `status`, `close` (EPIC et dépendances).
+- Skills : `new` (type EPIC, `tdd: no`, questions de relation, proposition d'un EPIC), `plan` (découpage d'un EPIC, signal d'un périmètre trop grand), `status`, `close` (EPIC et dépendances), `init` (mise à jour de la section Process).
+- Section Process du `CLAUDE.md` : aujourd'hui écrite en dur dans le skill `init` ; la sortir dans un template pour que la CLI puisse la comparer à celle du projet.
 - `plugins/atelier/test/core.test.mjs` : tests de la logique et du hook d'écriture (règle du `CLAUDE.md`).
 - Site : `site/fondations/types.md`, `site/fondations/chantier.md`, `site/reference/templates.md`, `site/reference/commandes.md`, `README.md` (table des types).
 
@@ -82,7 +89,8 @@ Questions si manquant : chaque critère peut-il devenir un test ? Que se passe-t
 - [ ] CA-9 : Étant donné un EPIC dont au moins un enfant n'est ni `done` ni `abandoned`, quand on lance `atelier set-status done`, alors la clôture est refusée avec la liste des enfants ouverts ; quand tous sont clos, elle est permise.
 - [ ] CA-10 : Étant donné un EPIC signé, quand on demande la prochaine étape, alors `status` indique : concevoir le découpage sans `plan.md` ; sinon les enfants encore ouverts et leur nombre ; puis la clôture quand tous sont clos.
 - [ ] CA-11 : Étant donné un chantier courant avec des relations, quand on lance `atelier status`, alors il affiche son parent, ses dépendances avec leur statut, son origine, ce qu'il remplace et, pour un EPIC, ses enfants calculés.
-- [ ] CA-12 : Étant donné le site, quand on lance `npm run build` dans `site/`, alors il réussit, la page des types présente six types et la page Templates inclut le template de spec EPIC.
+- [ ] CA-12 : Étant donné un `CLAUDE.md` dont la section « Process (atelier) » diffère du template courant (ou est absente), quand la CLI compare les deux, alors elle signale la section comme à mettre à jour ; identique, elle ne signale rien.
+- [ ] CA-13 : Étant donné le site, quand on lance `npm run build` dans `site/`, alors il réussit, la page des types présente six types et la page Templates inclut le template de spec EPIC.
 
 ## 6. Non-fonctionnel
 <!-- Une ligne chacun, ou « N/A » + raison.
