@@ -13,11 +13,12 @@
 /atelier:new [type] [description, lien Notion ou Sentry]
 ```
 
-1. atelier choisit l’identifiant, crée la branche et le dossier, copie le template du type.
+1. atelier choisit l’identifiant (après un `git fetch`, sauf si vous le fournissez), crée la branche et le dossier, copie le template du type.
 2. Il exploite d’abord vos sources : brouillon, trace Sentry, code existant.
 3. Il remplit ce qu’il peut **sans rien inventer**, et ne vous interroge que sur les manques.
 4. Il vous demande si le chantier se fait en **TDD**.
 5. `atelier check-spec` vérifie la complétude.
+6. **Commit du brouillon** : la spec est commitée seule (`docs(chantiers): [<ID>] spec draft`) puis poussée, sauf si vous refusez le push. Jamais sur la branche par défaut. Le brouillon ne se perd pas avec la session, et le commit poussé **réserve l’identifiant** : après un `git fetch`, `atelier next-id` le voit, quel que soit le nom de la branche distante. Chaque retouche du brouillon est commitée et poussée de la même façon.
 
 ## Les questions : seulement sur les manques
 

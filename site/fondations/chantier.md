@@ -9,7 +9,8 @@ Le **chantier** est l’unité de travail d’atelier : une modification du logi
 Format `<TYPE>-<numéro>` : `FEAT-412`, `FIX-431`, `TEC-437`.
 
 - Le **compteur est unique par projet**, tous types confondus. `FIX-431` peut suivre `FEAT-430`.
-- Sans identifiant fourni, `/atelier:new` prend le numéro suivant le plus grand déjà utilisé, y compris dans l’historique git (les anciens préfixes comme `FEA-26` ou `BUG-421` comptent).
+- Sans identifiant fourni, `/atelier:new` récupère d’abord le remote (`git fetch`), puis prend le numéro suivant le plus grand déjà utilisé, y compris dans l’historique git de toutes les branches (les anciens préfixes comme `FEA-26` ou `BUG-421` comptent).
+- Le commit du brouillon (`docs(chantiers): [<ID>] spec draft`), poussé dès l’ouverture, **réserve le numéro** : les autres le voient après leur propre `git fetch`. Un numéro réservé reste pris, même si le chantier est abandonné ou renuméroté.
 
 ## Partout le même identifiant
 

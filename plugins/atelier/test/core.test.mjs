@@ -302,6 +302,77 @@ describe('write guard on a spec that is no longer a draft', () => {
   })
 })
 
+describe('write guard on a spec whose committed version is a draft', () => {
+  const relativePath = 'docs/chantiers/TEC-5-x/spec.md'
+  const draftText = '---\nid: TEC-5\ntype: TEC\ntitle: Brouillon\nstatus: draft\ntdd: no\nsigned_by:\nsigned_at:\n---\n# TEC-5\n\n## 1. Quoi\nTexte initial.\n\n## Amendements\n<!-- Après signature : une entrée datée. -->\n'
+  const signedText = draftText.replace('status: draft', 'status: signed').replace('signed_by:', 'signed_by: Ana').replace('signed_at:', 'signed_at: 2026-11-20')
+  const body = { old_string: 'Texte initial.', new_string: 'Texte corrigé.' }
+  const entry = { old_string: '<!-- Après signature : une entrée datée. -->\n', new_string: '<!-- Après signature : une entrée datée. -->\n- 2026-11-21 : quoi précisé\n' }
+
+  // Asks the guard for one write on `current`, with `committed` as the version in HEAD (null: absent).
+  function write(current, committed, toolName, input) {
+    const proposed = applyToolEdit(current, toolName, input)
+    return decide({
+      relativePath,
+      toolName,
+      existingSpec: parseFrontMatter(current),
+      proposedSpec: proposed === null ? null : parseFrontMatter(proposed),
+      committedSpec: committed === null ? null : parseFrontMatter(committed),
+    })
+  }
+
+  // [label, working version, tool, input, expected]; each case is checked with a committed draft (V-1, V-2)
+  // and with no committed spec at all (V-3): the committed draft must change nothing.
+  const reserved = [
+    ['status', 'status: draft', 'status: signed'],
+    ['signed_by', 'signed_by:', 'signed_by: Ana'],
+    ['signed_at', 'signed_at:', 'signed_at: 2026-11-20'],
+    ['done_at', 'signed_at:', 'signed_at:\ndone_at: 2026-11-21'],
+    ['tests_commit', 'signed_at:', 'signed_at:\ntests_commit: abc'],
+    ['reviewed_commit', 'signed_at:', 'signed_at:\nreviewed_commit: abc'],
+  ]
+  const cases = [
+    ['V-1 draft: full rewrite', draftText, 'Write', { content: draftText.replace('Texte initial.', 'Tout réécrit.') }, true],
+    ['V-1 draft: body edit', draftText, 'Edit', body, true],
+    ['V-1 draft: tdd and title edits', draftText, 'MultiEdit', { edits: [{ old_string: 'tdd: no', new_string: 'tdd: yes' }, { old_string: 'title: Brouillon', new_string: 'title: Autre' }] }, true],
+    ...reserved.map(([field, from, to]) => [`V-1 draft: reserved field ${field}`, draftText, 'Edit', { old_string: from, new_string: to }, false]),
+    ['V-2 signed, not committed: full rewrite', signedText, 'Write', { content: signedText }, false],
+    ['V-2 signed, not committed: body edit without entry', signedText, 'Edit', body, false],
+    ['V-2 signed, not committed: body edit with a new entry', signedText, 'MultiEdit', { edits: [entry, body] }, true],
+    ['V-2 signed, not committed: back to draft', signedText, 'MultiEdit', { edits: [entry, { old_string: 'status: signed', new_string: 'status: draft' }] }, false],
+  ]
+
+  for (const [label, current, toolName, input, expected] of cases) {
+    it(label, () => {
+      const withDraft = write(current, draftText, toolName, input)
+      assert.equal(withDraft.allowed, expected, 'committed draft')
+      assert.deepEqual(withDraft, write(current, null, toolName, input), 'V-3: same decision as with no committed spec')
+    })
+  }
+
+  it('V-2/V-3 takes the signed working version as reference, not an older committed draft', () => {
+    // Draft committed, then touched up by the critical review and signed without committing in between.
+    const olderDraft = draftText.replace('Texte initial.', 'Texte du premier brouillon.')
+    const noChange = { old_string: 'Texte initial.', new_string: 'Texte initial.' }
+    for (const [label, toolName, input, expected] of [
+      ['edit leaving the body as signed', 'Edit', noChange, true],
+      ['body edit without entry', 'Edit', body, false],
+      ['body edit with a new entry', 'MultiEdit', { edits: [entry, body] }, true],
+      ['full rewrite', 'Write', { content: signedText }, false],
+    ]) {
+      const withDraft = write(signedText, olderDraft, toolName, input)
+      assert.equal(withDraft.allowed, expected, label)
+      assert.deepEqual(withDraft, write(signedText, null, toolName, input), `${label}: same decision as with no committed spec`)
+    }
+  })
+
+  it('names the reserved field and the amendment rule in its refusals', () => {
+    assert.match(write(draftText, draftText, 'Edit', { old_string: 'status: draft', new_string: 'status: signed' }).reason, /« status »/)
+    assert.match(write(signedText, draftText, 'Edit', body).reason, /Amendements/)
+    assert.match(write(signedText, draftText, 'Write', { content: signedText }).reason, /ne se réécrit pas/)
+  })
+})
+
 describe('close decision', () => {
   const reviewed = { reviewedCommit: 'a'.repeat(40), found: true, isAncestor: true, codeFilesSince: [], amendmentsChanged: false }
   const nominal = { chantier: signedTec, reviewFacts: reviewed, uncommittedCode: [], checksFailure: null }
