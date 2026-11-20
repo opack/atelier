@@ -118,36 +118,36 @@ Tranchées pendant la rédaction (à reporter dans `decisions.md`) :
 Chacun testable automatiquement. Penser aux cas limites : vide, doublon, hors-ligne, utilisateur non autorisé, grand volume.
 Questions si manquant : chaque critère peut-il devenir un test ? Que se passe-t-il si la liste est vide, très grande, si l'utilisateur n'a pas le droit, si le réseau tombe ? -->
 Plan et tranche en cours :
-- [ ] CA-2 : Étant donné un `plan.md` dont la section « Tranches » compte 3 entrées numérotées de premier niveau (sous-listes et commentaires ignorés), quand atelier lit le plan, alors il compte 3 tranches.
-- [ ] CA-3 : Étant donné un chantier sans `plan.md`, ou dont le plan n'a pas de section « Tranches » ou une seule entrée, quand atelier lit l'état, alors il y a une tranche, et ni `status` ni la prochaine étape ne parlent de tranche.
-- [ ] CA-4 : Étant donné une spec signée sans champ `slice` et un plan à 3 tranches, quand atelier lit l'état, alors la tranche en cours est la 1 ; avec `slice: 2`, c'est la 2.
-- [ ] CA-5 : Étant donné une spec signée sans champ `slice` dont `tests_commit` ou `reviewed_commit` est renseigné (chantier de l'ancien modèle), quand atelier lit l'état, alors il y a une tranche unique, quel que soit le plan.
-- [ ] CA-6 : Étant donné une spec signée, quand l'agent tente d'écrire ou de modifier `slice` ou `slice_base` dans l'en-tête, alors le hook d'écriture refuse, comme pour `tests_commit`.
+- [ ] CA-1 : Étant donné un `plan.md` dont la section « Tranches » compte 3 entrées numérotées de premier niveau (sous-listes et commentaires ignorés), quand atelier lit le plan, alors il compte 3 tranches.
+- [ ] CA-2 : Étant donné un chantier sans `plan.md`, ou dont le plan n'a pas de section « Tranches » ou une seule entrée, quand atelier lit l'état, alors il y a une tranche, et ni `status` ni la prochaine étape ne parlent de tranche.
+- [ ] CA-3 : Étant donné une spec signée sans champ `slice` et un plan à 3 tranches, quand atelier lit l'état, alors la tranche en cours est la 1 ; avec `slice: 2`, c'est la 2.
+- [ ] CA-4 : Étant donné une spec signée sans champ `slice` dont `tests_commit` ou `reviewed_commit` est renseigné (chantier de l'ancien modèle), quand atelier lit l'état, alors il y a une tranche unique, quel que soit le plan.
+- [ ] CA-5 : Étant donné une spec signée, quand l'agent tente d'écrire ou de modifier `slice` ou `slice_base` dans l'en-tête, alors le hook d'écriture refuse, comme pour `tests_commit`.
 
 Gel des tests :
-- [ ] CA-7 : Étant donné un chantier TDD à plusieurs tranches sans champ `slice`, quand `atelier freeze-tests` réussit, alors il écrit `tests_commit` et `slice: 1`.
-- [ ] CA-8 : Étant donné la tranche N > 1 en phase « tests d'abord » et des lignes de test présentes à `slice_base` modifiées ou supprimées depuis, sans réouverture, quand `atelier freeze-tests` est lancé, alors il refuse en listant les fichiers concernés, renvoie vers `/atelier:amend` ou `/atelier:write-tests <raison>`, et n'écrit rien.
-- [ ] CA-9 : Étant donné la tranche N > 1 en phase « tests d'abord », quand `atelier reopen-tests <raison>` est lancé, alors il ajoute l'entrée « tests rouverts (gel quitté : <slice_base>) : <raison> » ; le `freeze-tests` suivant accepte alors les modifications de tests antérieurs et ajoute l'entrée « tests regelés ».
-- [ ] CA-10 : Étant donné la tranche N > 1 où seuls des tests ont été ajoutés (lignes ou fichiers nouveaux), quand `atelier freeze-tests` est lancé, alors il fige sans demander de raison.
+- [ ] CA-6 : Étant donné un chantier TDD à plusieurs tranches sans champ `slice`, quand `atelier freeze-tests` réussit, alors il écrit `tests_commit` et `slice: 1`.
+- [ ] CA-7 : Étant donné la tranche N > 1 en phase « tests d'abord » et des lignes de test présentes à `slice_base` modifiées ou supprimées depuis, sans réouverture, quand `atelier freeze-tests` est lancé, alors il refuse en listant les fichiers concernés, renvoie vers `/atelier:amend` ou `/atelier:write-tests <raison>`, et n'écrit rien.
+- [ ] CA-8 : Étant donné la tranche N > 1 en phase « tests d'abord », quand `atelier reopen-tests <raison>` est lancé, alors il ajoute l'entrée « tests rouverts (gel quitté : <slice_base>) : <raison> » ; le `freeze-tests` suivant accepte alors les modifications de tests antérieurs et ajoute l'entrée « tests regelés ».
+- [ ] CA-9 : Étant donné la tranche N > 1 où seuls des tests ont été ajoutés (lignes ou fichiers nouveaux), quand `atelier freeze-tests` est lancé, alors il fige sans demander de raison.
 
 Garde d'écriture et contrôle de fin :
-- [ ] CA-11 : Étant donné la tranche N > 1 en phase « tests d'abord », quand l'agent écrit un fichier hors des chemins de test, alors le hook refuse ; un fichier de test, alors il accepte.
-- [ ] CA-12 : Étant donné la tranche N en phase d'implémentation, quand un test (de cette tranche ou d'une précédente) a changé depuis `tests_commit`, alors le hook d'écriture refuse son écriture et le contrôle de fin le signale, comme aujourd'hui.
+- [ ] CA-10 : Étant donné la tranche N > 1 en phase « tests d'abord », quand l'agent écrit un fichier hors des chemins de test, alors le hook refuse ; un fichier de test, alors il accepte.
+- [ ] CA-11 : Étant donné la tranche N en phase d'implémentation, quand un test (de cette tranche ou d'une précédente) a changé depuis `tests_commit`, alors le hook d'écriture refuse son écriture et le contrôle de fin le signale, comme aujourd'hui.
 
 Revue et passage de tranche :
-- [ ] CA-13 : Étant donné la tranche 2 sur 3, revue sans refus possible, quand `atelier set-reviewed` est lancé, alors la spec reçoit `slice: 3`, `slice_base: <HEAD>`, `tests_commit` vide, et `reviewed_commit` reste absent ; le message annonce la tranche 3 et la commande suivante (`/atelier:write-tests`, ou `/atelier:build` sans TDD).
-- [ ] CA-14 : Étant donné la tranche 3 sur 3, quand `atelier set-reviewed` est lancé, alors la spec reçoit `slice: chantier` et `slice_base: <HEAD>`, `tests_commit` est conservé, `reviewed_commit` reste absent, et le message annonce la revue du chantier (`/atelier:review`).
-- [ ] CA-15 : Étant donné `slice: chantier`, ou un chantier à tranche unique, quand `atelier set-reviewed` est lancé, alors il écrit `reviewed_commit` comme aujourd'hui, sans toucher à `slice`.
-- [ ] CA-16 : Étant donné `slice: chantier` en TDD, quand l'agent écrit un fichier de test, alors le hook refuse (tests figés) ; un fichier de code, alors il accepte.
-- [ ] CA-17 : Étant donné un chantier `tdd: no` à 2 tranches en tranche 1, quand `atelier set-reviewed` est lancé, alors il passe à la tranche 2 (`slice: 2`, `slice_base`), et la prochaine étape est `/atelier:build`.
-- [ ] CA-18 : Étant donné une des situations de refus actuelles de `set-reviewed` (code non commité, tests non figés ou modifiés), quand il est lancé, alors il refuse sans changer de tranche.
+- [ ] CA-12 : Étant donné la tranche 2 sur 3, revue sans refus possible, quand `atelier set-reviewed` est lancé, alors la spec reçoit `slice: 3`, `slice_base: <HEAD>`, `tests_commit` vide, et `reviewed_commit` reste absent ; le message annonce la tranche 3 et la commande suivante (`/atelier:write-tests`, ou `/atelier:build` sans TDD).
+- [ ] CA-13 : Étant donné la tranche 3 sur 3, quand `atelier set-reviewed` est lancé, alors la spec reçoit `slice: chantier` et `slice_base: <HEAD>`, `tests_commit` est conservé, `reviewed_commit` reste absent, et le message annonce la revue du chantier (`/atelier:review`).
+- [ ] CA-14 : Étant donné `slice: chantier`, ou un chantier à tranche unique, quand `atelier set-reviewed` est lancé, alors il écrit `reviewed_commit` comme aujourd'hui, sans toucher à `slice`.
+- [ ] CA-15 : Étant donné `slice: chantier` en TDD, quand l'agent écrit un fichier de test, alors le hook refuse (tests figés) ; un fichier de code, alors il accepte.
+- [ ] CA-16 : Étant donné un chantier `tdd: no` à 2 tranches en tranche 1, quand `atelier set-reviewed` est lancé, alors il passe à la tranche 2 (`slice: 2`, `slice_base`), et la prochaine étape est `/atelier:build`.
+- [ ] CA-17 : Étant donné une des situations de refus actuelles de `set-reviewed` (code non commité, tests non figés ou modifiés), quand il est lancé, alors il refuse sans changer de tranche.
 
 Clôture et prochaine étape :
-- [ ] CA-19 : Étant donné un chantier en tranche 2 sur 3, ou en tranche 3 sur 3 pas encore revue, quand `atelier close-check` est lancé, alors il refuse avec « tranche N/3 en cours » ; en `slice: chantier` sans `reviewed_commit`, il refuse en demandant la revue du chantier.
-- [ ] CA-20 : Étant donné `slice: 4` et un plan qui ne compte plus que 3 tranches, quand `atelier close-check` est lancé, alors il refuse en signalant l'incohérence entre la spec et le plan.
-- [ ] CA-21 : Étant donné `slice: chantier` et la revue du chantier à jour, quand `atelier close-check` est lancé, alors il passe ; un chantier de l'ancien modèle avec une revue à jour passe aussi.
-- [ ] CA-22 : Étant donné un chantier TDD à 3 tranches, quand atelier calcule la prochaine étape, alors elle nomme la tranche (« Tranche 2/3 ») et la commande attendue selon la phase : `write-tests`, `build` puis `review` ; après la dernière tranche, « Revue du chantier : /atelier:review » ; une fois celle-ci enregistrée, `close`.
-- [ ] CA-23 : Étant donné un `SPIKE` à plusieurs tranches, quand atelier calcule l'état, alors il n'y a pas de passage de tranche par la revue et la clôture n'exige pas de tranche finale.
+- [ ] CA-18 : Étant donné un chantier en tranche 2 sur 3, ou en tranche 3 sur 3 pas encore revue, quand `atelier close-check` est lancé, alors il refuse avec « tranche N/3 en cours » ; en `slice: chantier` sans `reviewed_commit`, il refuse en demandant la revue du chantier.
+- [ ] CA-19 : Étant donné `slice: 4` et un plan qui ne compte plus que 3 tranches, quand `atelier close-check` est lancé, alors il refuse en signalant l'incohérence entre la spec et le plan.
+- [ ] CA-20 : Étant donné `slice: chantier` et la revue du chantier à jour, quand `atelier close-check` est lancé, alors il passe ; un chantier de l'ancien modèle avec une revue à jour passe aussi.
+- [ ] CA-21 : Étant donné un chantier TDD à 3 tranches, quand atelier calcule la prochaine étape, alors elle nomme la tranche (« Tranche 2/3 ») et la commande attendue selon la phase : `write-tests`, `build` puis `review` ; après la dernière tranche, « Revue du chantier : /atelier:review » ; une fois celle-ci enregistrée, `close`.
+- [ ] CA-22 : Étant donné un `SPIKE` à plusieurs tranches, quand atelier calcule l'état, alors il n'y a pas de passage de tranche par la revue et la clôture n'exige pas de tranche finale.
 
 ## 6. Non-fonctionnel
 <!-- Une ligne chacun, ou « N/A » + raison.
@@ -156,7 +156,7 @@ Questions si manquant : qui peut lire / écrire quoi, et où l'autorisation est-
 - Performance : un `git diff` de plus au gel (fichiers de test depuis `slice_base`) ; négligeable.
 - Accessibilité : schéma SVG du site avec titre et description (`aria-labelledby`), comme l'actuel.
 - Données personnelles : N/A, aucune donnée nouvelle.
-- Compatibilité : Node ≥ 20, ESM, aucune dépendance ; chantiers de l'ancien modèle inchangés (CA-4, CA-18).
+- Compatibilité : Node ≥ 20, ESM, aucune dépendance ; chantiers de l'ancien modèle inchangés (CA-4, CA-20).
 
 ## 7. Données de test
 <!-- Jeux de données, comptes, cas à reproduire. Optionnel. -->
