@@ -7,6 +7,7 @@ tdd: yes
 created_at: 2026-11-20
 signed_by: Opack
 signed_at: 2026-11-20
+tests_commit: 3a599c9
 ---
 
 # FEAT-4 Relations entre chantiers et type EPIC
