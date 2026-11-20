@@ -33,12 +33,13 @@ Petite tâche (règle ESLint, montée de version) : seules les sections 1, 2 et 
   - `plugins/atelier/skills/new/SKILL.md` :
     - §1 : en reprenant un chantier existant en brouillon, toute retouche de la spec est commitée et poussée comme en §7, avec le même message ;
     - §3 : quand l'identifiant n'est pas fourni par l'utilisateur, `git fetch --quiet <remote>` avant `atelier next-id` ; un échec est signalé, sans bloquer. Le remote est celui de suivi de la branche courante, sinon `origin`, sinon le seul remote existant ; s'il y en a plusieurs sans qu'aucune de ces règles ne tranche, demander. Pas de remote : ni fetch ni push ;
+    - §3, création de la branche : `git switch --no-track -c <type>/<ID>-<slug> <point de départ>`, pour qu'une branche partie de `<remote>/<branche par défaut>` ne la suive pas ;
     - §7 : toujours commiter la spec seule à la fin, `git add <dossier>/spec.md` puis `git commit -m "docs(chantiers): [<ID>] spec draft" -- <dossier>/spec.md` (le `--` exclut tout ce qui était déjà dans l'index), puis pousser, sauf refus explicite de l'utilisateur :
-      - si la branche courante a une branche de suivi (cas d'une branche imposée par l'environnement) : `git push <remote> HEAD:<branche de suivi>`, forme explicite (un `git push` nu est refusé par `push.default=simple` quand les noms local et distant diffèrent) ;
-      - sinon : `git push -u <remote> <branche>` ;
+      - si la branche courante suit une branche distante autre que la branche par défaut (cas d'une branche imposée par l'environnement) : `git push <remote> HEAD:<nom distant>`, où `<nom distant>` est `git config branch.<branche>.merge` sans `refs/heads/` (pas la sortie de `@{u}`, préfixée par le remote), forme explicite (un `git push` nu est refusé par `push.default=simple` quand les noms local et distant diffèrent) ;
+      - sinon (pas de suivi, ou suivi de la branche par défaut) : `git push -u <remote> <branche>` ; le brouillon n'est jamais poussé sur la branche par défaut ;
       - si le push échoue, le dire : l'identifiant n'est pas réservé.
   - `plugins/atelier/skills/sign/SKILL.md` :
-    - §2 : si l'utilisateur ne signe pas au bout de la relecture, les retouches de la spec sont commitées et poussées en `docs(chantiers): [<ID>] spec draft`, comme dans `new` §7 ;
+    - fin de §3 : si l'utilisateur ne signe pas au bout de la relecture, les retouches de la spec sont commitées en `docs(chantiers): [<ID>] spec draft` (`git add` puis `git commit … -- <dossier>/spec.md`) et poussées selon les règles de `new` §7 ;
     - §4 : le commit de signature fonctionne qu'un brouillon ait déjà été commité ou non ; il emporte aussi les retouches issues de la relecture critique non commitées. La spec seule, toujours : `git commit -m "docs(chantiers): [<ID>] sign spec" -- <dossier>/spec.md`.
   - `plugins/atelier/test/core.test.mjs` : tests qui figent le comportement de la garde de spec (`specWriteRefusal`, via `decideWrite`) quand la version commitée est un brouillon (voir §5).
   - Site : `site/cycle/intention.md` (étape « commit du brouillon » dans « Avec atelier »), `site/cycle/signature.md` (étape 5 : la spec est commitée, qu'un brouillon l'ait été ou non ; seul le commit `sign spec` porte `status: signed`), `site/reference/commandes.md` (ligne `/atelier:new` : commit et push du brouillon).
@@ -69,8 +70,8 @@ Question si manquant : qu'est-ce qui pourrait changer pour l'utilisateur malgré
   - V-2 : version commitée en brouillon, version de travail signée (après `atelier sign`, avant le commit) → `Write` refusé ; édition du corps sans nouvelle entrée datée refusée ; édition avec nouvelle entrée acceptée ; retour de `status` à `draft` refusé ;
   - V-3 : pour chacun des cas de V-1 et V-2, la décision est identique à celle obtenue avec `committedSpec` à `null` (pas de brouillon commité).
 - Relecture des deux skills :
-  - `new` §1 commite et pousse les retouches d'un brouillon repris ; `new` §3 récupère le remote avant `next-id` (sauf identifiant fourni) avec la règle de choix du remote ; `new` §7 commite la spec seule (`-- <dossier>/spec.md`) puis pousse vers la branche de suivi existante ou une nouvelle branche ;
-  - `sign` §2 commite et pousse les retouches en l'absence de signature ; `sign` §4 commite la spec seule (`--`) et ne suppose plus que la spec est absente de l'historique.
+  - `new` §1 commite et pousse les retouches d'un brouillon repris ; `new` §3 récupère le remote avant `next-id` (sauf identifiant fourni) avec la règle de choix du remote ; `new` §3 crée la branche avec `--no-track` ; `new` §7 commite la spec seule (`-- <dossier>/spec.md`) puis pousse vers la branche distante suivie (nom lu dans `branch.<b>.merge`) ou une nouvelle branche, jamais vers la branche par défaut ;
+  - `sign` (fin de §3) commite et pousse les retouches en l'absence de signature ; `sign` §4 commite la spec seule (`--`) et ne suppose plus que la spec est absente de l'historique.
 - `site/` : `npm run build` passe ; `intention.md`, `signature.md` et `commandes.md` décrivent le commit et le push du brouillon.
 - `claude plugin validate ./plugins/atelier` passe.
 
@@ -80,3 +81,4 @@ Question si manquant : qu'est-ce qui pourrait changer pour l'utilisateur malgré
 
 ## Amendements
 <!-- Après signature : une entrée datée par modification de la spec. -->
+- 2026-11-20 : règle de push du brouillon corrigée après la revue (tour 1, B1), parce que `git switch -c <branche> origin/main` crée un suivi vers `origin/main` et que le push « vers la branche de suivi » aurait alors publié le brouillon sur la branche par défaut. `new` §3 crée la branche avec `--no-track` ; `new` §7 lit la cible dans `branch.<b>.merge` et ne pousse jamais le brouillon sur la branche par défaut. La consigne de `sign` pour les retouches sans signature passe de §2 en fin de §3 (revue, D2). Vérification complétée en conséquence.
