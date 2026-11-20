@@ -28,7 +28,8 @@ Cycle résultant : `new → sign → (plan) → (write-tests) → build ⇄ revi
 ## 3. Périmètre
 - Inclus :
   - plugin : skills `write-tests` (ex-`tests`), `amend`, `review`, `close` ; mises à jour de `build`, `plan`, `sign`, `status`, `new` ; CLI ; hook de garde ; template `revue.md` ; version 0.2.0 (`npm run version:minor`) ;
-  - site : cycle, référence des commandes, hooks et configuration, templates (inclusion de `revue.md`), en-tête de spec, glossaire, démarrage rapide, schéma SVG dans « Vue d'ensemble du cycle » ; `README.md`.
+  - site : cycle, référence des commandes, hooks et configuration, templates (inclusion de `revue.md`), en-tête de spec, glossaire, démarrage rapide, schéma SVG dans « Vue d'ensemble du cycle » ; `README.md` ;
+  - documentation : où et comment lancer les commandes (voir §4, « Lancer les commandes »).
 - Hors périmètre :
   - empêcher les écritures par le shell (limite connue de TEC-1, §5) ;
   - vérifier que la re-signature d'un amendement vient bien de l'humain (même limite que `atelier sign`) ;
@@ -99,6 +100,13 @@ Ajout à la règle 4 (« En-tête de spec ») de TEC-1 §4, sans changer l'ordre
 - `atelier status` affiche `reviewed_commit` et indique si du code a changé depuis ; le rappel de début de session suit.
 - Logique de décision (garde, clôture, prochaine étape, entrées d'amendement) dans `lib/core.mjs`, en fonctions pures testées ; `lib/cli.mjs` ne fait que lire, exécuter et afficher.
 
+### Lancer les commandes (documentation)
+Le README, le démarrage rapide et la référence des commandes disent clairement :
+- les commandes `/atelier:*` se tapent **dans une conversation Claude Code**, pas dans un terminal ;
+- la CLI `atelier` n'est sur le `PATH` que du shell de Claude Code (outil Bash de l'agent), pas du terminal de l'utilisateur. Hors de Claude Code, elle se lance avec `node <dossier du plugin>/bin/atelier <commande>` (plugin installé : `~/.claude/plugins/cache/atelier/atelier/<version>/`) ;
+- **en une fois** (démarrage de session + commande) : `claude "/atelier:status"` ouvre une session interactive qui lance la commande ; `claude -p "/atelier:status"` l'exécute sans session interactive et affiche le résultat. Pour une commande qui demande une confirmation (`sign`, `amend`, `close`), on répond par `claude -p "oui" --continue`, ou on préfère la session interactive ;
+- la documentation n'affirme que ce qui a été vérifié (ou ce que la documentation de Claude Code garantit) ; le reste est signalé comme non vérifié.
+
 ## 5. Impacts indirects
 - Projets existants : `/atelier:tests` disparaît au profit de `/atelier:write-tests` ; un chantier signé avant cette version et non clôturé doit passer par `/atelier:review` avant `/atelier:close`.
 - Une édition de spec signée sans entrée d'amendement, autorisée jusque-là, est refusée.
@@ -124,6 +132,7 @@ Ajout à la règle 4 (« En-tête de spec ») de TEC-1 §4, sans changer l'ordre
   - réouverture : `reopen-tests` sur des tests figés, implémentation refusée pendant la réécriture, regel tracé dans la spec ;
   - revue puis clôture : `close-check` et `set-status done` refusés après un commit de code postérieur à `set-reviewed`, acceptés sinon ; `reviewed_commit` non modifiable par l'outil d'édition.
 - Aucune référence restante à `/atelier:tests` dans le plugin, le README et le site.
+- Les lancements en une fois documentés (`claude "/atelier:status"`, `claude -p "/atelier:status"`, `node <dossier du plugin>/bin/atelier status`) sont essayés ; le résultat est consigné dans le bilan, et ce qui n'a pas pu être essayé est signalé comme tel dans la documentation.
 
 ## 7. Retour arrière
 Revenir à la version 0.1.1 du plugin (revert de la fusion, puis `npm run version:patch`). Les champs `reviewed_commit` et les fichiers `revue.md` déjà écrits sont ignorés par l'ancienne version.
