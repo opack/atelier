@@ -2,11 +2,11 @@
 id: TEC-5
 type: TEC
 title: Commiter la spec en brouillon
-status: signed
+status: draft
 tdd: no
 created_at: 2026-11-20
-signed_by: Claude
-signed_at: 2026-11-20
+signed_by:
+signed_at:
 ---
 
 # TEC-5 Commiter la spec en brouillon
