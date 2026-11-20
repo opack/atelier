@@ -54,7 +54,8 @@ L’agent présente un tableau : test, critère couvert, résultat, raison. Un t
 Les tests sont la spécification exécutable : **relisez-les**. Puis :
 
 1. commit des tests seuls ;
-2. `atelier freeze-tests` : refuse s’il reste des tests non commités ou si le dernier commit ne contient aucun test, et note le commit dans la spec (`tests_commit`).
+2. `atelier freeze-tests` : refuse s’il reste des tests non commités ou si le dernier commit ne contient aucun test, et note le commit dans la spec (`tests_commit`) ;
+3. commit de la spec seule, aussitôt (`freeze tests`).
 
 À partir de là, les tests sont **figés** : l’agent ne peut plus les modifier.
 
@@ -80,7 +81,7 @@ Ce qui est permis à la réouverture :
 - **modifier** un test existant, seulement s’il était faux ou si la spec a été [amendée](./amendement) ;
 - **supprimer** un test, seulement si un critère a disparu, donc après un amendement.
 
-La réouverture est refusée pour un chantier sans TDD (il n’a pas de tests figés) et pour des tests pas encore figés.
+La réouverture est refusée pour une spec non signée, pour un chantier sans TDD (il n’a pas de tests figés) et pour des tests pas encore figés.
 
 ## Et si le TDD s’avère inadapté ?
 
