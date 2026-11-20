@@ -49,7 +49,7 @@ N'inclus que les contrôles qui existent et s'exécutent en moins de quelques mi
 
 - Crée `docs/chantiers/` et `docs/decisions/` (avec un `.gitkeep`).
 - Ajoute `.atelier/` au `.gitignore` (état local : débrayage, état du hook de fin).
-- Ajoute au `CLAUDE.md` du projet (crée le fichier s'il n'existe pas), sans toucher au reste, la section « Process (atelier) » telle que la donne `atelier template process`. Vérifie ensuite avec `atelier check-process` : rien ne doit manquer.
+- Ajoute au `CLAUDE.md` du projet (crée le fichier s'il n'existe pas), sans toucher au reste, la section « Process (atelier) » telle que la donne `atelier template process`, avec `docs/chantiers` remplacé par le `chantiersDir` du projet s'il diffère. Vérifie ensuite avec `atelier check-process` : rien ne doit manquer.
 
 ## 4. Fin
 

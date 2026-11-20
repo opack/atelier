@@ -19,6 +19,7 @@ import {
   describeRelation,
   closeProblems,
   collectUsedIdentifiers,
+  DEFAULT_CONFIG,
   configPath,
   currentBranch,
   decideStop,
@@ -348,8 +349,12 @@ function commandCheckSpec([path]) {
 
 // Lines of the « Process (atelier) » section missing from the project's CLAUDE.md.
 function commandCheckProcess() {
-  const claudePath = join(findProjectRoot(), 'CLAUDE.md')
+  const projectRoot = findProjectRoot()
+  const claudePath = join(projectRoot, 'CLAUDE.md')
+  // The template names the default chantiers directory: the project's own is expected instead.
+  const chantiersDir = loadConfig(projectRoot)?.chantiersDir ?? DEFAULT_CONFIG.chantiersDir
   const templateText = readFileSync(join(pluginRoot, 'templates', 'process.md'), 'utf8')
+    .replaceAll(`${DEFAULT_CONFIG.chantiersDir}/`, `${chantiersDir}/`)
   const missing = checkProcessProblems(templateText, existsSync(claudePath) ? readFileSync(claudePath, 'utf8') : null)
   if (missing.length === 0) {
     console.log('Section « Process (atelier) » du CLAUDE.md à jour.')
@@ -858,12 +863,7 @@ function hookSessionStart() {
   }
   const { branch, chantier, source } = activeChantier(projectRoot, config)
   const review = reviewSummary(projectRoot, config, chantier)
-  let relations = null
-  try {
-    relations = relationsSummary(projectRoot, config, chantier)
-  } catch {
-    // The reminder must not fail: relations are left out, `atelier status` shows the error.
-  }
+  const relations = relationsSummary(projectRoot, config, chantier)
   const summary = {
     branch,
     chantierSource: source,
