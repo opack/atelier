@@ -66,4 +66,4 @@
 
 ## 2026-11-20 : revue, tour 1
 - Une erreur git en lisant la spec commitée bloque aussi l'édition d'une spec en brouillon : sans `HEAD` lisible, on ne sait pas si la spec y est encore en brouillon. La garde reste stricte (fail-closed), et le message de refus le dit désormais. Exception acceptée en revue.
-- `/atelier:amend` : `set-tdd` ne donne plus lieu à un commit séparé ; son entrée part dans le commit `amend spec` après accord, ou est annulée avec le reste. Hors amendement (spec propre), la règle « commit aussitôt » s'applique toujours.
+- `/atelier:amend` (tour 2, remplace le choix du tour 1 qui laissait l'entrée de `set-tdd` en attente, contraire à la spec §4) : un changement de TDD est une décision à part, demandée à l'utilisateur à l'étape 0, sur la spec propre, puis `set-tdd` et commit `set tdd` aussitôt, avant toute édition. Aucune entrée de la CLI ne reste en attente ni ne sert de passe-droit ; un refus de l'amendement ensuite ne défait pas la décision TDD, prise séparément. Écarté : amender la spec pour autoriser l'entrée en attente (garantie affaiblie pour un commit de moins).
