@@ -7,6 +7,7 @@ tdd: no
 created_at: 2026-11-20
 signed_by: Opack
 signed_at: 2026-11-20
+reviewed_commit: f0ecc017d46166240c6b8d4f1bbb5b58ccc06b1a
 ---
 
 # TEC-3 Amender la spec, rouvrir les tests, séparer revue et clôture
