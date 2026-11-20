@@ -21,3 +21,9 @@
 ## 2026-11-20 : lancement des commandes, version simplifiée
 - Décision de l'utilisateur : on ne documente ni `claude -p`, ni le lancement en une fois, ni la CLI par `node`. La doc dit seulement que les commandes `/atelier:*` se lancent dans une session Claude Code ouverte sur le répertoire du projet.
 - Écarté : `claude -p` (il exige des permissions pré-autorisées pour toute commande qui écrit, ce qui est fragile et trompeur) ; `node <plugin>/bin/atelier` (détail d'implémentation, pas un usage).
+
+## 2026-11-20 : conception (plan)
+- Amorçage, **option A** : TEC-3 est revu et clôturé avec la 0.2.0 locale (`claude --plugin-dir ./plugins/atelier`), donc soumis à `review` → `reviewed_commit` → `close-check`. Écarté : clôturer avec la 0.1.1 installée (plus simple, mais on clôturerait sans revue le chantier qui la rend obligatoire, et on perdrait le meilleur rejeu possible).
+- Refus de la CLI (`reopen-tests`, `set-reviewed`, `set-status draft`) écrits comme fonctions pures dans `core.mjs`, testées sans dépôt git. Écarté : tests d'intégration sur des dépôts temporaires (lents, fragiles sous Windows) ; le vrai git est couvert par le rejeu de bout en bout.
+- « Aucun changement de code non commité » dans `close-check` utilise le même ensemble de chemins que la détection des commits de code (`.claude/**` compte comme du code). C'est la lecture la plus cohérente de la spec ; pas d'amendement.
+- Playwright lancé hors du projet (dossier temporaire), pour garder `site/` sans dépendance de test.
