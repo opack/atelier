@@ -145,12 +145,13 @@ function commandStatus(options) {
     console.log(JSON.stringify({ installed: false }))
     return
   }
-  const { branch, chantier } = activeChantier(projectRoot, config)
+  const { branch, chantier, source } = activeChantier(projectRoot, config)
   const bypass = readBypass(projectRoot, branch)
   const review = reviewSummary(projectRoot, config, chantier)
   const summary = {
     installed: true,
     branch,
+    chantierSource: source,
     chantier: chantier
       ? {
           id: chantier.id,
@@ -190,7 +191,8 @@ function formatStatus(summary) {
   const lines = [`Branche : ${summary.branch ?? '(aucune)'}`]
   if (summary.chantier) {
     const { id, title, type, status, files, specProblems } = summary.chantier
-    lines.push(`Chantier : ${id}${title ? ` — ${title}` : ''} (${type ?? '?'}, ${status ?? 'pas de spec'})`)
+    const deduced = summary.chantierSource === 'commits' ? ' (déduit des commits)' : ''
+    lines.push(`Chantier : ${id}${deduced}${title ? ` — ${title}` : ''} (${type ?? '?'}, ${status ?? 'pas de spec'})`)
     lines.push(`Documents : ${files.length ? files.join(', ') : 'aucun'}`)
     const phaseLabels = {
       'writing-tests': 'tests d’abord — aucune implémentation tant que les tests ne sont pas commités',
@@ -700,10 +702,11 @@ function hookSessionStart() {
   if (!config) {
     return
   }
-  const { branch, chantier } = activeChantier(projectRoot, config)
+  const { branch, chantier, source } = activeChantier(projectRoot, config)
   const review = reviewSummary(projectRoot, config, chantier)
   const summary = {
     branch,
+    chantierSource: source,
     chantier: chantier ? { id: chantier.id, title: chantier.spec?.data.title, type: chantier.spec?.data.type, status: chantier.spec?.data.status, files: chantier.files, ...review } : null,
     bypass: readBypass(projectRoot, branch),
     nextStep: nextStep(chantier, review.reviewState),

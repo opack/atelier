@@ -25,6 +25,7 @@ export const DEFAULT_CONFIG = {
 export const TDD_RECOMMENDATION = { FEAT: 'yes', FIX: 'yes', REF: 'yes', TEC: 'no', SPIKE: 'no' }
 
 const ID_PATTERN = new RegExp(`\\b(${CHANTIER_TYPES.join('|')})-(\\d+)\\b`, 'i')
+const BRACKETED_ID_PATTERN = new RegExp(`\\[(${CHANTIER_TYPES.join('|')})-(\\d+)\\]`, 'i')
 
 // Sections required before signature, per chantier type.
 // A section matches when its heading (without its number) starts with the given title.
@@ -151,13 +152,76 @@ export function readChantier(projectRoot, config, chantierId) {
   return { id: chantierId, directory, spec, files: readdirSync(directory) }
 }
 
+// Subjects are ordered from newest to oldest; only a bracketed identifier counts.
+export function chantierIdFromCommitSubjects(subjects) {
+  for (const subject of subjects) {
+    const match = subject.match(BRACKETED_ID_PATTERN)
+    if (match) {
+      return `${match[1].toUpperCase()}-${match[2]}`
+    }
+  }
+  return null
+}
+
+function gitOutput(projectRoot, gitArguments) {
+  try {
+    return execFileSync('git', gitArguments, {
+      cwd: projectRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim()
+  } catch {
+    return null
+  }
+}
+
+// refs/remotes/origin/HEAD is missing from cloud clones, hence the fallbacks.
+const BASE_REF_CANDIDATES = ['refs/remotes/origin/HEAD', 'origin/main', 'origin/master', 'main', 'master']
+
+export function defaultBaseRef(projectRoot) {
+  return BASE_REF_CANDIDATES.find(
+    (ref) => gitOutput(projectRoot, ['rev-parse', '--verify', '--quiet', `${ref}^{commit}`]) !== null,
+  ) ?? null
+}
+
+export function branchCommitSubjects(projectRoot, base) {
+  const output = gitOutput(projectRoot, ['log', '--format=%s', `${base}..HEAD`])
+  return output ? output.split('\n') : []
+}
+
+// Short name of the default branch behind a base ref: origin/HEAD → origin/main → main.
+// null when origin/HEAD cannot be resolved: the default branch is then unknown.
+function defaultBranchName(projectRoot, base) {
+  const resolved = base === 'refs/remotes/origin/HEAD'
+    ? gitOutput(projectRoot, ['rev-parse', '--abbrev-ref', base])
+    : base
+  return resolved ? resolved.replace(/^origin\//, '') : null
+}
+
+function chantierIdFromBranchCommits(projectRoot, branch) {
+  if (!branch || branch === 'HEAD') {
+    return null
+  }
+  const base = defaultBaseRef(projectRoot)
+  const defaultBranch = base && defaultBranchName(projectRoot, base)
+  if (!defaultBranch || branch === defaultBranch) {
+    return null
+  }
+  return chantierIdFromCommitSubjects(branchCommitSubjects(projectRoot, base))
+}
+
+// The branch name wins; otherwise, off the default branch, the branch's own commits tell.
 export function activeChantier(projectRoot, config) {
   const branch = currentBranch(projectRoot)
-  const chantierId = chantierIdFromText(branch)
-  if (!chantierId) {
-    return { branch, chantier: null }
+  const branchId = chantierIdFromText(branch)
+  if (branchId) {
+    return { branch, chantier: readChantier(projectRoot, config, branchId), source: 'branch' }
   }
-  return { branch, chantier: readChantier(projectRoot, config, chantierId) }
+  const commitsId = chantierIdFromBranchCommits(projectRoot, branch)
+  if (commitsId) {
+    return { branch, chantier: readChantier(projectRoot, config, commitsId), source: 'commits' }
+  }
+  return { branch, chantier: null, source: null }
 }
 
 // ---------- Next identifier ----------

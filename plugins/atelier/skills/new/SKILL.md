@@ -12,7 +12,7 @@ Arguments reçus : `$ARGUMENTS`
 ## 1. Préalables
 
 - Lance `atelier status --json`. Si `installed` vaut `false`, arrête-toi et propose `/atelier:init`.
-- Si la branche courante porte déjà un chantier, demande s'il faut en ouvrir un nouveau ou continuer celui-ci.
+- Si un chantier est actif (nom de branche ou commits de la branche), demande s'il faut en ouvrir un nouveau ou continuer celui-ci.
 - Si le dépôt a des modifications non commitées, signale-le avant de changer de branche.
 
 ## 2. Type
@@ -31,7 +31,7 @@ Déduis le type des arguments s'il est donné ou évident, sinon demande-le :
 
 1. Si l'utilisateur a fourni un identifiant, utilise-le. Sinon : `atelier next-id <TYPE>`.
 2. Slug : 2 à 5 mots du titre, en minuscules, sans accents, séparés par des tirets.
-3. Branche : `git switch -c <type en minuscules>/<ID>-<slug>` depuis la branche par défaut à jour (demande si tu n'es pas sur la branche par défaut).
+3. Branche : `git switch -c <type en minuscules>/<ID>-<slug>` depuis la branche par défaut à jour. Si tu n'es pas sur la branche par défaut (branche imposée, par exemple `claude/...` dans une session cloud), demande s'il faut rester sur la branche courante. Si oui, ne crée pas de branche et rappelle que le chantier n'y est reconnu qu'après le premier commit `[<ID>]` (le commit du brouillon).
 4. Dossier : `docs/chantiers/<ID>-<slug>/` (ou le `chantiersDir` de la configuration).
 5. Spec : `atelier template spec-<type en minuscules>` ; remplace `{{ID}}`, `{{TITLE}}`, `{{DATE}}` (AAAA-MM-JJ) et écris `spec.md`.
 
