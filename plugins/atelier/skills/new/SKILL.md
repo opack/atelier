@@ -1,5 +1,5 @@
 ---
-description: Ouvre un chantier atelier (FEAT, FIX, REF, TEC, SPIKE) — identifiant, branche, dossier — et construit la spec en posant des questions uniquement sur ce qui manque.
+description: Ouvre un chantier atelier (FEAT, FIX, REF, TEC, SPIKE, EPIC) — identifiant, branche, dossier — et construit la spec en posant des questions uniquement sur ce qui manque.
 argument-hint: "[type] [titre, description, lien Notion ou Sentry]"
 ---
 
@@ -26,6 +26,9 @@ Déduis le type des arguments s'il est donné ou évident, sinon demande-le :
 | `REF` | Restructuration du code, comportement inchangé |
 | `TEC` | Technique sans impact utilisateur direct : CI, outillage, dépendances, config, sécurité, infra, migration, petite maintenance |
 | `SPIKE` | Exploration bornée dans le temps ; code jetable |
+| `EPIC` | Chantier d'organisation : une vision que plusieurs chantiers rattachés réalisent ; n'implémente rien |
+
+**EPIC ou pas ?** Si la demande couvre plusieurs livrables indépendants (types différents, ou plusieurs PR inévitables), propose d'ouvrir d'abord un `EPIC`, puis les chantiers qui s'y rattachent. À l'inverse, un EPIC demandé pour un seul livrable est un `FEAT` : dis-le. L'utilisateur tranche.
 
 ## 3. Identifiant, branche, dossier
 
@@ -55,6 +58,8 @@ Puis, **section par section**, pose des questions **uniquement** quand une secti
 - contredite par le code ;
 - marquée « N/A » sans raison.
 
+**Relations** (en-tête, préfixe `rel_`, un identifiant ou plusieurs séparés par des virgules) : `rel_parent` (l'EPIC auquel le chantier appartient, un seul), `rel_depends_on` (chantiers à livrer avant celui-ci), `rel_origin` (le chantier dont il découle : SPIKE, régression, suite d'un bilan), `rel_replaces` (chantier abandonné qu'il reprend). Le lien se déclare chez l'enfant seulement. Ne pose une question sur les relations que si le contexte en suggère une (un EPIC ouvert sur le sujet, un SPIKE cité, un chantier prérequis). Un EPIC peut avoir un EPIC pour parent : au-delà de deux niveaux d'imbrication, mets en garde (découpage sans doute trop fin).
+
 Ne fais jamais confirmer ce qui est déjà écrit et correct. Les commentaires `<!-- -->` du template donnent les questions utiles par section. Pose au plus 5 questions à la fois, groupées, en citant la section.
 
 Règles d'écriture :
@@ -77,9 +82,11 @@ Repères pour recommander :
 
 Enregistre la réponse : `atelier set-tdd yes` ou `atelier set-tdd no [raison]`.
 
+**EPIC** : ne pose pas la question. Un EPIC n'implémente rien, il est toujours en `tdd: no` (déjà dans son template ; `atelier set-tdd yes` est refusé).
+
 ## 6. Vérifier
 
-Lance `atelier check-spec docs/chantiers/<ID>-<slug>/spec.md`. Tant qu'il reste des points, traite-les avec l'utilisateur ou note ceux qu'il choisit de laisser pour plus tard.
+Lance `atelier check-spec docs/chantiers/<ID>-<slug>/spec.md`. Il vérifie aussi les relations (identifiants connus dans les branches, parent unique et EPIC non clos, ni auto-référence ni cycle). Tant qu'il reste des points, traite-les avec l'utilisateur ou note ceux qu'il choisit de laisser pour plus tard.
 
 ## 7. Fin
 

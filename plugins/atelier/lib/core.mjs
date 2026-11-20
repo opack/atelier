@@ -5,7 +5,7 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import nodePath, { basename, join } from 'node:path'
 
-export const CHANTIER_TYPES = ['FEAT', 'FIX', 'REF', 'TEC', 'SPIKE']
+export const CHANTIER_TYPES = ['FEAT', 'FIX', 'REF', 'TEC', 'SPIKE', 'EPIC']
 
 export const DEFAULT_CONFIG = {
   chantiersDir: 'docs/chantiers',
@@ -21,8 +21,9 @@ export const DEFAULT_CONFIG = {
 }
 
 // Recommended answer to "should this chantier follow TDD?", per type. Only a suggestion:
-// the human always decides, in the `tdd` field of the spec header.
-export const TDD_RECOMMENDATION = { FEAT: 'yes', FIX: 'yes', REF: 'yes', TEC: 'no', SPIKE: 'no' }
+// the human always decides, in the `tdd` field of the spec header. An EPIC implements nothing:
+// it is always `tdd: no`, without asking.
+export const TDD_RECOMMENDATION = { FEAT: 'yes', FIX: 'yes', REF: 'yes', TEC: 'no', SPIKE: 'no', EPIC: 'no' }
 
 const ID_PATTERN = new RegExp(`\\b(${CHANTIER_TYPES.join('|')})-(\\d+)\\b`, 'i')
 const BRACKETED_ID_PATTERN = new RegExp(`\\[(${CHANTIER_TYPES.join('|')})-(\\d+)\\]`, 'i')
@@ -35,6 +36,7 @@ export const REQUIRED_SECTIONS = {
   REF: ['Périmètre', 'Pourquoi maintenant', 'État actuel', 'Preuve de non-régression', 'Stratégie', 'Critère de fin'],
   TEC: ['Quoi', 'Pourquoi', 'Vérification'],
   SPIKE: ['Question', 'Pourquoi', 'Budget', 'Ce qui compte comme réponse'],
+  EPIC: ['Vision', 'Pourquoi', "Critères d'acceptation globaux", 'Cadre', 'Hors périmètre'],
 }
 
 // Sections that must contain at least one numbered acceptance criterion (CA-1, CA-2...).
@@ -216,6 +218,257 @@ export function activeChantier(projectRoot, config) {
   return { branch, chantier: null, source: null }
 }
 
+// ---------- Relations between chantiers ----------
+
+// Relation fields of the spec header. The link is declared by the child only.
+export const RELATION_FIELDS = { parent: 'rel_parent', dependsOn: 'rel_depends_on', origin: 'rel_origin', replaces: 'rel_replaces' }
+
+// Any identifier, legacy prefixes included (BUG-421, FEA-26), as accepted by the shared counter.
+const RELATION_ID_PATTERN = /^[A-Za-z]{2,6}-\d+$/
+
+const CLOSED_STATUSES = ['done', 'abandoned']
+
+function relationValues(value) {
+  return String(value ?? '').split(',').map((part) => part.trim()).filter(Boolean)
+}
+
+// { parent, dependsOn, origin, replaces }: identifiers in upper case, without duplicates.
+export function parseRelations(data) {
+  return Object.fromEntries(Object.entries(RELATION_FIELDS).map(([name, field]) => [
+    name,
+    [...new Set(relationValues(data?.[field]).map((value) => value.toUpperCase()))],
+  ]))
+}
+
+export function hasRelations(data) {
+  return Object.values(RELATION_FIELDS).some((field) => relationValues(data?.[field]).length)
+}
+
+// Chantier identifier at the start of a chantier directory name (`FEAT-12-budget` → FEAT-12).
+export function chantierIdFromDirectoryName(name) {
+  const match = name.match(new RegExp(`^(${CHANTIER_TYPES.join('|')})-(\\d+)(?:-|$)`, 'i'))
+  return match ? `${match[1].toUpperCase()}-${match[2]}` : null
+}
+
+// Short name of a ref: refs/heads/x → x, refs/remotes/origin/x → origin/x.
+export function shortRefName(ref) {
+  return ref.replace(/^refs\/(heads|remotes)\//, '')
+}
+
+// Objects printed by `git cat-file --batch`, in the order of the requests: { id, type, content
+// (Buffer) } for each object found, null for a missing one.
+export function parseCatFileBatch(output) {
+  const objects = []
+  let offset = 0
+  while (offset < output.length) {
+    const end = output.indexOf(0x0a, offset)
+    if (end < 0) {
+      break // truncated output
+    }
+    const header = output.subarray(offset, end).toString('utf8')
+    if (/ (missing|ambiguous)$/.test(header)) {
+      objects.push(null)
+      offset = end + 1
+      continue
+    }
+    const [id, type, size] = header.split(' ')
+    objects.push({ id, type, content: output.subarray(end + 1, end + 1 + Number(size)) })
+    offset = end + 1 + Number(size) + 1
+  }
+  return objects
+}
+
+// Entries of a raw tree object (`<mode> <name>\0<binary id>`), as { mode, name, id } with a hex id.
+// `idLength` is the length in bytes of an object id (20 for SHA-1, 32 for SHA-256).
+export function parseTreeEntries(content, idLength = 20) {
+  const entries = []
+  let offset = 0
+  while (offset < content.length) {
+    const space = content.indexOf(0x20, offset)
+    const nul = content.indexOf(0x00, space)
+    entries.push({
+      mode: content.subarray(offset, space).toString('utf8'),
+      name: content.subarray(space + 1, nul).toString('utf8'),
+      id: content.subarray(nul + 1, nul + 1 + idLength).toString('hex'),
+    })
+    offset = nul + 1 + idLength
+  }
+  return entries
+}
+
+// Chantier directories of a raw chantiers tree: [{ id, tree }], `tree` being the directory's id.
+export function chantierTreesOf(content, idLength = 20) {
+  return parseTreeEntries(content, idLength)
+    .filter((entry) => entry.mode === '40000')
+    .map((entry) => ({ id: chantierIdFromDirectoryName(entry.name), tree: entry.id }))
+    .filter((entry) => entry.id)
+}
+
+// Index of the known chantiers, by identifier: { id, here (header in the current tree, or null),
+// branches ([{ branch, data }] in the other branches) }. `here` is [{ id, data }].
+export function buildChantierIndex(here, branchHeaders) {
+  const index = new Map()
+  const entry = (id) => {
+    if (!index.has(id)) {
+      index.set(id, { id, here: null, branches: [] })
+    }
+    return index.get(id)
+  }
+  here.forEach(({ id, data }) => { entry(id).here = data })
+  branchHeaders.forEach(({ branch, id, data }) => entry(id).branches.push({ branch, data }))
+  return index
+}
+
+// Status in the current tree; null for a chantier found only on other branches (not merged).
+export function statusHere(entry) {
+  return entry?.here ? entry.here.status || 'draft' : null
+}
+
+// Closed means closed in the current tree: a chantier closed only on its branch is still open.
+export function isClosedHere(entry) {
+  return CLOSED_STATUSES.includes(statusHere(entry))
+}
+
+function versions(entry) {
+  return [...(entry.here ? [entry.here] : []), ...entry.branches.map((branch) => branch.data)]
+}
+
+function typeOf(entry) {
+  return versions(entry).map((data) => (data.type ?? '').toUpperCase()).find(Boolean) ?? ''
+}
+
+// Ids an entry is linked to through `relation`: union of all its known versions.
+function linksOf(entry, relation) {
+  return new Set(versions(entry).flatMap((data) => parseRelations(data)[relation]))
+}
+
+// Direct children of a chantier: those whose header, in any version, names it as parent.
+export function childrenOf(index, id) {
+  return [...index.values()].filter((entry) => entry.id !== id && linksOf(entry, 'parent').has(id))
+}
+
+// A related chantier as shown to the user: { id, status (in the current tree, null when absent
+// from it), closed, branches (where it lives when it is not in the current tree) }.
+export function describeRelation(index, id) {
+  const entry = index.get(id)
+  return {
+    id,
+    status: statusHere(entry),
+    closed: isClosedHere(entry),
+    branches: entry && !entry.here ? entry.branches.map((branch) => branch.branch) : [],
+  }
+}
+
+// A cycle through `id` following `relation`, as a list of ids starting and ending with `id`, or
+// null. `ownLinks` replaces the links of `id` found in the index.
+function findCycle(index, id, ownLinks, relation) {
+  const next = (current) => (current === id ? ownLinks : index.has(current) ? [...linksOf(index.get(current), relation)] : [])
+  const visited = new Set()
+  const walk = (current, path) => {
+    for (const target of next(current)) {
+      if (target === id) {
+        return [...path, id]
+      }
+      if (!visited.has(target)) {
+        visited.add(target)
+        const cycle = walk(target, [...path, target])
+        if (cycle) {
+          return cycle
+        }
+      }
+    }
+    return null
+  }
+  return walk(id, [id])
+}
+
+// Relation problems of a spec header, which block the signature. `index` comes from
+// buildChantierIndex. Only `rel_parent` and `rel_depends_on` must name a known chantier:
+// `rel_origin` and `rel_replaces` are traces, checked on their format only.
+export function relationProblems(data, index) {
+  const problems = []
+  const id = (data.id ?? '').toUpperCase()
+  for (const field of Object.values(RELATION_FIELDS)) {
+    for (const value of relationValues(data[field])) {
+      if (!RELATION_ID_PATTERN.test(value)) {
+        problems.push(`${field} : « ${value} » est mal formé (attendu : un identifiant comme FEAT-12).`)
+      } else if (value.toUpperCase() === id) {
+        problems.push(`${field} : ${id} ne peut pas se citer lui-même.`)
+      }
+    }
+  }
+  const relations = parseRelations(data)
+  const valid = (ids) => ids.filter((value) => RELATION_ID_PATTERN.test(value) && value !== id)
+  if (relations.parent.length > 1) {
+    problems.push(`rel_parent : un seul parent possible (${relations.parent.join(', ')}).`)
+  }
+  for (const [field, ids] of [['rel_parent', valid(relations.parent)], ['rel_depends_on', valid(relations.dependsOn)]]) {
+    for (const target of ids.filter((value) => !index.has(value))) {
+      problems.push(`${field} : ${target} est introuvable dans les branches du projet (faute de frappe ?).`)
+    }
+  }
+  for (const parent of valid(relations.parent).filter((value) => index.has(value))) {
+    const entry = index.get(parent)
+    if (typeOf(entry) !== 'EPIC') {
+      problems.push(`rel_parent : ${parent} n’est pas un EPIC (type : ${typeOf(entry) || '?'}) ; seul un EPIC peut être parent.`)
+    } else if (isClosedHere(entry)) {
+      problems.push(`rel_parent : l’EPIC ${parent} est clos (statut : ${statusHere(entry)}) ; on ne rattache pas un chantier à un EPIC clos.`)
+    }
+  }
+  for (const [field, relation] of [['rel_parent', 'parent'], ['rel_depends_on', 'dependsOn']]) {
+    const cycle = id ? findCycle(index, id, valid(relations[relation]), relation) : null
+    if (cycle) {
+      problems.push(`${field} : cycle ${cycle.join(' → ')}.`)
+    }
+  }
+  return problems
+}
+
+// Children of an EPIC that are not closed in the current tree, as described by describeRelation.
+export function openChildren(index, id) {
+  return childrenOf(index, id).map((entry) => describeRelation(index, entry.id)).filter((child) => !child.closed)
+}
+
+function openChildProblem(child) {
+  return child.status
+    ? `Enfant ${child.id} encore ouvert ici (statut : ${child.status}) : une fois livré, fusionne la branche par défaut dans celle-ci.`
+    : `Enfant ${child.id} pas fusionné dans cette branche (vit sur ${child.branches.join(', ')}) : fusionne la branche par défaut dans celle-ci une fois ${child.id} livré, ou supprime sa branche s’il est abandonné.`
+}
+
+// Why the relations prevent closing (`done`) a chantier, as a list. `id` is the chantier's
+// identifier (from its branch and directory), `data` its spec header, `index` comes from
+// buildChantierIndex. Statuses are judged in the current tree only.
+export function relationCloseProblems(id, data, index) {
+  const problems = []
+  for (const dependency of parseRelations(data).dependsOn.map((target) => describeRelation(index, target))) {
+    const { status, branches } = dependency
+    const dependencyId = dependency.id
+    if (status === 'done') {
+      continue
+    }
+    if (status === 'abandoned') {
+      problems.push(`Dépendance ${dependencyId} abandonnée (statut : abandoned) : retire la relation (/atelier:amend) ou dépends du chantier qui la remplace.`)
+    } else if (status) {
+      problems.push(`Dépendance ${dependencyId} pas livrée (statut : ${status}) : attends sa clôture, puis fusionne la branche par défaut dans celle-ci.`)
+    } else if (branches.length) {
+      problems.push(`Dépendance ${dependencyId} pas fusionnée dans cette branche (présente seulement sur ${branches.join(', ')}) : fusionne la branche par défaut dans celle-ci une fois ${dependencyId} livrée.`)
+    } else {
+      problems.push(`Dépendance ${dependencyId} introuvable dans les branches du projet.`)
+    }
+  }
+  if ((data.type ?? '').toUpperCase() === 'EPIC') {
+    const open = openChildren(index, id)
+    problems.push(...open.map(openChildProblem))
+    const children = childrenOf(index, id)
+    if (!open.length && !children.some((entry) => statusHere(entry) === 'done')) {
+      problems.push(children.length
+        ? `Aucun enfant de ${id} n’est done : la vision n’a pas été réalisée. Abandonne l’EPIC (atelier set-status abandoned).`
+        : `Aucun enfant rattaché à ${id} (rel_parent: ${id}) : rien n’a été réalisé. Ouvre les chantiers du plan, ou abandonne l’EPIC (atelier set-status abandoned).`)
+    }
+  }
+  return problems
+}
+
 // ---------- Next identifier ----------
 
 // The counter is shared by all types: the next number follows the highest one ever used,
@@ -311,6 +564,9 @@ export function checkSpec(text) {
     problems.push('En-tête : « tdd » doit valoir yes ou no. C’est une décision humaine : ce chantier suit-il le TDD (tests écrits, commités et figés avant l’implémentation) ?')
   }
   const type = (data.type ?? '').toUpperCase()
+  if (type === 'EPIC' && data.tdd === 'yes') {
+    problems.push('En-tête : un EPIC n’implémente rien, il est toujours en « tdd: no ».')
+  }
   const required = REQUIRED_SECTIONS[type]
   if (!required) {
     problems.push(`En-tête : type « ${data.type ?? ''} » inconnu (attendu : ${CHANTIER_TYPES.join(', ')}).`)
@@ -336,6 +592,24 @@ export function checkSpec(text) {
     }
   }
   return problems
+}
+
+// ---------- Process section of CLAUDE.md ----------
+
+// Lines of the process section template missing from that section of the project's CLAUDE.md
+// (null when the file does not exist), compared trimmed: all of them when the section is absent.
+// The section runs from its heading (the template's first line) to the next heading of the same
+// level or above. Lines added by the project are not a problem.
+export function checkProcessProblems(templateText, claudeText) {
+  const expected = templateText.split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
+  const lines = (claudeText ?? '').split(/\r?\n/).map((line) => line.trim())
+  const start = lines.indexOf(expected[0])
+  if (start < 0) {
+    return expected
+  }
+  const end = lines.findIndex((line, index) => index > start && /^#{1,2}\s/.test(line))
+  const present = new Set(lines.slice(start, end < 0 ? lines.length : end))
+  return expected.filter((line) => !present.has(line))
 }
 
 // ---------- Amendments ----------
@@ -524,17 +798,25 @@ export function setReviewedRefusal({ chantier, uncommittedCode, specUncommitted,
 
 // ---------- Close ----------
 
+// A SPIKE (throwaway code, never merged) and an EPIC (no code) are closed without a review.
+export function isReviewExempt(chantier) {
+  return ['SPIKE', 'EPIC'].includes((chantier?.spec?.data?.type ?? '').toUpperCase())
+}
+
 // Why the chantier cannot be closed, as a list (empty when it can). `context` = { chantier,
 // reviewFacts (see reviewProblems), uncommittedCode (code files changed and not committed),
-// checksFailure (first failing check as { check }, or null) }. A SPIKE (throwaway code, never
-// merged) skips everything related to the review.
+// checksFailure (first failing check as { check }, or null), index (see buildChantierIndex, or
+// null when the chantier has no relation and is not an EPIC) }. A SPIKE (throwaway code, never
+// merged) and an EPIC (no code) skip everything related to the review.
 // `uncommittedError` is the git error met while listing uncommitted files, if any.
-export function closeProblems({ chantier, reviewFacts, uncommittedCode, uncommittedError, checksFailure }) {
+export function closeProblems({ chantier, reviewFacts, uncommittedCode, uncommittedError, checksFailure, index = null }) {
   if (specStatus(chantier?.spec) !== 'signed') {
     return [`La spec de ${chantier?.id ?? 'ce chantier'} n’est pas signée (statut : ${specStatus(chantier?.spec)}).`]
   }
-  const type = (chantier.spec.data.type ?? '').toUpperCase()
-  const problems = type === 'SPIKE' ? [] : reviewProblems(reviewFacts)
+  const problems = isReviewExempt(chantier) ? [] : reviewProblems(reviewFacts)
+  if (index) {
+    problems.push(...relationCloseProblems(chantier.id, chantier.spec.data, index))
+  }
   if (uncommittedError) {
     problems.push(`Impossible de lister les fichiers non commités (${uncommittedError}).`)
   } else if (uncommittedCode.length) {
@@ -552,7 +834,8 @@ export function closeProblems({ chantier, reviewFacts, uncommittedCode, uncommit
 // ---------- Next step ----------
 
 // `review` is the state of the review ('none', 'current' or 'stale'), computed by the command.
-export function nextStep(chantier, review = 'none') {
+// `children` are the direct children of an EPIC, as { id, closed } (see describeRelation).
+export function nextStep(chantier, review = 'none', children = []) {
   if (!chantier) {
     return 'Aucun chantier actif sur cette branche. Ouvrir un chantier : /atelier:new'
   }
@@ -570,9 +853,19 @@ export function nextStep(chantier, review = 'none') {
   if (status !== 'signed') {
     return 'Compléter la spec puis la signer : /atelier:sign'
   }
-  const needsPlan = ['FEAT', 'REF'].includes(type)
+  const needsPlan = ['FEAT', 'REF', 'EPIC'].includes(type)
   if (needsPlan && !chantier.files.includes('plan.md')) {
-    return 'Concevoir : /atelier:plan'
+    return type === 'EPIC' ? 'Concevoir le découpage en chantiers : /atelier:plan' : 'Concevoir : /atelier:plan'
+  }
+  if (type === 'EPIC') {
+    const open = children.filter((child) => !child.closed)
+    if (!children.length) {
+      return `Ouvrir les chantiers prévus au plan, rattachés par « rel_parent: ${chantier.id} » : /atelier:new`
+    }
+    if (open.length) {
+      return `${open.length} enfant(s) encore ouvert(s) : ${open.map((child) => child.id).join(', ')}. Les mener à terme (et ouvrir les lots restants du plan : /atelier:new), puis clôturer l’EPIC.`
+    }
+    return 'Tous les enfants sont clos : clôturer l’EPIC (bilan prévu / réalisé) : /atelier:close'
   }
   const phase = testDrivenPhase(chantier)
   if (phase === 'writing-tests') {
@@ -756,6 +1049,14 @@ function amendmentRefusal(referenceSpec, proposedSpec) {
   return null
 }
 
+// Why `atelier set-tdd <value>` is refused for this chantier, or null.
+export function setTddRefusal(chantier, value) {
+  if (value === 'yes' && (chantier?.spec?.data?.type ?? '').toUpperCase() === 'EPIC') {
+    return `${chantier.id} est un EPIC : il n’implémente rien, il reste en « tdd: no ».`
+  }
+  return null
+}
+
 // Why `atelier set-status <status>` is refused for this chantier, or null.
 export function setStatusRefusal(chantier, status) {
   const current = specStatus(chantier?.spec)
@@ -813,6 +1114,12 @@ export function decideWrite(context) {
     return {
       allowed: false,
       reason: `atelier : la spec de ${chantier.id} n’est pas signée (statut : ${status}). Termine-la puis signe-la avec /atelier:sign avant de modifier le code.`,
+    }
+  }
+  if ((chantier.spec.data.type ?? '').toUpperCase() === 'EPIC') {
+    return {
+      allowed: false,
+      reason: `atelier : ${chantier.id} est un EPIC : il n’implémente rien, il définit un cadre que d’autres chantiers concrétisent. Seuls les chemins libres (docs/…) s’écrivent ici ; pour coder, ouvre un chantier rattaché (rel_parent: ${chantier.id}) avec /atelier:new.`,
     }
   }
   const isTestFile = matches(config.testPaths)

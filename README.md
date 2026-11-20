@@ -55,8 +55,11 @@ Puis `/reload-plugins` après chaque modification. Tests : `npm test`. Validatio
 | `REF` | Restructuration, comportement inchangé | spec → signature → plan → (tests de caractérisation si TDD) → build ⇄ revue → clôture |
 | `TEC` | Technique sans impact utilisateur direct (CI, outillage, dépendances, config, sécurité, migration…) | spec → signature → build ⇄ revue → clôture |
 | `SPIKE` | Exploration bornée dans le temps, code jetable | spec → signature → exploration → clôture |
+| `EPIC` | Ensemble de chantiers qui réalisent une même vision ; n'implémente rien | spec → signature → plan (découpage) → chantiers enfants → clôture |
 
 Une spec signée qui s'avère fausse ou incomplète s'amende (`/atelier:amend`), ce qui peut ramener à l'écriture des tests ou à l'implémentation.
+
+Relations entre chantiers, dans l'en-tête de la spec : `rel_parent` (l'EPIC d'appartenance), `rel_depends_on` (prérequis, vérifiés à la clôture), `rel_origin` et `rel_replaces` (trace). Un chantier ne compte comme clos que si son statut clos est fusionné dans la branche courante.
 
 Identifiants : `<TYPE>-<numéro>`, avec un compteur unique par projet (qui continue l'historique existant). Branche `<type>/<ID>-<slug>`, commits `<prefix>(<scope>): [<ID>] …`, PR `[<ID>] <titre>`.
 

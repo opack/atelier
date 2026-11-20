@@ -19,3 +19,23 @@
 - Contexte : avant signature, l'en-tête se modifie à la main ; rien n'empêchait un EPIC en `tdd: yes`.
 - Écarté : une simple note ici sans critère, parce que le type EPIC est créé dans ce chantier et doit être cohérent d'emblée.
 - Conséquence : amendement de la spec (description et CA-7).
+
+## 2026-11-20 : les en-têtes des autres branches se lisent par `git cat-file --batch`, sans `git grep`
+- Contexte : mesure du plan (330 specs, 31 branches, Windows) : le `git grep` sur toutes les refs prend ~2 s, car il relit chaque spec une fois par branche (~60 ms par ref).
+- Écarté : le `git grep` de l'entrée précédente, qui croît avec le nombre de branches ; un `git ls-tree` par branche, pour la même raison.
+- Conséquence : trois appels git, quel que soit le nombre de branches : `for-each-ref`, `cat-file --batch` sur `<ref>:<chantiersDir>` (arbre de chaque ref), `cat-file --batch` sur `<arbre du chantier>:spec.md` pour les seuls dossiers distincts (les branches partagent presque tous les mêmes). Seules les specs distinctes sont lues, pas une par branche. Requêtes par l'entrée standard : pas de limite de longueur de ligne de commande. Mesure : ~170 ms au-dessus d'un `status` sans relations (360 ms contre 190 ms), constant avec le nombre de branches ; au-dessus de l'indication de 100 ms, dû surtout au lancement des processus git sous Windows et à la lecture des specs de l'arbre courant.
+
+## 2026-11-20 : la branche courante est lue sur le disque, pas dans git
+- Contexte : l'index contient une version par branche ; la branche courante a aussi son contenu non commité.
+- Écarté : lire aussi `refs/heads/<branche courante>`, qui doublerait la version du disque par une version commitée parfois périmée.
+- Conséquence : l'arbre courant (disque) fait foi pour la branche courante ; sa branche de suivi distante reste lue comme les autres.
+
+## 2026-11-20 : un refus de clôture d'un chantier sans revue ne renvoie pas vers la revue
+- Contexte : le message de refus se terminait toujours par « refais relire : /atelier:review », faux pour un EPIC (et déjà pour un SPIKE).
+- Écarté : ne corriger que l'EPIC, parce que la règle est la même (pas de revue exigée).
+- Conséquence : pour un SPIKE ou un EPIC, le refus invite à corriger puis relancer la clôture (/atelier:close).
+
+## 2026-11-20 : les dépendants d'un chantier ne sont pas calculés
+- Contexte : la spec cite « chantiers qui dépendent d'un autre » parmi les liens inverses calculables, sans critère ni affichage qui les demande.
+- Écarté : les afficher dans `status`, parce qu'aucun CA ne le demande et que le hors périmètre exclut une vue globale des relations.
+- Conséquence : seul l'inverse de `rel_parent` (enfants d'un EPIC) est calculé ; les dépendants pourront s'ajouter quand un besoin les demandera.

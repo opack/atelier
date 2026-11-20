@@ -55,4 +55,26 @@ tests_commit: 8cfa4be # posé au gel des tests, si TDD
 
 Les champs `status`, `signed_by`, `signed_at`, `done_at` et `tests_commit` ne changent que par la commande `atelier`, et `tdd` aussi une fois la spec signée : l’agent ne peut pas les modifier avec ses outils d’édition.
 
+## Relations entre chantiers
+
+Un chantier en suppose un autre, naît d’un SPIKE ou d’une régression, ou contribue à un EPIC. Ces liens se déclarent dans l’en-tête de la spec, **chez l’enfant seulement** :
+
+| Champ | Sens | Effet |
+|---|---|---|
+| `rel_parent` | Le chantier appartient à cet EPIC (un seul) | Affiché ; compte pour la clôture de l’EPIC |
+| `rel_depends_on` | Le chantier ne peut être livré qu’après ceux-ci | Affiché avec leur statut ; vérifié à la clôture |
+| `rel_origin` | Le chantier découle de celui-ci (SPIKE, régression, suite d’un bilan) | Trace seule |
+| `rel_replaces` | Le chantier reprend un chantier abandonné | Trace seule |
+
+```yaml
+rel_parent: EPIC-40
+rel_depends_on: FEAT-41, TEC-42
+```
+
+- **Découverts partout, jugés ici.** atelier trouve les chantiers dans toutes les branches (locales et distantes connues), mais un chantier ne compte comme clos que si son statut clos est **dans la branche courante**, c’est-à-dire fusionné. On ne livre pas un chantier dont le prérequis n’est pas dans la branche, et on ne clôt pas un EPIC pendant qu’un enfant avance ailleurs.
+- **Vérifiés avant signature** : un `rel_parent` ou un `rel_depends_on` doit exister dans l’une des branches ; un seul parent, qui est un EPIC non clos ; ni auto-référence ni cycle. `rel_origin` et `rel_replaces` acceptent les identifiants historiques (`BUG-421`).
+- **Une dépendance abandonnée bloque** la clôture comme une dépendance ouverte : on retire la relation par amendement, ou on dépend du chantier qui la remplace.
+- **Rattachement après coup** : ajouter `rel_parent` à une spec signée passe par un amendement. Un chantier déjà clos ne se rattache pas : l’EPIC le cite dans son contexte.
+- `atelier status` affiche les relations du chantier courant et, pour un EPIC, ses enfants calculés.
+
 Supprimer le plugin ne fait rien perdre : tout est lisible dans git.
