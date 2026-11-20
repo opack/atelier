@@ -23,7 +23,7 @@ Lance le sous-agent `atelier:reviewer` en lui donnant : le chemin de la spec, du
 
 ## 3. Traiter chaque point
 
-Pour chaque point, propose un sort et laisse l'utilisateur décider :
+Pour chaque point, propose un traitement et laisse l'utilisateur décider :
 - **correction du code** : en suivant `/atelier:build` (résumé, accord de l'utilisateur, commit `[<ID>]`) ;
 - **test manquant ou faux** : `/atelier:write-tests` (en TDD, il rouvre les tests figés, raison à l'appui) ;
 - **spec fausse ou incomplète** : `/atelier:amend` ;
@@ -34,7 +34,7 @@ Après des corrections, relance l'étape 1 puis l'étape 2 : c'est un nouveau to
 
 ## 4. Consigner
 
-Dans le dossier du chantier, `revue.md` (créé depuis `atelier template revue` s'il n'existe pas ; remplace `{{ID}}`, `{{TITLE}}`, `{{DATE}}`) : une section par tour, avec la date, le commit revu (`git rev-parse --short HEAD`), la base, les points et leur sort.
+Dans le dossier du chantier, `revue.md` (créé depuis `atelier template revue` s'il n'existe pas ; remplace `{{ID}}`, `{{TITLE}}`, `{{DATE}}`) : une section par tour, avec la date, le commit revu (`git rev-parse --short HEAD`), la base, les points et leur traitement.
 
 ## 5. Enregistrer la revue
 

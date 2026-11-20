@@ -36,9 +36,9 @@ La revue de l’agent **précède** la vôtre, elle ne la remplace pas. Voir [Re
 
 ## 3. Traiter chaque point
 
-Vous décidez du sort de chaque point :
+Vous décidez du traitement de chaque point :
 
-| Le point révèle… | Sort |
+| Le point révèle… | Traitement |
 |---|---|
 | Une erreur dans le code | Correction, comme une tranche (`/atelier:build`) |
 | Un test manquant ou faux | `/atelier:write-tests` : en TDD, il rouvre les tests figés, raison à l’appui |
@@ -50,7 +50,7 @@ Après des corrections, on relance la revue : c’est un **nouveau tour**. On co
 
 ## 4. Consigner et enregistrer
 
-Chaque tour est consigné dans `revue.md`, dans le dossier du chantier : date, commit revu, points et leur sort. Le relecteur lit les tours précédents pour ne pas revenir sur ce qui est tranché.
+Chaque tour est consigné dans `revue.md`, dans le dossier du chantier : date, commit revu, points et leur traitement. Le relecteur lit les tours précédents pour ne pas revenir sur ce qui est tranché.
 
 Quand plus rien ne bloque, `atelier set-reviewed` écrit le hash complet du commit revu (`reviewed_commit`) dans l’en-tête de la spec, puis la spec et `revue.md` sont commitées (`docs(chantiers): [<ID>] review`). La commande refuse sans spec signée, avec du code ou une spec non commités, ou en TDD si les tests ne sont pas figés ou ont changé depuis leur gel.
 

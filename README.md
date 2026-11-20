@@ -109,7 +109,7 @@ docs/chantiers/<ID>-<slug>/
   spec.md        intention signée (template selon le type)
   plan.md        conception, tranches
   decisions.md   journal tenu pendant le chantier
-  revue.md       tours de revue : points et leur sort
+  revue.md       tours de revue : points et leur traitement
   bilan.md       synthèse finale + verdict de revue : l'historique du chantier
 ```
 
