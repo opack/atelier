@@ -34,7 +34,7 @@ Petite tâche (règle ESLint, montée de version) : seules les sections 1, 2 et 
     - §1 : en reprenant un chantier existant en brouillon, toute retouche de la spec est commitée et poussée comme en §7, avec le même message ;
     - §3 : quand l'identifiant n'est pas fourni par l'utilisateur, `git fetch --quiet <remote>` avant `atelier next-id` ; un échec est signalé, sans bloquer. Le remote est celui de suivi de la branche courante, sinon `origin`, sinon le seul remote existant ; s'il y en a plusieurs sans qu'aucune de ces règles ne tranche, demander. Pas de remote : ni fetch ni push ;
     - §7 : toujours commiter la spec seule à la fin, `git add <dossier>/spec.md` puis `git commit -m "docs(chantiers): [<ID>] spec draft" -- <dossier>/spec.md` (le `--` exclut tout ce qui était déjà dans l'index), puis pousser, sauf refus explicite de l'utilisateur :
-      - si la branche courante a une branche de suivi (cas d'une branche imposée par l'environnement) : `git push` vers elle ;
+      - si la branche courante a une branche de suivi (cas d'une branche imposée par l'environnement) : `git push <remote> HEAD:<branche de suivi>`, forme explicite (un `git push` nu est refusé par `push.default=simple` quand les noms local et distant diffèrent) ;
       - sinon : `git push -u <remote> <branche>` ;
       - si le push échoue, le dire : l'identifiant n'est pas réservé.
   - `plugins/atelier/skills/sign/SKILL.md` :
