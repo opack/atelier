@@ -79,7 +79,7 @@ Ajout à la règle 4 (« En-tête de spec ») de TEC-1 §4, sans changer l'ordre
 1. Contrôles : spec signée, `atelier checks` vert, en TDD tests figés et inchangés (`atelier tests-changed`), travail commité.
 2. Revue par le sous-agent `reviewer` (base : `git merge-base HEAD <branche par défaut>`).
 3. Traitement de chaque point : correction via `/atelier:build`, test manquant via `/atelier:write-tests`, spec fausse via `/atelier:amend`, ou exception acceptée explicitement par l'utilisateur. Relance jusqu'à **zéro point bloquant**.
-4. Résultat consigné dans `revue.md` (dossier du chantier, nouveau template) : un tour par section, avec la date, le commit revu, les points et leur sort.
+4. Résultat consigné dans `revue.md` (dossier du chantier, nouveau template) : un tour par section, avec la date, le commit revu, les points et leur traitement.
 5. `atelier set-reviewed` écrit `reviewed_commit` (hash complet de `HEAD`) dans l'en-tête de la spec, puis commit `docs(chantiers): [<ID>] review`. `set-reviewed` refuse sans spec signée, avec du code non commité, avec des changements non commités de `spec.md`, ou en TDD si les tests ne sont pas figés ou ont changé depuis leur gel.
 - `reviewed_commit` est un champ **réservé** : ajouté à `status`, `signed_by`, `signed_at`, `done_at`, `tests_commit` dans la garde.
 
@@ -139,3 +139,4 @@ Revenir à la version 0.1.1 du plugin (revert de la fusion, puis `npm run versio
 
 ## Amendements
 <!-- Après signature : une entrée datée par modification de la spec. -->
+- 2026-11-20 : « sort » remplacé par « traitement » pour ce qui est fait de chaque point de revue (§4 Revue, point 4), « sort » étant ambigu et peu clair.
