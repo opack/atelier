@@ -50,3 +50,9 @@
 - `close-check` lance les contrôles même quand un autre problème est déjà trouvé : la liste donnée à l'utilisateur est complète en un seul passage. Écarté : s'arrêter au premier problème (plus rapide, mais oblige à relancer pour découvrir le suivant).
 - En TDD, la clôture vérifie que les tests sont figés, comme le demande la spec ; un test modifié après le gel est déjà couvert par la revue (un test commité après la revue la rend obsolète) et par le hook de fin.
 - `set-status done` vérifie d'abord le refus de statut (`setStatusRefusal`), puis les mêmes problèmes que `close-check`, par la même fonction.
+
+## 2026-11-20 : tranche 5, skills
+- `/atelier:amend` ne lance pas lui-même `atelier reopen-tests` : il renvoie vers `/atelier:write-tests <raison>`, qui rouvre et commite la spec aussitôt. Un seul endroit lance la réouverture, donc un seul endroit fait le commit qui suit. Écarté : réouverture dans `amend` puis `write-tests` (deux skills à tenir cohérents).
+- `/atelier:amend` et `/atelier:review` restent invocables par l'agent (la revue renvoie vers `amend`, `build` et `write-tests`) ; l'accord humain est exigé à l'intérieur du skill. `/atelier:sign` et `/atelier:close` restent réservés à l'utilisateur.
+- `/atelier:new` n'a pas changé : `set-tdd` y agit sur une spec en brouillon, qui n'est pas encore commitée et ne reçoit pas d'entrée d'amendement ; la règle « commit aussitôt après une écriture de la CLI » vise les specs signées.
+- Template de bilan : la section « Verdict de revue » reprend `revue.md`.
