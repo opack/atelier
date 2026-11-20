@@ -12,7 +12,7 @@ Arguments reçus : `$ARGUMENTS`
 ## 1. Préalables
 
 - Lance `atelier status --json`. Si `installed` vaut `false`, arrête-toi et propose `/atelier:init`.
-- Si la branche courante porte déjà un chantier, demande s'il faut en ouvrir un nouveau ou continuer celui-ci.
+- Si la branche courante porte déjà un chantier, demande s'il faut en ouvrir un nouveau ou continuer celui-ci. Si tu continues un chantier dont la spec est en brouillon, toute retouche de la spec est commitée et poussée comme en §7, avec le même message.
 - Si le dépôt a des modifications non commitées, signale-le avant de changer de branche.
 
 ## 2. Type
@@ -29,7 +29,8 @@ Déduis le type des arguments s'il est donné ou évident, sinon demande-le :
 
 ## 3. Identifiant, branche, dossier
 
-1. Si l'utilisateur a fourni un identifiant, utilise-le. Sinon : `atelier next-id <TYPE>`.
+1. Si l'utilisateur a fourni un identifiant, utilise-le. Sinon, récupère d'abord le remote pour voir les identifiants déjà pris ailleurs : `git fetch --quiet <remote>`, puis `atelier next-id <TYPE>`. Si le fetch échoue, signale-le (l'identifiant peut entrer en collision avec un chantier non récupéré) sans bloquer.
+   - **Remote** (ici et en §7) : celui de la branche de suivi de la branche courante, sinon `origin`, sinon le seul remote existant. S'il y en a plusieurs sans qu'aucune de ces règles ne tranche, demande. Sans remote : ni fetch ni push.
 2. Slug : 2 à 5 mots du titre, en minuscules, sans accents, séparés par des tirets.
 3. Branche : `git switch -c <type en minuscules>/<ID>-<slug>` depuis la branche par défaut à jour (demande si tu n'es pas sur la branche par défaut).
 4. Dossier : `docs/chantiers/<ID>-<slug>/` (ou le `chantiersDir` de la configuration).
@@ -79,4 +80,18 @@ Lance `atelier check-spec docs/chantiers/<ID>-<slug>/spec.md`. Tant qu'il reste 
 
 ## 7. Fin
 
-Ne commite pas encore : la spec est commitée à la signature. Indique : `/atelier:sign` quand la spec te convient.
+Commite la spec seule, même en brouillon :
+
+```
+git add <dossier du chantier>/spec.md
+git commit -m "docs(chantiers): [<ID>] spec draft" -- <dossier du chantier>/spec.md
+```
+
+Le `--` limite le commit à la spec, même si d'autres fichiers étaient déjà dans l'index.
+
+Puis pousse-le, sauf si l'utilisateur le refuse explicitement : le sujet de ce commit, visible de tous après un `git fetch`, **réserve l'identifiant**, quel que soit le nom de la branche distante.
+- Si la branche courante a une branche de suivi (par exemple une branche imposée par l'environnement) : `git push <remote> HEAD:<branche de suivi>`. Garde cette forme explicite : un `git push` nu est refusé quand les noms local et distant diffèrent.
+- Sinon : `git push -u <remote> <branche>`.
+- Si le push échoue, dis-le : l'identifiant n'est pas réservé tant que le commit n'est pas poussé.
+
+Indique ensuite : `/atelier:sign` quand la spec te convient.

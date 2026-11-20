@@ -18,6 +18,8 @@ La signature est une décision humaine : « cette spec suffit pour lancer le cha
 
 Lance le sous-agent `atelier:spec-critic` avec le chemin de la spec (et le dossier racine du projet). Présente ses remarques classées **bloquant** / **à discuter**, sans les noyer. Pour chaque point retenu par l'utilisateur, modifie la spec. Les points écartés n'ont pas besoin d'être tracés.
 
+Si l'utilisateur ne signe pas au bout de la relecture, commite et pousse les retouches de la spec comme le fait `/atelier:new` (§7) : `git commit -m "docs(chantiers): [<ID>] spec draft" -- <dossier du chantier>/spec.md`, puis push vers la branche de suivi.
+
 ## 3. Confirmation
 
 Résume en 3 lignes ce que la spec engage (périmètre, critères clés, hors périmètre, **TDD oui / non**), puis demande explicitement : « Je signe la spec <ID> ? ».
@@ -27,7 +29,7 @@ Résume en 3 lignes ce que la spec engage (périmètre, critères clés, hors p�
 ## 4. Signature
 
 1. `atelier sign` (écrit `status: signed`, `signed_by`, `signed_at` ; refuse une spec incomplète).
-2. Commite la spec seule : `git add <dossier du chantier>/spec.md` puis `git commit -m "docs(chantiers): [<ID>] sign spec"`.
+2. Commite la spec seule : `git add <dossier du chantier>/spec.md` puis `git commit -m "docs(chantiers): [<ID>] sign spec" -- <dossier du chantier>/spec.md`. Peu importe qu'un brouillon ait déjà été commité : ce commit emporte aussi les retouches de la relecture pas encore commitées, et c'est le seul à porter `status: signed`.
 3. Indique la suite : `/atelier:plan` pour un `FEAT`, un `REF` ou un gros chantier ; sinon `/atelier:write-tests` si `tdd: yes`, `/atelier:build` si `tdd: no` ; pour un `SPIKE`, explorer dans le budget fixé.
 
 Après signature, la spec ne se réécrit pas : toute modification passe par `/atelier:amend` (édition ciblée, entrée datée dans la section « Amendements », nouvel accord de l'utilisateur). Elle ne repasse jamais en brouillon ; une signature faite par erreur se traite en abandonnant le chantier (`atelier set-status abandoned`) puis en ouvrant un nouveau.
