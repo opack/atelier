@@ -350,6 +350,22 @@ describe('write guard on a spec whose committed version is a draft', () => {
     })
   }
 
+  it('V-2/V-3 takes the signed working version as reference, not an older committed draft', () => {
+    // Draft committed, then touched up by the critical review and signed without committing in between.
+    const olderDraft = draftText.replace('Texte initial.', 'Texte du premier brouillon.')
+    const noChange = { old_string: 'Texte initial.', new_string: 'Texte initial.' }
+    for (const [label, toolName, input, expected] of [
+      ['edit leaving the body as signed', 'Edit', noChange, true],
+      ['body edit without entry', 'Edit', body, false],
+      ['body edit with a new entry', 'MultiEdit', { edits: [entry, body] }, true],
+      ['full rewrite', 'Write', { content: signedText }, false],
+    ]) {
+      const withDraft = write(signedText, olderDraft, toolName, input)
+      assert.equal(withDraft.allowed, expected, label)
+      assert.deepEqual(withDraft, write(signedText, null, toolName, input), `${label}: same decision as with no committed spec`)
+    }
+  })
+
   it('names the reserved field and the amendment rule in its refusals', () => {
     assert.match(write(draftText, draftText, 'Edit', { old_string: 'status: draft', new_string: 'status: signed' }).reason, /« status »/)
     assert.match(write(signedText, draftText, 'Edit', body).reason, /Amendements/)

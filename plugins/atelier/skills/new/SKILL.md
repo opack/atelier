@@ -32,7 +32,7 @@ Déduis le type des arguments s'il est donné ou évident, sinon demande-le :
 1. Si l'utilisateur a fourni un identifiant, utilise-le. Sinon, récupère d'abord le remote pour voir les identifiants déjà pris ailleurs : `git fetch --quiet <remote>`, puis `atelier next-id <TYPE>`. Si le fetch échoue, signale-le (l'identifiant peut entrer en collision avec un chantier non récupéré) sans bloquer.
    - **Remote** (ici et en §7) : celui de la branche de suivi de la branche courante, sinon `origin`, sinon le seul remote existant. S'il y en a plusieurs sans qu'aucune de ces règles ne tranche, demande. Sans remote : ni fetch ni push.
 2. Slug : 2 à 5 mots du titre, en minuscules, sans accents, séparés par des tirets.
-3. Branche : `git switch -c <type en minuscules>/<ID>-<slug>` depuis la branche par défaut à jour (demande si tu n'es pas sur la branche par défaut).
+3. Branche : `git switch --no-track -c <type en minuscules>/<ID>-<slug> <point de départ>`, le point de départ étant la branche par défaut à jour (demande si tu n'es pas sur la branche par défaut). `--no-track` est indispensable : partie de `<remote>/<branche par défaut>`, la branche la suivrait sinon, et le push du §7 enverrait le brouillon sur la branche par défaut.
 4. Dossier : `docs/chantiers/<ID>-<slug>/` (ou le `chantiersDir` de la configuration).
 5. Spec : `atelier template spec-<type en minuscules>` ; remplace `{{ID}}`, `{{TITLE}}`, `{{DATE}}` (AAAA-MM-JJ) et écris `spec.md`.
 
@@ -90,8 +90,8 @@ git commit -m "docs(chantiers): [<ID>] spec draft" -- <dossier du chantier>/spec
 Le `--` limite le commit à la spec, même si d'autres fichiers étaient déjà dans l'index.
 
 Puis pousse-le, sauf si l'utilisateur le refuse explicitement : le sujet de ce commit, visible de tous après un `git fetch`, **réserve l'identifiant**, quel que soit le nom de la branche distante.
-- Si la branche courante a une branche de suivi (par exemple une branche imposée par l'environnement) : `git push <remote> HEAD:<branche de suivi>`. Garde cette forme explicite : un `git push` nu est refusé quand les noms local et distant diffèrent.
-- Sinon : `git push -u <remote> <branche>`.
+- Si la branche courante suit une branche distante **autre que la branche par défaut** (par exemple une branche imposée par l'environnement) : `git push <remote> HEAD:<nom distant>`, où `<nom distant>` est `git config branch.<branche>.merge` sans `refs/heads/` (jamais la sortie de `@{u}`, préfixée par le remote : elle créerait une branche distante `origin/…`). Garde cette forme explicite : un `git push` nu est refusé quand les noms local et distant diffèrent.
+- Sinon (pas de suivi, ou suivi de la branche par défaut) : `git push -u <remote> <branche>`. **Ne pousse jamais le brouillon sur la branche par défaut.**
 - Si le push échoue, dis-le : l'identifiant n'est pas réservé tant que le commit n'est pas poussé.
 
 Indique ensuite : `/atelier:sign` quand la spec te convient.
