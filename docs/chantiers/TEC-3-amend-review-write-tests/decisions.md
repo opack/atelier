@@ -63,3 +63,7 @@
 - `reference/commandes` ne dit plus que la CLI est « disponible dans votre terminal » : elle est lancée par les commandes et les hooks, conformément à la décision de ne documenter que les commandes `/atelier:*` dans une session Claude Code. Phrase ajoutée aussi à `projet/installation`.
 - `reference/limites` mentionne git 2.31 ou plus (`--diff-merges=first-parent`), le contenu d'un amendement non vérifié et la signature faite par erreur.
 - Captures Playwright du schéma (bureau 1280 px et mobile 390 px, clair et sombre) faites depuis le dossier de travail temporaire, sans dépendance ajoutée à `site/`.
+
+## 2026-11-20 : revue, tour 1
+- Une erreur git en lisant la spec commitée bloque aussi l'édition d'une spec en brouillon : sans `HEAD` lisible, on ne sait pas si la spec y est encore en brouillon. La garde reste stricte (fail-closed), et le message de refus le dit désormais. Exception acceptée en revue.
+- `/atelier:amend` : `set-tdd` ne donne plus lieu à un commit séparé ; son entrée part dans le commit `amend spec` après accord, ou est annulée avec le reste. Hors amendement (spec propre), la règle « commit aussitôt » s'applique toujours.
