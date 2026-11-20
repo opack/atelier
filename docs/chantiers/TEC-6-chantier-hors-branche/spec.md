@@ -7,7 +7,7 @@ tdd: yes
 created_at: 2026-11-20
 signed_by: Opack
 signed_at: 2026-11-20
-tests_commit: 
+tests_commit: af0da4a
 ---
 
 # TEC-6 Reconnaître un chantier hors branche <type>/<ID>-<slug>
@@ -92,3 +92,4 @@ Question si manquant : qu'est-ce qui pourrait changer pour l'utilisateur malgré
 - 2026-11-20 : tests rouverts (gel quitté : 24b4134) : spec amendée (d0ca34d) : ajout de V-7 à V-9, relevés par la revue
 - 2026-11-20 : tests regelés : 2e6ddb1
 - 2026-11-20 : tests rouverts (gel quitté : 2e6ddb1) : intégration de TEC-5 depuis main (ab8398c) : la fusion apporte les tests de TEC-5
+- 2026-11-20 : tests regelés : af0da4a
