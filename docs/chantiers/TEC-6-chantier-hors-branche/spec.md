@@ -7,7 +7,7 @@ tdd: yes
 created_at: 2026-11-20
 signed_by: Opack
 signed_at: 2026-11-20
-tests_commit: 
+tests_commit: 2e6ddb1
 ---
 
 # TEC-6 Reconnaître un chantier hors branche <type>/<ID>-<slug>
@@ -90,3 +90,4 @@ Question si manquant : qu'est-ce qui pourrait changer pour l'utilisateur malgré
 <!-- Après signature : une entrée datée par modification de la spec. -->
 - 2026-11-20 : §3 et §4, `git log` borné à 200 sujets et coût git réel décrit (jusqu'à 5 `rev-parse` pour trouver la base, 1 `log`, 1 `rev-parse --abbrev-ref` si la base est `origin/HEAD`) ; §5, ajout de V-7 à V-9 (déduction via `origin/HEAD`, `origin/HEAD` vers une autre branche que `main`, branche sans commit propre). Pourquoi : la revue a relevé une sortie de `git log` non bornée, un coût sous-estimé et trois cas réels sans test.
 - 2026-11-20 : tests rouverts (gel quitté : 24b4134) : spec amendée (d0ca34d) : ajout de V-7 à V-9, relevés par la revue
+- 2026-11-20 : tests regelés : 2e6ddb1
