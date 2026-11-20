@@ -7,6 +7,7 @@ tdd: no
 created_at: 2026-11-20
 signed_by: Opack
 signed_at: 2026-11-20
+reviewed_commit: 0b3a5d1ce7a2b120a52e084d05d7ba6ffba636da
 ---
 
 # TEC-5 Commiter la spec en brouillon
