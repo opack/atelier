@@ -31,15 +31,18 @@ Questions si manquant : qu'est-ce qui est hors périmètre ? Quelle est la plus 
 - Valeurs : un identifiant, ou plusieurs séparés par des virgules (le parseur d'en-tête reste plat).
 - Le lien est déclaré chez l'enfant seulement. L'inverse (enfants d'un EPIC, chantiers qui dépendent d'un autre) est calculé par la CLI en lisant les en-têtes.
 - Une simple mention reste du texte libre, sans champ.
+- Un identifiant cité dans un `rel_*` doit exister dans le dossier des chantiers : sinon `check-spec` le signale et la signature est bloquée (une faute de frappe désactiverait la vérification sans bruit).
+- Une dépendance `abandoned` bloque la clôture comme une dépendance ouverte : il faut retirer la relation (par amendement) ou dépendre du chantier qui la remplace. L'abandon d'un prérequis est une décision explicite.
 - `/atelier:new` ne pose de question sur les relations que si le contexte en suggère une.
 
 **Type `EPIC`**, sixième type de chantier, dédié à l'organisation : il n'implémente rien, il définit un chantier plus large que d'autres chantiers concrétisent.
 
 - Spec signée : vision, pourquoi, critères d'acceptation globaux, cadre fonctionnel et technique commun, hors périmètre. Elle ne change que par amendement, comme pour tout chantier.
-- `plan.md` : le découpage prévu, écrit une fois puis laissé tel quel (consigne du skill, pas de hook). Les écarts vont dans `decisions.md`, la confrontation prévu / réalisé dans `bilan.md`.
+- `plan.md` : le découpage prévu, sur un template dédié (`plan-epic` : lots, type envisagé, ordre, dépendances pressenties), écrit une fois puis laissé tel quel (consigne du skill, pas de hook). Les écarts vont dans `decisions.md`, la confrontation prévu / réalisé dans `bilan.md`.
 - `tdd: no` d'office : la question n'est pas posée.
 - Branche courte `epic/<ID>-<slug>`, le temps d'écrire et de signer la spec puis le plan. Aucun code n'y est jamais autorisé hors des chemins libres, même après signature.
-- Clôture possible seulement quand tous ses chantiers enfants sont clos.
+- Clôture : sur une branche du même nom, rouverte depuis la branche par défaut quand tous les enfants sont clos ; le chantier actif reste déduit de la branche, sans règle nouvelle.
+- Clôture (`done`) possible seulement quand tous ses chantiers enfants sont clos, et s'il en a au moins un. Un EPIC sans enfant ne se clôt pas en `done` : il est abandonné (`abandoned`).
 - Étapes : spec → signature → plan → (chantiers enfants) → clôture.
 
 **Proposer un EPIC au bon moment**, sans que l'utilisateur ait à y penser :
@@ -68,11 +71,7 @@ Hors périmètre :
 
 ## 4. Questions ouvertes
 <!-- Questions à trancher avant ou pendant la conception. Les réponses vont dans decisions.md. Optionnel. -->
-- Clôture de l'EPIC : la branche courte est fusionnée après le plan, mais le bilan s'écrit bien plus tard. Rouvre-t-on une branche du même nom pour la clôture, ou une autre convention ?
-- Une dépendance `abandoned` débloque-t-elle la clôture, ou faut-il retirer explicitement la relation ?
-- Un EPIC sans aucun enfant peut-il être clos (abandon de fait) ?
-- Plan d'EPIC : template dédié ou section dans le template de plan existant ?
-- Un identifiant inconnu dans un `rel_*` : avertissement ou blocage ?
+Aucune : les cinq questions relevées à l'écriture (branche de clôture d'un EPIC, dépendance abandonnée, EPIC sans enfant, plan d'EPIC, identifiant inconnu) sont tranchées dans la description.
 
 ## 5. Critères d'acceptation
 <!-- Format : - [ ] CA-1 : Étant donné …, quand …, alors …
@@ -80,13 +79,13 @@ Chacun testable automatiquement. Penser aux cas limites : vide, doublon, hors-li
 Questions si manquant : chaque critère peut-il devenir un test ? Que se passe-t-il si la liste est vide, très grande, si l'utilisateur n'a pas le droit, si le réseau tombe ? -->
 - [ ] CA-1 : Étant donné un en-tête `rel_depends_on: FEAT-12,  tec-15`, quand il est lu, alors les relations valent `['FEAT-12', 'TEC-15']` (espaces tolérés, casse normalisée, doublons retirés) ; un champ vide ou absent donne une liste vide.
 - [ ] CA-2 : Étant donné plusieurs chantiers dont deux portent `rel_parent: EPIC-5`, quand on calcule les enfants de EPIC-5, alors on obtient exactement ces deux chantiers avec leur statut.
-- [ ] CA-3 : Étant donné un chantier signé dont `rel_depends_on` cite un chantier qui n'est pas `done`, quand on lance `atelier set-status done`, alors la clôture est refusée avec un message qui nomme le chantier bloquant et son statut.
+- [ ] CA-3 : Étant donné un chantier signé dont `rel_depends_on` cite un chantier qui n'est pas `done` (ouvert ou `abandoned`), quand on lance `atelier set-status done`, alors la clôture est refusée avec un message qui nomme le chantier bloquant et son statut.
 - [ ] CA-4 : Étant donné un chantier dont toutes les dépendances sont `done`, quand on lance `atelier set-status done`, alors la vérification des relations ne bloque pas.
-- [ ] CA-5 : Étant donné un `rel_*` qui cite un identifiant introuvable dans le dossier des chantiers, quand on lance `atelier check-spec`, alors l'identifiant est signalé.
+- [ ] CA-5 : Étant donné un `rel_*` qui cite un identifiant introuvable dans le dossier des chantiers, quand on lance `atelier check-spec`, alors l'identifiant est signalé comme un manque, ce qui bloque la signature.
 - [ ] CA-6 : Étant donné le type `EPIC`, quand on lance `atelier next-id EPIC`, alors l'identifiant suit le compteur unique du projet ; et une branche `epic/EPIC-7-x` est reconnue comme chantier actif EPIC-7.
-- [ ] CA-7 : Étant donné `atelier template spec-epic`, quand le template est produit, alors il contient `tdd: no` et les sections Vision, Pourquoi, Critères d'acceptation globaux, Cadre, Hors périmètre, que `check-spec` exige avant signature.
+- [ ] CA-7 : Étant donné `atelier template spec-epic`, quand le template est produit, alors il contient `tdd: no` et les sections Vision, Pourquoi, Critères d'acceptation globaux, Cadre, Hors périmètre, que `check-spec` exige avant signature ; et `atelier template plan-epic` produit le template de découpage.
 - [ ] CA-8 : Étant donné un EPIC signé sur sa branche, quand l'agent écrit un fichier hors des chemins libres, alors l'écriture est refusée avec un message qui explique qu'un EPIC n'implémente rien ; une écriture dans `docs/` reste autorisée.
-- [ ] CA-9 : Étant donné un EPIC dont au moins un enfant n'est ni `done` ni `abandoned`, quand on lance `atelier set-status done`, alors la clôture est refusée avec la liste des enfants ouverts ; quand tous sont clos, elle est permise.
+- [ ] CA-9 : Étant donné un EPIC dont au moins un enfant n'est ni `done` ni `abandoned`, quand on lance `atelier set-status done`, alors la clôture est refusée avec la liste des enfants ouverts ; quand tous sont clos, elle est permise ; un EPIC sans aucun enfant ne peut pas passer en `done`, seulement en `abandoned`.
 - [ ] CA-10 : Étant donné un EPIC signé, quand on demande la prochaine étape, alors `status` indique : concevoir le découpage sans `plan.md` ; sinon les enfants encore ouverts et leur nombre ; puis la clôture quand tous sont clos.
 - [ ] CA-11 : Étant donné un chantier courant avec des relations, quand on lance `atelier status`, alors il affiche son parent, ses dépendances avec leur statut, son origine, ce qu'il remplace et, pour un EPIC, ses enfants calculés.
 - [ ] CA-12 : Étant donné un `CLAUDE.md` dont la section « Process (atelier) » diffère du template courant (ou est absente), quand la CLI compare les deux, alors elle signale la section comme à mettre à jour ; identique, elle ne signale rien.
