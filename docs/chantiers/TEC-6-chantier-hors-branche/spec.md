@@ -3,7 +3,7 @@ id: TEC-6
 type: TEC
 title: Reconnaître un chantier hors branche <type>/<ID>-<slug>
 status: draft
-tdd:                 # yes | no : décision humaine, obligatoire avant signature
+tdd: yes
 created_at: 2026-11-20
 signed_by:
 signed_at:
