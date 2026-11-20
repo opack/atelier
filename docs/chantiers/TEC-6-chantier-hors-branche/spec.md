@@ -43,10 +43,10 @@ Quand le nom de la branche courante ne porte pas d'identifiant de chantier, `act
   - `plugins/atelier/lib/cli.mjs` : `atelier status --json` expose `chantierSource` à la racine (`"branch"`, `"commits"` ou `null`) ; `formatStatus` et `hook-session-start` ajoutent « (déduit des commits) » après l'identifiant quand la source est `commits`, pour que l'utilisateur ne soit pas surpris.
   - `plugins/atelier/skills/new/SKILL.md` :
     - §1 : « si un chantier est actif » (et non plus « si la branche porte un chantier »), puisqu'il peut venir des commits ;
-    - §3 : hors de la branche par défaut, demander s'il faut rester sur la branche courante au lieu de créer `<type>/<ID>-<slug>` ; si oui, rappeler que le chantier n'est reconnu qu'après le premier commit `[<ID>]` (commit du brouillon, apporté par TEC-5).
+    - §3 : hors de la branche par défaut, demander s'il faut rester sur la branche courante au lieu de créer `<type>/<ID>-<slug>` ; si oui, commiter et pousser le brouillon (même message et même push que le commit du brouillon de TEC-5) dès l'écriture de `spec.md`, avant de remplir la spec et avant `atelier set-tdd` : le chantier n'est reconnu qu'à partir de ce commit `[<ID>]`, et tant qu'il manque, `set-tdd` refuserait (premier chantier de la branche) ou écrirait dans la spec d'un ancien chantier déduit des commits.
   - Tests dans `plugins/atelier/test/core.test.mjs` (toute évolution de hook a son test, `CLAUDE.md`).
   - Site : `site/fondations/chantier.md` (« Le chantier actif ») ; `site/reference/limites.md` pour les limites listées au §4 (squash ou rebase, branches longues, plusieurs chantiers sur une branche imposée) ; `README.md` si une ligne dit que le chantier vient seulement du nom de branche.
-- Prérequis : **TEC-5** (commit du brouillon dans `/atelier:new`). Sans lui, sur une branche non conforme, aucun commit `[<ID>]` n'existe avant la signature, donc `atelier set-tdd` et `atelier sign` refusent faute de chantier actif. TEC-6 reste livrable seul (aucun effet sur les branches conformes), mais n'est utile hors branche conforme qu'une fois TEC-5 fusionné. Ordre de fusion recommandé : TEC-5 puis TEC-6.
+- Prérequis : **TEC-5** (commit du brouillon dans `/atelier:new`). Sans lui, sur une branche non conforme, aucun commit `[<ID>]` n'existe avant la signature, donc `atelier set-tdd` et `atelier sign` refusent faute de chantier actif. TEC-6 reste livrable seul (aucun effet sur les branches conformes), mais n'est utile hors branche conforme qu'une fois TEC-5 fusionné. Ordre de fusion recommandé : TEC-5 puis TEC-6. Le commit du brouillon de TEC-5 a lieu en fin de `/atelier:new`, après `set-tdd` : sur une branche imposée, TEC-6 l'avance juste après l'écriture de `spec.md` (voir ci-dessus).
 - Hors périmètre :
   - le débrayage (`.atelier/bypass.json`), qui reste lié au nom de branche ;
   - `next-id` : il lit déjà les sujets de commits de toutes les branches (`git log --all`), donc les commits `[<ID>]` d'une branche `claude/...` poussée sont comptés ;
@@ -79,7 +79,9 @@ Question si manquant : qu'est-ce qui pourrait changer pour l'utilisateur malgré
   - V-7 : dépôt avec une origine et `refs/remotes/origin/HEAD` vers `origin/main` (`git remote set-head`) : sur `claude/x` portant un commit `[TEC-9]`, `activeChantier` rend `TEC-9` avec la source `commits` ;
   - V-8 : `refs/remotes/origin/HEAD` vers une autre branche que `main` (ex. `origin/develop`) : sur `develop`, aucun chantier ; sur `claude/x` créée depuis `develop` avec un commit `[TEC-9]`, `TEC-9` avec la source `commits` ;
   - V-9 : branche non conforme sans commit propre (`<base>..HEAD` vide) : aucun chantier, source `null`.
+  - V-10 : garde d'écriture (`hook-guard`) sur `claude/x` avec un chantier déduit des commits : écriture d'un fichier de code refusée quand sa spec est en brouillon, autorisée quand elle est signée avec `tdd: no`.
 - Essai manuel dans ce dépôt, sur une branche `claude/...` portant un commit `[TEC-6]` : `atelier status` affiche TEC-6 et sa source.
+- Essai manuel de `/atelier:new` dans un dépôt de test, sur une branche `claude/...` (avec et sans commit `[<ID>]` d'un chantier précédent) : le brouillon est commité avant `set-tdd`, et `set-tdd` écrit dans la spec du nouveau chantier.
 - `claude plugin validate ./plugins/atelier` passe ; `npm run build` dans `site/` passe.
 
 ## 6. Retour arrière
@@ -93,3 +95,4 @@ Question si manquant : qu'est-ce qui pourrait changer pour l'utilisateur malgré
 - 2026-11-20 : tests regelés : 2e6ddb1
 - 2026-11-20 : tests rouverts (gel quitté : 2e6ddb1) : intégration de TEC-5 depuis main (ab8398c) : la fusion apporte les tests de TEC-5
 - 2026-11-20 : tests regelés : af0da4a
+- 2026-11-20 : §3 et Prérequis, sur une branche imposée `/atelier:new` commite et pousse le brouillon dès l'écriture de `spec.md`, avant `set-tdd` ; §5, ajout de V-10 (garde d'écriture sur un chantier déduit des commits) et de l'essai manuel de `/atelier:new` sur une branche `claude/...`. Pourquoi : revue tour 2, `set-tdd` (§5 du skill) passait avant le commit du brouillon (§7) : refus sur un premier chantier, écriture dans la spec de l'ancien chantier sinon ; et aucun test ne passait par le hook d'écriture.
