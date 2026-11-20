@@ -7,6 +7,7 @@ tdd: yes
 created_at: 2026-11-20
 signed_by: Opack
 signed_at: 2026-11-20
+tests_commit: 24b4134
 ---
 
 # TEC-6 Reconnaître un chantier hors branche <type>/<ID>-<slug>
