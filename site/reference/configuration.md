@@ -16,14 +16,18 @@ Elle s’applique **avant chaque écriture par les outils d’édition** de Clau
 | 2 | **Fichier sensible** (`sensitivePaths`) | Toujours refusé, même en débrayage |
 | 3 | **État d’atelier** : `.atelier/**` | Refusé |
 |   | `.claude/atelier.json` | Création autorisée (c’est ce que fait `/atelier:init`), modification et suppression refusées : la configuration est modifiée par l’humain |
-| 4 | **En-tête de spec** : `status`, `signed_by`, `signed_at`, `done_at`, `tests_commit` | Ne changent que par la commande `atelier` |
+| 4 | **En-tête de spec** : `status`, `signed_by`, `signed_at`, `done_at`, `tests_commit`, `reviewed_commit` | Ne changent que par la commande `atelier` |
 |   | `tdd` | Libre en brouillon ; ensuite, seulement par `atelier set-tdd`, tracé en amendement |
-|   | Réécriture complète d’une spec signée | Refusée ; les éditions ciblées restent possibles, avec une entrée datée dans « Amendements » |
-|   | Édition de spec impossible à vérifier | Refusée |
+|   | `id`, `type` | Figés dès que la spec n’est plus en brouillon |
+|   | Réécriture complète d’une spec non brouillon (`abandoned` compris) | Refusée |
+|   | Corps ou autre champ d’en-tête d’une spec non brouillon | Refusés sans nouvelle entrée datée à la fin de « Amendements » ; entrées existantes intouchables ; une seule section (voir [Amender la spec](../cycle/amendement)) |
+|   | Édition de spec impossible à vérifier, version commitée illisible | Refusée |
 | 5 | **Chemins libres** (`freePaths`) | Autorisés |
 | 6 | **Débrayage actif** sur la branche | Autorisé |
 | 7 | **Sans chantier signé** : branche sans chantier (`main`, HEAD détachée), spec en brouillon, chantier clos (`done` ou `abandoned`) | Refusé. Un chantier clos rebloque le code : il faut en ouvrir un nouveau |
 | 8 | **TDD** (si `tdd: yes`) | Phase tests : seuls les fichiers de `testPaths`. Phase implémentation : ces fichiers sont refusés |
+
+Une spec est « non brouillon » dès qu’elle ne l’est plus dans le fichier **ou** dans sa version commitée (`HEAD`). Le corps est comparé à la version commitée : on peut écrire l’entrée d’amendement, puis modifier la spec en plusieurs éditions.
 
 Sous Windows et macOS, les chemins sont comparés **sans tenir compte de la casse**.
 
@@ -43,7 +47,7 @@ En cas d’erreur, ce hook **ne bloque pas**, mais le signale.
 
 ## Au démarrage d’une session
 
-Rappelle la branche, le chantier actif, son statut, ses documents et la prochaine étape.
+Rappelle la branche, le chantier actif, son statut, ses documents, l’état de sa revue et la prochaine étape.
 
 ## `.claude/atelier.json`
 
@@ -92,3 +96,4 @@ Local, non versionné (ajouté au `.gitignore` par `/atelier:init`), protégé c
 | `signed_by`, `signed_at` | — | `atelier sign` |
 | `done_at` | date | `atelier set-status done` |
 | `tests_commit` | hash git | `atelier freeze-tests`, `atelier reopen-tests` |
+| `reviewed_commit` | hash git complet | `atelier set-reviewed` |

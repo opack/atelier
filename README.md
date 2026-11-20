@@ -24,6 +24,8 @@ claude plugin marketplace add opack/atelier
 claude plugin install atelier@atelier
 ```
 
+atelier est un plugin Claude Code : ses commandes `/atelier:*` se lancent **dans une session Claude Code ouverte sur le répertoire du projet**, pas dans un terminal.
+
 Puis, dans chaque projet : `/atelier:init`. Il déclare aussi le plugin dans le `.claude/settings.json` du projet : toute personne qui ouvre le projet se voit proposer atelier automatiquement, sans commande.
 
 Pour tester une branche du plugin avant sa fusion, ajoute la référence : `claude plugin marketplace add "opack/atelier#<branche>"`.
@@ -48,15 +50,19 @@ Puis `/reload-plugins` après chaque modification. Tests : `npm test`. Validatio
 
 | Type | Pour | Étapes |
 |---|---|---|
-| `FEAT` | Fonctionnalité à créer ou améliorer | spec → signature → plan → (tests si TDD) → build → clôture |
-| `FIX` | Correction d'un bug | spec → signature → (test de non-régression si TDD) → build → clôture |
-| `REF` | Restructuration, comportement inchangé | spec → signature → plan → (tests de caractérisation si TDD) → build → clôture |
-| `TEC` | Technique sans impact utilisateur direct (CI, outillage, dépendances, config, sécurité, migration…) | spec → signature → build → clôture |
+| `FEAT` | Fonctionnalité à créer ou améliorer | spec → signature → plan → (tests si TDD) → build ⇄ revue → clôture |
+| `FIX` | Correction d'un bug | spec → signature → (test de non-régression si TDD) → build ⇄ revue → clôture |
+| `REF` | Restructuration, comportement inchangé | spec → signature → plan → (tests de caractérisation si TDD) → build ⇄ revue → clôture |
+| `TEC` | Technique sans impact utilisateur direct (CI, outillage, dépendances, config, sécurité, migration…) | spec → signature → build ⇄ revue → clôture |
 | `SPIKE` | Exploration bornée dans le temps, code jetable | spec → signature → exploration → clôture |
+
+Une spec signée qui s'avère fausse ou incomplète s'amende (`/atelier:amend`), ce qui peut ramener à l'écriture des tests ou à l'implémentation.
 
 Identifiants : `<TYPE>-<numéro>`, avec un compteur unique par projet (qui continue l'historique existant). Branche `<type>/<ID>-<slug>`, commits `<prefix>(<scope>): [<ID>] …`, PR `[<ID>] <titre>`.
 
 ## Commandes
+
+À lancer dans une session Claude Code ouverte sur le répertoire du projet.
 
 | Commande | Rôle |
 |---|---|
@@ -64,10 +70,12 @@ Identifiants : `<TYPE>-<numéro>`, avec un compteur unique par projet (qui conti
 | `/atelier:new [type] [description, lien Notion ou Sentry]` | Ouvre un chantier : identifiant, branche, dossier, spec construite en posant des questions sur les manques. |
 | `/atelier:sign` | Relecture critique par un agent séparé, puis signature sur ta confirmation explicite. |
 | `/atelier:plan` | Conception : approche, fichiers, tranches → `plan.md`, décisions → `decisions.md`. |
-| `/atelier:tests` | TDD, étapes 1 à 3 : tests écrits depuis les critères d'acceptation, **aucune implémentation**, échec vérifié, relecture, commit puis gel des tests. |
+| `/atelier:amend <ce qui change>` | Modifie une spec signée : entrée datée dans « Amendements », impact sur les critères, ton nouvel accord, commit. |
+| `/atelier:write-tests [raison]` | TDD, étapes 1 à 3 : tests écrits depuis les critères d'acceptation, **aucune implémentation**, échec vérifié, relecture, commit puis gel des tests. Relançable pour rouvrir des tests figés (cas oublié, test faux, spec amendée). |
 | `/atelier:build [tranche]` | TDD, étapes 4 et 5 : implémentation jusqu'à ce que tout passe **sans modifier les tests**, vérification anti-surapprentissage par un sous-agent indépendant, commit après validation. |
 | `/atelier:status` | Où en est le chantier et quelle est la prochaine étape. |
-| `/atelier:close` | Contrôles, revue indépendante, `bilan.md`, ton verdict, proposition de PR. |
+| `/atelier:review` | Revue indépendante par un sous-agent, traitement de chaque point, autant de tours que nécessaire, puis enregistrement du commit revu (`revue.md`). |
+| `/atelier:close` | Vérifie que le code clôturé est celui qui a été relu, puis `bilan.md`, ton verdict, proposition de PR. |
 | `/atelier:off <raison>` | Débrayage d'urgence de production : autorise le code sans spec, tracé. |
 
 ## Le cycle TDD, quand il est pertinent
@@ -76,19 +84,21 @@ Pour chaque chantier, **tu décides** s'il suit le TDD : champ `tdd: yes | no` d
 
 Quand c'est oui, atelier suit le workflow « write tests, commit; code, iterate, commit » recommandé par Anthropic ([Claude Code: Best practices for agentic coding](https://www.anthropic.com/engineering/claude-code-best-practices)) et le fait respecter par les hooks :
 
-1. **Tests d'abord** (`/atelier:tests`) : seuls les fichiers de test sont modifiables. Toute écriture d'implémentation, même factice, est refusée.
+1. **Tests d'abord** (`/atelier:write-tests`) : seuls les fichiers de test sont modifiables. Toute écriture d'implémentation, même factice, est refusée.
 2. Les tests sont lancés et doivent **échouer pour la bonne raison**.
 3. Après relecture, les tests sont **commités** puis **figés** (`atelier freeze-tests` refuse s'ils ne sont pas commités).
 4. **Implémentation** (`/atelier:build`) : les tests sont en lecture seule. L'agent itère jusqu'à ce que tout passe ; un sous-agent indépendant vérifie que l'implémentation ne surapprend pas les tests.
 5. **Commit** de l'implémentation après validation.
 
-Un test réellement faux se rouvre explicitement (`atelier reopen-tests <raison>`) ; la décision TDD peut changer en cours de chantier (`atelier set-tdd <yes|no> <raison>`). Les deux sont tracés dans la spec.
+Un test oublié ou réellement faux se rouvre explicitement (`/atelier:write-tests <raison>`) ; la décision TDD peut changer en cours de chantier (`atelier set-tdd <yes|no> <raison>`). Les deux sont tracés dans la spec et commités aussitôt.
 
 ## Ce que font les hooks
 
-- **Avant chaque écriture** (outils d'édition) : refuse les modifications de code sans chantier signé (branche sans chantier, spec en brouillon ou chantier clos) ; en TDD, toute implémentation pendant l'écriture des tests et toute modification des tests une fois figés. Refuse aussi, toujours : les fichiers sensibles (`.env`, clés), l'état d'atelier (`.atelier/`, et `.claude/atelier.json` une fois créé), la réécriture d'une spec signée et la modification des champs d'en-tête réservés à la commande (`status`, `signed_by`, `signed_at`, `done_at`, `tests_commit`, et `tdd` après signature).
+- **Avant chaque écriture** (outils d'édition) : refuse les modifications de code sans chantier signé (branche sans chantier, spec en brouillon ou chantier clos) ; en TDD, toute implémentation pendant l'écriture des tests et toute modification des tests une fois figés. Refuse aussi, toujours : les fichiers sensibles (`.env`, clés), l'état d'atelier (`.atelier/`, et `.claude/atelier.json` une fois créé), la réécriture d'une spec signée, la modification des champs d'en-tête réservés à la commande (`status`, `signed_by`, `signed_at`, `done_at`, `tests_commit`, `reviewed_commit`, et `tdd`, `id`, `type` après signature), et toute modification d'une spec signée sans nouvelle entrée datée dans « Amendements ».
 - **Avant de terminer** : pendant l'implémentation, refuse tout test modifié depuis son gel (même par une commande shell ou un commit) ; signale une fois du code modifié sans chantier signé (écriture par le shell) ; si du code a changé hors des chemins libres, lance les contrôles de `.claude/atelier.json`, sauf sur un état déjà passé au vert, et l'agent continue tant qu'ils échouent. Si l'agent bute sans rien changer, il est autorisé à s'arrêter et l'échec t'est montré. Pendant l'écriture des tests, des tests rouges sont attendus : rien n'est lancé.
-- **Au démarrage d'une session** : rappelle le chantier actif, son statut et la prochaine étape.
+- **Au démarrage d'une session** : rappelle le chantier actif, son statut, l'état de sa revue et la prochaine étape.
+
+La clôture (`atelier close-check`, `atelier set-status done`) refuse si du code a été commité depuis la revue, si la spec a été amendée depuis, ou si le commit revu n'est plus un ancêtre de `HEAD`.
 
 Les hooks ne font rien dans un projet sans `.claude/atelier.json`. Ce sont des garde-fous contre l'oubli, pas une barrière contre un agent qui chercherait à les contourner : une écriture par le shell n'est détectée qu'en fin de tour, et rien n'est annulé.
 
@@ -99,6 +109,7 @@ docs/chantiers/<ID>-<slug>/
   spec.md        intention signée (template selon le type)
   plan.md        conception, tranches
   decisions.md   journal tenu pendant le chantier
+  revue.md       tours de revue : points et leur sort
   bilan.md       synthèse finale + verdict de revue : l'historique du chantier
 ```
 

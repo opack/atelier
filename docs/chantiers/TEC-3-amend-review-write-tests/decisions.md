@@ -56,3 +56,10 @@
 - `/atelier:amend` et `/atelier:review` restent invocables par l'agent (la revue renvoie vers `amend`, `build` et `write-tests`) ; l'accord humain est exigé à l'intérieur du skill. `/atelier:sign` et `/atelier:close` restent réservés à l'utilisateur.
 - `/atelier:new` n'a pas changé : `set-tdd` y agit sur une spec en brouillon, qui n'est pas encore commitée et ne reçoit pas d'entrée d'amendement ; la règle « commit aussitôt après une écriture de la CLI » vise les specs signées.
 - Template de bilan : la section « Verdict de revue » reprend `revue.md`.
+
+## 2026-11-20 : tranche 6, site et README
+- La page `cycle/tests` garde son URL (seul son contenu passe à `/atelier:write-tests`) : renommer l'URL casserait les liens existants pour un gain nul. Nouvelles pages `cycle/revue` (étape 6) et `cycle/amendement` (hors numérotation, elle peut intervenir à tout moment après la signature) ; la clôture devient l'étape 7.
+- Schéma du cycle en SVG inline dans `guide/vue-ensemble.md`, vertical (lisible sur mobile), couleurs tirées des variables du thème VitePress (clair et sombre sans deuxième image). Écarté : image dans `public/` (pas de thème sombre), diagramme horizontal (illisible sur mobile).
+- `reference/commandes` ne dit plus que la CLI est « disponible dans votre terminal » : elle est lancée par les commandes et les hooks, conformément à la décision de ne documenter que les commandes `/atelier:*` dans une session Claude Code. Phrase ajoutée aussi à `projet/installation`.
+- `reference/limites` mentionne git 2.31 ou plus (`--diff-merges=first-parent`), le contenu d'un amendement non vérifié et la signature faite par erreur.
+- Captures Playwright du schéma (bureau 1280 px et mobile 390 px, clair et sombre) faites depuis le dossier de travail temporaire, sans dépendance ajoutée à `site/`.

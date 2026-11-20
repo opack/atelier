@@ -7,6 +7,7 @@ docs/chantiers/FEAT-27-total-enveloppes/
   spec.md        l’intention signée
   plan.md        la conception, les tranches
   decisions.md   le journal tenu pendant le chantier
+  revue.md       les tours de revue : points et leur sort
   bilan.md       la synthèse finale et le verdict de revue
 ```
 
@@ -15,6 +16,7 @@ docs/chantiers/FEAT-27-total-enveloppes/
 | `spec.md` | Avant le code | L’agent et le relecteur | Tous |
 | `plan.md` | Après signature | L’agent, pendant l’implémentation | FEAT, REF, gros TEC |
 | `decisions.md` | Pendant | Vous, plus tard | Tous, si décisions |
+| `revue.md` | À la revue | Vous, le relecteur suivant | Tous, sauf SPIKE sans revue |
 | `bilan.md` | À la clôture | Le prochain qui touchera ce code | Tous |
 
 ## Journal ou bilan ?

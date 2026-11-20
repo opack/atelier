@@ -12,6 +12,8 @@ claude plugin install atelier@atelier
 
 ## Dans un projet
 
+Dans une session Claude Code ouverte sur le répertoire du projet (les commandes `/atelier:*` ne se lancent pas dans un terminal) :
+
 ```text
 /atelier:init
 ```

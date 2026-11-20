@@ -9,7 +9,8 @@ Un bug ne doit pas coûter une demi-journée de process. La voie rapide garde l�
 3. **Vous signez.**
 4. **Test de non-régression** qui reproduit le bug, rouge (si TDD).
 5. **Correction**, contrôles verts.
-6. **Bilan court** : cause réelle, correction, autres endroits où le même schéma existe.
+6. **Revue** par un agent indépendant.
+7. **Bilan court** : cause réelle, correction, autres endroits où le même schéma existe.
 
 Objectif : moins de cinq minutes de surcoût par rapport à une correction sans process.
 
@@ -18,8 +19,9 @@ Objectif : moins de cinq minutes de surcoût par rapport à une correction sans 
 ```text
 /atelier:new FIX <lien Sentry ou description>
 /atelier:sign
-/atelier:tests      (si TDD)
+/atelier:write-tests   (si TDD)
 /atelier:build
+/atelier:review
 /atelier:close
 ```
 

@@ -46,6 +46,12 @@ Les commentaires `<!-- -->` donnent les questions à se poser pour chaque sectio
 <!--@include: ../../plugins/atelier/templates/decisions.md{1,}-->
 ````
 
+## Revue
+
+````markdown
+<!--@include: ../../plugins/atelier/templates/revue.md{1,}-->
+````
+
 ## Bilan
 
 ````markdown

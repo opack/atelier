@@ -34,7 +34,7 @@ Si le comportement change, ce n’est pas un REF : c’est un FEAT ou un FIX.
 
 Sans impact utilisateur direct : CI, outillage, dépendances, configuration (ESLint…), sécurité, infra, migration de données.
 
-- **Étapes** : spec, signature, implémentation, clôture. Conception si le chantier est gros.
+- **Étapes** : spec, signature, implémentation, revue, clôture. Conception si le chantier est gros.
 - **Spec** : quoi, pourquoi, vérification. Pour une **petite maintenance**, ces trois lignes suffisent.
 - **TDD** : souvent non.
 
@@ -45,7 +45,7 @@ Une petite maintenance est un `TEC` avec une spec de trois lignes, jamais un cha
 Une exploration **bornée dans le temps** pour répondre à une question.
 
 - **Spec** : la question, pourquoi, le budget de temps, ce qui compte comme réponse.
-- **Code jetable, jamais fusionné.** Le livrable est une réponse dans le bilan, puis selon le cas une décision, un nouveau chantier ou l’abandon.
+- **Code jetable, jamais fusionné** : pas de revue obligatoire avant la clôture. Le livrable est une réponse dans le bilan, puis selon le cas une décision, un nouveau chantier ou l’abandon.
 
 ## Pourquoi pas plus de types ?
 
