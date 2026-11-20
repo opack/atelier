@@ -23,7 +23,7 @@ Présente, de façon concise :
 - **Fichiers et couches touchés.**
 - **Tranches** : chacune livrable seule, relisible en moins de 15 minutes, un commit ; indique les `CA-x` couverts par chaque tranche. Chaque `CA` doit être couvert par au moins une tranche.
 - **Risques** et parades ; zones critiques (paiement, concurrence, règles de sécurité, autorisation, migrations) à relire ligne à ligne.
-- **Ce qui manque dans la spec**, si la conception révèle un trou : propose un amendement daté plutôt que de le combler en silence.
+- **Ce qui manque dans la spec**, si la conception révèle un trou : propose un amendement (`/atelier:amend`) plutôt que de le combler en silence.
 
 Attends que l'utilisateur challenge et valide.
 
@@ -32,4 +32,4 @@ Attends que l'utilisateur challenge et valide.
 1. `atelier template plan` → `plan.md` dans le dossier du chantier, rempli avec la version validée.
 2. Pour chaque choix tranché pendant la discussion : une entrée datée dans `decisions.md` (créé depuis `atelier template decisions` s'il n'existe pas), avec l'option écartée et la raison.
 3. Commite : `docs(chantiers): [<ID>] plan`.
-4. Suite : `/atelier:tests` si la spec indique `tdd: yes`, sinon `/atelier:build`. Conseille de repartir d'un contexte propre : le plan porte la mémoire, pas la conversation.
+4. Suite : `/atelier:write-tests` si la spec indique `tdd: yes`, sinon `/atelier:build`. Conseille de repartir d'un contexte propre : le plan porte la mémoire, pas la conversation.

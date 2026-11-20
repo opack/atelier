@@ -11,13 +11,13 @@ Tranche demandée : `$ARGUMENTS` (sinon : la prochaine tranche non faite de `pla
 
 ## 0. Préalables
 
-- `atelier status --json` : spec **signée**. Si `testDrivenPhase` vaut `writing-tests`, arrête-toi : les tests ne sont pas encore écrits et commités, propose `/atelier:tests`.
+- `atelier status --json` : spec **signée**. Si `testDrivenPhase` vaut `writing-tests`, arrête-toi : les tests ne sont pas encore écrits et commités, propose `/atelier:write-tests`.
 - Si `testDrivenPhase` vaut `none` (`tdd: no`), suis la section « Sans TDD » en fin de document à la place des étapes 1 et 2.
 - Lis la spec, `plan.md` et `decisions.md` s'ils existent, puis les tests figés du chantier.
 
 ## 1. Implémenter jusqu'à ce que tous les tests passent
 
-**Règle absolue : ne modifie pas les tests.** Ils sont commités et figés : le hook d'atelier refuse toute écriture dans un fichier de test, et le contrôle de fin signale tout test modifié par un autre moyen. Si un test te semble faux ou impossible à satisfaire, **arrête-toi et explique pourquoi à l'utilisateur** ; c'est à lui de décider de le rouvrir (`/atelier:tests` après `atelier reopen-tests <raison>`).
+**Règle absolue : ne modifie pas les tests.** Ils sont commités et figés : le hook d'atelier refuse toute écriture dans un fichier de test, et le contrôle de fin signale tout test modifié par un autre moyen. Si un test te semble faux ou impossible à satisfaire, **arrête-toi et explique pourquoi à l'utilisateur** ; c'est à lui de décider de le rouvrir (`/atelier:write-tests <raison>`). Si c'est la spec qui est fausse : `/atelier:amend`.
 
 Puis :
 1. Écris le code qui fait passer les tests de la tranche, en respectant les conventions du projet et `plan.md`.
@@ -40,7 +40,7 @@ Présente un résumé de la tranche : fichiers modifiés, tests passés, points 
 Seulement après son accord :
 1. Vérifie `atelier tests-changed` : aucun test ne doit avoir changé depuis leur commit.
 2. Commite la tranche : `<prefix>(<scope>): [<ID>] <description>` (un commit par tranche).
-3. S'il reste des tranches dans le plan, propose la suivante (`/atelier:build <tranche>`). Sinon : `/atelier:close`.
+3. S'il reste des tranches dans le plan, propose la suivante (`/atelier:build <tranche>`). Sinon : `/atelier:review`. Si la tranche corrige un point de revue, retour à `/atelier:review`.
 
 ## Sans TDD (`tdd: no`)
 

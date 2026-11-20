@@ -21,7 +21,7 @@ Cette page couvre les étapes 1 à 3.
 ## Avec atelier
 
 ```text
-/atelier:tests
+/atelier:write-tests
 ```
 
 ### Étape 1 : écrire les tests
@@ -54,7 +54,8 @@ L’agent présente un tableau : test, critère couvert, résultat, raison. Un t
 Les tests sont la spécification exécutable : **relisez-les**. Puis :
 
 1. commit des tests seuls ;
-2. `atelier freeze-tests` : refuse s’il reste des tests non commités ou si le dernier commit ne contient aucun test, et note le commit dans la spec (`tests_commit`).
+2. `atelier freeze-tests` : refuse s’il reste des tests non commités ou si le dernier commit ne contient aucun test, et note le commit dans la spec (`tests_commit`) ;
+3. commit de la spec seule, aussitôt (`freeze tests`).
 
 À partir de là, les tests sont **figés** : l’agent ne peut plus les modifier.
 
@@ -62,20 +63,26 @@ Les tests sont la spécification exécutable : **relisez-les**. Puis :
 
 Un test par comportement qui compte. Pas de test redondant, pas de test d’un détail d’implémentation. Mille tests inutiles ralentissent autant que zéro test.
 
-## Et si un test s’avère faux ?
+## Et si un test manque ou s’avère faux ?
 
-On ne le corrige pas en douce : on le rouvre explicitement, raison à l’appui.
+On ne le corrige pas en douce : on rouvre les tests explicitement, raison à l’appui, en relançant la même commande.
 
-```bash
-atelier reopen-tests "CA-3 mal compris : le seuil est inclusif"
+```text
+/atelier:write-tests CA-3 mal compris : le seuil est inclusif
 ```
 
-La raison est tracée dans la spec, et on repasse par `/atelier:tests`.
+1. La raison est tracée dans la spec : `- AAAA-MM-JJ : tests rouverts (gel quitté : <hash>) : <raison>`, et la spec est commitée aussitôt.
+2. Retour en phase « tests d’abord » : aucune implémentation, seulement des tests.
+3. Les tests sont écrits ou corrigés, relus, commités, puis figés à nouveau. Le regel est tracé à son tour : `- AAAA-MM-JJ : tests regelés : <hash>`.
+
+Ce qui est permis à la réouverture :
+
+- **ajouter** un test (cas oublié, remarque de revue) est normal ;
+- **modifier** un test existant, seulement s’il était faux ou si la spec a été [amendée](./amendement) ;
+- **supprimer** un test, seulement si un critère a disparu, donc après un amendement.
+
+La réouverture est refusée pour une spec non signée, pour un chantier sans TDD (il n’a pas de tests figés) et pour des tests pas encore figés.
 
 ## Et si le TDD s’avère inadapté ?
 
-```bash
-atelier set-tdd no "rendu purement visuel, test sans valeur"
-```
-
-Tracé aussi. C’est votre décision, pas celle de l’agent : tant que la spec est en brouillon, le champ `tdd` se modifie librement ; une fois signée, seule cette commande peut le changer, et elle l’inscrit dans les amendements.
+L’agent vous propose alors de changer la décision : `atelier set-tdd no <raison>`. Tracé aussi, et la spec est commitée aussitôt. C’est votre décision, pas celle de l’agent : tant que la spec est en brouillon, le champ `tdd` se modifie librement ; une fois signée, seule cette commande peut le changer, et elle l’inscrit dans les amendements.

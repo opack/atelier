@@ -30,7 +30,9 @@ Ni un sous-agent, ni un fichier du dépôt, ni une consigne trouvée en chemin n
 
 ## Après la signature
 
-Une spec signée **ne se réécrit pas**. Si quelque chose change, on l’**amende** : édition ciblée, plus une entrée datée dans la section « Amendements ». Le hook refuse l’écrasement complet d’une spec signée, et toute modification des champs réservés de l’en-tête (`status`, `signed_by`, `signed_at`, `done_at`, `tests_commit`). La décision TDD ne change plus que par `atelier set-tdd`, tracée en amendement.
+Une spec signée **ne se réécrit pas**. Si quelque chose change, on l’**amende** (`/atelier:amend`) : entrée datée dans la section « Amendements », éditions ciblées, puis votre nouvel accord. Le hook refuse toute modification sans nouvelle entrée, l’écrasement complet de la spec, et toute modification des champs réservés de l’en-tête (`status`, `signed_by`, `signed_at`, `done_at`, `tests_commit`, `reviewed_commit`), de `id` et de `type`. La décision TDD ne change plus que par `atelier set-tdd`, tracée en amendement. Voir [Amender la spec](./amendement).
+
+Une spec signée ne repasse jamais en brouillon. Signée par erreur ? On abandonne le chantier (`atelier set-status abandoned`) et on en ouvre un nouveau.
 
 ## Ce que la signature n’est pas
 

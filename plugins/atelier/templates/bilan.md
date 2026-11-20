@@ -1,6 +1,6 @@
 # Bilan : {{ID}} {{TITLE}}
 
-<!-- Écrit à la clôture, à partir de la spec, du journal de décisions, du diff et de la revue. Se lit seul.
+<!-- Écrit à la clôture, à partir de la spec, du journal de décisions, du diff et de revue.md. Se lit seul.
 Pour un FIX : sections 1, 2, 4 et 7 suffisent, plus la cause réelle. -->
 
 ## 1. Résumé
@@ -25,7 +25,7 @@ Pour un FIX : sections 1, 2, 4 et 7 suffisent, plus la cause réelle. -->
 <!-- Ce qui reste à faire, raccourcis assumés, chantiers à ouvrir. -->
 
 ## 7. Verdict de revue
-<!-- Points bloquants traités, points à discuter et leur sort, exceptions acceptées. -->
+<!-- Repris de revue.md : tours de revue, points bloquants traités, points à discuter et leur traitement, exceptions acceptées. -->
 - Verdict :
 - Validé par :
 - Date :

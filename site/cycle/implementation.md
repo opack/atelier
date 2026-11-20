@@ -21,7 +21,9 @@ Sans argument, atelier prend la prochaine tranche du plan.
 `sum = () => 5` fait passer `assert.equal(sum(2, 3), 5)`. Aucun hook ne peut le détecter : c’est le rôle d’`overfit-checker` et de la revue.
 :::
 
-Si un test semble faux, l’agent **s’arrête et vous l’explique**. À vous de décider de le rouvrir.
+Si un test semble faux, l’agent **s’arrête et vous l’explique**. À vous de décider de le rouvrir (`/atelier:write-tests <raison>`), ou d’[amender la spec](./amendement) si c’est elle qui est fausse.
+
+Quand la dernière tranche est commitée, place à la [revue](./revue).
 
 ## Sans TDD
 

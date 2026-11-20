@@ -6,4 +6,4 @@ description: Indique où en est le chantier actif (statut, documents, manques) e
 
 > La commande `atelier` est fournie par le plugin. Si elle est introuvable, utilise `node "${CLAUDE_PLUGIN_ROOT}/bin/atelier"`.
 
-Lance `atelier status` et présente le résultat en quelques lignes : chantier, statut, documents présents, points manquants, débrayage éventuel, prochaine étape. Si la spec n'est pas signée et a des manques, propose d'y travailler. N'ajoute rien d'autre.
+Lance `atelier status` et présente le résultat en quelques lignes : chantier, statut, documents présents, points manquants, état de la revue (commit revu, à jour ou obsolète et pourquoi), débrayage éventuel, prochaine étape. Si la spec n'est pas signée et a des manques, propose d'y travailler. N'ajoute rien d'autre.

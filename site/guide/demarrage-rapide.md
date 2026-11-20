@@ -25,7 +25,7 @@ claude plugin install atelier@atelier
 
 ## 2. Préparer le projet
 
-Dans Claude Code, à la racine du projet :
+atelier est un plugin Claude Code : ses commandes `/atelier:*` se lancent **dans une session Claude Code ouverte sur le répertoire du projet**, pas dans un terminal. Ouvrez Claude Code à la racine du projet, puis :
 
 ```text
 /atelier:init
@@ -53,23 +53,32 @@ Un agent critique relit la spec, vous tranchez ses remarques, puis vous signez. 
 
 ```text
 /atelier:plan
-/atelier:tests
+/atelier:write-tests
 /atelier:build
 ```
 
 - `plan` propose une approche et un découpage en tranches.
-- `tests` écrit les tests à partir des critères d’acceptation, vérifie qu’ils échouent, et les commite (si TDD).
+- `write-tests` écrit les tests à partir des critères d’acceptation, vérifie qu’ils échouent, et les commite (si TDD).
 - `build` implémente jusqu’à ce que tout passe, sans toucher aux tests, puis commite après votre accord.
 
-## 6. Clôturer
+## 6. Faire relire
+
+```text
+/atelier:review
+```
+
+Un agent indépendant relit le chantier. Vous tranchez chaque point (correction, test, amendement ou exception), autant de tours que nécessaire, puis le commit relu est enregistré.
+
+## 7. Clôturer
 
 ```text
 /atelier:close
 ```
 
-Contrôles, revue par un agent indépendant, bilan, **votre verdict**, puis proposition de PR.
+Bilan, **votre verdict**, vérification que le code n’a pas changé depuis la revue, puis proposition de PR.
 
 ## Et ensuite ?
 
 - Perdu en route ? `/atelier:status` vous dit où vous en êtes et quoi faire.
+- La spec signée s’avère fausse ou incomplète ? `/atelier:amend` : voir [Amender la spec](../cycle/amendement).
 - Pour comprendre chaque étape en détail : [Vue d’ensemble du cycle](./vue-ensemble).

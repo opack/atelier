@@ -1,6 +1,8 @@
-# 6. Clôture : revue et bilan
+# 7. Clôture : bilan et verdict
 
-**Objectif** : vérifier le travail avec un regard indépendant, garder la trace de ce qui a été fait, et rendre un verdict.
+**Objectif** : vérifier que le code clôturé est celui qui a été relu, garder la trace de ce qui a été fait, et rendre un verdict.
+
+La clôture ne relit pas et ne corrige pas le code : c’est le rôle de la [revue](./revue).
 
 ## Avec atelier
 
@@ -8,32 +10,11 @@
 /atelier:close
 ```
 
-## 1. Contrôles
+## 1. Préalable : une revue à jour
 
-- Tous les contrôles sont verts (`atelier checks`).
-- En TDD, aucun test n’a changé depuis leur gel (`atelier tests-changed`).
-- Chaque commit porte l’identifiant du chantier.
+La revue doit être enregistrée et à jour (`/atelier:status` le dit). Sinon, retour à `/atelier:review`. Exception : un `SPIKE`, dont le code n’est jamais fusionné.
 
-## 2. Revue indépendante
-
-Le sous-agent `reviewer` relit le diff **sans avoir participé à l’écriture du code**. Il ne modifie rien. Il vérifie :
-
-| Dimension | Exemples |
-|---|---|
-| Conformité à la spec | Chaque CA couvert par un test qui passe ; pas de hors périmètre |
-| Sécurité | Autorisation vérifiée côté serveur, entrées validées, aucun secret |
-| Performance | Requêtes en boucle, lectures excessives, abonnements non nettoyés |
-| Accessibilité | Clavier, ARIA, contraste, textes localisés |
-| Maintenabilité | Conventions, duplication, code mort, sur-ingénierie |
-| Évolutivité | Frontières entre couches, couplages, choix difficiles à défaire |
-| Pièges du code généré | API inventées, dépendances ajoutées, tests affaiblis |
-| Livraison | Commits portant l’identifiant du chantier, aucun fichier hors périmètre |
-
-Ses remarques sont classées **bloquant** / **à discuter**, avec `fichier:ligne`. Les points bloquants sont corrigés, ou acceptés explicitement comme exceptions.
-
-La revue de l’agent **précède** la vôtre, elle ne la remplace pas. Voir [Relire du code généré](../agent/revue).
-
-## 3. Bilan
+## 2. Bilan
 
 `bilan.md` se lit seul. Il contient :
 
@@ -43,16 +24,32 @@ La revue de l’agent **précède** la vôtre, elle ne la remplace pas. Voir [Re
 4. **Éléments de code principaux** : ce qu’un nouveau venu doit lire en premier.
 5. **Pistes écartées**, et pourquoi. C’est ce qui évite de refaire le chemin.
 6. **Dette et suites.**
-7. **Verdict de revue.**
+7. **Verdict de revue**, repris de `revue.md`.
 
 Pour un `FIX`, s’y ajoute la cause réelle (confirmée ou non) et les autres endroits où le même schéma existe. Pour un `SPIKE`, la réponse à la question.
 
-## 4. Verdict
+## 3. Verdict
 
-Vous rendez le verdict : **accepté**, **accepté avec exceptions** (lesquelles), ou **refusé** (que reprendre). Il est inscrit dans le bilan avec votre nom et la date, et le chantier passe en `done` (`atelier set-status done`).
+Vous rendez le verdict : **accepté**, **accepté avec exceptions** (lesquelles), ou **refusé** (que reprendre). Il est inscrit dans le bilan avec votre nom et la date.
+
+## 4. Vérifications déterministes
+
+Après votre verdict, juste avant de passer le chantier en `done`, `atelier close-check` vérifie :
+
+- la spec est signée ;
+- `reviewed_commit` est renseigné et est un ancêtre de `HEAD` (sinon, après un rebase par exemple : nouvelle revue) ;
+- **aucun commit de code** depuis le commit revu : tests, `.claude/` et fusions compris ; seuls les autres chemins libres, le dossier du chantier et `.atelier/` ne comptent pas ;
+- **aucun amendement** de la spec depuis la revue ;
+- aucun changement de code non commité ;
+- en TDD, les tests sont figés ;
+- les contrôles de `.claude/atelier.json` sont verts.
+
+Un `SPIKE` ignore tout ce qui touche à la revue ; le reste s’applique. En cas d’échec : la liste des problèmes, et retour à `/atelier:review`.
+
+`atelier set-status done` refait les mêmes vérifications et refuse si l’une échoue. La clôture peut donc prendre le temps de la suite de tests.
 
 Un chantier clos rebloque le code sur sa branche : toute modification ultérieure est un nouveau chantier.
 
 ## 5. PR
 
-atelier propose la PR : titre `[<ID>] <titre>`, résumé du bilan, liens vers la spec et le bilan. Il ne la crée que si vous le demandez.
+atelier propose la PR : titre `[<ID>] <titre>`, résumé du bilan, liens vers la spec, la revue et le bilan. Il ne la crée que si vous le demandez.

@@ -28,6 +28,6 @@ Résume en 3 lignes ce que la spec engage (périmètre, critères clés, hors p�
 
 1. `atelier sign` (écrit `status: signed`, `signed_by`, `signed_at` ; refuse une spec incomplète).
 2. Commite la spec seule : `git add <dossier du chantier>/spec.md` puis `git commit -m "docs(chantiers): [<ID>] sign spec"`.
-3. Indique la suite : `/atelier:plan` pour un `FEAT`, un `REF` ou un gros chantier ; sinon `/atelier:tests` si `tdd: yes`, `/atelier:build` si `tdd: no` ; pour un `SPIKE`, explorer dans le budget fixé.
+3. Indique la suite : `/atelier:plan` pour un `FEAT`, un `REF` ou un gros chantier ; sinon `/atelier:write-tests` si `tdd: yes`, `/atelier:build` si `tdd: no` ; pour un `SPIKE`, explorer dans le budget fixé.
 
-Après signature, la spec ne se réécrit pas : toute modification se fait par édition ciblée, avec une entrée datée dans la section « Amendements ».
+Après signature, la spec ne se réécrit pas : toute modification passe par `/atelier:amend` (édition ciblée, entrée datée dans la section « Amendements », nouvel accord de l'utilisateur). Elle ne repasse jamais en brouillon ; une signature faite par erreur se traite en abandonnant le chantier (`atelier set-status abandoned`) puis en ouvrant un nouveau.

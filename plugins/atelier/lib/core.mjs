@@ -282,9 +282,221 @@ export function checkSpec(text) {
   return problems
 }
 
+// ---------- Amendments ----------
+
+const AMENDMENTS_HEADING = /^## Amendements[ \t]*$/
+const SECTION_END = /^#{1,2}\s/
+const ENTRY_START = /^- \d{4}-\d{2}-\d{2} : /
+
+// Line ranges [start, end) of every `## Amendements` section, heading included, in LF lines.
+function amendmentSectionRanges(lines) {
+  const ranges = []
+  for (let start = 0; start < lines.length; start += 1) {
+    if (!AMENDMENTS_HEADING.test(lines[start])) {
+      continue
+    }
+    let end = start + 1
+    while (end < lines.length && !SECTION_END.test(lines[end])) {
+      end += 1
+    }
+    ranges.push([start, end])
+  }
+  return ranges
+}
+
+// Reads the `## Amendements` section of a spec (or of its body).
+// Returns { sectionCount, entries, rest }: `entries` are the dated first-level list items with
+// their indented continuation lines (HTML comments of the section ignored); `rest` is the text
+// outside the entries — the rest of the file, plus any other text of the section, which counts
+// as spec body. With several sections, only `sectionCount` is meaningful.
+export function parseAmendments(text) {
+  const lines = text.replace(/\r\n/g, '\n').split('\n')
+  const ranges = amendmentSectionRanges(lines)
+  if (ranges.length !== 1) {
+    return { sectionCount: ranges.length, entries: [], rest: lines.join('\n') }
+  }
+  const [start, end] = ranges[0]
+  const sectionText = lines.slice(start + 1, end).join('\n').replace(/<!--[\s\S]*?-->/g, '')
+  const entries = []
+  const otherLines = []
+  let current = null
+  for (const line of sectionText.split('\n').map((candidate) => candidate.trimEnd())) {
+    if (ENTRY_START.test(line)) {
+      current = [line]
+      entries.push(current)
+    } else if (!line) {
+      continue
+    } else if (current && /^\s/.test(line)) {
+      current.push(line)
+    } else {
+      current = null
+      otherLines.push(line)
+    }
+  }
+  const rest = [...lines.slice(0, start + 1), ...otherLines, ...lines.slice(end)].join('\n')
+  return { sectionCount: 1, entries: entries.map((entryLines) => entryLines.join('\n')), rest }
+}
+
+// Adds `- <entry>` at the end of the `## Amendements` section, wherever it is, or creates the
+// section at the end of the file. Keeps the file's line endings.
+export function appendAmendmentEntry(text, entry) {
+  const lineEnding = text.includes('\r\n') ? '\r\n' : '\n'
+  const lines = text.replace(/\r\n/g, '\n').split('\n')
+  const [range] = amendmentSectionRanges(lines)
+  let result
+  if (!range) {
+    result = `${lines.join('\n').replace(/\s*$/, '')}\n\n## Amendements\n- ${entry}\n`
+  } else {
+    // After the last non-blank line of the section, so that blank lines before the next heading stay.
+    let last = range[1] - 1
+    while (last > range[0] && !lines[last].trim()) {
+      last -= 1
+    }
+    result = [...lines.slice(0, last + 1), `- ${entry}`, ...lines.slice(last + 1)].join('\n')
+  }
+  return result.replace(/\n/g, lineEnding)
+}
+
+// Fixed labels of the entries written by the atelier command.
+export function reopenTestsEntry(date, commit, reason) {
+  return `${date} : tests rouverts (gel quitté : ${commit}) : ${reason}`
+}
+
+export function refreezeTestsEntry(date, commit) {
+  return `${date} : tests regelés : ${commit}`
+}
+
+// Whether freezing the tests now is a refreeze: the last "tests rouverts" entry comes after the
+// last "tests regelés" entry (or there is none). Position decides, not dates. The pre-0.2.0
+// format (`tests rouverts : <raison>`) starts the same way.
+export function isRefreeze(entries) {
+  const lastIndexOf = (label) => entries.findLastIndex((entry) => entry.replace(ENTRY_START, '').startsWith(label))
+  const lastReopen = lastIndexOf('tests rouverts')
+  return lastReopen >= 0 && lastReopen > lastIndexOf('tests regelés')
+}
+
+// Why `atelier reopen-tests` is refused for this chantier, or null.
+export function reopenTestsRefusal(chantier) {
+  const data = chantier?.spec?.data ?? {}
+  if (specStatus(chantier?.spec) !== 'signed') {
+    return `La spec de ${chantier?.id ?? 'ce chantier'} n’est pas signée (statut : ${specStatus(chantier?.spec)}) : ses tests ne se rouvrent pas.`
+  }
+  if (data.tdd !== 'yes') {
+    return `${chantier?.id ?? 'Ce chantier'} ne suit pas le TDD (tdd: ${data.tdd || '?'}) : il n’a pas de tests figés à rouvrir. Ajoute ou modifie les tests avec le code (/atelier:build).`
+  }
+  if (!data.tests_commit) {
+    return `Les tests de ${chantier.id} ne sont pas figés : ils s’écrivent encore, rien à rouvrir (/atelier:write-tests).`
+  }
+  return null
+}
+
+// ---------- Review ----------
+
+// Files that count as code for the review: everything outside the free paths, the chantier
+// documents and the atelier state. `.claude/**` is not free here, so that checks and hooks
+// cannot be weakened after the review, whatever the free path patterns. Tests count as code.
+export function reviewCodeFiles(files, config) {
+  const ignoredPaths = [...config.freePaths, `${config.chantiersDir}/**`, '.atelier/**']
+  return files.filter((file) => matchesAny(file, ['.claude/**'], config.ignoreCase) || !matchesAny(file, ignoredPaths, config.ignoreCase))
+}
+
+// Why the review recorded in the spec no longer covers the chantier, as a list (empty when it is
+// current). `facts` = { reviewedCommit, gitError, found, isAncestor, codeFilesSince,
+// amendmentsChanged }, read from git by the command.
+export function reviewProblems(facts) {
+  const { reviewedCommit, gitError, found, isAncestor, codeFilesSince = [], amendmentsChanged } = facts
+  if (!reviewedCommit) {
+    return ['Aucune revue enregistrée (reviewed_commit absent).']
+  }
+  const commit = reviewedCommit.slice(0, 7)
+  if (gitError) {
+    return [`Revue obsolète : impossible d’évaluer le commit revu ${commit} (${gitError}).`]
+  }
+  if (!found) {
+    return [`Revue obsolète : le commit revu ${commit} est introuvable (rebase ?).`]
+  }
+  if (!isAncestor) {
+    return [`Revue obsolète : le commit revu ${commit} n’est plus un ancêtre de HEAD (rebase ?).`]
+  }
+  const problems = []
+  if (codeFilesSince.length) {
+    problems.push(`Revue obsolète : du code a été commité depuis le commit revu ${commit} (${codeFilesSince.join(', ')}).`)
+  }
+  if (amendmentsChanged) {
+    problems.push(`Revue obsolète : la spec a été amendée depuis le commit revu ${commit}.`)
+  }
+  return problems
+}
+
+// 'none' (no review recorded), 'current' or 'stale'.
+export function reviewState(facts) {
+  if (!facts.reviewedCommit) {
+    return 'none'
+  }
+  return reviewProblems(facts).length ? 'stale' : 'current'
+}
+
+// Whether the amendment entries differ between two versions of the spec text.
+export function amendmentsDiffer(text, otherText) {
+  const entries = (candidate) => parseAmendments(parseFrontMatter(candidate).body)
+  const [one, other] = [entries(text), entries(otherText)]
+  return one.sectionCount !== other.sectionCount || one.entries.join('\0') !== other.entries.join('\0')
+}
+
+// Why `atelier set-reviewed` is refused, or null. `context` = { chantier, uncommittedCode (code
+// files changed and not committed), specUncommitted, changedTests (frozen tests changed since
+// tests_commit) }.
+export function setReviewedRefusal({ chantier, uncommittedCode, specUncommitted, changedTests }) {
+  if (specStatus(chantier?.spec) !== 'signed') {
+    return `la spec de ${chantier?.id ?? 'ce chantier'} n’est pas signée.`
+  }
+  if (uncommittedCode.length) {
+    return `du code n’est pas commité (${uncommittedCode.join(', ')}). La revue porte sur un commit : commite d’abord.`
+  }
+  if (specUncommitted) {
+    return 'la spec a des changements non commités. Commite-la d’abord.'
+  }
+  const phase = testDrivenPhase(chantier)
+  if (phase === 'writing-tests') {
+    return 'les tests ne sont pas figés (/atelier:write-tests).'
+  }
+  if (phase === 'implementing' && changedTests.length) {
+    return `des tests ont changé depuis leur gel (${changedTests.join(', ')}).`
+  }
+  return null
+}
+
+// ---------- Close ----------
+
+// Why the chantier cannot be closed, as a list (empty when it can). `context` = { chantier,
+// reviewFacts (see reviewProblems), uncommittedCode (code files changed and not committed),
+// checksFailure (first failing check as { check }, or null) }. A SPIKE (throwaway code, never
+// merged) skips everything related to the review.
+// `uncommittedError` is the git error met while listing uncommitted files, if any.
+export function closeProblems({ chantier, reviewFacts, uncommittedCode, uncommittedError, checksFailure }) {
+  if (specStatus(chantier?.spec) !== 'signed') {
+    return [`La spec de ${chantier?.id ?? 'ce chantier'} n’est pas signée (statut : ${specStatus(chantier?.spec)}).`]
+  }
+  const type = (chantier.spec.data.type ?? '').toUpperCase()
+  const problems = type === 'SPIKE' ? [] : reviewProblems(reviewFacts)
+  if (uncommittedError) {
+    problems.push(`Impossible de lister les fichiers non commités (${uncommittedError}).`)
+  } else if (uncommittedCode.length) {
+    problems.push(`Du code n’est pas commité (${uncommittedCode.join(', ')}).`)
+  }
+  if (testDrivenPhase(chantier) === 'writing-tests') {
+    problems.push('Les tests ne sont pas figés (/atelier:write-tests).')
+  }
+  if (checksFailure) {
+    problems.push(`Le contrôle « ${checksFailure.check.name} » échoue (${checksFailure.check.command}).`)
+  }
+  return problems
+}
+
 // ---------- Next step ----------
 
-export function nextStep(chantier) {
+// `review` is the state of the review ('none', 'current' or 'stale'), computed by the command.
+export function nextStep(chantier, review = 'none') {
   if (!chantier) {
     return 'Aucun chantier actif sur cette branche. Ouvrir un chantier : /atelier:new'
   }
@@ -308,12 +520,21 @@ export function nextStep(chantier) {
   }
   const phase = testDrivenPhase(chantier)
   if (phase === 'writing-tests') {
-    return 'Tests d’abord : écrire les tests, vérifier qu’ils échouent, les commiter (aucune implémentation) : /atelier:tests'
+    return 'Tests d’abord : écrire les tests, vérifier qu’ils échouent, les commiter (aucune implémentation) : /atelier:write-tests'
   }
-  if (phase === 'implementing') {
-    return 'Implémenter jusqu’à ce que tous les tests passent, sans modifier les tests, puis commiter : /atelier:build ; ensuite clôturer : /atelier:close'
+  const build = phase === 'implementing'
+    ? 'Implémenter jusqu’à ce que tous les tests passent, sans modifier les tests, puis commiter : /atelier:build'
+    : 'Implémenter (sans TDD pour ce chantier), puis commiter : /atelier:build'
+  if (type === 'SPIKE') {
+    return `${build} ; ensuite clôturer : /atelier:close`
   }
-  return 'Implémenter (sans TDD pour ce chantier), puis commiter : /atelier:build ; ensuite clôturer : /atelier:close'
+  if (review === 'current') {
+    return 'Revue à jour : clôturer (bilan, verdict) : /atelier:close'
+  }
+  if (review === 'stale') {
+    return 'Le code ou la spec a changé depuis la revue : refaire relire : /atelier:review'
+  }
+  return `${build} ; ensuite faire relire : /atelier:review`
 }
 
 // ---------- Test-driven phases ----------
@@ -408,41 +629,92 @@ export function applyToolEdit(currentText, toolName, toolInput) {
   return text
 }
 
-// Spec header fields written only by the atelier command (sign, set-status, freeze-tests, reopen-tests).
-export const COMMAND_SPEC_FIELDS = ['status', 'signed_by', 'signed_at', 'done_at', 'tests_commit']
+// Spec header fields written only by the atelier command (sign, set-status, freeze-tests,
+// reopen-tests, set-reviewed).
+export const COMMAND_SPEC_FIELDS = ['status', 'signed_by', 'signed_at', 'done_at', 'tests_commit', 'reviewed_commit']
+
+// Fields that cannot change through the edit tool once the spec is no longer a draft, besides
+// the command fields: `tdd` changes through `atelier set-tdd`; `id` and `type` are bound to the
+// branch, the directory and the next step.
+const FROZEN_AFTER_SIGNATURE_FIELDS = ['tdd', 'id', 'type']
+
+const specStatus = (spec) => spec?.data?.status || 'draft'
 
 // Why a write to a spec file is refused, or null. `existingSpec` and `proposedSpec` are the
-// parsed spec before and after the write (null when absent or unknown).
-function specWriteRefusal(toolName, existingSpec, proposedSpec) {
-  const before = existingSpec?.data ?? {}
-  const status = before.status || 'draft'
-  if (toolName === 'Write' && ['signed', 'done'].includes(status)) {
-    return 'atelier : cette spec est signée, elle ne se réécrit pas. Modifie-la avec des éditions ciblées et ajoute une entrée datée dans la section « Amendements ».'
+// parsed spec before and after the write (null when absent or unknown); `committedSpec` is the
+// parsed spec in HEAD (null when absent from HEAD) and `committedSpecError` the git error met
+// while reading it, if any.
+function specWriteRefusal(toolName, existingSpec, proposedSpec, committedSpec, committedSpecError) {
+  if (committedSpecError) {
+    return `atelier : impossible de lire la version commitée de la spec (${committedSpecError}), donc de vérifier cette écriture, même pour une spec en brouillon. Signale-le à l’utilisateur.`
+  }
+  const guarded = specStatus(existingSpec) !== 'draft' || (committedSpec && specStatus(committedSpec) !== 'draft')
+  if (toolName === 'Write' && guarded) {
+    return 'atelier : cette spec n’est plus en brouillon, elle ne se réécrit pas. Modifie-la avec des éditions ciblées et ajoute une entrée datée dans la section « Amendements » (/atelier:amend).'
   }
   if (!proposedSpec) {
     // An edit that cannot be replayed exactly cannot be checked: refuse rather than trust it.
-    return existingSpec && ['Edit', 'MultiEdit'].includes(toolName)
+    return (existingSpec || guarded) && ['Edit', 'MultiEdit'].includes(toolName)
       ? 'atelier : impossible de vérifier cette édition de la spec (texte introuvable tel quel). Relis le fichier et refais une édition exacte.'
       : null
   }
+  const before = existingSpec?.data ?? {}
   const after = proposedSpec.data
   const valueOf = (data, field) => (field === 'status' ? data.status || 'draft' : data[field] ?? '')
   const changedFields = COMMAND_SPEC_FIELDS.filter((field) => valueOf(before, field) !== valueOf(after, field))
   if (changedFields.length) {
     return `atelier : ${changedFields.map((field) => `« ${field} »`).join(', ')} ne se modifie(nt) que par la commande atelier (la signature passe par /atelier:sign, sur accord explicite de l’utilisateur).`
   }
-  if (status !== 'draft' && (before.tdd ?? '') !== (after.tdd ?? '')) {
+  if (!guarded) {
+    return null
+  }
+  const status = specStatus(existingSpec)
+  const frozenChanges = FROZEN_AFTER_SIGNATURE_FIELDS.filter((field) => valueOf(before, field) !== valueOf(after, field))
+  if (frozenChanges.includes('tdd')) {
     return `atelier : la spec n’est plus en brouillon (statut : ${status}) ; « tdd » ne change plus que par « atelier set-tdd <yes|no> <raison> », tracé en amendement.`
+  }
+  if (frozenChanges.length) {
+    return `atelier : la spec n’est plus en brouillon (statut : ${status}) ; ${frozenChanges.map((field) => `« ${field} »`).join(' et ')} ne change(nt) plus (liés à la branche et au dossier du chantier). Si c’est vraiment nécessaire, abandonne ce chantier et ouvre-en un nouveau.`
+  }
+  return amendmentRefusal(committedSpec && specStatus(committedSpec) !== 'draft' ? committedSpec : existingSpec, proposedSpec)
+}
+
+// A change to the body (outside "Amendements") or to a header field compared with the reference
+// needs a new dated entry; the reference entries stay an exact prefix of the proposed ones.
+function amendmentRefusal(referenceSpec, proposedSpec) {
+  const reference = parseAmendments(referenceSpec.body ?? '')
+  const proposed = parseAmendments(proposedSpec.body ?? '')
+  if (proposed.sectionCount > 1) {
+    return 'atelier : la spec aurait plusieurs sections « ## Amendements ». Garde une seule section et ajoute les entrées à sa fin.'
+  }
+  const isPrefix = reference.entries.every((entry, index) => proposed.entries[index] === entry)
+  if (!isPrefix) {
+    return 'atelier : les entrées existantes de la section « Amendements » ne se modifient ni ne se suppriment, et une nouvelle entrée s’ajoute à la fin de la section.'
+  }
+  const excluded = new Set([...COMMAND_SPEC_FIELDS, ...FROZEN_AFTER_SIGNATURE_FIELDS])
+  const fields = new Set([...Object.keys(referenceSpec.data), ...Object.keys(proposedSpec.data)].filter((field) => !excluded.has(field)))
+  const headerChanged = [...fields].some((field) => (referenceSpec.data[field] ?? '') !== (proposedSpec.data[field] ?? ''))
+  if ((headerChanged || reference.rest !== proposed.rest) && proposed.entries.length <= reference.entries.length) {
+    return 'atelier : cette spec est signée ; toute modification doit être tracée. Ajoute d’abord, à la fin de la section « ## Amendements », une entrée « - AAAA-MM-JJ : quoi, pourquoi », puis modifie la spec (/atelier:amend). La comparaison se fait avec la version commitée : une modification non commitée sans entrée, même faite par l’utilisateur, bloque les éditions jusqu’à son commit ou l’ajout d’une entrée.'
+  }
+  return null
+}
+
+// Why `atelier set-status <status>` is refused for this chantier, or null.
+export function setStatusRefusal(chantier, status) {
+  const current = specStatus(chantier?.spec)
+  if (status === 'draft' && current !== 'draft') {
+    return `la spec de ${chantier.id} est « ${current} » ; elle ne repasse pas en brouillon. Pour la modifier : /atelier:amend. Signée par erreur : abandonne ce chantier (atelier set-status abandoned) et ouvre-en un nouveau.`
   }
   return null
 }
 
 // Decides whether the agent may write a file. Returns { allowed, reason }. The rules apply in order.
 // `context` = { relativePath (null outside the project), toolName, config, chantier, bypass,
-// fileExists, existingSpec, proposedSpec } where the specs are the parsed spec file before and
-// after the write (see specWriteRefusal).
+// fileExists, existingSpec, proposedSpec, committedSpec, committedSpecError } where the specs are
+// the parsed spec file before and after the write, and in HEAD (see specWriteRefusal).
 export function decideWrite(context) {
-  const { relativePath, toolName, config, chantier, bypass, fileExists, existingSpec, proposedSpec } = context
+  const { relativePath, toolName, config, chantier, bypass, fileExists, existingSpec, proposedSpec, committedSpec, committedSpecError } = context
   if (relativePath === null) {
     return { allowed: true }
   }
@@ -457,7 +729,7 @@ export function decideWrite(context) {
     }
   }
   if (matches([`${config.chantiersDir}/**`]) && matches(['spec.md'])) {
-    const refusal = specWriteRefusal(toolName, existingSpec, proposedSpec)
+    const refusal = specWriteRefusal(toolName, existingSpec, proposedSpec, committedSpec ?? null, committedSpecError ?? null)
     if (refusal) {
       return { allowed: false, reason: refusal }
     }
@@ -492,13 +764,13 @@ export function decideWrite(context) {
   if (phase === 'writing-tests' && !isTestFile) {
     return {
       allowed: false,
-      reason: `atelier : ${chantier.id} est en phase « tests d’abord » (TDD). N’écris aucune implémentation, même factice : seulement des fichiers de test. Lance les tests, vérifie qu’ils échouent, fais-les relire et commiter (/atelier:tests). Si ce fichier est un test, demande à l’utilisateur d’ajouter son motif à « testPaths » dans .claude/atelier.json.`,
+      reason: `atelier : ${chantier.id} est en phase « tests d’abord » (TDD). N’écris aucune implémentation, même factice : seulement des fichiers de test. Lance les tests, vérifie qu’ils échouent, fais-les relire et commiter (/atelier:write-tests). Si ce fichier est un test, demande à l’utilisateur d’ajouter son motif à « testPaths » dans .claude/atelier.json.`,
     }
   }
   if (phase === 'implementing' && isTestFile) {
     return {
       allowed: false,
-      reason: `atelier : les tests de ${chantier.id} sont commités et figés. Ne les modifie pas : modifie l’implémentation jusqu’à ce qu’ils passent. Si un test est réellement faux, arrête-toi et signale-le ; le rouvrir se fait avec /atelier:tests, raison à l’appui.`,
+      reason: `atelier : les tests de ${chantier.id} sont commités et figés. Ne les modifie pas : modifie l’implémentation jusqu’à ce qu’ils passent. Si un test est réellement faux, arrête-toi et signale-le ; le rouvrir se fait avec /atelier:write-tests, raison à l’appui, sur décision de l’utilisateur.`,
     }
   }
   return { allowed: true }
