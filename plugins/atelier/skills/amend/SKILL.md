@@ -39,5 +39,6 @@ Montre le diff de la spec (`git diff -- <dossier du chantier>/spec.md`) et deman
 
 ## 4. Suite
 
+- **Après un changement de TDD** à l'étape 0 : `set-tdd yes` → `/atelier:write-tests` (les tests s'écrivent et se figent avant de reprendre le code) ; `set-tdd no` → `/atelier:build` ou `/atelier:review`.
 - **En TDD** (`testDrivenPhase` ≠ `none`), si des critères ont bougé : les tests doivent suivre. Si les tests sont figés, `/atelier:write-tests <raison>` les rouvre (la commande lance `atelier reopen-tests` et commite la spec) ; sinon, `/atelier:write-tests` reprend leur écriture.
 - **Sinon** : retour à `/atelier:build` si du code est à reprendre, ou à `/atelier:review` si l'amendement suit une remarque de revue.

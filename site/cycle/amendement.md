@@ -10,6 +10,7 @@ Une spec signée est un engagement : elle ne se réécrit pas, elle s’**amende
 /atelier:amend <ce qui change, et pourquoi>
 ```
 
+0. **Si la décision TDD change** : votre accord à part, `atelier set-tdd`, commit aussitôt, avant le reste de l’amendement.
 1. **Entrée datée d’abord** : une ligne `- AAAA-MM-JJ : quoi, pourquoi` à la fin de la section « Amendements ».
 2. **Éditions ciblées** de la spec, jamais une réécriture.
 3. **Impact** : critères ajoutés, modifiés, supprimés (pour un `TEC`, points de vérification), et ce qu’ils entraînent (tests, code, revue).
