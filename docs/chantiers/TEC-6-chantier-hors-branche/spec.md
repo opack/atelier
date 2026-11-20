@@ -7,7 +7,7 @@ tdd: yes
 created_at: 2026-11-20
 signed_by: Opack
 signed_at: 2026-11-20
-tests_commit: af0da4a
+tests_commit: 
 ---
 
 # TEC-6 Reconnaître un chantier hors branche <type>/<ID>-<slug>
@@ -96,3 +96,4 @@ Question si manquant : qu'est-ce qui pourrait changer pour l'utilisateur malgré
 - 2026-11-20 : tests rouverts (gel quitté : 2e6ddb1) : intégration de TEC-5 depuis main (ab8398c) : la fusion apporte les tests de TEC-5
 - 2026-11-20 : tests regelés : af0da4a
 - 2026-11-20 : §3 et Prérequis, sur une branche imposée `/atelier:new` commite et pousse le brouillon dès l'écriture de `spec.md`, avant `set-tdd` ; §5, ajout de V-10 (garde d'écriture sur un chantier déduit des commits) et de l'essai manuel de `/atelier:new` sur une branche `claude/...`. Pourquoi : revue tour 2, `set-tdd` (§5 du skill) passait avant le commit du brouillon (§7) : refus sur un premier chantier, écriture dans la spec de l'ancien chantier sinon ; et aucun test ne passait par le hook d'écriture.
+- 2026-11-20 : tests rouverts (gel quitté : af0da4a) : spec amendée : ajout de V-10 (garde d'écriture sur un chantier déduit des commits), relevé par la revue tour 2
