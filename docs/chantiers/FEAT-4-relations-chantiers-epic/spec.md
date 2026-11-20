@@ -7,7 +7,7 @@ tdd: yes
 created_at: 2026-11-20
 signed_by: Opack
 signed_at: 2026-11-20
-tests_commit: 3a599c9
+tests_commit: 
 ---
 
 # FEAT-4 Relations entre chantiers et type EPIC
@@ -113,3 +113,4 @@ Dépôts git fictifs créés dans un répertoire temporaire par les tests : un E
 ## Amendements
 <!-- Après signature : une entrée datée par modification de la spec (date, quoi, pourquoi). -->
 - 2026-11-20 : `check-spec` signale un EPIC dont l'en-tête porte `tdd: yes` (description et CA-7), pour que « `tdd: no` d'office » tienne aussi avant la signature, quand l'en-tête est encore modifiable à la main ; relevé à la conception.
+- 2026-11-20 : tests rouverts (gel quitté : 3a599c9) : revue tour 1 (B1) : le hook de démarrage affiche les relations et l'étape d'un EPIC, et tolère les erreurs git, sans test (règle du CLAUDE.md sur les hooks)
