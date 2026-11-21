@@ -11,7 +11,7 @@ Tu installes le process atelier dans le projet courant. Ne pose de questions que
 
 ## 1. État des lieux
 
-- Lance `atelier status --json`. Si `installed` vaut `true`, dis-le et propose seulement de vérifier la configuration existante.
+- Lance `atelier status --json`. Si `installed` vaut `true`, dis-le, propose de vérifier la configuration existante, puis lance `atelier check-process` : s'il liste des lignes absentes de la section « Process (atelier) » du `CLAUDE.md` (nouvelle version du plugin), montre-les et propose de les ajouter à la section, sans réécrire ni retirer les lignes du projet. N'écris qu'après accord. Rien d'autre à faire sur un projet déjà installé.
 - Lis `package.json` (ou l'équivalent du langage) pour trouver les commandes de **types**, **lint** et **tests**.
 - **Vérifie que la commande de tests fait réellement quelque chose** : un script du type `echo … && exit 0` ou l'absence de tests ne compte pas. Si c'est le cas, signale-le clairement : sans vrais tests, les étapes « tests d'abord » et les contrôles automatiques ne protègent rien. Propose d'en faire le premier chantier (`TEC`).
 
@@ -49,16 +49,7 @@ N'inclus que les contrôles qui existent et s'exécutent en moins de quelques mi
 
 - Crée `docs/chantiers/` et `docs/decisions/` (avec un `.gitkeep`).
 - Ajoute `.atelier/` au `.gitignore` (état local : débrayage, état du hook de fin).
-- Ajoute cette section au `CLAUDE.md` du projet (crée le fichier s'il n'existe pas), sans toucher au reste :
-
-```markdown
-## Process (atelier)
-- Toute modification passe par un chantier : `docs/chantiers/<ID>-<slug>/`, branche `<type>/<ID>-<slug>`.
-- Pas de modification de code tant que `spec.md` n'a pas `status: signed`.
-- Avant de déclarer une tâche terminée : contrôles de `.claude/atelier.json` verts.
-- Commits : `<prefix>(<scope>): [<ID>] <description>` ; titre de PR : `[<ID>] <titre>`.
-- Décision prise en cours de chantier : une entrée datée dans `decisions.md`.
-```
+- Ajoute au `CLAUDE.md` du projet (crée le fichier s'il n'existe pas), sans toucher au reste, la section « Process (atelier) » telle que la donne `atelier template process`, avec `docs/chantiers` remplacé par le `chantiersDir` du projet (sans `/` final) s'il diffère. Vérifie ensuite avec `atelier check-process` : rien ne doit manquer.
 
 ## 4. Fin
 

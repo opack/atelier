@@ -1,6 +1,6 @@
 # Types de chantier
 
-Cinq types, pas plus. Le type choisit le template de spec, les questions posées et les étapes.
+Six types, pas plus. Le type choisit le template de spec, les questions posées et les étapes.
 
 ## FEAT : fonctionnalité
 
@@ -47,6 +47,20 @@ Une exploration **bornée dans le temps** pour répondre à une question.
 - **Spec** : la question, pourquoi, le budget de temps, ce qui compte comme réponse.
 - **Code jetable, jamais fusionné** : pas de revue obligatoire avant la clôture. Le livrable est une réponse dans le bilan, puis selon le cas une décision, un nouveau chantier ou l’abandon.
 
+## EPIC : ensemble de chantiers
+
+Une vision plus large qu’un chantier, que **plusieurs chantiers rattachés** réalisent : « Module gestion client » se concrétise par « Création client », « Contact client »… L’EPIC n’implémente rien : il pose le cadre commun et suit l’avancement.
+
+- **Étapes** : spec, signature, plan (le découpage), chantiers enfants, clôture.
+- **Spec** : vision, pourquoi, critères d’acceptation globaux, cadre fonctionnel et technique commun, hors périmètre.
+- **Plan** : les lots prévus, avec leur type, leur ordre et leurs dépendances pressenties. Écrit une fois puis laissé tel quel : les écarts vont dans `decisions.md`, la confrontation prévu / réalisé dans le bilan.
+- **TDD** : jamais (`tdd: no` d’office). Aucun code sur sa branche `epic/<ID>-<slug>`, ni revue.
+- **Clôture** : quand tous ses enfants sont clos et qu’au moins l’un d’eux est `done`. Sinon la vision n’a pas été réalisée : l’EPIC est abandonné.
+
+Un chantier s’y rattache par `rel_parent` (voir [les relations entre chantiers](./chantier#relations-entre-chantiers)). Un EPIC peut lui-même appartenir à un EPIC ; au-delà de deux niveaux, le découpage est sans doute trop fin.
+
+Quand une demande couvre plusieurs livrables indépendants, `/atelier:new` propose d’ouvrir un EPIC ; `/atelier:plan` signale un FEAT ou un REF dont le découpage dépasse un chantier. À l’inverse, un EPIC pour un seul livrable est un FEAT.
+
 ## Pourquoi pas plus de types ?
 
-Chaque type supplémentaire ajoute un template, des questions et des règles à retenir. Cinq types couvrent la quasi-totalité des cas. Le contenu (marketing, textes) qui n’est pas du code reste hors d’atelier.
+Chaque type supplémentaire ajoute un template, des questions et des règles à retenir. Six types couvrent la quasi-totalité des cas. Le contenu (marketing, textes) qui n’est pas du code reste hors d’atelier.

@@ -2,7 +2,7 @@
 // and by the hooks. Every user-facing message is in French, like the rest of the method.
 
 import { execFileSync, spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
@@ -10,23 +10,36 @@ import {
   amendmentsDiffer,
   appendAmendmentEntry,
   applyToolEdit,
+  buildChantierIndex,
+  chantierIdFromDirectoryName,
+  chantierTreesOf,
+  checkProcessProblems,
   checkSpec,
+  childrenOf,
+  describeRelation,
   closeProblems,
   collectUsedIdentifiers,
   configPath,
+  currentBranch,
   decideStop,
   decideWrite,
   findProjectRoot,
+  hasRelations,
   isRefreeze,
+  isReviewExempt,
   loadConfig,
   nextChantierId,
   matchesAny,
   nextStep,
+  openChildren,
   testDrivenPhase,
   parseAmendments,
   parseFrontMatter,
+  parseCatFileBatch,
   parsePorcelainPaths,
+  parseRelations,
   refreezeTestsEntry,
+  relationProblems,
   reopenTestsEntry,
   reopenTestsRefusal,
   reviewCodeFiles,
@@ -35,6 +48,8 @@ import {
   setFrontMatterValues,
   setReviewedRefusal,
   setStatusRefusal,
+  setTddRefusal,
+  shortRefName,
   toProjectRelativePath,
 } from './core.mjs'
 
@@ -44,6 +59,7 @@ const commands = {
   'next-id': commandNextId,
   status: commandStatus,
   'check-spec': commandCheckSpec,
+  'check-process': commandCheckProcess,
   template: commandTemplate,
   sign: commandSign,
   'set-status': commandSetStatus,
@@ -148,6 +164,7 @@ function commandStatus(options) {
   const { branch, chantier, source } = activeChantier(projectRoot, config)
   const bypass = readBypass(projectRoot, branch)
   const review = reviewSummary(projectRoot, config, chantier)
+  const relations = relationsSummary(projectRoot, config, chantier)
   const summary = {
     installed: true,
     branch,
@@ -162,12 +179,13 @@ function commandStatus(options) {
           testDrivenPhase: chantier.spec ? testDrivenPhase(chantier) : null,
           testsCommit: chantier.spec?.data.tests_commit || null,
           ...review,
+          relations,
           files: chantier.files,
           specProblems: chantier.spec ? checkSpec(readFileSync(join(chantier.directory, 'spec.md'), 'utf8')) : [],
         }
       : null,
     bypass,
-    nextStep: nextStep(chantier, review.reviewState),
+    nextStep: nextStep(chantier, review.reviewState, relations?.children),
   }
   if (options.includes('--json')) {
     console.log(JSON.stringify(summary, null, 2))
@@ -187,6 +205,39 @@ function reviewSummary(projectRoot, config, chantier) {
   }
 }
 
+// Relations of the chantier, with the status of the related chantiers in the current tree; null
+// when it has none and is not an EPIC (the index is then not built).
+function relationsSummary(projectRoot, config, chantier) {
+  if (!chantier?.spec || !needsIndex(chantier)) {
+    return null
+  }
+  const index = chantierIndex(projectRoot, config)
+  const { parent, dependsOn, origin, replaces } = parseRelations(chantier.spec.data)
+  const describe = (ids) => ids.map((id) => describeRelation(index, id))
+  return {
+    parent: describe(parent),
+    dependsOn: describe(dependsOn),
+    origin,
+    replaces,
+    children: isEpic(chantier) ? childrenOf(index, chantier.id).map((entry) => describeRelation(index, entry.id)) : [],
+  }
+}
+
+function formatRelation({ id, status, branches }) {
+  return `${id} (${status ?? (branches.length ? `pas fusionné ici : ${branches.join(' ')}` : 'introuvable')})`
+}
+
+function formatRelations(relations) {
+  const lines = [
+    ['Parent', relations.parent.map(formatRelation)],
+    ['Dépendances', relations.dependsOn.map(formatRelation)],
+    ['Origine', relations.origin],
+    ['Remplace', relations.replaces],
+    ['Enfants', relations.children.map(formatRelation)],
+  ]
+  return lines.filter(([, values]) => values.length).map(([label, values]) => `${label} : ${values.join(', ')}`)
+}
+
 function formatStatus(summary) {
   const lines = [`Branche : ${summary.branch ?? '(aucune)'}`]
   if (summary.chantier) {
@@ -194,6 +245,9 @@ function formatStatus(summary) {
     const deduced = summary.chantierSource === 'commits' ? ' (déduit des commits)' : ''
     lines.push(`Chantier : ${id}${deduced}${title ? ` — ${title}` : ''} (${type ?? '?'}, ${status ?? 'pas de spec'})`)
     lines.push(`Documents : ${files.length ? files.join(', ') : 'aucun'}`)
+    if (summary.chantier.relations) {
+      lines.push(...formatRelations(summary.chantier.relations))
+    }
     const phaseLabels = {
       'writing-tests': 'tests d’abord — aucune implémentation tant que les tests ne sont pas commités',
       implementing: 'implémentation — tests figés, ne pas les modifier',
@@ -218,13 +272,94 @@ function formatStatus(summary) {
   return lines.join('\n')
 }
 
+// Spec headers of the chantiers in the current tree (from disk, uncommitted changes included).
+function chantiersHere(projectRoot, config) {
+  const chantiersRoot = join(projectRoot, config.chantiersDir)
+  if (!existsSync(chantiersRoot)) {
+    return []
+  }
+  return readdirSync(chantiersRoot).flatMap((name) => {
+    const id = chantierIdFromDirectoryName(name)
+    const specPath = join(chantiersRoot, name, 'spec.md')
+    return id && existsSync(specPath) ? [{ id, data: parseFrontMatter(readFileSync(specPath, 'utf8')).data }] : []
+  })
+}
+
+// Objects requested through `git cat-file --batch` (requests on stdin, so no command line limit).
+function catFileBatch(projectRoot, requests) {
+  if (!requests.length) {
+    return []
+  }
+  const result = spawnSync('git', ['cat-file', '--batch'], { cwd: projectRoot, input: `${requests.join('\n')}\n`, maxBuffer: 256 * 1024 * 1024 })
+  if (result.status !== 0) {
+    throw new Error(result.error?.message || result.stderr?.toString().trim() || 'git cat-file')
+  }
+  return parseCatFileBatch(result.stdout)
+}
+
+// Every chantier known in the current tree and in the other branches (local and remote), read
+// with three git calls whatever the number of branches: the refs, the chantiers tree of each ref,
+// then the spec of each distinct chantier directory (branches mostly share the same ones).
+function chantierIndex(projectRoot, config) {
+  const current = currentBranch(projectRoot)
+  const refs = gitRaw(projectRoot, ['for-each-ref', '--format=%(refname)%00%(symref)', 'refs/heads', 'refs/remotes'])
+    .split('\n')
+    .map((line) => line.split('\0'))
+    .filter(([ref, symref]) => ref && !symref && ref !== `refs/heads/${current}`)
+    .map(([ref]) => ref)
+  const chantiersTrees = catFileBatch(projectRoot, refs.map((ref) => `${ref}:${config.chantiersDir}`))
+  const directories = refs.flatMap((ref, index) => {
+    const tree = chantiersTrees[index]
+    return tree?.type === 'tree' ? chantierTreesOf(tree.content, tree.id.length / 2).map((entry) => ({ ...entry, branch: shortRefName(ref) })) : []
+  })
+  const distinctTrees = [...new Set(directories.map((directory) => directory.tree))]
+  const specs = catFileBatch(projectRoot, distinctTrees.map((tree) => `${tree}:spec.md`))
+  const headers = new Map(distinctTrees.map((tree, index) => [tree, specs[index] && parseFrontMatter(specs[index].content.toString('utf8')).data]))
+  const branchHeaders = directories
+    .filter((directory) => headers.get(directory.tree))
+    .map(({ id, branch, tree }) => ({ id, branch, data: headers.get(tree) }))
+  return buildChantierIndex(chantiersHere(projectRoot, config), branchHeaders)
+}
+
+// Spec problems, relations included when atelier is installed: { problems, notes }.
+function specProblems(projectRoot, config, text) {
+  const problems = checkSpec(text)
+  const { data } = parseFrontMatter(text)
+  if (!hasRelations(data)) {
+    return { problems, notes: [] }
+  }
+  if (!config) {
+    return { problems, notes: ['Relations (rel_*) non vérifiées : atelier n’est pas installé dans ce projet (pas de .claude/atelier.json).'] }
+  }
+  return { problems: [...problems, ...relationProblems(data, chantierIndex(projectRoot, config))], notes: [] }
+}
+
 function commandCheckSpec([path]) {
-  const problems = checkSpec(readFileSync(path, 'utf8'))
+  const projectRoot = findProjectRoot()
+  const { problems, notes } = specProblems(projectRoot, loadConfig(projectRoot), readFileSync(path, 'utf8'))
+  notes.forEach((note) => console.log(note))
   if (problems.length === 0) {
     console.log('Spec complète.')
     return
   }
   console.log(problems.map((problem) => `- ${problem}`).join('\n'))
+  process.exitCode = 2
+}
+
+// Lines of the « Process (atelier) » section missing from the project's CLAUDE.md.
+function commandCheckProcess() {
+  const projectRoot = findProjectRoot()
+  const claudePath = join(projectRoot, 'CLAUDE.md')
+  const missing = checkProcessProblems(
+    readFileSync(join(pluginRoot, 'templates', 'process.md'), 'utf8'),
+    existsSync(claudePath) ? readFileSync(claudePath, 'utf8') : null,
+    loadConfig(projectRoot)?.chantiersDir,
+  )
+  if (missing.length === 0) {
+    console.log('Section « Process (atelier) » du CLAUDE.md à jour.')
+    return
+  }
+  console.log(`Lignes de la section « Process (atelier) » absentes du CLAUDE.md :\n${missing.join('\n')}`)
   process.exitCode = 2
 }
 
@@ -246,7 +381,7 @@ function commandSign() {
     console.error(`Signature refusée : la spec de ${chantier.id} est déjà « ${status} ». Seule une spec en brouillon se signe.`)
     process.exit(2)
   }
-  const problems = checkSpec(readFileSync(join(chantier.directory, 'spec.md'), 'utf8'))
+  const { problems } = specProblems(projectRoot, config, readFileSync(join(chantier.directory, 'spec.md'), 'utf8'))
   if (problems.length) {
     console.error(`Spec incomplète, signature refusée :\n${problems.map((problem) => `- ${problem}`).join('\n')}`)
     process.exit(2)
@@ -277,13 +412,28 @@ function commandSetStatus([status]) {
   if (status === 'done') {
     const problems = closeCheckProblems(projectRoot, config, chantier)
     if (problems.length) {
-      console.error(formatCloseProblems(problems))
+      console.error(formatCloseProblems(chantier, problems))
       process.exit(2)
     }
   }
+  // Abandoning an EPIC does not cascade: its open children are only listed.
+  const open = status === 'abandoned' && isEpic(chantier) ? openChildren(chantierIndex(projectRoot, config), chantier.id) : []
   const values = status === 'done' ? { status, done_at: today() } : { status }
   const { specPath } = updateSpec(projectRoot, config, values)
   console.log(toProjectRelativePath(projectRoot, specPath))
+  if (open.length) {
+    const lines = open.map((child) => `- ${child.id} (${child.status ?? `sur ${child.branches.join(', ')}`})`)
+    console.log(`Enfants encore ouverts de ${chantier.id}, à clore ou abandonner un par un :\n${lines.join('\n')}`)
+  }
+}
+
+function isEpic(chantier) {
+  return (chantier?.spec?.data?.type ?? '').toUpperCase() === 'EPIC'
+}
+
+// The index of all chantiers is only built when the chantier needs it.
+function needsIndex(chantier) {
+  return isEpic(chantier) || hasRelations(chantier?.spec?.data)
 }
 
 function git(projectRoot, gitArguments) {
@@ -435,6 +585,11 @@ function commandSetTdd([value, ...reasonWords]) {
   const projectRoot = findProjectRoot()
   const config = requireConfig(projectRoot)
   const chantier = requireActiveChantier(projectRoot, config)
+  const refusal = setTddRefusal(chantier, value)
+  if (refusal) {
+    console.error(`TDD refusé : ${refusal}`)
+    process.exit(2)
+  }
   const wasSigned = chantier.spec.data.status === 'signed'
   const { specPath } = updateSpec(projectRoot, config, { tdd: value })
   const reason = reasonWords.join(' ').trim()
@@ -485,19 +640,22 @@ function closeCheckProblems(projectRoot, config, chantier) {
     uncommittedCode,
     uncommittedError,
     checksFailure: runChecks(projectRoot, config),
+    index: needsIndex(chantier) ? chantierIndex(projectRoot, config) : null,
   })
 }
 
-function formatCloseProblems(problems) {
-  return `Clôture refusée :\n${problems.map((problem) => `- ${problem}`).join('\n')}\nCorrige, puis refais relire : /atelier:review`
+function formatCloseProblems(chantier, problems) {
+  const after = isReviewExempt(chantier) ? 'Corrige, puis relance la clôture : /atelier:close' : 'Corrige, puis refais relire : /atelier:review'
+  return `Clôture refusée :\n${problems.map((problem) => `- ${problem}`).join('\n')}\n${after}`
 }
 
 function commandCloseCheck() {
   const projectRoot = findProjectRoot()
   const config = requireConfig(projectRoot)
-  const problems = closeCheckProblems(projectRoot, config, requireActiveChantier(projectRoot, config))
+  const chantier = requireActiveChantier(projectRoot, config)
+  const problems = closeCheckProblems(projectRoot, config, chantier)
   if (problems.length) {
-    console.error(formatCloseProblems(problems))
+    console.error(formatCloseProblems(chantier, problems))
     process.exitCode = 2
     return
   }
@@ -704,12 +862,13 @@ function hookSessionStart() {
   }
   const { branch, chantier, source } = activeChantier(projectRoot, config)
   const review = reviewSummary(projectRoot, config, chantier)
+  const relations = relationsSummary(projectRoot, config, chantier)
   const summary = {
     branch,
     chantierSource: source,
-    chantier: chantier ? { id: chantier.id, title: chantier.spec?.data.title, type: chantier.spec?.data.type, status: chantier.spec?.data.status, files: chantier.files, ...review } : null,
+    chantier: chantier ? { id: chantier.id, title: chantier.spec?.data.title, type: chantier.spec?.data.type, status: chantier.spec?.data.status, files: chantier.files, ...review, relations } : null,
     bypass: readBypass(projectRoot, branch),
-    nextStep: nextStep(chantier, review.reviewState),
+    nextStep: nextStep(chantier, review.reviewState, relations?.children),
   }
   const statusText = summary.chantier
     ? formatStatus({ ...summary, chantier: { ...summary.chantier, specProblems: [] } })

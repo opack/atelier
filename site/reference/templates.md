@@ -34,10 +34,22 @@ Les commentaires `<!-- -->` donnent les questions à se poser pour chaque sectio
 <!--@include: ../../plugins/atelier/templates/spec-spike.md{1,}-->
 ````
 
+## Spec EPIC
+
+````markdown
+<!--@include: ../../plugins/atelier/templates/spec-epic.md{1,}-->
+````
+
 ## Plan
 
 ````markdown
 <!--@include: ../../plugins/atelier/templates/plan.md{1,}-->
+````
+
+## Plan d’EPIC
+
+````markdown
+<!--@include: ../../plugins/atelier/templates/plan-epic.md{1,}-->
 ````
 
 ## Journal de décisions
@@ -56,6 +68,14 @@ Les commentaires `<!-- -->` donnent les questions à se poser pour chaque sectio
 
 ````markdown
 <!--@include: ../../plugins/atelier/templates/bilan.md{1,}-->
+````
+
+## Section Process du CLAUDE.md
+
+Ajoutée par `/atelier:init` ; `atelier check-process` signale les lignes manquantes.
+
+````markdown
+<!--@include: ../../plugins/atelier/templates/process.md{1,}-->
 ````
 
 ## ADR
