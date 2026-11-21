@@ -3,7 +3,7 @@ id: FEAT-7
 type: FEAT
 title: Cycle tests, build, revue par tranche
 status: draft
-tdd:                 # yes | no : décision humaine, obligatoire avant signature
+tdd: yes
 created_at: 2026-11-20
 signed_by:
 signed_at:
