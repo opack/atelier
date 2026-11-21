@@ -12,7 +12,7 @@ La clôture ne relit pas et ne corrige pas le code : c’est le rôle de la [rev
 
 ## 1. Préalable : une revue à jour
 
-La revue doit être enregistrée et à jour (`/atelier:status` le dit). Sinon, retour à `/atelier:review`. Exception : un `SPIKE`, dont le code n’est jamais fusionné.
+La revue doit être enregistrée et à jour (`/atelier:status` le dit). Pour un chantier à plusieurs tranches, c’est la **revue du chantier**, après la dernière tranche : une tranche encore en cours, ou ajoutée au plan après la dernière revue de tranche, bloque la clôture. Sinon, retour à `/atelier:review`. Exception : un `SPIKE` sans TDD, dont le code n’est jamais fusionné.
 
 ## 2. Bilan
 

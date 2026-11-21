@@ -18,6 +18,12 @@ atelier suit le workflow « write tests, commit; code, iterate, commit » recomm
 
 Cette page couvre les étapes 1 à 3.
 
+## Par tranche
+
+Pour un chantier découpé en tranches, on n’écrit pas d’un coup les tests de tous les critères : seulement ceux des **CA de la tranche en cours** (le plan dit lesquels). Les tests des tranches suivantes s’écrivent après la revue de celle-ci, avec ce qu’elle a appris. Le cycle tests → implémentation → [revue](./revue) se répète pour chaque tranche.
+
+Les tests des tranches précédentes restent figés : on **ajoute** des tests, on ne modifie ni ne supprime les leurs. Comme ils vivent souvent dans le même fichier, la règle est vérifiée **au gel**, ligne par ligne : `atelier freeze-tests` refuse si une ligne de test présente au début de la tranche a été modifiée ou supprimée (fichier supprimé ou renommé compris ; espaces et fins de ligne ignorés), en listant les fichiers. Le contrôle ne voit pas une assertion ajoutée au milieu d’un test existant : le relecteur, si.
+
 ## Avec atelier
 
 ```text
@@ -32,7 +38,7 @@ Chaque `CA-x` de la spec donne au moins un test, dont le nom cite l’identifian
 test('CA-2 : refuse un montant négatif', () => { … })
 ```
 
-- **FEAT** : un test par critère d’acceptation.
+- **FEAT** : un test par critère d’acceptation de la tranche.
 - **FIX** : un test qui reproduit le bug.
 - **REF** : des tests de caractérisation, qui figent le comportement actuel. Exception : eux doivent **passer** dès maintenant.
 
@@ -54,7 +60,7 @@ L’agent présente un tableau : test, critère couvert, résultat, raison. Un t
 Les tests sont la spécification exécutable : **relisez-les**. Puis :
 
 1. commit des tests seuls ;
-2. `atelier freeze-tests` : refuse s’il reste des tests non commités ou si le dernier commit ne contient aucun test, et note le commit dans la spec (`tests_commit`) ;
+2. `atelier freeze-tests` : refuse s’il reste des tests non commités, si le dernier commit ne contient aucun test, ou si un test d’une tranche précédente a changé sans réouverture ; note le commit dans la spec (`tests_commit`, et `slice: 1` au premier gel) ;
 3. commit de la spec seule, aussitôt (`freeze tests`).
 
 À partir de là, les tests sont **figés** : l’agent ne peut plus les modifier.
@@ -81,7 +87,9 @@ Ce qui est permis à la réouverture :
 - **modifier** un test existant, seulement s’il était faux ou si la spec a été [amendée](./amendement) ;
 - **supprimer** un test, seulement si un critère a disparu, donc après un amendement.
 
-La réouverture est refusée pour une spec non signée, pour un chantier sans TDD (il n’a pas de tests figés) et pour des tests pas encore figés.
+Un test d’une **tranche précédente** se rouvre de la même façon, pendant la phase « tests d’abord » de la tranche en cours (à partir de la tranche 2) : le gel quitté est alors le début de la tranche. Si c’est la spec qui change, on l’[amende](./amendement) d’abord. Il n’y a pas d’option pour passer outre au moment du gel.
+
+La réouverture est refusée pour une spec non signée, pour un chantier sans TDD (il n’a pas de tests figés), pour des tests pas encore figés (phase « tests d’abord » de la tranche 1), et deux fois de suite avant le regel (« tests déjà rouverts »).
 
 ## Et si le TDD s’avère inadapté ?
 

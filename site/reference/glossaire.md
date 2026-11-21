@@ -13,7 +13,7 @@
 | **Journal de décisions** | `decisions.md` : une entrée datée par décision prise pendant le chantier. |
 | **Regel** | Nouveau gel des tests après une réouverture, tracé dans la spec. |
 | **Porte** | Contrôle à passer pour changer d’étape : automatique (types, lint, tests, complétude) ou humaine (signature, verdict). |
-| **Revue** | Relecture du chantier par un sous-agent indépendant, en tours successifs jusqu’à zéro point bloquant ; consignée dans `revue.md`. Obsolète dès que du code est commité ou la spec amendée après le commit revu. |
+| **Revue** | Passage du sous-agent relecteur indépendant, relancé après chaque correction jusqu’à zéro point bloquant ; consignée dans `revue.md`. **Revue de tranche** : le diff de la tranche, ligne à ligne ; sa validation fait passer à la tranche suivante. **Revue du chantier** : après la dernière tranche, transversale. Obsolète dès que du code est commité ou la spec amendée après le commit revu. |
 | **Signature** | Validation humaine qu’une spec suffit pour lancer le chantier. |
 | **Socle commun** | Règles partagées par tous les projets, dont chaque projet hérite. |
 | **Spec** | Document qui décrit l’intention du chantier : quoi, pourquoi, comment on saura que c’est réussi. |
@@ -22,6 +22,6 @@
 | **TDD** | Développement piloté par les tests : tests écrits, échoués et commités avant l’implémentation. Décidé chantier par chantier. |
 | **Test de caractérisation** | Test qui fige le comportement actuel d’un code avant de le restructurer. |
 | **Test de non-régression** | Test qui reproduit un bug : rouge avant la correction, vert après. |
-| **Tranche** | Morceau de chantier livrable seul, relisible en moins de 15 minutes. Un commit par tranche. |
+| **Tranche** | Morceau de chantier livrable seul, relisible en moins de 15 minutes, numéroté dans `plan.md`. Unité du cycle : ses tests, son implémentation et sa revue se font à part, dans l’ordre du plan. La tranche en cours est dans l’en-tête de la spec (`slice`). |
 | **Verdict** | Décision humaine finale à la clôture : accepté, accepté avec exceptions, refusé. |
 | **Voie rapide** | Enchaînement court pour les corrections de bugs. |

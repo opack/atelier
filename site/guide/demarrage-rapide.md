@@ -61,13 +61,15 @@ Un agent critique relit la spec, vous tranchez ses remarques, puis vous signez. 
 - `write-tests` écrit les tests à partir des critères d’acceptation, vérifie qu’ils échouent, et les commite (si TDD).
 - `build` implémente jusqu’à ce que tout passe, sans toucher aux tests, puis commite après votre accord.
 
+`write-tests`, `build` et `review` se répètent **pour chaque tranche** du plan : `/atelier:status` indique la tranche en cours.
+
 ## 6. Faire relire
 
 ```text
 /atelier:review
 ```
 
-Un agent indépendant relit le chantier. Vous tranchez chaque point (correction, test, amendement ou exception), autant de tours que nécessaire, puis le commit relu est enregistré.
+Un agent indépendant relit le chantier. Vous tranchez chaque point (correction, test, amendement ou exception), autant de revues que nécessaire. Pour un chantier découpé en tranches, cela se fait après chaque tranche, puis une dernière fois sur l’ensemble ; le commit relu est alors enregistré.
 
 ## 7. Clôturer
 

@@ -16,7 +16,7 @@ Elle s’applique **avant chaque écriture par les outils d’édition** de Clau
 | 2 | **Fichier sensible** (`sensitivePaths`) | Toujours refusé, même en débrayage |
 | 3 | **État d’atelier** : `.atelier/**` | Refusé |
 |   | `.claude/atelier.json` | Création autorisée (c’est ce que fait `/atelier:init`), modification et suppression refusées : la configuration est modifiée par l’humain |
-| 4 | **En-tête de spec** : `status`, `signed_by`, `signed_at`, `done_at`, `tests_commit`, `reviewed_commit` | Ne changent que par la commande `atelier` |
+| 4 | **En-tête de spec** : `status`, `signed_by`, `signed_at`, `done_at`, `tests_commit`, `reviewed_commit`, `slice`, `slice_base`, `last_slice` | Ne changent que par la commande `atelier` |
 |   | `tdd` | Libre en brouillon ; ensuite, seulement par `atelier set-tdd`, tracé en amendement |
 |   | `id`, `type` | Figés dès que la spec n’est plus en brouillon |
 |   | Réécriture complète d’une spec non brouillon (`abandoned` compris) | Refusée |
@@ -95,5 +95,10 @@ Local, non versionné (ajouté au `.gitignore` par `/atelier:init`), protégé c
 | `tdd` | `yes`, `no` | Vous, en brouillon ; ensuite `atelier set-tdd` |
 | `signed_by`, `signed_at` | — | `atelier sign` |
 | `done_at` | date | `atelier set-status done` |
-| `tests_commit` | hash git | `atelier freeze-tests`, `atelier reopen-tests` |
-| `reviewed_commit` | hash git complet | `atelier set-reviewed` |
+| `tests_commit` | hash git : gel des tests de la tranche en cours | `atelier freeze-tests`, `atelier reopen-tests`, `atelier set-reviewed` (vidé au passage de tranche) |
+| `slice` | numéro de la tranche en cours, ou `chantier` (revue du chantier) | `atelier freeze-tests`, `atelier set-reviewed` |
+| `slice_base` | hash git complet : commit revu qui a clos la tranche précédente | `atelier set-reviewed` |
+| `last_slice` | numéro de la dernière tranche revue | `atelier set-reviewed` |
+| `reviewed_commit` | hash git complet : revue du chantier, ou de l’unique tranche | `atelier set-reviewed` |
+
+Un chantier signé sans `slice` mais avec `tests_commit`, `reviewed_commit` ou des tests rouverts / regelés a été mené avant le cycle par tranche : il est traité comme une tranche unique et se termine comme avant.

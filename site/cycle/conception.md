@@ -35,9 +35,11 @@ Une tranche est un morceau de chantier :
 
 - **livrable seul** ;
 - **relisible en moins de 15 minutes** (environ 300 lignes hors code généré) ;
-- **un commit**.
+- **testée, implémentée et revue à part** : le cycle tests → implémentation → revue se fait tranche par tranche.
 
 Plus gros : on redécoupe. Les petites tranches gardent les revues lisibles et les retours en arrière simples.
+
+Dans `plan.md`, chaque tranche est une entrée numérotée de premier niveau de la section « Tranches », avec ses critères : `2. Export CSV — CA couverts : CA-3, CA-4`. atelier y lit le nombre de tranches. Une tranche garde son numéro : on peut ajouter ou redécouper des tranches à venir, pas retirer une tranche déjà revue.
 
 ## Sortie
 
