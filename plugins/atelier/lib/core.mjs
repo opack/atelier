@@ -892,10 +892,12 @@ export function setReviewedUpdate(chantier, head) {
 // ---------- Close ----------
 
 // An EPIC (no code) and a SPIKE without TDD (throwaway code, never merged) are closed without a
-// review. A SPIKE in TDD follows the whole process, review included.
+// review. A SPIKE in TDD follows the whole process, review included, unless it was led under the
+// model before slices (legacy), which closed a SPIKE without review.
 export function isReviewExempt(chantier) {
   const type = (chantier?.spec?.data?.type ?? '').toUpperCase()
-  return type === 'EPIC' || sliceState(chantier).model === 'none'
+  const { model } = sliceState(chantier)
+  return type === 'EPIC' || model === 'none' || (type === 'SPIKE' && model === 'legacy')
 }
 
 // « Tranche N/M », or « Tranche N (absente du plan) » once the plan no longer counts it.

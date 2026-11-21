@@ -666,7 +666,7 @@ function commandSetReviewed() {
     chantier,
     sliceBaseIsAncestor,
     sliceCodeFiles: model === 'sliced' && slice !== 'chantier' && sliceBaseIsAncestor !== false
-      ? sliceCodeFiles(projectRoot, config, sliceBase)
+      ? sliceCodeFiles(projectRoot, config, sliceBase, chantier.spec.data.tdd === 'yes')
       : null,
     uncommittedCode: reviewCodeFiles(uncommitted, config),
     specUncommitted: uncommitted.some((file) => (config.ignoreCase ? file.toLowerCase() === specPath.toLowerCase() : file === specPath)),
@@ -684,12 +684,14 @@ function commandSetReviewed() {
 }
 
 // Code files committed since the start of the current slice: `slice_base`, or for the first
-// slice the merge base with the default branch (the whole branch without one).
-function sliceCodeFiles(projectRoot, config, sliceBase) {
+// slice the merge base with the default branch; null (no check) without one. In TDD, test files
+// do not count: each slice starts with the commit of its tests.
+function sliceCodeFiles(projectRoot, config, sliceBase, testDriven) {
   const defaultRef = defaultBaseRef(projectRoot)
   const base = sliceBase ?? (defaultRef ? git(projectRoot, ['merge-base', defaultRef, 'HEAD']) : null)
-  const files = gitPaths(projectRoot, ['log', '--name-only', '-z', '--no-renames', '--format=', base ? `${base}..HEAD` : 'HEAD'])
-  return [...new Set(reviewCodeFiles(files, config))]
+  if (!base) return null
+  const files = reviewCodeFiles(gitPaths(projectRoot, ['log', '--name-only', '-z', '--no-renames', '--format=', `${base}..HEAD`]), config)
+  return [...new Set(testDriven ? files.filter((file) => !matchesAny(file, config.testPaths, config.ignoreCase)) : files)]
 }
 
 // Deterministic checks before closing (see closeProblems in lib/core.mjs). Runs the project checks.
