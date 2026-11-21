@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path, { join } from 'node:path'
 import { after, describe, it } from 'node:test'
@@ -1485,5 +1485,559 @@ describe('FEAT-4 site', () => {
     const templates = site('reference/templates.md')
     assert.match(templates, /@include: [^\n]*templates\/spec-epic\.md/)
     assert.match(templates, /@include: [^\n]*templates\/plan-epic\.md/)
+  })
+})
+
+// ---------- FEAT-7: tests, build and review cycle per slice ----------
+
+// A plan whose « Tranches » section has first-level entries numbered `numbers` (sub-lists and
+// comments around, and a numbered list in another section, which must be ignored).
+function planOf(numbers) {
+  const entries = numbers.map((number) => `${number}. Tranche ${number} — CA couverts : CA-${number}\n   1. sous-étape`).join('\n')
+  return `# Plan : FEAT-20\n\n## Approche\nTexte.\n\n## Tranches\n<!-- 1. <tranche> — CA couverts : CA-1\n2. exemple -->\n${entries}\n\n## Risques et points d'attention\n1. pas une tranche\n2. toujours pas\n3. non\n4. non\n5. non\n`
+}
+const threeSlices = planOf([1, 2, 3])
+
+// Pure chantier object, as readChantier returns it (plan text in `plan`).
+function slicedChantier(data = {}, { plan = threeSlices, type = 'FEAT', tdd = 'yes' } = {}) {
+  return {
+    id: `${type}-20`,
+    directory: `/p/docs/chantiers/${type}-20-x`,
+    spec: { data: { status: 'signed', type, tdd, ...data }, body: '# x\n' },
+    files: plan === null ? ['spec.md'] : ['spec.md', 'plan.md'],
+    plan,
+  }
+}
+
+// A repository on branch `<type>/<id>-x` with the signed chantier (and its plan) committed.
+function makeSlicedRepository({ id = 'FEAT-20', tdd = 'yes', plan = threeSlices, header = {} } = {}) {
+  const directory = makeRepository('main')
+  git(directory, 'switch', '-q', '-c', `${id.split('-')[0].toLowerCase()}/${id}-x`)
+  writeChantier(directory, { id, tdd, relations: header, files: plan === null ? {} : { 'plan.md': plan } })
+  git(directory, 'add', '-A')
+  commit(directory, `docs(chantiers): [${id}] spec`)
+  return directory
+}
+
+// Writes (or deletes, when the content is null) files, then commits everything.
+function commitFiles(directory, files, subject = 'chore: files') {
+  for (const [relativePath, content] of Object.entries(files)) {
+    const filePath = join(directory, relativePath)
+    if (content === null) {
+      rmSync(filePath)
+    } else {
+      mkdirSync(path.dirname(filePath), { recursive: true })
+      writeFileSync(filePath, content)
+    }
+  }
+  git(directory, 'add', '-A')
+  commit(directory, subject)
+}
+
+function headOf(directory) {
+  return git(directory, 'rev-parse', 'HEAD').trim()
+}
+
+function commitSpec(directory) {
+  git(directory, 'add', '-A')
+  commit(directory, 'docs(chantiers): spec')
+}
+
+// Sets spec header fields by hand (as the user would) and commits the spec.
+function setHeader(directory, id, values) {
+  const specPath = join(chantierDirectoryOf(directory, id), 'spec.md')
+  writeFileSync(specPath, setFrontMatterValues(readFileSync(specPath, 'utf8'), values))
+  commitSpec(directory)
+}
+
+function specFileText(directory, id) {
+  return readFileSync(join(chantierDirectoryOf(directory, id), 'spec.md'), 'utf8')
+}
+
+function amendmentEntries(directory, id) {
+  return parseAmendments(parseFrontMatter(specFileText(directory, id)).body).entries
+}
+
+function atelierOk(directory, ...cliArguments) {
+  const result = atelierRun(directory, ...cliArguments)
+  assert.equal(result.status, 0, result.output)
+  return result.output
+}
+
+// Slice 1 done (a test and its code committed), the chantier now in slice 2 « tests d'abord »,
+// slice_base at the end of slice 1.
+function atSliceTwo(options = {}) {
+  const directory = makeSlicedRepository(options)
+  commitFiles(directory, { 'test/one.test.mjs': 'ligne a\nligne b\nligne c\n' }, 'test: one')
+  commitFiles(directory, { 'src/one.mjs': 'export const one = 1\n' }, 'feat: one')
+  const base = headOf(directory)
+  setHeader(directory, 'FEAT-20', { slice: '2', slice_base: base })
+  return { directory, base }
+}
+
+// Slice `slice` (a number or 'chantier') in implementation: tests frozen (TDD), code committed.
+function implementedSlice({ slice, plan = threeSlices, tdd = 'yes', extra = {} }) {
+  const directory = makeSlicedRepository({ plan, tdd })
+  commitFiles(directory, { 'src/before.mjs': 'export const before = 1\n' }, 'feat: before')
+  const base = headOf(directory)
+  let testsCommit = ''
+  if (tdd === 'yes') {
+    commitFiles(directory, { 'test/now.test.mjs': 'test\n' }, 'test: now')
+    testsCommit = git(directory, 'rev-parse', '--short', 'HEAD').trim()
+  }
+  commitFiles(directory, { 'src/now.mjs': 'export const now = 1\n' }, 'feat: now')
+  setHeader(directory, 'FEAT-20', { slice: String(slice), slice_base: base, ...(testsCommit ? { tests_commit: testsCommit } : {}), ...extra })
+  return { directory, base, testsCommit }
+}
+
+describe('FEAT-7 plan and current slice', () => {
+  it('CA-1 : compte les entrées numérotées de premier niveau de « Tranches » (sous-listes, commentaires et autres sections ignorés)', () => {
+    assert.equal(core.planSliceCount(threeSlices), 3)
+    assert.equal(core.planSliceCount(threeSlices.replace(/\n/g, '\r\n')), 3, 'plan en CRLF')
+  })
+
+  it('CA-1 : le nombre de tranches est le plus grand numéro', () => {
+    assert.equal(core.planSliceCount(planOf([1, 2, 4])), 4)
+  })
+
+  it('CA-2 : sans plan, sans section « Tranches » ou avec une seule entrée, une tranche unique', () => {
+    for (const plan of [null, '# Plan\n\n## Approche\nTexte.\n', planOf([1])]) {
+      assert.equal(core.sliceState(slicedChantier({}, { plan })).model, 'single', String(plan))
+    }
+  })
+
+  it('CA-2 : status --json donne slice et sliceCount null, et ne parle de tranche ni en texte ni dans la prochaine étape', () => {
+    for (const plan of [null, planOf([1])]) {
+      const directory = makeSlicedRepository({ plan })
+      const summary = JSON.parse(atelierOk(directory, 'status', '--json'))
+      assert.equal(summary.chantier.slice, null)
+      assert.equal(summary.chantier.sliceCount, null)
+      assert.doesNotMatch(summary.nextStep, /tranche/i)
+      assert.doesNotMatch(atelierOk(directory, 'status'), /tranche/i)
+    }
+  })
+
+  it('CA-3 : sans champ slice ni trace de l’ancien modèle, la tranche en cours est la 1', () => {
+    assert.deepEqual(core.sliceState(slicedChantier()), { model: 'sliced', slice: 1, sliceCount: 3 })
+    const summary = JSON.parse(atelierOk(makeSlicedRepository(), 'status', '--json'))
+    assert.equal(summary.chantier.slice, 1)
+    assert.equal(summary.chantier.sliceCount, 3)
+  })
+
+  it('CA-3 : avec slice: 2, la tranche en cours est la 2', () => {
+    assert.deepEqual(core.sliceState(slicedChantier({ slice: '2' })), { model: 'sliced', slice: 2, sliceCount: 3 })
+    const summary = JSON.parse(atelierOk(makeSlicedRepository({ header: { slice: 2 } }), 'status', '--json'))
+    assert.equal(summary.chantier.slice, 2)
+    assert.equal(summary.chantier.sliceCount, 3)
+  })
+
+  it('CA-4 : un chantier de l’ancien modèle (tests_commit, reviewed_commit, tests rouverts ou regelés) est une tranche unique, quel que soit le plan', () => {
+    const withAmendment = (entry) => ({ ...slicedChantier(), spec: { data: { status: 'signed', type: 'FEAT', tdd: 'yes' }, body: `# x\n\n## Amendements\n- ${entry}\n` } })
+    const legacy = [
+      slicedChantier({ tests_commit: 'abc1234' }),
+      slicedChantier({ reviewed_commit: 'a'.repeat(40) }, { tdd: 'no' }),
+      withAmendment('2026-11-01 : tests rouverts (gel quitté : abc1234) : oubli'),
+      withAmendment('2026-11-02 : tests regelés : def5678'),
+    ]
+    legacy.forEach((chantier, index) => assert.equal(core.sliceState(chantier).model, 'legacy', `cas ${index}`))
+    const summary = JSON.parse(atelierOk(makeSlicedRepository({ header: { tests_commit: 'abc1234' } }), 'status', '--json'))
+    assert.equal(summary.chantier.slice, null)
+    assert.equal(summary.chantier.sliceCount, null)
+  })
+
+  it('CA-5 : le hook refuse que l’agent écrive ou modifie slice, slice_base ou last_slice', () => {
+    const relativePath = 'docs/chantiers/FEAT-20-x/spec.md'
+    const signedText = '---\nid: FEAT-20\ntype: FEAT\ntitle: X\nstatus: signed\ntdd: yes\nslice: 2\n---\n# FEAT-20\n'
+    for (const [field, newValue] of [['slice', 'slice: 3'], ['slice_base', 'slice: 2\nslice_base: abc'], ['last_slice', 'slice: 2\nlast_slice: 3']]) {
+      const proposed = applyToolEdit(signedText, 'Edit', { old_string: 'slice: 2', new_string: newValue })
+      const decision = decide({
+        relativePath,
+        existingSpec: parseFrontMatter(signedText),
+        proposedSpec: parseFrontMatter(proposed),
+        committedSpec: parseFrontMatter(signedText),
+      })
+      assert.equal(decision.allowed, false, field)
+      assert.match(decision.reason, new RegExp(`« ${field} »`), field)
+    }
+  })
+})
+
+describe('FEAT-7 freezing the tests of a slice', () => {
+  it('CA-6 : le premier gel écrit tests_commit et slice: 1, avec ou sans plan, SPIKE compris', () => {
+    for (const options of [{}, { plan: null }, { id: 'SPIKE-20' }]) {
+      const id = options.id ?? 'FEAT-20'
+      const directory = makeSlicedRepository(options)
+      commitFiles(directory, { 'test/one.test.mjs': 'test\n' }, 'test: one')
+      atelierOk(directory, 'freeze-tests')
+      const data = specData(directory, id)
+      assert.ok(data.tests_commit, JSON.stringify(options))
+      assert.equal(data.slice, '1', JSON.stringify(options))
+    }
+  })
+
+  for (const [label, change] of [
+    ['ligne modifiée', { 'test/one.test.mjs': 'ligne a\nligne B\nligne c\n' }],
+    ['fichier supprimé', { 'test/one.test.mjs': null }],
+  ]) {
+    it(`CA-7 : en tranche 2, refuse le gel quand une ligne de test antérieure a changé (${label})`, () => {
+      const { directory } = atSliceTwo()
+      commitFiles(directory, { ...change, 'test/two.test.mjs': 'test 2\n' }, 'test: two')
+      const before = specFileText(directory, 'FEAT-20')
+      const { status, output } = atelierRun(directory, 'freeze-tests')
+      assert.notEqual(status, 0)
+      assert.match(output, /test\/one\.test\.mjs/)
+      assert.match(output, /\/atelier:amend/)
+      assert.match(output, /\/atelier:write-tests/)
+      assert.equal(specFileText(directory, 'FEAT-20'), before, 'rien n’est écrit')
+    })
+  }
+
+  it('CA-7 : en tranche 2, un fichier de test renommé compte comme supprimé', () => {
+    const { directory } = atSliceTwo()
+    git(directory, 'mv', 'test/one.test.mjs', 'test/renamed.test.mjs')
+    commit(directory, 'test: rename')
+    const before = specFileText(directory, 'FEAT-20')
+    const { status, output } = atelierRun(directory, 'freeze-tests')
+    assert.notEqual(status, 0)
+    assert.match(output, /test\/one\.test\.mjs/)
+    assert.equal(specFileText(directory, 'FEAT-20'), before)
+  })
+
+  it('CA-7 : extrait du diff les fichiers dont des lignes sont retirées', () => {
+    const diff = [
+      'diff --git a/test/one.test.mjs b/test/one.test.mjs',
+      'index 1..2 100644',
+      '--- a/test/one.test.mjs',
+      '+++ b/test/one.test.mjs',
+      '@@ -1,3 +1,3 @@',
+      ' ligne a',
+      '-ligne b',
+      '+ligne B',
+      'diff --git a/test/gone.test.mjs b/test/gone.test.mjs',
+      'deleted file mode 100644',
+      '--- a/test/gone.test.mjs',
+      '+++ /dev/null',
+      '@@ -1 +0,0 @@',
+      '-tout',
+      'diff --git a/test/added.test.mjs b/test/added.test.mjs',
+      '--- a/test/added.test.mjs',
+      '+++ b/test/added.test.mjs',
+      '@@ -1 +1,2 @@',
+      ' x',
+      '+--- pas un en-tête',
+      '',
+    ].join('\n')
+    assert.deepEqual(core.removedTestLines(diff).sort(), ['test/gone.test.mjs', 'test/one.test.mjs'])
+    assert.deepEqual(core.removedTestLines(''), [])
+  })
+
+  it('CA-8 : en tranche 2, la réouverture trace le gel quitté (slice_base) ; le gel suivant accepte les modifications et trace le regel', () => {
+    const { directory, base } = atSliceTwo()
+    atelierOk(directory, 'reopen-tests', 'test', 'faux')
+    assert.match(amendmentEntries(directory, 'FEAT-20').at(-1), new RegExp(`tests rouverts \\(gel quitté : ${base.slice(0, 7)}[0-9a-f]*\\) : test faux`))
+    commitSpec(directory)
+    commitFiles(directory, { 'test/one.test.mjs': 'ligne a\nligne B\nligne c\n' }, 'test: fix one')
+    atelierOk(directory, 'freeze-tests')
+    assert.match(amendmentEntries(directory, 'FEAT-20').at(-1), /tests regelés/)
+    assert.ok(specData(directory, 'FEAT-20').tests_commit)
+  })
+
+  it('CA-8 : une seconde réouverture avant le regel est refusée', () => {
+    const { directory } = atSliceTwo()
+    atelierOk(directory, 'reopen-tests', 'première')
+    commitSpec(directory)
+    const { status, output } = atelierRun(directory, 'reopen-tests', 'seconde')
+    assert.notEqual(status, 0)
+    assert.match(output, /tests déjà rouverts/)
+  })
+
+  it('CA-8 : en phase « tests d’abord » de la tranche 1, la réouverture reste refusée ; en tranche 2 elle est possible', () => {
+    assert.match(reopenTestsRefusal(slicedChantier({ slice: '1' })), /pas figés/)
+    assert.match(reopenTestsRefusal(slicedChantier()), /pas figés/)
+    assert.equal(reopenTestsRefusal(slicedChantier({ slice: '2', slice_base: 'a'.repeat(40) })), null)
+  })
+
+  it('CA-9 : en tranche 2, des tests seulement ajoutés (lignes, fichiers ; espaces et fins de ligne changés) se figent sans raison', () => {
+    const { directory } = atSliceTwo()
+    commitFiles(directory, {
+      'test/one.test.mjs': 'ligne a\r\nligne b  \r\n  ligne    c\r\nligne d\r\n',
+      'test/two.test.mjs': 'test 2\n',
+    }, 'test: two')
+    atelierOk(directory, 'freeze-tests')
+    const data = specData(directory, 'FEAT-20')
+    assert.ok(data.tests_commit)
+    assert.equal(data.slice, '2')
+    assert.deepEqual(amendmentEntries(directory, 'FEAT-20'), [], 'aucune entrée de gel')
+  })
+
+  it('CA-10 : en revue du chantier, la réouverture vide tests_commit, garde slice: chantier ; le gel suivant accepte les modifications', () => {
+    const { directory } = implementedSlice({ slice: 'chantier', extra: { last_slice: '3' } })
+    atelierOk(directory, 'reopen-tests', 'CA', 'sans', 'test')
+    let data = specData(directory, 'FEAT-20')
+    assert.equal(data.tests_commit ?? '', '')
+    assert.equal(data.slice, 'chantier')
+    assert.match(amendmentEntries(directory, 'FEAT-20').at(-1), /tests rouverts/)
+    commitSpec(directory)
+    assert.equal(JSON.parse(atelierOk(directory, 'status', '--json')).chantier.testDrivenPhase, 'writing-tests')
+    commitFiles(directory, { 'test/now.test.mjs': 'test modifié\n' }, 'test: cover CA')
+    atelierOk(directory, 'freeze-tests')
+    data = specData(directory, 'FEAT-20')
+    assert.ok(data.tests_commit)
+    assert.equal(data.slice, 'chantier')
+  })
+
+  it('CA-11 : refuse le gel et la revue quand slice_base n’est plus un ancêtre de HEAD', () => {
+    for (const command of ['freeze-tests', 'set-reviewed']) {
+      const directory = makeSlicedRepository({ tdd: command === 'freeze-tests' ? 'yes' : 'no' })
+      git(directory, 'switch', '-q', '-c', 'side')
+      commit(directory, 'chore: side')
+      const side = headOf(directory)
+      git(directory, 'switch', '-q', '-')
+      setHeader(directory, 'FEAT-20', { slice: '2', slice_base: side })
+      commitFiles(directory, command === 'freeze-tests' ? { 'test/two.test.mjs': 'test\n' } : { 'src/two.mjs': 'code\n' }, 'work')
+      const before = specFileText(directory, 'FEAT-20')
+      const { status, output } = atelierRun(directory, command)
+      assert.notEqual(status, 0, command)
+      assert.match(output, /ancêtre/, command)
+      assert.equal(specFileText(directory, 'FEAT-20'), before, `${command} : rien n’est écrit`)
+    }
+  })
+})
+
+describe('FEAT-7 write guard and stop hook per slice', () => {
+  const sliceTwoWriting = slicedChantier({ slice: '2', slice_base: 'a'.repeat(40) })
+  const sliceTwoImplementing = slicedChantier({ slice: '2', slice_base: 'a'.repeat(40), tests_commit: 'abc1234' })
+  const chantierReview = slicedChantier({ slice: 'chantier', last_slice: '3', slice_base: 'a'.repeat(40), tests_commit: 'abc1234' })
+
+  it('CA-12 : en tranche 2, phase « tests d’abord », refuse le code et accepte les tests', () => {
+    assert.equal(decide({ chantier: sliceTwoWriting, relativePath: 'src/budget.ts' }).allowed, false)
+    assert.equal(decide({ chantier: sliceTwoWriting, relativePath: 'test/budget.test.ts' }).allowed, true)
+  })
+
+  it('CA-13 : en tranche 2, phase d’implémentation, refuse l’écriture d’un test ; le contrôle de fin signale un test modifié', () => {
+    assert.equal(decide({ chantier: sliceTwoImplementing, relativePath: 'test/one.test.ts' }).allowed, false)
+    const decision = decideStop({
+      config: DEFAULT_CONFIG,
+      chantier: sliceTwoImplementing,
+      bypass: null,
+      changedFiles: ['test/one.test.ts'],
+      changedTests: ['test/one.test.ts'],
+      tree: 'tree-1',
+      state: {},
+      runChecks: () => null,
+    })
+    assert.equal(decision.block, true)
+    assert.match(decision.message, /git checkout abc1234/)
+  })
+
+  it('CA-17 : en revue du chantier, tests figés, refuse un test et accepte le code', () => {
+    assert.equal(decide({ chantier: chantierReview, relativePath: 'test/one.test.ts' }).allowed, false)
+    assert.equal(decide({ chantier: chantierReview, relativePath: 'src/budget.ts' }).allowed, true)
+  })
+})
+
+describe('FEAT-7 review and next slice', () => {
+  it('CA-14 : la revue validée de la tranche 2 sur 3 passe à la tranche 3', () => {
+    const { directory } = implementedSlice({ slice: 2 })
+    const head = headOf(directory)
+    const output = atelierOk(directory, 'set-reviewed')
+    const data = specData(directory, 'FEAT-20')
+    assert.equal(data.slice, '3')
+    assert.equal(data.slice_base, head)
+    assert.equal(data.tests_commit ?? '', '')
+    assert.ok(!data.reviewed_commit)
+    assert.match(output, /[Tt]ranche 3/)
+    assert.match(output, /\/atelier:write-tests/)
+  })
+
+  for (const [label, plan] of [['tranche 3 sur 3', threeSlices], ['tranche 3 retirée d’un plan à 2', planOf([1, 2])]]) {
+    it(`CA-15 : la revue validée de la dernière tranche passe à la revue du chantier (${label})`, () => {
+      const { directory, testsCommit } = implementedSlice({ slice: 3, plan })
+      const head = headOf(directory)
+      const output = atelierOk(directory, 'set-reviewed')
+      const data = specData(directory, 'FEAT-20')
+      assert.equal(data.slice, 'chantier')
+      assert.equal(data.last_slice, '3')
+      assert.equal(data.slice_base, head)
+      assert.equal(data.tests_commit, testsCommit)
+      assert.ok(!data.reviewed_commit)
+      assert.match(output, /revue du chantier/i)
+      assert.match(output, /\/atelier:review/)
+    })
+  }
+
+  it('CA-15 : status signale une tranche en cours absente du plan', () => {
+    const { directory } = implementedSlice({ slice: 3, plan: planOf([1, 2]) })
+    assert.match(atelierOk(directory, 'status'), /tranche 3 absente du plan/i)
+  })
+
+  it('CA-16 : en revue du chantier, set-reviewed écrit reviewed_commit sans toucher à slice', () => {
+    const { directory } = implementedSlice({ slice: 'chantier', extra: { last_slice: '3' } })
+    const head = headOf(directory)
+    atelierOk(directory, 'set-reviewed')
+    const data = specData(directory, 'FEAT-20')
+    assert.equal(data.reviewed_commit, head)
+    assert.equal(data.slice, 'chantier')
+  })
+
+  it('CA-16 : un chantier à tranche unique enregistre reviewed_commit comme aujourd’hui', () => {
+    for (const plan of [null, planOf([1])]) {
+      const directory = makeSlicedRepository({ tdd: 'no', plan })
+      commitFiles(directory, { 'src/a.mjs': 'code\n' }, 'feat: a')
+      const head = headOf(directory)
+      atelierOk(directory, 'set-reviewed')
+      assert.equal(specData(directory, 'FEAT-20').reviewed_commit, head, String(plan))
+    }
+  })
+
+  it('CA-18 : sans TDD, la revue de la tranche 1 sur 2 passe à la tranche 2 ; prochaine étape /atelier:build', () => {
+    const directory = makeSlicedRepository({ tdd: 'no', plan: planOf([1, 2]) })
+    commitFiles(directory, { 'src/a.mjs': 'code\n' }, 'feat: a')
+    const head = headOf(directory)
+    atelierOk(directory, 'set-reviewed')
+    const data = specData(directory, 'FEAT-20')
+    assert.equal(data.slice, '2')
+    assert.equal(data.slice_base, head)
+    commitSpec(directory)
+    assert.match(JSON.parse(atelierOk(directory, 'status', '--json')).nextStep, /\/atelier:build/)
+  })
+
+  it('CA-19 : les refus actuels de set-reviewed ne changent pas de tranche', () => {
+    const uncommitted = implementedSlice({ slice: 2 }).directory
+    writeFileSync(join(uncommitted, 'src', 'pending.mjs'), 'code\n')
+    const testsChanged = implementedSlice({ slice: 2 }).directory
+    commitFiles(testsChanged, { 'test/now.test.mjs': 'test modifié\n' }, 'test: change')
+    const notFrozen = atSliceTwo().directory
+    commitFiles(notFrozen, { 'src/two.mjs': 'code\n' }, 'feat: two')
+    for (const [label, directory] of [['code non commité', uncommitted], ['tests modifiés', testsChanged], ['tests non figés', notFrozen]]) {
+      const before = specFileText(directory, 'FEAT-20')
+      assert.notEqual(atelierRun(directory, 'set-reviewed').status, 0, label)
+      assert.equal(specFileText(directory, 'FEAT-20'), before, label)
+    }
+  })
+
+  it('CA-20 : refuse de passer une tranche sans commit de code depuis son début', () => {
+    const sliceTwo = makeSlicedRepository({ tdd: 'no' })
+    commitFiles(sliceTwo, { 'src/one.mjs': 'code\n' }, 'feat: one')
+    setHeader(sliceTwo, 'FEAT-20', { slice: '2', slice_base: headOf(sliceTwo) })
+    const sliceOne = makeSlicedRepository({ tdd: 'no' })
+    for (const [label, directory] of [['tranche 2', sliceTwo], ['tranche 1', sliceOne]]) {
+      const before = specFileText(directory, 'FEAT-20')
+      const { status, output } = atelierRun(directory, 'set-reviewed')
+      assert.notEqual(status, 0, label)
+      assert.match(output, /tranche vide/i, label)
+      assert.equal(specFileText(directory, 'FEAT-20'), before, label)
+    }
+  })
+})
+
+describe('FEAT-7 close and next step', () => {
+  // Code committed, then the review recorded by hand at that commit (spec committed after it).
+  function reviewedChantier({ plan = threeSlices, header = {}, tdd = 'no', id = 'FEAT-20' } = {}) {
+    const directory = makeSlicedRepository({ plan, tdd, id })
+    commitFiles(directory, { 'src/a.mjs': 'code\n' }, 'feat: a')
+    setHeader(directory, id, { ...header, reviewed_commit: headOf(directory) })
+    return directory
+  }
+
+  it('CA-21 : refuse la clôture tant qu’une tranche est en cours', () => {
+    for (const slice of ['2', '3']) {
+      const { directory } = implementedSlice({ slice, tdd: 'no' })
+      const { status, output } = atelierRun(directory, 'close-check')
+      assert.notEqual(status, 0, slice)
+      assert.match(output, new RegExp(`tranche ${slice}/3 en cours`, 'i'), slice)
+    }
+  })
+
+  it('CA-21 : en revue du chantier sans reviewed_commit, demande la revue du chantier', () => {
+    const { directory } = implementedSlice({ slice: 'chantier', tdd: 'no', extra: { last_slice: '3' } })
+    const { status, output } = atelierRun(directory, 'close-check')
+    assert.notEqual(status, 0)
+    assert.match(output, /revue du chantier/i)
+  })
+
+  it('CA-22 : refuse la clôture quand le plan compte une tranche après last_slice', () => {
+    const directory = reviewedChantier({ plan: planOf([1, 2, 3, 4]), header: { slice: 'chantier', last_slice: '3' } })
+    const { status, output } = atelierRun(directory, 'close-check')
+    assert.notEqual(status, 0)
+    assert.match(output, /tranche 4 du plan non revue/i)
+  })
+
+  it('CA-23 : clôture possible avec la revue du chantier à jour, et pour un chantier de l’ancien modèle revu', () => {
+    const sliced = reviewedChantier({ header: { slice: 'chantier', last_slice: '3' } })
+    const slicedResult = atelierRun(sliced, 'close-check')
+    assert.equal(slicedResult.status, 0, slicedResult.output)
+    const legacy = makeSlicedRepository({ tdd: 'yes' })
+    commitFiles(legacy, { 'test/a.test.mjs': 'test\n' }, 'test: a')
+    const testsCommit = git(legacy, 'rev-parse', '--short', 'HEAD').trim()
+    commitFiles(legacy, { 'src/a.mjs': 'code\n' }, 'feat: a')
+    setHeader(legacy, 'FEAT-20', { tests_commit: testsCommit, reviewed_commit: headOf(legacy) })
+    const legacyResult = atelierRun(legacy, 'close-check')
+    assert.equal(legacyResult.status, 0, legacyResult.output)
+  })
+
+  it('CA-24 : la prochaine étape préfixe le message de la phase par « Tranche N/3 : »', () => {
+    assert.match(nextStep(slicedChantier()), /^Tranche 1\/3 : .*\/atelier:write-tests/)
+    assert.match(nextStep(slicedChantier({ slice: '2', slice_base: 'a'.repeat(40) })), /^Tranche 2\/3 : .*\/atelier:write-tests/)
+    assert.match(nextStep(slicedChantier({ slice: '2', slice_base: 'a'.repeat(40), tests_commit: 'abc1234' })), /^Tranche 2\/3 : .*\/atelier:build.*\/atelier:review/)
+  })
+
+  it('CA-24 : en revue du chantier, demande la revue de l’ensemble, puis la clôture', () => {
+    const chantier = slicedChantier({ slice: 'chantier', last_slice: '3', slice_base: 'a'.repeat(40), tests_commit: 'abc1234' })
+    assert.match(nextStep(chantier, 'none'), /^Revue du chantier : faire relire l.ensemble : \/atelier:review/)
+    assert.match(nextStep(chantier, 'current'), /\/atelier:close/)
+  })
+
+  it('CA-25 : un SPIKE en TDD suit le cycle par tranche et sa clôture exige la revue du chantier', () => {
+    const spike = slicedChantier({ slice: '2', slice_base: 'a'.repeat(40) }, { type: 'SPIKE' })
+    assert.equal(core.sliceState(spike).model, 'sliced')
+    assert.match(nextStep(spike), /^Tranche 2\/3 : .*\/atelier:write-tests/)
+    const directory = makeSlicedRepository({ id: 'SPIKE-20', tdd: 'yes', header: { slice: 'chantier', last_slice: '3', tests_commit: 'abc1234' } })
+    const { status, output } = atelierRun(directory, 'close-check')
+    assert.notEqual(status, 0)
+    assert.match(output, /revue du chantier/i)
+  })
+
+  it('CA-25 : un SPIKE sans TDD reste hors tranches : pas de slice, pas de message de tranche, clôture sans revue', () => {
+    const spike = slicedChantier({}, { type: 'SPIKE', tdd: 'no' })
+    assert.equal(core.sliceState(spike).model, 'none')
+    assert.doesNotMatch(nextStep(spike), /tranche/i)
+    const directory = makeSlicedRepository({ id: 'SPIKE-20', tdd: 'no' })
+    commitFiles(directory, { 'src/a.mjs': 'code\n' }, 'feat: a')
+    const summary = JSON.parse(atelierOk(directory, 'status', '--json'))
+    assert.equal(summary.chantier.slice, null)
+    assert.equal(summary.chantier.sliceCount, null)
+    const closeResult = atelierRun(directory, 'close-check')
+    assert.equal(closeResult.status, 0, closeResult.output)
+    atelierOk(directory, 'set-reviewed')
+    assert.equal(specData(directory, 'SPIKE-20').slice, undefined)
+  })
+
+  it('CA-26 : le rappel de début de session indique la tranche, et n’en parle pas pour une tranche unique', () => {
+    const { directory } = atSliceTwo()
+    assert.match(atelierOk(directory, 'hook-session-start'), /Tranche 2\/3/)
+    assert.doesNotMatch(atelierOk(makeSlicedRepository({ plan: null }), 'hook-session-start'), /tranche/i)
+  })
+})
+
+describe('FEAT-7 vocabulary of the review', () => {
+  const repositoryPath = (relativePath) => fileURLToPath(new URL(`../../../${relativePath}`, import.meta.url))
+  const reviewRound = /\btours? de revue\b|\btour \d+\b|\bà chaque tour\b/i
+
+  it('CA-27 : plus de « tour » au sens d’un passage de revue dans les skills, l’agent, les templates, le site et le README', () => {
+    const siteFiles = readdirSync(repositoryPath('site'), { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.') && !['node_modules', 'public'].includes(entry.name))
+      .flatMap((entry) => readdirSync(repositoryPath(`site/${entry.name}`)).filter((name) => name.endsWith('.md')).map((name) => `site/${entry.name}/${name}`))
+    const files = [
+      'plugins/atelier/skills/review/SKILL.md',
+      'plugins/atelier/skills/close/SKILL.md',
+      'plugins/atelier/agents/reviewer.md',
+      'plugins/atelier/templates/revue.md',
+      'plugins/atelier/templates/bilan.md',
+      'README.md',
+      ...siteFiles,
+    ]
+    const offenders = files.filter((file) => reviewRound.test(readFileSync(repositoryPath(file), 'utf8')))
+    assert.deepEqual(offenders, [])
   })
 })
