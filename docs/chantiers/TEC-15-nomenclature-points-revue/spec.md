@@ -72,7 +72,7 @@ Cette fonction est appelée par :
 - `atelier set-reviewed`, qui refuse d'enregistrer la revue en listant les points ouverts ;
 - `atelier close-check` (et `set-status done`), qui refuse la clôture pour la même raison.
 
-**À trancher** : un `RD` sans traitement bloque-t-il aussi ? Je propose **oui** : la skill `review` demande déjà un traitement pour chaque point, et un « écarté » motivé coûte une ligne. Sinon, un point à discuter oublié n'est vu par personne.
+Les `RD` sont soumis au même contrôle que les `RB` (décision de l'utilisateur) : la skill `review` demande déjà un traitement pour chaque point, et un « écarté » motivé coûte une ligne. Sans cela, un point à discuter oublié ne serait vu par personne.
 
 ### Messages de commit
 Un commit qui traite un point le cite après l'identifiant du chantier : `fix(plugin): [TEC-15] RB2 refuse an empty treatment`. C'est une convention (skills `review` et `build`, site), pas un contrôle : la colonne Traitement de `revue.md` porte déjà le hash du commit.
@@ -105,7 +105,7 @@ Critères d'acceptation (testés dans `plugins/atelier/test/`) :
 - CA-1 : Étant donné un `revue.md` dont les points vont jusqu'à `RB3` et `RD7`, répartis sur plusieurs sections, quand on calcule les prochains numéros, alors on obtient `RB4` et `RD8`.
 - CA-2 : Étant donné l'absence de `revue.md`, ou un `revue.md` sans point, quand on calcule les prochains numéros, alors on obtient `RB1` et `RD1`, sans point ouvert.
 - CA-3 : Étant donné un `RB2` corrigé dans la section 1 puis repris `(repris)` sans traitement dans la section 2, quand on liste les points ouverts, alors `RB2` en fait partie (c'est la dernière occurrence qui compte) ; et un `RB1` sans traitement en section 1 mais corrigé en section 2 n'en fait pas partie.
-- CA-4 : Étant donné un `RB` à la colonne Traitement vide (ou réduite à des espaces), quand on contrôle `revue.md`, alors le problème cite l'identifiant et son intitulé. Même chose pour un `RD` (selon la décision « À trancher » du §3).
+- CA-4 : Étant donné un `RB` à la colonne Traitement vide (ou réduite à des espaces), quand on contrôle `revue.md`, alors le problème cite l'identifiant et son intitulé. Même chose pour un `RD`.
 - CA-5 : Étant donné un même identifiant présenté comme nouveau dans deux sections, quand on contrôle, alors le problème cite l'identifiant et les deux sections.
 - CA-6 : Étant donné un `revue.md` qui contient au moins un `RB`/`RD` et une ligne de point sans identifiant reconnu (ancien format `B1.`, numéro seul `1.`, texte libre), quand on contrôle, alors la ligne est signalée ; la ligne « Aucun » ne l'est pas.
 - CA-7 : Étant donné un `revue.md` sans aucun `RB`/`RD` (chantier antérieur), quand on contrôle, alors aucun problème.
