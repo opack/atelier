@@ -33,6 +33,7 @@ import {
   nextStep,
   openChildren,
   testDrivenPhase,
+  sliceState,
   parseAmendments,
   parseFrontMatter,
   parseCatFileBatch,
@@ -178,6 +179,7 @@ function commandStatus(options) {
           status: chantier.spec?.data.status ?? null,
           testDrivenPhase: chantier.spec ? testDrivenPhase(chantier) : null,
           testsCommit: chantier.spec?.data.tests_commit || null,
+          ...slicePosition(chantier),
           ...review,
           relations,
           files: chantier.files,
@@ -192,6 +194,12 @@ function commandStatus(options) {
     return
   }
   console.log(formatStatus(summary))
+}
+
+// Current slice and number of slices, both null outside the slice cycle.
+function slicePosition(chantier) {
+  const { slice, sliceCount } = sliceState(chantier)
+  return { slice, sliceCount }
 }
 
 // State of the review, as shown by `status` and the session start reminder.
