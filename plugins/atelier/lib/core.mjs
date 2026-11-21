@@ -723,12 +723,13 @@ export function reopenTestsRefusal(chantier) {
   }
   if (!data.tests_commit) {
     // « Tests d'abord » of a slice N > 1: the tests of the previous slices are frozen.
+    // After a reopening (slice N > 1 or the whole-chantier review), the tests are already reopened.
     const { slice } = sliceState(chantier)
+    if (data.slice_base && isRefreeze(parseAmendments(chantier.spec.body ?? '').entries)) {
+      return `tests déjà rouverts pour ${chantier.id} : modifie-les, commite-les puis fige-les (atelier freeze-tests).`
+    }
     if (typeof slice !== 'number' || slice < 2 || !data.slice_base) {
       return `Les tests de ${chantier.id} ne sont pas figés : ils s’écrivent encore, rien à rouvrir (/atelier:write-tests).`
-    }
-    if (isRefreeze(parseAmendments(chantier.spec.body ?? '').entries)) {
-      return `tests déjà rouverts pour ${chantier.id} : modifie-les, commite-les puis fige-les (atelier freeze-tests).`
     }
   }
   return null

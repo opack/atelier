@@ -560,7 +560,7 @@ function isAncestorOfHead(projectRoot, commit) {
 // diff has no removed line for an empty or binary file and quotes unusual paths.
 function testFilesWithRemovedLines(projectRoot, config, base) {
   const range = [base, 'HEAD', '--']
-  const fromDiff = removedTestLines(gitRaw(projectRoot, ['-c', 'core.quotePath=false', 'diff', '--no-renames', '--no-color', '--no-ext-diff', '--ignore-all-space', '--ignore-cr-at-eol', ...range]))
+  const fromDiff = removedTestLines(gitRaw(projectRoot, ['-c', 'core.quotePath=false', 'diff', '--no-renames', '--no-color', '--no-ext-diff', '--src-prefix=a/', '--dst-prefix=b/', '--ignore-all-space', '--ignore-cr-at-eol', ...range]))
   const deleted = gitPaths(projectRoot, ['diff', '--no-renames', '--name-only', '-z', '--diff-filter=D', ...range])
   // `--numstat -z` entries: "<added>\t<removed>\t<path>", "-" for both counts on a binary file.
   const binary = gitPaths(projectRoot, ['diff', '--no-renames', '--numstat', '-z', ...range])
