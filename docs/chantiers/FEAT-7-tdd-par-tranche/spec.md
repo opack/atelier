@@ -54,7 +54,7 @@ Cycle résultant : `new → sign → plan → [write-tests → build → review]
 - `slice: chantier`, ou chantier à tranche unique : écrit `reviewed_commit`, comme aujourd'hui.
 Mêmes refus qu'aujourd'hui (spec non signée, code non commité, spec modifiée et non commitée, tests non figés ou modifiés depuis leur gel), plus deux :
 - `slice_base` n'est plus un ancêtre de `HEAD` ;
-- revue de tranche sans aucun commit de code depuis le début de la tranche (`slice_base`, ou `merge-base` pour la tranche 1) : on ne passe pas une tranche vide. « Code » au sens de la revue actuelle (hors dossier du chantier, état atelier et chemins libres).
+- revue de tranche sans aucun commit de code depuis le début de la tranche (`slice_base`, ou `merge-base` pour la tranche 1) : on ne passe pas une tranche vide. « Code » au sens de la revue actuelle (hors dossier du chantier, état atelier et chemins libres), et en TDD hors fichiers de test (`testPaths`), puisque chaque tranche commence par le commit de ses tests. Sans base (tranche 1 sans `merge-base` possible), pas de contrôle.
 
 Si la tranche en cours a été retirée du plan, `status` le signale (« tranche 3 absente du plan : la revue de la tranche mène à la revue du chantier »).
 
@@ -81,7 +81,7 @@ Le hook d'écriture garde ses règles actuelles : rien que des tests en phase «
 
 **Chantiers simples.**
 - Pas de `plan.md` (FIX, TEC, petit chantier) ou une seule tranche : une seule tranche ; le cycle est exactement celui d'aujourd'hui, sans message de tranche (`slice: 1` est écrit dans la spec, mais ni `status` ni la prochaine étape n'en parlent).
-- `SPIKE` en TDD (`tdd: yes`) : le choix du TDD vaut tout le process ; cycle par tranche complet, revue **obligatoire** (de tranche et du chantier), vérifiée par `close-check` comme pour les autres types.
+- `SPIKE` en TDD (`tdd: yes`) : le choix du TDD vaut tout le process ; cycle par tranche complet, revue **obligatoire** (de tranche et du chantier), vérifiée par `close-check` comme pour les autres types. Exception : un `SPIKE` en TDD de l'ancien modèle (voir « Compatibilité ») se termine comme aujourd'hui, sans revue exigée.
 - `SPIKE` sans TDD : hors du découpage en tranches ; pas de champ `slice`, `build` enchaîne les tranches, revue facultative sur tout le diff, clôture sans revue exigée, comme aujourd'hui.
 - Le skill `build` ne prend plus d'argument « tranche demandée » quand `slice` est défini : il travaille sur la tranche en cours. L'argument reste pour un `SPIKE` sans TDD.
 - `EPIC` (FEAT-4) : ses lots sont des chantiers, pas des tranches ; non concerné.
@@ -160,14 +160,14 @@ Revue et passage de tranche :
 - [ ] CA-17 : Étant donné `slice: chantier` en TDD, tests figés, quand l'agent écrit un fichier de test, alors le hook refuse ; un fichier de code, alors il accepte.
 - [ ] CA-18 : Étant donné un chantier `tdd: no` à 2 tranches en tranche 1, quand `atelier set-reviewed` est lancé, alors il passe à la tranche 2 (`slice: 2`, `slice_base`), et la prochaine étape est `/atelier:build`.
 - [ ] CA-19 : Étant donné une des situations de refus actuelles de `set-reviewed` (code non commité, tests non figés ou modifiés), quand il est lancé, alors il refuse sans changer de tranche.
-- [ ] CA-20 : Étant donné une tranche sans aucun commit de code depuis son début (`slice_base`, ou `merge-base` en tranche 1), quand `atelier set-reviewed` est lancé, alors il refuse (« tranche vide ») sans changer de tranche.
+- [ ] CA-20 : Étant donné une tranche sans aucun commit de code depuis son début (`slice_base`, ou `merge-base` en tranche 1), en TDD fichiers de test exclus, quand `atelier set-reviewed` est lancé, alors il refuse (« tranche vide ») sans changer de tranche ; sans base calculable, il ne refuse pas pour ce motif.
 
 Clôture et prochaine étape :
 - [ ] CA-21 : Étant donné un chantier en tranche 2 sur 3, ou en tranche 3 sur 3 pas encore revue, quand `atelier close-check` est lancé, alors il refuse avec « tranche N/3 en cours » ; en `slice: chantier` sans `reviewed_commit`, il refuse en demandant la revue du chantier.
 - [ ] CA-22 : Étant donné `slice: chantier`, `last_slice: 3` et un plan qui compte une tranche 4, quand `atelier close-check` est lancé, alors il refuse (« tranche 4 du plan non revue »).
 - [ ] CA-23 : Étant donné `slice: chantier` et la revue du chantier à jour, quand `atelier close-check` est lancé, alors il passe ; un chantier de l'ancien modèle avec une revue à jour passe aussi.
 - [ ] CA-24 : Étant donné un chantier TDD à 3 tranches, quand atelier calcule la prochaine étape, alors elle vaut « Tranche N/3 : » suivi du message actuel de la phase (`write-tests`, puis `build ; ensuite faire relire : /atelier:review`) ; en `slice: chantier` sans revue, « Revue du chantier : faire relire l'ensemble : /atelier:review » ; une fois celle-ci enregistrée, le message actuel de clôture (`/atelier:close`).
-- [ ] CA-25 : Étant donné un `SPIKE` en TDD à plusieurs tranches, quand atelier calcule l'état, alors il suit le cycle par tranche comme un `FEAT`, et `close-check` exige la revue du chantier ; étant donné un `SPIKE` sans TDD à plusieurs tranches, alors pas de `slice` (`set-reviewed` n'en écrit pas), pas de message de tranche, et la clôture n'exige ni tranche finale ni revue.
+- [ ] CA-25 : Étant donné un `SPIKE` en TDD à plusieurs tranches, quand atelier calcule l'état, alors il suit le cycle par tranche comme un `FEAT`, et `close-check` exige la revue du chantier ; étant donné un `SPIKE` sans TDD à plusieurs tranches, alors pas de `slice` (`set-reviewed` n'en écrit pas), pas de message de tranche, et la clôture n'exige ni tranche finale ni revue ; étant donné un `SPIKE` en TDD de l'ancien modèle, la clôture n'exige pas de revue.
 - [ ] CA-26 : Étant donné un chantier en tranche 2 sur 3, quand le rappel de début de session s'affiche, alors il indique « Tranche 2/3 » et la prochaine étape correspondante ; pour un chantier à tranche unique, il ne parle pas de tranche.
 - [ ] CA-27 : Étant donné les skills `review` et `close`, l'agent `reviewer`, les templates `revue.md` et `bilan.md`, le site et `README.md`, quand on y cherche « tour » au sens d'un passage de revue (« tour de revue », « Tour N », « à chaque tour »), alors il n'y en a plus aucun.
 
@@ -186,3 +186,4 @@ Rejeu de bout en bout sur un dépôt jetable, plan à deux tranches au moins, en
 
 ## Amendements
 <!-- Après signature : une entrée datée par modification de la spec (date, quoi, pourquoi). -->
+- 2026-11-21 : « tranche vide » (CA-20) ne compte plus les fichiers de test en TDD et ne contrôle rien sans base ; un `SPIKE` en TDD de l'ancien modèle reste dispensé de revue, pourquoi : revue tour 1 (D1 : en TDD, le commit des tests rendait le contrôle inopérant ; D2 : contradiction entre « Chantiers simples » et « Compatibilité »).
