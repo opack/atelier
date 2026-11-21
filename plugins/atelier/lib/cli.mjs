@@ -22,6 +22,7 @@ import {
   configPath,
   currentBranch,
   decideStop,
+  defaultBaseRef,
   decideWrite,
   findProjectRoot,
   hasRelations,
@@ -51,6 +52,7 @@ import {
   reviewState,
   setFrontMatterValues,
   setReviewedRefusal,
+  setReviewedUpdate,
   setStatusRefusal,
   setTddRefusal,
   shortRefName,
@@ -653,8 +655,15 @@ function commandSetReviewed() {
   const chantier = requireActiveChantier(projectRoot, config)
   const uncommitted = uncommittedFiles(projectRoot)
   const specPath = toProjectRelativePath(projectRoot, join(chantier.directory, 'spec.md'))
+  const { model, slice } = sliceState(chantier)
+  const sliceBase = chantier.spec.data.slice_base || null
+  const sliceBaseIsAncestor = model === 'sliced' && sliceBase ? isAncestorOfHead(projectRoot, sliceBase) : null
   const refusal = setReviewedRefusal({
     chantier,
+    sliceBaseIsAncestor,
+    sliceCodeFiles: model === 'sliced' && slice !== 'chantier' && sliceBaseIsAncestor !== false
+      ? sliceCodeFiles(projectRoot, config, sliceBase)
+      : null,
     uncommittedCode: reviewCodeFiles(uncommitted, config),
     specUncommitted: uncommitted.some((file) => (config.ignoreCase ? file.toLowerCase() === specPath.toLowerCase() : file === specPath)),
     changedTests: testDrivenPhase(chantier) === 'implementing'
@@ -665,9 +674,18 @@ function commandSetReviewed() {
     console.error(`Revue non enregistrée : ${refusal}`)
     process.exit(2)
   }
-  const commit = git(projectRoot, ['rev-parse', 'HEAD'])
-  updateSpec(projectRoot, config, { reviewed_commit: commit })
-  console.log(`Revue enregistrée au commit ${commit}. Commite la spec : docs(chantiers): [${chantier.id}] review`)
+  const { values, message } = setReviewedUpdate(chantier, git(projectRoot, ['rev-parse', 'HEAD']))
+  updateSpec(projectRoot, config, values)
+  console.log(message)
+}
+
+// Code files committed since the start of the current slice: `slice_base`, or for the first
+// slice the merge base with the default branch (the whole branch without one).
+function sliceCodeFiles(projectRoot, config, sliceBase) {
+  const defaultRef = defaultBaseRef(projectRoot)
+  const base = sliceBase ?? (defaultRef ? git(projectRoot, ['merge-base', defaultRef, 'HEAD']) : null)
+  const files = gitPaths(projectRoot, ['log', '--name-only', '-z', '--no-renames', '--format=', base ? `${base}..HEAD` : 'HEAD'])
+  return [...new Set(reviewCodeFiles(files, config))]
 }
 
 // Deterministic checks before closing (see closeProblems in lib/core.mjs). Runs the project checks.

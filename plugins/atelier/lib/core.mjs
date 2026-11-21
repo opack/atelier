@@ -832,7 +832,10 @@ export function amendmentsDiffer(text, otherText) {
 // Why `atelier set-reviewed` is refused, or null. `context` = { chantier, uncommittedCode (code
 // files changed and not committed), specUncommitted, changedTests (frozen tests changed since
 // tests_commit) }.
-export function setReviewedRefusal({ chantier, uncommittedCode, specUncommitted, changedTests }) {
+// `sliceBaseIsAncestor` is false when `slice_base` is no longer an ancestor of HEAD;
+// `sliceCodeFiles` are the code files committed since the start of the current slice, or null
+// when the review is not that of a slice of a chantier with several slices.
+export function setReviewedRefusal({ chantier, uncommittedCode, specUncommitted, changedTests, sliceBaseIsAncestor = null, sliceCodeFiles = null }) {
   if (specStatus(chantier?.spec) !== 'signed') {
     return `la spec de ${chantier?.id ?? 'ce chantier'} n’est pas signée.`
   }
@@ -849,7 +852,40 @@ export function setReviewedRefusal({ chantier, uncommittedCode, specUncommitted,
   if (phase === 'implementing' && changedTests.length) {
     return `des tests ont changé depuis leur gel (${changedTests.join(', ')}).`
   }
+  if (sliceBaseIsAncestor === false) {
+    return `le début de la tranche (slice_base : ${chantier.spec.data.slice_base}) n’est plus un ancêtre de HEAD (rebase, historique réécrit). Seul l’utilisateur peut corriger slice_base dans l’en-tête de la spec.`
+  }
+  if (sliceCodeFiles && !sliceCodeFiles.length) {
+    return 'tranche vide : aucun code commité depuis le début de la tranche. Implémente-la (/atelier:build) avant de la faire valider.'
+  }
   return null
+}
+
+// What `atelier set-reviewed` writes at `head` (full hash), and what it says. A validated slice
+// review moves to the next slice, or to the review of the whole chantier after the last one;
+// the review of the whole chantier, or of a chantier with a single slice, records
+// `reviewed_commit`.
+export function setReviewedUpdate(chantier, head) {
+  const { model, slice, sliceCount } = sliceState(chantier)
+  const commitHint = (label) => `Commite la spec et revue.md : docs(chantiers): [${chantier.id}] review ${label}`
+  if (model === 'sliced' && slice !== 'chantier') {
+    if (slice < sliceCount) {
+      const next = chantier.spec.data.tdd === 'yes' ? 'écrire ses tests : /atelier:write-tests' : 'l’implémenter : /atelier:build'
+      return {
+        values: { slice: String(slice + 1), slice_base: head, tests_commit: '' },
+        message: `Tranche ${slice} validée. Tranche ${slice + 1}/${sliceCount} : ${next}. ${commitHint(slice)}`,
+      }
+    }
+    return {
+      values: { slice: 'chantier', last_slice: String(slice), slice_base: head },
+      message: `Tranche ${slice} validée, c’était la dernière. Revue du chantier : faire relire l’ensemble : /atelier:review. ${commitHint(slice)}`,
+    }
+  }
+  const firstOfCycle = model === 'single' && !String(chantier.spec.data.slice ?? '').trim()
+  return {
+    values: { reviewed_commit: head, ...(firstOfCycle ? { slice: '1' } : {}) },
+    message: `Revue enregistrée au commit ${head}. ${commitHint(slice === 'chantier' ? 'chantier' : '').trimEnd()}`,
+  }
 }
 
 // ---------- Close ----------
