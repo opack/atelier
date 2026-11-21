@@ -1,0 +1,87 @@
+---
+id: EPIC-14
+type: EPIC
+title: Travailler avec atelier sur n'importe quel dépôt
+status: draft
+tdd: no              # un EPIC n'implémente rien : toujours no
+created_at: 2026-11-21
+signed_by:
+signed_at:
+---
+
+# EPIC-14 Travailler avec atelier sur n'importe quel dépôt
+
+<!-- Chantier d'organisation : il n'implémente rien, il définit un chantier plus large que d'autres chantiers concrétisent
+(rattachés par `rel_parent: EPIC-14` dans leur en-tête). Étapes : spec → signature → plan (découpage) → chantiers enfants → clôture.
+Clôture possible quand tous les enfants sont clos et qu'au moins l'un d'eux est done ; sinon l'EPIC est abandonné. -->
+
+## 1. Vision
+<!-- Ce qui existera quand l'EPIC sera réalisé, du point de vue de l'utilisateur.
+Questions si manquant : qui l'utilise, pour faire quoi ? À quoi reconnaît-on que c'est fini ? -->
+Un développeur bénéficie de la méthode atelier (chantier identifié, spec signée avant le code, tests d'abord, revue, bilan versionné) sur **n'importe quel dépôt**, y compris un dépôt qui n'utilise aucune méthode et dans lequel il n'a pas le droit d'ajouter de fichiers (mission chez un client).
+
+- Dans un projet qui a adopté atelier, rien ne change dans les habitudes, sauf que le chantier actif ne dépend plus d'une convention de nommage : branches et commits peuvent suivre n'importe quelle convention.
+- Dans un projet qui n'a pas adopté atelier, les fichiers de la méthode (configuration, chantiers, décisions) vivent dans un **dépôt compagnon**, un par mission, ailleurs sur le disque. Le dépôt du client ne reçoit que du code, des tests et des commits ordinaires.
+- Plusieurs chantiers peuvent être menés en parallèle dans plusieurs copies de travail (clones ou worktrees), chacune avec son chantier actif.
+
+On reconnaît que c'est fini quand un chantier complet (de `/atelier:new` à `/atelier:close`) peut être mené sur un dépôt client sans y laisser la moindre trace d'atelier.
+
+## 2. Pourquoi
+<!-- Le problème, le besoin, l'enjeu. Ce qui arrive si on ne fait rien. Pourquoi un ensemble de chantiers plutôt qu'un seul. -->
+- atelier n'a qu'une racine, celle du projet : `.claude/atelier.json`, `docs/chantiers/`, `docs/decisions/`, `.atelier/`, la section Process du `CLAUDE.md` et la déclaration du plugin dans `.claude/settings.json` sont tous écrits dans le dépôt du projet. Sans `.claude/atelier.json`, `loadConfig` rend `null` et tous les hooks se taisent : atelier est inutilisable sur un dépôt qu'on ne peut pas modifier.
+- Le chantier actif est déduit d'une convention : nom de branche `<type>/<ID>-<slug>`, puis commits `[<ID>]` propres à la branche (TEC-6). Un dépôt client impose ses propres conventions (`feature/JIRA-123`, format de commit vérifié) ou n'en a aucune : atelier n'y reconnaît alors aucun chantier.
+- Une copie de travail ne peut porter qu'un chantier à la fois, et rien ne permet de choisir entre plusieurs chantiers menés sur une même branche (`dev` dans un projet sans branches de fonctionnalité).
+- Si on ne fait rien : en mission, on travaille sans le cadre, ou on pollue le dépôt du client.
+- Un ensemble plutôt qu'un chantier : deux livrables séparables, avec une dépendance nette. Le **pointeur de chantier actif** a de la valeur seul, dès maintenant (dans ce dépôt, en session cloud). Le **dépôt compagnon** en a besoin, pas l'inverse. Réunis, ils feraient un diff trop gros pour une revue utile.
+
+## 3. Critères d'acceptation globaux
+<!-- Ce que l'ensemble doit permettre, vérifiable une fois les chantiers enfants livrés.
+Format : - CA-1 : Étant donné…, quand…, alors… -->
+- CA-1 : Étant donné un projet atelier et deux copies de travail (deux clones, ou deux worktrees) sur deux branches portant chacune un chantier signé différent, quand l'agent écrit du code dans chacune, alors la garde applique dans chaque copie les règles de son propre chantier.
+- CA-2 : Étant donné une branche que déclarent plusieurs chantiers ouverts (`branch: dev`), quand on se trouve sur cette branche dans une copie de travail sans pointeur, alors aucun chantier n'est deviné : l'écriture de code est refusée et le message liste les candidats ; après `atelier use <ID>`, ce chantier est actif.
+- CA-3 : Étant donné un chantier actif sur une branche, quand on passe sur une autre branche (`git switch`) puis qu'on revient, alors le chantier actif suit la branche : celui de l'autre branche (ou aucun), puis de nouveau le premier.
+- CA-4 : Étant donné un dépôt sans atelier et un dépôt compagnon enregistré pour lui, quand on mène un chantier complet (`new`, `sign`, tests, implémentation, `review`, `close`) depuis Claude ouvert sur le dossier du code, alors aucun fichier versionné du dépôt n'a été ajouté ni modifié par atelier (`git status` ne montre que le code et les tests du chantier), ses branches et ses commits suivent les conventions choisies par l'utilisateur, et la spec, la revue et le bilan sont commités dans le dépôt compagnon.
+- CA-5 : Étant donné un dépôt compagnon, quand l'agent tente de modifier une spec signée sans amendement, alors la garde la refuse comme si la spec était dans le dépôt du projet.
+- CA-6 : Étant donné un nouveau clone ou un nouveau worktree d'un dépôt pour lequel un compagnon est enregistré, sans aucune configuration locale, quand on y ouvre Claude, alors atelier trouve le compagnon et, si un seul chantier ouvert déclare la branche courante, le rend actif ; sinon il dit pourquoi aucun chantier n'est actif. atelier n'est jamais silencieux sur un dépôt pour lequel un compagnon est enregistré.
+- CA-7 : Étant donné le site, quand on lance `npm run build` dans `site/`, alors il réussit et explique le chantier actif (pointeur, `atelier use`, repli) et le travail sur un dépôt sans atelier (dépôt compagnon, registre, où lancer Claude).
+
+## 4. Cadre
+<!-- Le cadre commun aux chantiers enfants : choix fonctionnels (vocabulaire, parcours, règles métier) et techniques
+(architecture, conventions, contraintes) qu'ils partagent. Ce qui n'est pas cadré ici se décide dans chaque enfant. -->
+**Un seul mode.** Pas de mode « dans le dépôt » et de mode « compagnon » aux règles différentes : seul l'emplacement des fichiers d'atelier change (la racine du projet par défaut, le dépôt compagnon s'il est enregistré). Pointeur, garde, gel des tests, revue et clôture se comportent de la même façon dans les deux cas.
+
+**Chantier actif.** Résolu, dans cet ordre, par :
+1. le **pointeur** : une table `branche → chantier` dans `.atelier/` de la copie de travail. Écrite par `/atelier:new` (le chantier créé devient actif sur la branche courante) et par `atelier use <ID>` (qui remplace l'entrée de la branche courante). Les entrées des autres branches restent : changer de branche change de chantier ;
+2. le **repli**, quand la branche courante n'a pas d'entrée ou que son chantier est clos : le chantier non clos, **s'il est unique**, dont l'en-tête de spec `branch:` porte la branche courante ;
+3. sinon, **aucun chantier actif** : l'écriture de code est refusée, le message propose `atelier use <ID>` (avec les candidats s'il y en a plusieurs) ou `/atelier:new`.
+
+Règles associées :
+- Le pointeur est un état local, **jamais versionné** (ni dans le projet, ni dans le compagnon) : versionné, il suivrait les fusions et créerait un conflit à chaque PR. La vérité partagée est l'en-tête `branch:` de la spec.
+- `branch:` est écrit par la CLI (`/atelier:new`, `atelier use`), comme `tests_commit` : la garde de spec l'accepte sans amendement.
+- Un chantier clos (`done`, `abandoned`) n'est jamais actif : `atelier use` le refuse, la résolution l'ignore. Le modifier, c'est ouvrir un nouveau chantier (`rel_origin`) ; le consulter ne demande pas qu'il soit actif.
+- Le nom de branche `<type>/<ID>-<slug>` et les commits `[<ID>]` deviennent de **simples conventions**, recommandées dans un projet atelier, facultatives ailleurs. atelier ne les lit plus pour trouver le chantier actif (fin de la déduction de TEC-6), sans lecture de compatibilité : les chantiers ouverts sans `branch:` se rattachent par un `atelier use <ID>`, que le hook de démarrage de session indique.
+- Deux chantiers ne sont pas menés en même temps dans la même copie de travail avec du code non commité des deux : on commite, puis `atelier use`.
+- FEAT-4 : la clôture d'un EPIC, qui reposait sur une branche `epic/<ID>-<slug>` lue par son nom, passe par le pointeur ou par `branch:`.
+
+**Dépôt compagnon.**
+- Un dépôt git par mission, ailleurs sur le disque, qui contient la configuration d'atelier, les chantiers, les décisions et l'état local (`.atelier/`, ignoré dans le compagnon). Plusieurs compagnons peuvent être rangés dans un même dossier parent : rien ne l'impose ni ne l'empêche.
+- Il est trouvé par un **registre utilisateur** (dans `~/.claude/`), indexé par l'URL du remote du projet : chaque clone et chaque worktree le retrouve sans configuration. L'emplacement du compagnon n'est jamais stocké dans un fichier non versionné de la copie de travail (absent d'une copie neuve, il rendrait atelier silencieux).
+- Claude s'ouvre sur le dossier du **code** : les hooks, la branche, le gel des tests, la revue et les contrôles portent sur le code. Le compagnon lui est rendu accessible en plus (répertoire additionnel).
+- Rien n'est écrit dans un fichier versionné du dépôt du projet. Seuls fichiers locaux tolérés : le pointeur dans `.atelier/`, ignoré via `.git/info/exclude` (jamais via le `.gitignore` du projet), et les réglages personnels de Claude Code non versionnés.
+- Plugin activé au niveau utilisateur ; les règles de la section Process sont injectées par le hook de démarrage de session au lieu du `CLAUDE.md` du projet.
+- Les commits de code et de tests vivent dans le dépôt du projet ; les commits de spec, revue, décisions et bilan dans le compagnon. `tests_commit`, `reviewed_commit` (et `slice_base` si FEAT-7 est livré) désignent des commits du dépôt du projet.
+- FEAT-4 juge un chantier clos sur son statut dans l'arbre courant, ce qui vaut « fusionné » quand les specs voyagent avec le code. Dans un compagnon, ce n'est plus vrai : l'enfant qui livre le compagnon tranche ce que vaut `done` (par exemple, la clôture demande si la PR est fusionnée chez le client).
+
+**Contraintes communes.** Node ≥ 20, aucune dépendance ; logique dans `lib/core.mjs` en fonctions pures testées ; toute évolution de hook a son test ; textes utilisateur en français.
+
+## 5. Hors périmètre
+<!-- Ce que l'EPIC ne couvre pas, même si on pourrait l'y attendre. -->
+- L'interface graphique qui s'appuierait sur les dépôts compagnons (sujet distinct).
+- Un compagnon partagé entre plusieurs projets, ou plusieurs projets par compagnon.
+- Le travail en équipe chez le client autour du compagnon (partage, revue des specs par l'équipe du client).
+- La lecture des anciennes conventions (nom de branche, commits `[<ID>]`) pour compatibilité.
+- Le nettoyage des entrées de pointeur des branches supprimées, et le rattachement automatique après un renommage de branche.
+- La synchronisation vers Notion.
+
+## Amendements
+<!-- Après signature : une entrée datée par modification de la spec. -->
