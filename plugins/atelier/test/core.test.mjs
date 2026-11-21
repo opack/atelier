@@ -2065,3 +2065,63 @@ describe('FEAT-7 vocabulary of the review', () => {
     assert.deepEqual(offenders, [])
   })
 })
+
+// A revue.md with the given sections: { title, blocking: [[point, file, treatment]], discuss: [...] }.
+function revueOf(sections) {
+  const table = (rows) => ['| Point | Fichier | Traitement |', '|---|---|---|', ...rows.map((cells) => `| ${cells.join(' | ')} |`)].join('\n')
+  const body = sections.map(({ title, blocking = [], discuss = [] }) =>
+    `## ${title}\n- Commit revu : abc1234\n\n### Bloquant\n${table(blocking)}\n\n### À discuter\n${table(discuss)}\n\n- Bilan de la revue : ok\n`)
+  return `# Revue : TEC-30 Essai\n\n<!-- consigne -->\n\n${body.join('\n')}`
+}
+
+// The fields of each analysed row that CA-12 and CA-15 are about.
+function pointsOf(parsed) {
+  return parsed.sections.flatMap((section) => section.rows.map(({ id, marker, title, treatment, table }) =>
+    ({ section: section.title, table, id, marker, title, treatment })))
+}
+
+describe('TEC-15 reading revue.md', () => {
+  it('CA-12 : extrait l’identifiant, le marqueur (repris, ex-RD3 ou aucun) et l’intitulé de chaque point', () => {
+    const text = revueOf([
+      { title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB2. Intitulé', '`a.mjs`', 'corrigé (abc1234)']], discuss: [['RD3. Autre point', '`b.mjs`', 'requalifié (RB4)']] },
+      { title: 'Revue : tranche 2 : 2026-11-22', blocking: [['RB2 (repris). Intitulé', '`a.mjs`', ''], ['RB4 (ex-RD3). Intitulé', '`b.mjs`', 'écarté : hors périmètre']] },
+    ])
+    assert.deepEqual(pointsOf(core.parseReviewPoints(text)), [
+      { section: 'Revue : tranche 1 : 2026-11-21', table: 'Bloquant', id: 'RB2', marker: null, title: 'Intitulé', treatment: 'corrigé (abc1234)' },
+      { section: 'Revue : tranche 1 : 2026-11-21', table: 'À discuter', id: 'RD3', marker: null, title: 'Autre point', treatment: 'requalifié (RB4)' },
+      { section: 'Revue : tranche 2 : 2026-11-22', table: 'Bloquant', id: 'RB2', marker: 'repris', title: 'Intitulé', treatment: '' },
+      { section: 'Revue : tranche 2 : 2026-11-22', table: 'Bloquant', id: 'RB4', marker: 'ex-RD3', title: 'Intitulé', treatment: 'écarté : hors périmètre' },
+    ])
+  })
+
+  it('CA-12 : lit un revue.md en CRLF, aux cellules entourées d’espaces superflus', () => {
+    const text = revueOf([{ title: 'Revue : chantier : 2026-11-21', blocking: [['  RB1. Push non vérifié  ', '`a.mjs`', '   corrigé (abc1234)   ']] }])
+      .replace(/\n/g, '\r\n')
+    assert.deepEqual(pointsOf(core.parseReviewPoints(text)), [
+      { section: 'Revue : chantier : 2026-11-21', table: 'Bloquant', id: 'RB1', marker: null, title: 'Push non vérifié', treatment: 'corrigé (abc1234)' },
+    ])
+  })
+
+  it('CA-12 : seuls les tableaux sous « ### Bloquant » et « ### À discuter » sont des tableaux de points', () => {
+    const text = `${revueOf([{ title: 'Revue : 2026-11-21', blocking: [['RB1. Un point', '`a.mjs`', 'corrigé (abc1234)']] }])}\n### Contrôles\n| Point | Fichier | Traitement |\n|---|---|---|\n| RB9. Hors tableau de points | \`x\` | |\n`
+    assert.deepEqual(pointsOf(core.parseReviewPoints(text)).map((point) => point.id), ['RB1'])
+  })
+
+  it('CA-15 : un \| dans une cellule est un | littéral, pas un séparateur de colonne', () => {
+    const text = revueOf([{ title: 'Revue : 2026-11-21', blocking: [['RB1. Option a \| b', '`a \| b`', 'corrigé (abc1234)']] }])
+    const [point] = core.parseReviewPoints(text).sections[0].rows
+    assert.equal(point.treatment, 'corrigé (abc1234)')
+    assert.equal(point.file, '`a | b`')
+    assert.equal(point.title, 'Option a | b')
+  })
+
+  it('readChantier expose le texte de revue.md (null sans fichier)', () => {
+    const directory = temporaryDirectory('atelier-tec15-')
+    const config = { ...DEFAULT_CONFIG, chantiersDir: 'docs/chantiers' }
+    const text = revueOf([{ title: 'Revue : 2026-11-21' }])
+    writeChantier(directory, { id: 'TEC-30', files: { 'revue.md': text } })
+    writeChantier(directory, { id: 'TEC-31' })
+    assert.equal(core.readChantier(directory, config, 'TEC-30').revue, text)
+    assert.equal(core.readChantier(directory, config, 'TEC-31').revue, null)
+  })
+})
