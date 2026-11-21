@@ -7,7 +7,7 @@ tdd: yes
 created_at: 2026-11-20
 signed_by: Opack
 signed_at: 2026-11-20
-tests_commit: 
+tests_commit: 76ad521
 ---
 
 # FEAT-4 Relations entre chantiers et type EPIC
@@ -117,3 +117,4 @@ Dépôts git fictifs créés dans un répertoire temporaire par les tests : un E
 - 2026-11-20 : tests regelés : 99382a0
 - 2026-11-21 : CA-10 : quand tous les enfants d'un EPIC sont clos sans qu'aucun soit `done`, la prochaine étape propose l'abandon, pas la clôture qui serait refusée ; CA-12 : la ligne du template qui nomme `docs/chantiers` est attendue avec le `chantiersDir` du projet (sans `/` final), sinon un projet configuré autrement serait signalé à tort ; relevés à la revue, tour 2.
 - 2026-11-21 : tests rouverts (gel quitté : 99382a0) : spec amendée (revue tour 2) : CA-10 abandon quand tous les enfants sont clos sans done ; CA-12 check-process avec le chantiersDir du projet
+- 2026-11-21 : tests regelés : 76ad521
