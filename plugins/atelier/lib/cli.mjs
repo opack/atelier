@@ -25,7 +25,10 @@ import {
   decideWrite,
   findProjectRoot,
   hasRelations,
+  freezeTestsRefusal,
+  freezeTestsValues,
   isRefreeze,
+  removedTestLines,
   isReviewExempt,
   loadConfig,
   nextChantierId,
@@ -534,6 +537,32 @@ function testFilesChangedSince(projectRoot, config, commit) {
   return [...new Set([...committed, ...uncommittedTestFiles(projectRoot, config)])]
 }
 
+// Whether `commit` exists and is an ancestor of HEAD; an error for anything git cannot answer.
+function isAncestorOfHead(projectRoot, commit) {
+  if (!gitObjectExists(projectRoot, `${commit}^{commit}`)) {
+    return false
+  }
+  const ancestry = spawnSync('git', ['merge-base', '--is-ancestor', commit, 'HEAD'], { cwd: projectRoot, encoding: 'utf8' })
+  if (ancestry.status === 0 || ancestry.status === 1) {
+    return ancestry.status === 0
+  }
+  throw new Error(ancestry.error?.message || ancestry.stderr?.trim() || 'git merge-base')
+}
+
+// Test files present at `base` whose lines were changed or removed in HEAD (whitespace and line
+// endings ignored). Deleted files and binary files are taken from git's file lists, as the text
+// diff has no removed line for an empty or binary file and quotes unusual paths.
+function testFilesWithRemovedLines(projectRoot, config, base) {
+  const range = [base, 'HEAD', '--']
+  const fromDiff = removedTestLines(gitRaw(projectRoot, ['-c', 'core.quotePath=false', 'diff', '--no-renames', '--no-color', '--no-ext-diff', '--ignore-all-space', '--ignore-cr-at-eol', ...range]))
+  const deleted = gitPaths(projectRoot, ['diff', '--no-renames', '--name-only', '-z', '--diff-filter=D', ...range])
+  // `--numstat -z` entries: "<added>\t<removed>\t<path>", "-" for both counts on a binary file.
+  const binary = gitPaths(projectRoot, ['diff', '--no-renames', '--numstat', '-z', ...range])
+    .filter((entry) => entry.startsWith('-\t-\t'))
+    .map((entry) => entry.slice(4))
+  return [...new Set([...fromDiff, ...deleted, ...binary])].filter((file) => matchesAny(file, config.testPaths, config.ignoreCase))
+}
+
 function appendAmendment(specPath, entry) {
   writeFileSync(specPath, appendAmendmentEntry(readFileSync(specPath, 'utf8'), entry))
 }
@@ -558,7 +587,15 @@ function commandFreezeTests() {
     console.error('Le dernier commit ne contient aucun fichier de test. Commite les tests (et seulement les tests) avant de les figer.')
     process.exit(2)
   }
-  const { specPath } = updateSpec(projectRoot, config, { tests_commit: commit })
+  const sliceBase = chantier.spec.data.slice_base || null
+  const sliceBaseIsAncestor = sliceBase ? isAncestorOfHead(projectRoot, sliceBase) : null
+  const removedTestFiles = sliceBase && sliceBaseIsAncestor ? testFilesWithRemovedLines(projectRoot, config, sliceBase) : []
+  const refusal = freezeTestsRefusal({ chantier, sliceBaseIsAncestor, removedTestFiles })
+  if (refusal) {
+    console.error(`Gel refusé : ${refusal}`)
+    process.exit(2)
+  }
+  const { specPath } = updateSpec(projectRoot, config, freezeTestsValues(chantier, commit))
   if (isRefreeze(parseAmendments(chantier.spec.body).entries)) {
     appendAmendment(specPath, refreezeTestsEntry(today(), commit))
   }
@@ -580,7 +617,7 @@ function commandReopenTests(reasonWords) {
     process.exit(2)
   }
   const { specPath } = updateSpec(projectRoot, config, { tests_commit: '' })
-  appendAmendment(specPath, reopenTestsEntry(today(), chantier.spec.data.tests_commit, reason))
+  appendAmendment(specPath, reopenTestsEntry(today(), chantier.spec.data.tests_commit || chantier.spec.data.slice_base, reason))
   console.log('Tests rouverts. Retour en phase « tests d’abord » : aucune implémentation jusqu’au prochain commit des tests.')
 }
 

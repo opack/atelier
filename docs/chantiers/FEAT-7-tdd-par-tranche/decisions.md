@@ -25,3 +25,8 @@
 - `SPIKE` : le TDD décide du cadre, pas le type.
 - Contrôle des tests antérieurs par lignes (`git diff`), pas par tests ; le reviewer complète.
 - `slice_base` non ancêtre de `HEAD` : refus, pas de recalcul.
+
+## 2026-11-21 : contrôle du gel complété par les listes de fichiers de git
+- Contexte : le diff texte ne montre aucune ligne retirée pour un fichier binaire ou vide supprimé, et met entre guillemets les chemins inhabituels (faux négatifs relevés par l'overfit-checker).
+- Écarté : `git diff --text`, parce qu'il ne règle ni le fichier vide ni les chemins entre guillemets.
+- Conséquence : `freeze-tests` ajoute aux fichiers de `removedTestLines` les tests supprimés (`--diff-filter=D -z`) et les tests binaires modifiés (`--numstat -z`).

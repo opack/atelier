@@ -722,9 +722,58 @@ export function reopenTestsRefusal(chantier) {
     return `${chantier?.id ?? 'Ce chantier'} ne suit pas le TDD (tdd: ${data.tdd || '?'}) : il n’a pas de tests figés à rouvrir. Ajoute ou modifie les tests avec le code (/atelier:build).`
   }
   if (!data.tests_commit) {
-    return `Les tests de ${chantier.id} ne sont pas figés : ils s’écrivent encore, rien à rouvrir (/atelier:write-tests).`
+    // « Tests d'abord » of a slice N > 1: the tests of the previous slices are frozen.
+    const { slice } = sliceState(chantier)
+    if (typeof slice !== 'number' || slice < 2 || !data.slice_base) {
+      return `Les tests de ${chantier.id} ne sont pas figés : ils s’écrivent encore, rien à rouvrir (/atelier:write-tests).`
+    }
+    if (isRefreeze(parseAmendments(chantier.spec.body ?? '').entries)) {
+      return `tests déjà rouverts pour ${chantier.id} : modifie-les, commite-les puis fige-les (atelier freeze-tests).`
+    }
   }
   return null
+}
+
+// Test files with removed lines in a `git diff` output (old path: a deleted or renamed file
+// counts as removed). Only lines inside hunks count; headers are read before the first hunk.
+export function removedTestLines(diff) {
+  const files = new Set()
+  let file = null
+  let inHunk = false
+  for (const line of diff.replace(/\r\n/g, '\n').split('\n')) {
+    if (line.startsWith('diff --git ')) {
+      file = null
+      inHunk = false
+    } else if (!inHunk && line.startsWith('--- ')) {
+      file = line === '--- /dev/null' ? null : line.slice(4).replace(/\t$/, '').replace(/^a\//, '')
+    } else if (line.startsWith('@@')) {
+      inHunk = true
+    } else if (inHunk && line.startsWith('-') && file) {
+      files.add(file)
+    }
+  }
+  return [...files]
+}
+
+// Why `atelier freeze-tests` is refused, or null. `sliceBaseIsAncestor` is false when the
+// `slice_base` of the spec is no longer an ancestor of HEAD; `removedTestFiles` are the test
+// files with lines removed since `slice_base` (see removedTestLines).
+export function freezeTestsRefusal({ chantier, sliceBaseIsAncestor, removedTestFiles }) {
+  if (sliceBaseIsAncestor === false) {
+    return `le début de la tranche (slice_base : ${chantier.spec.data.slice_base}) n’est plus un ancêtre de HEAD (rebase, historique réécrit). Seul l’utilisateur peut corriger slice_base dans l’en-tête de la spec.`
+  }
+  if (removedTestFiles.length && !isRefreeze(parseAmendments(chantier.spec.body ?? '').entries)) {
+    return `des tests des tranches précédentes ont été modifiés ou supprimés :\n${removedTestFiles.map((file) => `- ${file}`).join('\n')}\nOn ne fait qu’ajouter des tests. Si l’un d’eux doit vraiment changer : /atelier:amend si la spec change, puis /atelier:write-tests <raison>.`
+  }
+  return null
+}
+
+// Spec header values written by `atelier freeze-tests` at `commit`: the first freeze of a
+// chantier of the slice cycle also writes `slice: 1`.
+export function freezeTestsValues(chantier, commit) {
+  const { model } = sliceState(chantier)
+  const firstOfCycle = ['single', 'sliced'].includes(model) && !String(chantier.spec.data.slice ?? '').trim()
+  return { tests_commit: commit, ...(firstOfCycle ? { slice: '1' } : {}) }
 }
 
 // ---------- Review ----------
