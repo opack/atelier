@@ -1929,6 +1929,20 @@ describe('FEAT-7 review and next slice', () => {
       assert.equal(specFileText(directory, 'FEAT-20'), before, label)
     }
   })
+
+  it('CA-20 : en TDD, une tranche dont seuls les tests ont été commités est vide', () => {
+    const directory = makeSlicedRepository({ tdd: 'yes' })
+    commitFiles(directory, { 'src/one.mjs': 'code\n' }, 'feat: one')
+    const base = headOf(directory)
+    commitFiles(directory, { 'test/two.test.mjs': 'test\n' }, 'test: two')
+    const testsCommit = git(directory, 'rev-parse', '--short', 'HEAD').trim()
+    setHeader(directory, 'FEAT-20', { slice: '2', slice_base: base, tests_commit: testsCommit })
+    const before = specFileText(directory, 'FEAT-20')
+    const { status, output } = atelierRun(directory, 'set-reviewed')
+    assert.notEqual(status, 0)
+    assert.match(output, /tranche vide/i)
+    assert.equal(specFileText(directory, 'FEAT-20'), before)
+  })
 })
 
 describe('FEAT-7 close and next step', () => {
@@ -1996,6 +2010,16 @@ describe('FEAT-7 close and next step', () => {
     const { status, output } = atelierRun(directory, 'close-check')
     assert.notEqual(status, 0)
     assert.match(output, /revue du chantier/i)
+  })
+
+  it('CA-25 : un SPIKE en TDD de l’ancien modèle se clôt sans revue exigée', () => {
+    const directory = makeSlicedRepository({ id: 'SPIKE-20', tdd: 'yes' })
+    commitFiles(directory, { 'test/a.test.mjs': 'test\n' }, 'test: a')
+    const testsCommit = git(directory, 'rev-parse', '--short', 'HEAD').trim()
+    commitFiles(directory, { 'src/a.mjs': 'code\n' }, 'feat: a')
+    setHeader(directory, 'SPIKE-20', { tests_commit: testsCommit })
+    const { status, output } = atelierRun(directory, 'close-check')
+    assert.equal(status, 0, output)
   })
 
   it('CA-25 : un SPIKE sans TDD reste hors tranches : pas de slice, pas de message de tranche, clôture sans revue', () => {
