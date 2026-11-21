@@ -7,7 +7,7 @@ tdd: yes
 created_at: 2026-11-20
 signed_by: Opack
 signed_at: 2026-11-21
-tests_commit: 5db2d52
+tests_commit: 
 ---
 
 # FEAT-7 Cycle tests, build, revue par tranche
@@ -187,3 +187,4 @@ Rejeu de bout en bout sur un dépôt jetable, plan à deux tranches au moins, en
 ## Amendements
 <!-- Après signature : une entrée datée par modification de la spec (date, quoi, pourquoi). -->
 - 2026-11-21 : « tranche vide » (CA-20) ne compte plus les fichiers de test en TDD et ne contrôle rien sans base ; un `SPIKE` en TDD de l'ancien modèle reste dispensé de revue, pourquoi : revue tour 1 (D1 : en TDD, le commit des tests rendait le contrôle inopérant ; D2 : contradiction entre « Chantiers simples » et « Compatibilité »).
+- 2026-11-21 : tests rouverts (gel quitté : 5db2d52) : amendement 2026-11-21 (revue tour 1, D1/D2) : CA-20 et CA-25 précisés
