@@ -1,0 +1,126 @@
+---
+id: TEC-15
+type: TEC
+title: Identifiants stables des points de relecture
+status: draft
+tdd: yes
+created_at: 2026-11-21
+signed_by:
+signed_at:
+rel_depends_on: FEAT-7
+---
+
+# TEC-15 Identifiants stables des points de relecture
+
+<!-- Chantier technique sans impact utilisateur direct : CI, outillage, dépendances, configuration, sécurité, infra, migration.
+Petite tâche (règle ESLint, montée de version) : seules les sections 1, 2 et 5 sont obligatoires. -->
+
+## 1. Quoi
+<!-- Le changement technique, en une ou deux phrases. -->
+Chaque point soulevé par un sous-agent de relecture porte un identifiant stable, formé d'un préfixe et d'un numéro : `RB1`, `RD2` pour la revue de code, `SB1`, `SD1` pour la relecture de spec, `OB1`, `OD1` pour la vérification de surapprentissage. On le cite dans la conversation, les commits, `revue.md` et le bilan. Une commande donne les prochains numéros de la revue, et un contrôle déterministe refuse d'enregistrer la revue ou de clore le chantier tant qu'un point de revue n'a pas de traitement consigné.
+
+## 2. Pourquoi
+<!-- Le déclencheur : risque, dépréciation, échéance, douleur récurrente, faille. Ce qui arrive si on ne fait rien. -->
+- Les sous-agents rendent deux listes, **Bloquant** et **À discuter**, sans identifiant. Pour parler d'un point, il faut le paraphraser (« le truc du push »), ce qui est lent et ambigu.
+- La nomenclature `B1`/`D1` est apparue spontanément sur TEC-3, et a montré son utilité : on écrit « je corrige B2, on écarte D3 », et le bilan, la spec et les commits peuvent y renvoyer. Mais elle n'est écrite nulle part, et l'usage dérive d'un chantier à l'autre :
+  - TEC-3 : `B1`, `B2`, `D1` à `D6` au tour 1, puis plus d'identifiant aux tours suivants (« la correction de B2 » renvoie à un point sans nom) ;
+  - TEC-5 : numérotation continue d'un tour à l'autre (`D7` au tour 3), citée dans la spec, le bilan et l'amendement : le bon usage ;
+  - FEAT-4 : `B1`, `D1` à `D6` au tour 1, puis `1.`, `2.`, `3.` qui repartent de 1 à chaque tour : « le point 2 » désigne trois choses différentes ;
+  - TEC-6 : aucun identifiant.
+- Avec FEAT-7 (revue par tranche, puis revue du chantier), un chantier aura plusieurs revues : sans numérotation à l'échelle du chantier, `RB1` de la tranche 1 et `RB1` de la tranche 2 entreraient en collision.
+- Rien ne vérifie aujourd'hui que chaque point a été traité : « continue jusqu'à zéro point bloquant non traité » est une consigne, pas un contrôle.
+- Si on ne fait rien : la convention reste une habitude d'agent, qui disparaît à la première session qui ne l'a pas vue.
+
+## 3. Périmètre
+<!-- Fichiers, services, environnements concernés. Hors périmètre. Optionnel pour une petite tâche. -->
+
+### Préfixes
+
+| Source | Bloquant | À discuter | Où le point est tracé |
+|---|---|---|---|
+| Revue de code (`reviewer`, `/atelier:review`) | `RB` | `RD` | `revue.md`, bilan §7 |
+| Relecture de spec (`spec-critic`, `/atelier:sign`) | `SB` | `SD` | conversation ; spec ou `decisions.md` quand le point change quelque chose |
+| Surapprentissage (`overfit-checker`, `/atelier:build`) | `OB` | `OD` | conversation ; `decisions.md` quand le point est reporté ou accepté |
+
+Les préfixes distincts évitent toute collision entre relectures d'un même chantier. Les chantiers déjà clos (`B1`/`D1`, ou sans identifiant) ne sont pas réécrits.
+
+### Numérotation
+- **Revue (`RB`/`RD`)** : numérotation continue sur tout le chantier, toutes revues confondues (tranches et revue du chantier de FEAT-7 comprises), une série par préfixe. Un numéro n'est jamais réutilisé.
+  - Un point **nouveau** prend le numéro suivant du préfixe.
+  - Un point **encore ouvert** à la revue suivante (correction incomplète ou remise en cause) garde son identifiant ; il est repris dans la nouvelle section de `revue.md`, marqué `(repris)` après l'identifiant.
+  - Un point dont la gravité change (`RD3` devenu bloquant) prend un nouvel identifiant dans l'autre série et renvoie à l'ancien : « RB4 (ex-RD3) ». L'identifiant porte donc toujours la gravité qu'il annonce.
+  - `/atelier:review` obtient les prochains numéros par `atelier review-ids` et les passe au sous-agent `reviewer`, avec la liste des points encore ouverts. Le reviewer ne calcule pas les numéros lui-même : un modèle compte mal dans un tableau.
+- **Relecture de spec et surapprentissage (`SB`/`SD`, `OB`/`OD`)** : ces points ne sont pas consignés dans un fichier dédié. La numérotation est continue dans la session : la skill passe au sous-agent le premier numéro libre de chaque préfixe (1 au premier passage, puis à la suite de ce qu'elle a déjà présenté). Une collision n'est possible qu'entre deux sessions différentes, où la conversation ne fait de toute façon plus foi.
+
+### Commande `atelier review-ids`
+Lit le `revue.md` du chantier actif et affiche les prochains numéros (`RB5 RD8`) et les points ouverts (identifiant et intitulé). `--json` pour les skills. Sans `revue.md` : `RB1 RD1`, aucun point ouvert.
+
+### Traitements
+Un point de `revue.md` a un traitement parmi : **corrigé** (commit), **test ajouté**, **spec amendée**, **exception acceptée** (par qui, pourquoi), **écarté** (pourquoi), **reporté** (chantier ou section « Dette et suites » du bilan qui le reprend), **sans objet**. Le traitement est écrit dans la colonne « Traitement ». Une colonne vide signifie : point ouvert.
+
+`reporté` est nouveau : il remplace les formulations libres (« chantier à part », « défaut de méthode à traiter ailleurs ») vues sur FEAT-4 et TEC-6.
+
+### Contrôle déterministe
+Une fonction pure de `lib/core.mjs` lit `revue.md` et renvoie les problèmes :
+- un point (`RB` ou `RD`) dont la **dernière** occurrence a une colonne Traitement vide ;
+- un identifiant présenté comme nouveau (sans `(repris)`) dans deux sections ;
+- une ligne de tableau « Point » sans identifiant reconnu, dès que le fichier contient au moins un identifiant `RB`/`RD` (la ligne « Aucun » est admise).
+
+Un `revue.md` sans aucun identifiant `RB`/`RD` est un fichier antérieur à ce chantier : pas de contrôle (voir §4).
+
+Cette fonction est appelée par :
+- `atelier set-reviewed`, qui refuse d'enregistrer la revue en listant les points ouverts ;
+- `atelier close-check` (et `set-status done`), qui refuse la clôture pour la même raison.
+
+**À trancher** : un `RD` sans traitement bloque-t-il aussi ? Je propose **oui** : la skill `review` demande déjà un traitement pour chaque point, et un « écarté » motivé coûte une ligne. Sinon, un point à discuter oublié n'est vu par personne.
+
+### Messages de commit
+Un commit qui traite un point le cite après l'identifiant du chantier : `fix(plugin): [TEC-15] RB2 refuse an empty treatment`. C'est une convention (skills `review` et `build`, site), pas un contrôle : la colonne Traitement de `revue.md` porte déjà le hash du commit.
+
+### Fichiers modifiés
+- Agents : `reviewer.md` (reçoit les numéros et les points ouverts, rend des points identifiés, reprend un point ouvert sous son identifiant), `spec-critic.md` et `overfit-checker.md` (reçoivent le premier numéro, rendent des points identifiés).
+- Skills : `review` (appel à `review-ids`, traitement `reporté`, commits, refus de `set-reviewed`), `sign` (numéros `SB`/`SD`), `build` (numéros `OB`/`OD`, commits qui traitent un point de revue), `close` (bilan §7 par identifiant, refus de `close-check`), `amend` (l'entrée d'amendement cite le point qui la motive).
+- Templates : `revue.md` (consigne de numérotation, `(repris)`, liste des traitements), `bilan.md` (§7 : un point par identifiant avec son traitement).
+- CLI : `lib/core.mjs` (lecture de `revue.md`, prochains numéros, problèmes), `lib/cli.mjs` (`review-ids`, appel du contrôle dans `set-reviewed` et `close-check`).
+- Tests : `plugins/atelier/test/`.
+- Site : `cycle/revue.md`, `cycle/signature.md`, `cycle/implementation.md`, `cycle/cloture.md`, `agent/revue.md`, `reference/commandes.md` (`review-ids`, refus de `set-reviewed` et `close-check`), `reference/glossaire.md` (« point de relecture », préfixes, « traitement »).
+- `README.md`, si la revue y est décrite. Version du plugin incrémentée.
+
+### Hors périmètre
+- Réécriture des `revue.md` des chantiers clos.
+- Persistance des points `SB`/`SD`/`OB`/`OD` dans un fichier dédié (`relecture-spec.md`) : à rouvrir si l'usage montre qu'on les cite après la session.
+- Contrôle des messages de commit (citation d'un point).
+- Hook : aucun comportement de hook ne change.
+
+## 4. Impacts indirects
+<!-- Comportement visible malgré tout ? Données, déploiement, coûts, autres développeurs. Optionnel pour une petite tâche.
+Question si manquant : qu'est-ce qui pourrait changer pour l'utilisateur malgré tout ? -->
+- **Chantiers en cours au moment de la mise à jour** : leur `revue.md` peut être sans identifiant ou au format `B1`/`D1`. Sans aucun `RB`/`RD`, le contrôle ne s'applique pas : la revue et la clôture se passent comme avant. Dès que la revue suivante ajoute un `RB`/`RD`, tout le fichier est contrôlé, et les lignes anciennes sans identifiant sont signalées : il faut les renommer (`B1` → `RB1`). La skill `review` le propose. Limite assumée : un `revue.md` tenu à la main sans aucun identifiant échappe au contrôle.
+- **Dépendance à FEAT-7** : ce chantier s'appuie sur la revue par tranche et le vocabulaire de FEAT-7 (« revue » au lieu de « tour »). Il démarre après sa fusion, sur une branche rebasée.
+- Pas de donnée, pas de déploiement : le plugin est mis à jour par `/plugin update`.
+
+## 5. Vérification
+<!-- Comment prouve-t-on que ça marche : CI verte, test de règles, déploiement sur un environnement, mesure avant / après. -->
+Critères d'acceptation (testés dans `plugins/atelier/test/`) :
+- CA-1 : Étant donné un `revue.md` dont les points vont jusqu'à `RB3` et `RD7`, répartis sur plusieurs sections, quand on calcule les prochains numéros, alors on obtient `RB4` et `RD8`.
+- CA-2 : Étant donné l'absence de `revue.md`, ou un `revue.md` sans point, quand on calcule les prochains numéros, alors on obtient `RB1` et `RD1`, sans point ouvert.
+- CA-3 : Étant donné un `RB2` corrigé dans la section 1 puis repris `(repris)` sans traitement dans la section 2, quand on liste les points ouverts, alors `RB2` en fait partie (c'est la dernière occurrence qui compte) ; et un `RB1` sans traitement en section 1 mais corrigé en section 2 n'en fait pas partie.
+- CA-4 : Étant donné un `RB` à la colonne Traitement vide (ou réduite à des espaces), quand on contrôle `revue.md`, alors le problème cite l'identifiant et son intitulé. Même chose pour un `RD` (selon la décision « À trancher » du §3).
+- CA-5 : Étant donné un même identifiant présenté comme nouveau dans deux sections, quand on contrôle, alors le problème cite l'identifiant et les deux sections.
+- CA-6 : Étant donné un `revue.md` qui contient au moins un `RB`/`RD` et une ligne de point sans identifiant reconnu (ancien format `B1.`, numéro seul `1.`, texte libre), quand on contrôle, alors la ligne est signalée ; la ligne « Aucun » ne l'est pas.
+- CA-7 : Étant donné un `revue.md` sans aucun `RB`/`RD` (chantier antérieur), quand on contrôle, alors aucun problème.
+- CA-8 : Étant donné un point ouvert, quand on lance `atelier set-reviewed`, alors la commande échoue (code non nul), n'écrit pas `reviewed_commit` et liste les points ouverts.
+- CA-9 : Étant donné un point ouvert dans un `revue.md` commité après la revue, quand on lance `atelier close-check`, alors la clôture est refusée avec la liste des points ouverts.
+- CA-10 : Étant donné un `revue.md` de plusieurs sections, quand on lance `atelier review-ids --json`, alors la sortie donne les prochains numéros et les points ouverts (identifiant, intitulé).
+- CA-11 : Les prompts des trois sous-agents, les skills `review`, `sign`, `build`, `close` et les templates `revue.md` et `bilan.md` mentionnent leurs préfixes (test de contenu, comme ceux des templates existants).
+
+Vérifications d'ensemble :
+- `npm test` vert ; `claude plugin validate .` et `claude plugin validate ./plugins/atelier` ; `npm run build` dans `site/`.
+- Essai manuel : une revue complète de ce chantier menée avec la nomenclature, `revue.md` contrôlé par la CLI. Ce chantier est son propre premier utilisateur.
+
+## 6. Retour arrière
+<!-- Comment annuler si ça casse en production. Optionnel pour une petite tâche. -->
+Revert de la PR et publication d'une version suivante du plugin. Les `revue.md` écrits avec les identifiants restent lisibles : ce sont des tableaux Markdown ordinaires.
+
+## Amendements
+<!-- Après signature : une entrée datée par modification de la spec. -->
