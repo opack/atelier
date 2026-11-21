@@ -8,6 +8,8 @@ created_at: 2026-11-21
 signed_by: Opack
 signed_at: 2026-11-21
 rel_depends_on: FEAT-7
+tests_commit: ff70aa1
+slice: 1
 ---
 
 # TEC-15 Identifiants stables des points de relecture
