@@ -37,9 +37,9 @@ Le process maintient ce rangement de lui-même : un nouveau chantier range ses t
 Format : - CA-1 : Étant donné…, quand…, alors… -->
 
 - CA-1 : Étant donné le dépôt à la clôture de l'EPIC, quand on liste `plugins/atelier/test/`, alors chaque fichier de tests couvre un seul domaine, aucun `describe` ne contient d'identifiant de chantier, et chaque test issu d'un critère se termine par l'étiquette `[<ID> CA-x]`.
-- CA-2 : Étant donné le dépôt à la clôture de l'EPIC, quand on liste `plugins/atelier/lib/`, alors `core.mjs` et `cli.mjs` sont découpés en modules par domaine, et aucun module ne dépasse <SEUIL> lignes.
+- CA-2 : Étant donné le dépôt à la clôture de l'EPIC, quand on liste `plugins/atelier/lib/`, alors `core.mjs` et `cli.mjs` sont découpés en modules par domaine, et aucun module ne dépasse 400 lignes.
 - CA-3 : Étant donné un nouveau chantier, quand `/atelier:write-tests` écrit ses tests, alors ses consignes disent de ranger chaque test dans le fichier de son domaine et de l'étiqueter `[<ID> CA-x]` en suffixe.
-- CA-4 : Étant donné une tranche qui allonge un fichier au-delà de <SEUIL> lignes ou y mêle un second domaine, quand le reviewer la relit, alors il le signale.
+- CA-4 : Étant donné une tranche qui allonge un fichier au-delà de 400 lignes ou y mêle un second domaine, quand le reviewer la relit, alors il le signale.
 - CA-5 : Étant donné des tests figés, quand un test est seulement déplacé (même nom, même corps, autre fichier ou autre position), alors `atelier freeze-tests` l'accepte sans réouverture ; quand son corps change, il refuse comme aujourd'hui.
 
 ## 4. Cadre
