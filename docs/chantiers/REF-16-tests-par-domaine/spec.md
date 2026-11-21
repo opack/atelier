@@ -91,7 +91,7 @@ Chaque étape laisse la suite verte et peut être fusionnée seule.
 ## 7. Critère de fin
 <!-- Quand s'arrête-t-on ? Qu'est-ce qui est volontairement laissé en l'état ? -->
 
-- `core.test.mjs` n'existe plus ; chaque fichier de `test/` couvre un seul domaine.
+- `core.test.mjs` n’existe plus ; chaque fichier de `test/` couvre un seul domaine et ne dépasse pas 400 lignes (EPIC-17 CA-1).
 - Aucun `describe` ne contient d'identifiant de chantier ; chaque test issu d'un critère se termine par `[<ID> CA-x]`.
 - Les contrôles du §4 passent.
 - Laissé en l'état : le contenu des tests (aucune assertion ajoutée, retirée ou réécrite, même maladroite), la durée de la suite, `lib/`.
