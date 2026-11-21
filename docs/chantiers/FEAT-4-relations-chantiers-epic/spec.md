@@ -2,13 +2,14 @@
 id: FEAT-4
 type: FEAT
 title: Relations entre chantiers et type EPIC
-status: signed
+status: done
 tdd: yes
 created_at: 2026-11-20
 signed_by: Opack
 signed_at: 2026-11-20
 tests_commit: 76ad521
 reviewed_commit: 17604cccd9350a6f2f2ad9362fa4af0e7c528298
+done_at: 2026-11-21
 ---
 
 # FEAT-4 Relations entre chantiers et type EPIC
