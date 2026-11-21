@@ -30,3 +30,9 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Reporté en tranche 2 : signaler une ligne `RB`/`RD` hors tableau de points, ou un titre `###` proche de « Bloquant » / « À discuter » (OD1) ; `legacy` dès une section `## Tour` ou seulement si toutes le sont (OD3, avec CA-7).
 - Écarté : tableau sans `|` en tête de ligne (OD1), parce que le template et le reviewer écrivent toujours la forme avec `|` ; `\|` lu comme séparateur (OD5), cas marginal.
 - Signalé à l'utilisateur, sans renforcer les tests : OD6 (`Aucun`, `legacy`, `line`, `point`, ordre des colonnes non testés).
+
+## 2026-11-22 : correction de RD1 à RD3, puis suites de la vérification de surapprentissage
+- Contexte : revue 1 de la tranche 1 (RD1 à RD3) ; `overfit-checker` a relevé OB1 et OD7 à OD11 sur la correction.
+- Retenu : en-tête reconnu par la ligne de séparation qui le suit, sauf s'il contient un point (RD1, OD7) ; tableau sans en-tête lu avec les colonnes du template, `cellCountMismatch` comparé à leur nombre (RD2, OD8) ; commentaire HTML masqué seulement s'il ouvre une ligne, jusqu'à la ligne qui contient `-->`, comme en CommonMark (RD3, OB1 : un `` `<!--` `` dans une cellule masquait tout le reste du fichier) ; bloc de code fermé seulement par le même caractère, au moins aussi long (OD9).
+- Écarté : retirer les commentaires `<!-- … -->` au milieu d'une ligne, parce que c'est ce qui a produit OB1 et qu'aucun template n'en écrit dans un tableau ; remettre l'en-tête à zéro après un texte libre (OD11), parce qu'une ligne lue en trop est signalée alors qu'une ligne sautée serait perdue (documenté dans le commentaire de `parseReviewPoints`).
+- Signalé à l'utilisateur, sans renforcer les tests : OD10 (`<!--` dans une cellule, `file` et `treatment` d'un tableau sans en-tête, colonnes réordonnées, séparateur aligné `:---:` non testés).

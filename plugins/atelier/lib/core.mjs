@@ -894,6 +894,7 @@ export function setReviewedUpdate(chantier, head) {
 // ---------- Review points ----------
 
 const POINT_TABLES = ['Bloquant', 'À discuter']
+const POINT_COLUMNS = ['Point', 'Fichier', 'Traitement']
 const POINT_PATTERN = /^(RB|RD)(\d+)( \(repris\)| \(ex-(R[BD]\d+)\))?\. (.+)$/
 const EMPTY_POINT_PATTERN = /^aucun\.?$/i
 
@@ -915,23 +916,54 @@ function parsePointCell(cell) {
   return { id: `${match[1]}${match[2]}`, marker, title: match[5] }
 }
 
+const isDelimiterRow = (line) => line.trim().startsWith('|') && tableCells(line).every((cell) => /^:?-+:?$/.test(cell))
+
+// The lines of a Markdown text with code blocks and HTML comment blocks blanked out, so that line
+// numbers are kept and an example table in either is not read. As in CommonMark, a fence closes on
+// the same character, at least as long, and a comment block starts with `<!--` at the start of a
+// line and ends with the line holding `-->`: a `<!--` inside a cell does not hide the rows after it.
+function visibleLines(text) {
+  let fence = null
+  let comment = false
+  return String(text ?? '').normalize('NFC').split(/\r?\n/).map((line) => {
+    if (comment) {
+      comment = !line.includes('-->')
+      return ''
+    }
+    const marker = /^ {0,3}(`{3,}|~{3,})/.exec(line)?.[1]
+    if (fence) {
+      if (marker && marker[0] === fence[0] && marker.length >= fence.length && !line.trim().slice(marker.length).trim()) {
+        fence = null
+      }
+      return ''
+    }
+    if (marker) {
+      fence = marker
+      return ''
+    }
+    const open = /^ {0,3}<!--/.exec(line)
+    if (open) {
+      comment = !line.slice(open[0].length).includes('-->')
+      return ''
+    }
+    return line
+  })
+}
+
 // Reads the points of a revue.md: one section per `## ` heading, the point tables being those under
-// `### Bloquant` and `### À discuter`. `Aucun` rows are skipped. `legacy` is true for a revue.md
-// written before FEAT-7 (`## Tour …` sections), which the review checks leave alone.
+// `### Bloquant` and `### À discuter`. A table header is the row followed by a delimiter row, unless
+// it holds a point; a table without one is read with the template columns (Point, Fichier,
+// Traitement). Every `|` row up to the next heading is read, even after free text: a row read in
+// excess is reported by the review checks, a row skipped would be lost. `Aucun` rows are skipped.
+// `legacy` is true for a revue.md written before FEAT-7 (`## Tour …` sections), which the review
+// checks leave alone.
 export function parseReviewPoints(text) {
   const sections = []
   let section = null
   let table = null
   let header = null
-  let fence = false
-  String(text ?? '').normalize('NFC').split(/\r?\n/).forEach((line, index) => {
-    if (/^ {0,3}(```|~~~)/.test(line)) {
-      fence = !fence
-      return
-    }
-    if (fence) {
-      return
-    }
+  const lines = visibleLines(text)
+  lines.forEach((line, index) => {
     const heading = /^ {0,3}(#{2,3})\s+(.*?)\s*$/.exec(line)
     if (heading) {
       header = null
@@ -944,24 +976,16 @@ export function parseReviewPoints(text) {
       }
       return
     }
-    if (!line.trim().startsWith('|')) {
-      // A table ends at the first line that is not a row: the next table starts with its own header.
-      header = null
-      return
-    }
-    if (!section || !table) {
+    if (!section || !table || !line.trim().startsWith('|') || isDelimiterRow(line)) {
       return
     }
     const cells = tableCells(line)
-    if (!header) {
+    if (isDelimiterRow(lines[index + 1] ?? '') && !cells.some((cell) => POINT_PATTERN.test(cell))) {
       header = cells
       return
     }
-    if (cells.every((cell) => /^:?-+:?$/.test(cell))) {
-      return
-    }
     const column = (name, fallback) => {
-      const position = header.indexOf(name)
+      const position = header ? header.indexOf(name) : -1
       return cells[position >= 0 ? position : fallback] ?? ''
     }
     const point = column('Point', 0)
@@ -973,7 +997,9 @@ export function parseReviewPoints(text) {
       ...parsePointCell(point),
       point,
       file: column('Fichier', 1),
-      treatment: column('Traitement', header.length - 1),
+      treatment: column('Traitement', 2),
+      // A `|` left unescaped in a cell shifts the columns: reported by the review checks.
+      cellCountMismatch: cells.length !== (header ?? POINT_COLUMNS).length,
       table,
       line: index + 1,
     })
