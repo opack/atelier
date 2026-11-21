@@ -2107,6 +2107,36 @@ describe('TEC-15 reading revue.md', () => {
     assert.deepEqual(pointsOf(core.parseReviewPoints(text)).map((point) => point.id), ['RB1'])
   })
 
+  it('CA-12 : une ligne vide au milieu d’un tableau de points ne fait perdre aucun point', () => {
+    const text = revueOf([{ title: 'Revue : 2026-11-21', blocking: [['RB1. Un', '`a.mjs`', 'corrigé (abc1234)'], ['RB2. Deux', '`b.mjs`', ''], ['RB3. Trois', '`c.mjs`', 'écarté : doublon']] }])
+      .replace('corrigé (abc1234) |\n', 'corrigé (abc1234) |\n\n')
+    assert.deepEqual(pointsOf(core.parseReviewPoints(text)).map(({ id, treatment }) => ({ id, treatment })), [
+      { id: 'RB1', treatment: 'corrigé (abc1234)' },
+      { id: 'RB2', treatment: '' },
+      { id: 'RB3', treatment: 'écarté : doublon' },
+    ])
+  })
+
+  it('CA-12 : un tableau de points sans ligne d’en-tête ne perd pas son premier point', () => {
+    const text = '# Revue : TEC-30 Essai\n\n## Revue : 2026-11-21\n\n### Bloquant\n| RB1. Un | `a.mjs` | |\n| RB2. Deux | `b.mjs` | |\n'
+    assert.deepEqual(pointsOf(core.parseReviewPoints(text)).map((point) => point.id), ['RB1', 'RB2'])
+  })
+
+  it('CA-12 : une ligne dont le nombre de cellules diffère de l’en-tête est marquée', () => {
+    const text = revueOf([{ title: 'Revue : 2026-11-21', blocking: [['RB1. Pipe non échappé', '`a | b`', 'corrigé (abc1234)'], ['RB2. Normal', '`c.mjs`', '']] }])
+    const rows = core.parseReviewPoints(text).sections[0].rows
+    assert.deepEqual(rows.map(({ id, cellCountMismatch }) => ({ id, cellCountMismatch })), [
+      { id: 'RB1', cellCountMismatch: true },
+      { id: 'RB2', cellCountMismatch: false },
+    ])
+  })
+
+  it('CA-12 : un tableau dans un commentaire HTML n’est pas lu, comme un bloc de code', () => {
+    const text = revueOf([{ title: 'Revue : 2026-11-21', blocking: [['RB1. Vrai point', '`a.mjs`', '']] }])
+      .replace('### Bloquant\n', '### Bloquant\n<!-- Exemple :\n| Point | Fichier | Traitement |\n|---|---|---|\n| RB9. Exemple | `x` | |\n-->\n')
+    assert.deepEqual(pointsOf(core.parseReviewPoints(text)).map((point) => point.id), ['RB1'])
+  })
+
   it('CA-15 : un \| dans une cellule est un | littéral, pas un séparateur de colonne', () => {
     const text = revueOf([{ title: 'Revue : 2026-11-21', blocking: [['RB1. Option a \\| b', '`a \\| b`', 'corrigé (abc1234)']] }])
     const [point] = core.parseReviewPoints(text).sections[0].rows
