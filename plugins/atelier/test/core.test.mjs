@@ -2108,7 +2108,7 @@ describe('TEC-15 reading revue.md', () => {
   })
 
   it('CA-15 : un \| dans une cellule est un | littéral, pas un séparateur de colonne', () => {
-    const text = revueOf([{ title: 'Revue : 2026-11-21', blocking: [['RB1. Option a \| b', '`a \| b`', 'corrigé (abc1234)']] }])
+    const text = revueOf([{ title: 'Revue : 2026-11-21', blocking: [['RB1. Option a \\| b', '`a \\| b`', 'corrigé (abc1234)']] }])
     const [point] = core.parseReviewPoints(text).sections[0].rows
     assert.equal(point.treatment, 'corrigé (abc1234)')
     assert.equal(point.file, '`a | b`')
