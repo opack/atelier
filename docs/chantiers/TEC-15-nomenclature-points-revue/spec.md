@@ -8,7 +8,7 @@ created_at: 2026-11-21
 signed_by: Opack
 signed_at: 2026-11-21
 rel_depends_on: FEAT-7
-tests_commit: 4924cad
+tests_commit: 
 slice: 1
 ---
 
@@ -147,3 +147,4 @@ Revert de la PR et publication d'une version suivante du plugin. Les `revue.md` 
 <!-- Après signature : une entrée datée par modification de la spec. -->
 - 2026-11-21 : tests rouverts (gel quitté : ff70aa1) : CA-15 : le test écrit \| dans une chaîne JS simple, où le backslash disparaît ; doubler l'échappement
 - 2026-11-21 : tests regelés : 4924cad
+- 2026-11-21 : tests rouverts (gel quitté : 4924cad) : Revue 1 de la tranche 1 : cas oubliés de CA-12 (D1 ligne vide dans un tableau, D2 nombre de cellules différent de l'en-tête, D3 tableau dans un commentaire HTML)
