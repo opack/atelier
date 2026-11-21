@@ -3,7 +3,7 @@ id: REF-16
 type: REF
 title: Tests rangés par domaine
 status: draft
-tdd:                 # yes | no : décision humaine, obligatoire avant signature
+tdd: no
 created_at: 2026-11-21
 signed_by:
 signed_at:
