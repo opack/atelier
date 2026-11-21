@@ -23,3 +23,10 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Contexte : `setReviewedRefusal` et `closeProblems` ont besoin du contenu de `revue.md`.
 - Écarté : passer le texte en paramètre de chaque fonction, parce que FEAT-7 a fait le même choix pour `chantier.plan` et que les signatures restent stables.
 - Conséquence : `set-reviewed` lit la copie de travail de `revue.md` ; `close-check` aussi, et refuse en plus un `revue.md` non commité.
+
+## 2026-11-21 : suites de la vérification de surapprentissage de la tranche 1
+- Contexte : `overfit-checker` a relevé OD1 à OD6 sur `parseReviewPoints`.
+- Retenu : titres en NFC et indentés jusqu'à 3 espaces (OD1), en-tête remis à zéro hors ligne de tableau (OD2), blocs de code ignorés (OD3), ligne `Aucun` sautée seulement si elle est seule (OD4).
+- Reporté en tranche 2 : signaler une ligne `RB`/`RD` hors tableau de points, ou un titre `###` proche de « Bloquant » / « À discuter » (OD1) ; `legacy` dès une section `## Tour` ou seulement si toutes le sont (OD3, avec CA-7).
+- Écarté : tableau sans `|` en tête de ligne (OD1), parce que le template et le reviewer écrivent toujours la forme avec `|` ; `\|` lu comme séparateur (OD5), cas marginal.
+- Signalé à l'utilisateur, sans renforcer les tests : OD6 (`Aucun`, `legacy`, `line`, `point`, ordre des colonnes non testés).

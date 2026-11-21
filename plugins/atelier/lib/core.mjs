@@ -145,7 +145,9 @@ export function readChantier(projectRoot, config, chantierId) {
   const spec = existsSync(specPath) ? parseFrontMatter(readFileSync(specPath, 'utf8')) : null
   const planPath = join(directory, 'plan.md')
   const plan = existsSync(planPath) ? readFileSync(planPath, 'utf8') : null
-  return { id: chantierId, directory, spec, files: readdirSync(directory), plan }
+  const revuePath = join(directory, 'revue.md')
+  const revue = existsSync(revuePath) ? readFileSync(revuePath, 'utf8') : null
+  return { id: chantierId, directory, spec, files: readdirSync(directory), plan, revue }
 }
 
 // Subjects are ordered from newest to oldest; only a bracketed identifier counts.
@@ -887,6 +889,96 @@ export function setReviewedUpdate(chantier, head) {
     values: { reviewed_commit: head, ...(firstOfCycle ? { slice: '1' } : {}) },
     message: `Revue enregistrée au commit ${head}. ${commitHint(slice === 'chantier' ? 'chantier' : '').trimEnd()}`,
   }
+}
+
+// ---------- Review points ----------
+
+const POINT_TABLES = ['Bloquant', 'À discuter']
+const POINT_PATTERN = /^(RB|RD)(\d+)( \(repris\)| \(ex-(R[BD]\d+)\))?\. (.+)$/
+const EMPTY_POINT_PATTERN = /^aucun\.?$/i
+
+// Cells of a Markdown table row; `\|` is a literal `|`, not a column separator.
+function tableCells(line) {
+  return line.trim().replace(/^\|/, '').replace(/(?<!\\)\|$/, '')
+    .split(/(?<!\\)\|/)
+    .map((cell) => cell.replace(/\\\|/g, '|').trim())
+}
+
+// Analyses the point cell of a row: `RB2. Title`, `RB2 (repris). Title`, `RB4 (ex-RD3). Title`.
+// A cell of another form gives a null id (the row is then reported by the review checks).
+function parsePointCell(cell) {
+  const match = POINT_PATTERN.exec(cell)
+  if (!match) {
+    return { id: null, marker: null, title: null }
+  }
+  const marker = match[3] ? (match[4] ? `ex-${match[4]}` : 'repris') : null
+  return { id: `${match[1]}${match[2]}`, marker, title: match[5] }
+}
+
+// Reads the points of a revue.md: one section per `## ` heading, the point tables being those under
+// `### Bloquant` and `### À discuter`. `Aucun` rows are skipped. `legacy` is true for a revue.md
+// written before FEAT-7 (`## Tour …` sections), which the review checks leave alone.
+export function parseReviewPoints(text) {
+  const sections = []
+  let section = null
+  let table = null
+  let header = null
+  let fence = false
+  String(text ?? '').normalize('NFC').split(/\r?\n/).forEach((line, index) => {
+    if (/^ {0,3}(```|~~~)/.test(line)) {
+      fence = !fence
+      return
+    }
+    if (fence) {
+      return
+    }
+    const heading = /^ {0,3}(#{2,3})\s+(.*?)\s*$/.exec(line)
+    if (heading) {
+      header = null
+      table = null
+      if (heading[1] === '##') {
+        section = { title: heading[2], rows: [] }
+        sections.push(section)
+      } else if (POINT_TABLES.includes(heading[2])) {
+        table = heading[2]
+      }
+      return
+    }
+    if (!line.trim().startsWith('|')) {
+      // A table ends at the first line that is not a row: the next table starts with its own header.
+      header = null
+      return
+    }
+    if (!section || !table) {
+      return
+    }
+    const cells = tableCells(line)
+    if (!header) {
+      header = cells
+      return
+    }
+    if (cells.every((cell) => /^:?-+:?$/.test(cell))) {
+      return
+    }
+    const column = (name, fallback) => {
+      const position = header.indexOf(name)
+      return cells[position >= 0 ? position : fallback] ?? ''
+    }
+    const point = column('Point', 0)
+    // `Aucun` alone on its row means no point; with other cells filled, it is a malformed point.
+    if (EMPTY_POINT_PATTERN.test(point) && cells.every((cell) => cell === point || cell === '')) {
+      return
+    }
+    section.rows.push({
+      ...parsePointCell(point),
+      point,
+      file: column('Fichier', 1),
+      treatment: column('Traitement', header.length - 1),
+      table,
+      line: index + 1,
+    })
+  })
+  return { legacy: sections.some((candidate) => /^Tour\b/.test(candidate.title)), sections }
 }
 
 // ---------- Close ----------
