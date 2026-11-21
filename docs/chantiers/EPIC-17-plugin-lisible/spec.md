@@ -2,11 +2,11 @@
 id: EPIC-17
 type: EPIC
 title: Un plugin qui reste lisible en grandissant
-status: draft
+status: signed
 tdd: no              # un EPIC n'implémente rien : toujours no
 created_at: 2026-11-21
-signed_by:
-signed_at:
+signed_by: Opack
+signed_at: 2026-11-21
 ---
 
 # EPIC-17 Un plugin qui reste lisible en grandissant
