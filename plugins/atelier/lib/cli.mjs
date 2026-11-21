@@ -22,10 +22,14 @@ import {
   configPath,
   currentBranch,
   decideStop,
+  defaultBaseRef,
   decideWrite,
   findProjectRoot,
   hasRelations,
+  freezeTestsRefusal,
+  freezeTestsValues,
   isRefreeze,
+  removedTestLines,
   isReviewExempt,
   loadConfig,
   nextChantierId,
@@ -33,6 +37,7 @@ import {
   nextStep,
   openChildren,
   testDrivenPhase,
+  sliceState,
   parseAmendments,
   parseFrontMatter,
   parseCatFileBatch,
@@ -47,6 +52,7 @@ import {
   reviewState,
   setFrontMatterValues,
   setReviewedRefusal,
+  setReviewedUpdate,
   setStatusRefusal,
   setTddRefusal,
   shortRefName,
@@ -178,6 +184,7 @@ function commandStatus(options) {
           status: chantier.spec?.data.status ?? null,
           testDrivenPhase: chantier.spec ? testDrivenPhase(chantier) : null,
           testsCommit: chantier.spec?.data.tests_commit || null,
+          ...slicePosition(chantier),
           ...review,
           relations,
           files: chantier.files,
@@ -192,6 +199,12 @@ function commandStatus(options) {
     return
   }
   console.log(formatStatus(summary))
+}
+
+// Current slice and number of slices, both null outside the slice cycle.
+function slicePosition(chantier) {
+  const { slice, sliceCount } = sliceState(chantier)
+  return { slice, sliceCount }
 }
 
 // State of the review, as shown by `status` and the session start reminder.
@@ -251,6 +264,10 @@ function formatStatus(summary) {
     const phaseLabels = {
       'writing-tests': 'tests d’abord — aucune implémentation tant que les tests ne sont pas commités',
       implementing: 'implémentation — tests figés, ne pas les modifier',
+    }
+    const { slice, sliceCount } = summary.chantier
+    if (typeof slice === 'number' && slice > sliceCount) {
+      lines.push(`Tranche ${slice} absente du plan : la revue de la tranche mène à la revue du chantier.`)
     }
     if (status === 'signed' && phaseLabels[summary.chantier.testDrivenPhase]) {
       lines.push(`Phase TDD : ${phaseLabels[summary.chantier.testDrivenPhase]}`)
@@ -526,6 +543,32 @@ function testFilesChangedSince(projectRoot, config, commit) {
   return [...new Set([...committed, ...uncommittedTestFiles(projectRoot, config)])]
 }
 
+// Whether `commit` exists and is an ancestor of HEAD; an error for anything git cannot answer.
+function isAncestorOfHead(projectRoot, commit) {
+  if (!gitObjectExists(projectRoot, `${commit}^{commit}`)) {
+    return false
+  }
+  const ancestry = spawnSync('git', ['merge-base', '--is-ancestor', commit, 'HEAD'], { cwd: projectRoot, encoding: 'utf8' })
+  if (ancestry.status === 0 || ancestry.status === 1) {
+    return ancestry.status === 0
+  }
+  throw new Error(ancestry.error?.message || ancestry.stderr?.trim() || 'git merge-base')
+}
+
+// Test files present at `base` whose lines were changed or removed in HEAD (whitespace and line
+// endings ignored). Deleted files and binary files are taken from git's file lists, as the text
+// diff has no removed line for an empty or binary file and quotes unusual paths.
+function testFilesWithRemovedLines(projectRoot, config, base) {
+  const range = [base, 'HEAD', '--']
+  const fromDiff = removedTestLines(gitRaw(projectRoot, ['-c', 'core.quotePath=false', 'diff', '--no-renames', '--no-color', '--no-ext-diff', '--src-prefix=a/', '--dst-prefix=b/', '--ignore-all-space', '--ignore-cr-at-eol', ...range]))
+  const deleted = gitPaths(projectRoot, ['diff', '--no-renames', '--name-only', '-z', '--diff-filter=D', ...range])
+  // `--numstat -z` entries: "<added>\t<removed>\t<path>", "-" for both counts on a binary file.
+  const binary = gitPaths(projectRoot, ['diff', '--no-renames', '--numstat', '-z', ...range])
+    .filter((entry) => entry.startsWith('-\t-\t'))
+    .map((entry) => entry.slice(4))
+  return [...new Set([...fromDiff, ...deleted, ...binary])].filter((file) => matchesAny(file, config.testPaths, config.ignoreCase))
+}
+
 function appendAmendment(specPath, entry) {
   writeFileSync(specPath, appendAmendmentEntry(readFileSync(specPath, 'utf8'), entry))
 }
@@ -550,7 +593,15 @@ function commandFreezeTests() {
     console.error('Le dernier commit ne contient aucun fichier de test. Commite les tests (et seulement les tests) avant de les figer.')
     process.exit(2)
   }
-  const { specPath } = updateSpec(projectRoot, config, { tests_commit: commit })
+  const sliceBase = chantier.spec.data.slice_base || null
+  const sliceBaseIsAncestor = sliceBase ? isAncestorOfHead(projectRoot, sliceBase) : null
+  const removedTestFiles = sliceBase && sliceBaseIsAncestor ? testFilesWithRemovedLines(projectRoot, config, sliceBase) : []
+  const refusal = freezeTestsRefusal({ chantier, sliceBaseIsAncestor, removedTestFiles })
+  if (refusal) {
+    console.error(`Gel refusé : ${refusal}`)
+    process.exit(2)
+  }
+  const { specPath } = updateSpec(projectRoot, config, freezeTestsValues(chantier, commit))
   if (isRefreeze(parseAmendments(chantier.spec.body).entries)) {
     appendAmendment(specPath, refreezeTestsEntry(today(), commit))
   }
@@ -572,7 +623,7 @@ function commandReopenTests(reasonWords) {
     process.exit(2)
   }
   const { specPath } = updateSpec(projectRoot, config, { tests_commit: '' })
-  appendAmendment(specPath, reopenTestsEntry(today(), chantier.spec.data.tests_commit, reason))
+  appendAmendment(specPath, reopenTestsEntry(today(), chantier.spec.data.tests_commit || chantier.spec.data.slice_base, reason))
   console.log('Tests rouverts. Retour en phase « tests d’abord » : aucune implémentation jusqu’au prochain commit des tests.')
 }
 
@@ -608,8 +659,15 @@ function commandSetReviewed() {
   const chantier = requireActiveChantier(projectRoot, config)
   const uncommitted = uncommittedFiles(projectRoot)
   const specPath = toProjectRelativePath(projectRoot, join(chantier.directory, 'spec.md'))
+  const { model, slice } = sliceState(chantier)
+  const sliceBase = chantier.spec.data.slice_base || null
+  const sliceBaseIsAncestor = model === 'sliced' && sliceBase ? isAncestorOfHead(projectRoot, sliceBase) : null
   const refusal = setReviewedRefusal({
     chantier,
+    sliceBaseIsAncestor,
+    sliceCodeFiles: model === 'sliced' && slice !== 'chantier' && sliceBaseIsAncestor !== false
+      ? sliceCodeFiles(projectRoot, config, sliceBase, chantier.spec.data.tdd === 'yes')
+      : null,
     uncommittedCode: reviewCodeFiles(uncommitted, config),
     specUncommitted: uncommitted.some((file) => (config.ignoreCase ? file.toLowerCase() === specPath.toLowerCase() : file === specPath)),
     changedTests: testDrivenPhase(chantier) === 'implementing'
@@ -620,9 +678,20 @@ function commandSetReviewed() {
     console.error(`Revue non enregistrée : ${refusal}`)
     process.exit(2)
   }
-  const commit = git(projectRoot, ['rev-parse', 'HEAD'])
-  updateSpec(projectRoot, config, { reviewed_commit: commit })
-  console.log(`Revue enregistrée au commit ${commit}. Commite la spec : docs(chantiers): [${chantier.id}] review`)
+  const { values, message } = setReviewedUpdate(chantier, git(projectRoot, ['rev-parse', 'HEAD']))
+  updateSpec(projectRoot, config, values)
+  console.log(message)
+}
+
+// Code files committed since the start of the current slice: `slice_base`, or for the first
+// slice the merge base with the default branch; null (no check) without one. In TDD, test files
+// do not count: each slice starts with the commit of its tests.
+function sliceCodeFiles(projectRoot, config, sliceBase, testDriven) {
+  const defaultRef = defaultBaseRef(projectRoot)
+  const base = sliceBase ?? (defaultRef ? git(projectRoot, ['merge-base', defaultRef, 'HEAD']) : null)
+  if (!base) return null
+  const files = reviewCodeFiles(gitPaths(projectRoot, ['log', '--name-only', '-z', '--no-renames', '--format=', `${base}..HEAD`]), config)
+  return [...new Set(testDriven ? files.filter((file) => !matchesAny(file, config.testPaths, config.ignoreCase)) : files)]
 }
 
 // Deterministic checks before closing (see closeProblems in lib/core.mjs). Runs the project checks.
@@ -866,7 +935,7 @@ function hookSessionStart() {
   const summary = {
     branch,
     chantierSource: source,
-    chantier: chantier ? { id: chantier.id, title: chantier.spec?.data.title, type: chantier.spec?.data.type, status: chantier.spec?.data.status, files: chantier.files, ...review, relations } : null,
+    chantier: chantier ? { id: chantier.id, title: chantier.spec?.data.title, type: chantier.spec?.data.type, status: chantier.spec?.data.status, files: chantier.files, ...(chantier.spec ? slicePosition(chantier) : {}), ...review, relations } : null,
     bypass: readBypass(projectRoot, branch),
     nextStep: nextStep(chantier, review.reviewState, relations?.children),
   }

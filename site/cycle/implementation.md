@@ -5,10 +5,10 @@
 ## Avec atelier
 
 ```text
-/atelier:build [tranche]
+/atelier:build
 ```
 
-Sans argument, atelier prend la prochaine tranche du plan.
+atelier travaille sur la **tranche en cours** (`/atelier:status` l’indique : « Tranche 2/3 »). Pour un `SPIKE` sans TDD, hors du découpage en tranches, on peut nommer la tranche : `/atelier:build <tranche>`.
 
 ## En TDD : les tests sont figés
 
@@ -23,7 +23,7 @@ Sans argument, atelier prend la prochaine tranche du plan.
 
 Si un test semble faux, l’agent **s’arrête et vous l’explique**. À vous de décider de le rouvrir (`/atelier:write-tests <raison>`), ou d’[amender la spec](./amendement) si c’est elle qui est fausse.
 
-Quand la dernière tranche est commitée, place à la [revue](./revue).
+Quand la tranche est commitée, place à sa [revue](./revue). C’est la validation de cette revue qui fait passer à la tranche suivante.
 
 ## Sans TDD
 

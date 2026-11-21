@@ -143,7 +143,9 @@ export function readChantier(projectRoot, config, chantierId) {
   }
   const specPath = join(directory, 'spec.md')
   const spec = existsSync(specPath) ? parseFrontMatter(readFileSync(specPath, 'utf8')) : null
-  return { id: chantierId, directory, spec, files: readdirSync(directory) }
+  const planPath = join(directory, 'plan.md')
+  const plan = existsSync(planPath) ? readFileSync(planPath, 'utf8') : null
+  return { id: chantierId, directory, spec, files: readdirSync(directory), plan }
 }
 
 // Subjects are ordered from newest to oldest; only a bracketed identifier counts.
@@ -720,9 +722,59 @@ export function reopenTestsRefusal(chantier) {
     return `${chantier?.id ?? 'Ce chantier'} ne suit pas le TDD (tdd: ${data.tdd || '?'}) : il n’a pas de tests figés à rouvrir. Ajoute ou modifie les tests avec le code (/atelier:build).`
   }
   if (!data.tests_commit) {
-    return `Les tests de ${chantier.id} ne sont pas figés : ils s’écrivent encore, rien à rouvrir (/atelier:write-tests).`
+    // « Tests d'abord » of a slice N > 1: the tests of the previous slices are frozen.
+    // After a reopening (slice N > 1 or the whole-chantier review), the tests are already reopened.
+    const { slice } = sliceState(chantier)
+    if (data.slice_base && isRefreeze(parseAmendments(chantier.spec.body ?? '').entries)) {
+      return `tests déjà rouverts pour ${chantier.id} : modifie-les, commite-les puis fige-les (atelier freeze-tests).`
+    }
+    if (typeof slice !== 'number' || slice < 2 || !data.slice_base) {
+      return `Les tests de ${chantier.id} ne sont pas figés : ils s’écrivent encore, rien à rouvrir (/atelier:write-tests).`
+    }
   }
   return null
+}
+
+// Test files with removed lines in a `git diff` output (old path: a deleted or renamed file
+// counts as removed). Only lines inside hunks count; headers are read before the first hunk.
+export function removedTestLines(diff) {
+  const files = new Set()
+  let file = null
+  let inHunk = false
+  for (const line of diff.replace(/\r\n/g, '\n').split('\n')) {
+    if (line.startsWith('diff --git ')) {
+      file = null
+      inHunk = false
+    } else if (!inHunk && line.startsWith('--- ')) {
+      file = line === '--- /dev/null' ? null : line.slice(4).replace(/\t$/, '').replace(/^a\//, '')
+    } else if (line.startsWith('@@')) {
+      inHunk = true
+    } else if (inHunk && line.startsWith('-') && file) {
+      files.add(file)
+    }
+  }
+  return [...files]
+}
+
+// Why `atelier freeze-tests` is refused, or null. `sliceBaseIsAncestor` is false when the
+// `slice_base` of the spec is no longer an ancestor of HEAD; `removedTestFiles` are the test
+// files with lines removed since `slice_base` (see removedTestLines).
+export function freezeTestsRefusal({ chantier, sliceBaseIsAncestor, removedTestFiles }) {
+  if (sliceBaseIsAncestor === false) {
+    return `le début de la tranche (slice_base : ${chantier.spec.data.slice_base}) n’est plus un ancêtre de HEAD (rebase, historique réécrit). Seul l’utilisateur peut corriger slice_base dans l’en-tête de la spec.`
+  }
+  if (removedTestFiles.length && !isRefreeze(parseAmendments(chantier.spec.body ?? '').entries)) {
+    return `des tests des tranches précédentes ont été modifiés ou supprimés :\n${removedTestFiles.map((file) => `- ${file}`).join('\n')}\nOn ne fait qu’ajouter des tests. Si l’un d’eux doit vraiment changer : /atelier:amend si la spec change, puis /atelier:write-tests <raison>.`
+  }
+  return null
+}
+
+// Spec header values written by `atelier freeze-tests` at `commit`: the first freeze of a
+// chantier of the slice cycle also writes `slice: 1`.
+export function freezeTestsValues(chantier, commit) {
+  const { model } = sliceState(chantier)
+  const firstOfCycle = ['single', 'sliced'].includes(model) && !String(chantier.spec.data.slice ?? '').trim()
+  return { tests_commit: commit, ...(firstOfCycle ? { slice: '1' } : {}) }
 }
 
 // ---------- Review ----------
@@ -781,7 +833,10 @@ export function amendmentsDiffer(text, otherText) {
 // Why `atelier set-reviewed` is refused, or null. `context` = { chantier, uncommittedCode (code
 // files changed and not committed), specUncommitted, changedTests (frozen tests changed since
 // tests_commit) }.
-export function setReviewedRefusal({ chantier, uncommittedCode, specUncommitted, changedTests }) {
+// `sliceBaseIsAncestor` is false when `slice_base` is no longer an ancestor of HEAD;
+// `sliceCodeFiles` are the code files committed since the start of the current slice, or null
+// when the review is not that of a slice of a chantier with several slices.
+export function setReviewedRefusal({ chantier, uncommittedCode, specUncommitted, changedTests, sliceBaseIsAncestor = null, sliceCodeFiles = null }) {
   if (specStatus(chantier?.spec) !== 'signed') {
     return `la spec de ${chantier?.id ?? 'ce chantier'} n’est pas signée.`
   }
@@ -798,14 +853,77 @@ export function setReviewedRefusal({ chantier, uncommittedCode, specUncommitted,
   if (phase === 'implementing' && changedTests.length) {
     return `des tests ont changé depuis leur gel (${changedTests.join(', ')}).`
   }
+  if (sliceBaseIsAncestor === false) {
+    return `le début de la tranche (slice_base : ${chantier.spec.data.slice_base}) n’est plus un ancêtre de HEAD (rebase, historique réécrit). Seul l’utilisateur peut corriger slice_base dans l’en-tête de la spec.`
+  }
+  if (sliceCodeFiles && !sliceCodeFiles.length) {
+    return 'tranche vide : aucun code commité depuis le début de la tranche. Implémente-la (/atelier:build) avant de la faire valider.'
+  }
   return null
+}
+
+// What `atelier set-reviewed` writes at `head` (full hash), and what it says. A validated slice
+// review moves to the next slice, or to the review of the whole chantier after the last one;
+// the review of the whole chantier, or of a chantier with a single slice, records
+// `reviewed_commit`.
+export function setReviewedUpdate(chantier, head) {
+  const { model, slice, sliceCount } = sliceState(chantier)
+  const commitHint = (label) => `Commite la spec et revue.md : docs(chantiers): [${chantier.id}] review ${label}`
+  if (model === 'sliced' && slice !== 'chantier') {
+    if (slice < sliceCount) {
+      const next = chantier.spec.data.tdd === 'yes' ? 'écrire ses tests : /atelier:write-tests' : 'l’implémenter : /atelier:build'
+      return {
+        values: { slice: String(slice + 1), slice_base: head, tests_commit: '' },
+        message: `Tranche ${slice} validée. Tranche ${slice + 1}/${sliceCount} : ${next}. ${commitHint(slice)}`,
+      }
+    }
+    return {
+      values: { slice: 'chantier', last_slice: String(slice), slice_base: head },
+      message: `Tranche ${slice} validée, c’était la dernière. Revue du chantier : faire relire l’ensemble : /atelier:review. ${commitHint(slice)}`,
+    }
+  }
+  const firstOfCycle = model === 'single' && !String(chantier.spec.data.slice ?? '').trim()
+  return {
+    values: { reviewed_commit: head, ...(firstOfCycle ? { slice: '1' } : {}) },
+    message: `Revue enregistrée au commit ${head}. ${commitHint(slice === 'chantier' ? 'chantier' : '').trimEnd()}`,
+  }
 }
 
 // ---------- Close ----------
 
-// A SPIKE (throwaway code, never merged) and an EPIC (no code) are closed without a review.
+// An EPIC (no code) and a SPIKE without TDD (throwaway code, never merged) are closed without a
+// review. A SPIKE in TDD follows the whole process, review included, unless it was led under the
+// model before slices (legacy), which closed a SPIKE without review.
 export function isReviewExempt(chantier) {
-  return ['SPIKE', 'EPIC'].includes((chantier?.spec?.data?.type ?? '').toUpperCase())
+  const type = (chantier?.spec?.data?.type ?? '').toUpperCase()
+  const { model } = sliceState(chantier)
+  return type === 'EPIC' || model === 'none' || (type === 'SPIKE' && model === 'legacy')
+}
+
+// « Tranche N/M », or « Tranche N (absente du plan) » once the plan no longer counts it.
+function sliceLabel(slice, sliceCount) {
+  return slice > sliceCount ? `Tranche ${slice} (absente du plan)` : `Tranche ${slice}/${sliceCount}`
+}
+
+// Close problems of the slice cycle: a slice still in progress, a slice added to the plan after
+// the last slice review, or the review of the whole chantier not recorded yet.
+function sliceCloseProblems(chantier) {
+  const { model, slice, sliceCount } = sliceState(chantier)
+  if (model !== 'sliced') {
+    return []
+  }
+  if (slice !== 'chantier') {
+    return [`${sliceLabel(slice, sliceCount)} en cours : la mener à terme et la faire valider (/atelier:review), jusqu’à la revue du chantier.`]
+  }
+  const problems = []
+  const lastSlice = Number(chantier.spec.data.last_slice) || 0
+  if (sliceCount > lastSlice) {
+    problems.push(`Tranche ${sliceCount} du plan non revue (dernière tranche revue : ${lastSlice}) : elle a été ajoutée au plan après la dernière revue de tranche.`)
+  }
+  if (!chantier.spec.data.reviewed_commit) {
+    problems.push('Revue du chantier non enregistrée : faire relire l’ensemble (/atelier:review).')
+  }
+  return problems
 }
 
 // Why the chantier cannot be closed, as a list (empty when it can). `context` = { chantier,
@@ -818,7 +936,8 @@ export function closeProblems({ chantier, reviewFacts, uncommittedCode, uncommit
   if (specStatus(chantier?.spec) !== 'signed') {
     return [`La spec de ${chantier?.id ?? 'ce chantier'} n’est pas signée (statut : ${specStatus(chantier?.spec)}).`]
   }
-  const problems = isReviewExempt(chantier) ? [] : reviewProblems(reviewFacts)
+  const sliceProblems = sliceCloseProblems(chantier)
+  const problems = isReviewExempt(chantier) || sliceProblems.length ? sliceProblems : reviewProblems(reviewFacts)
   if (index) {
     problems.push(...relationCloseProblems(chantier.id, chantier.spec.data, index))
   }
@@ -875,6 +994,18 @@ export function nextStep(chantier, review = 'none', children = []) {
     }
     return 'Tous les enfants sont clos : clôturer l’EPIC (bilan prévu / réalisé) : /atelier:close'
   }
+  const { model, slice, sliceCount } = sliceState(chantier)
+  if (model === 'sliced' && slice !== 'chantier') {
+    return `${sliceLabel(slice, sliceCount)} : ${phaseStep(chantier)}`
+  }
+  if (model === 'sliced' && review === 'none' && testDrivenPhase(chantier) !== 'writing-tests') {
+    return 'Revue du chantier : faire relire l’ensemble : /atelier:review'
+  }
+  return phaseStep(chantier, review)
+}
+
+// Next step of the current phase (tests, build, review, close), for a slice or the chantier.
+function phaseStep(chantier, review = 'none') {
   const phase = testDrivenPhase(chantier)
   if (phase === 'writing-tests') {
     return 'Tests d’abord : écrire les tests, vérifier qu’ils échouent, les commiter (aucune implémentation) : /atelier:write-tests'
@@ -882,7 +1013,7 @@ export function nextStep(chantier, review = 'none', children = []) {
   const build = phase === 'implementing'
     ? 'Implémenter jusqu’à ce que tous les tests passent, sans modifier les tests, puis commiter : /atelier:build'
     : 'Implémenter (sans TDD pour ce chantier), puis commiter : /atelier:build'
-  if (type === 'SPIKE') {
+  if (isReviewExempt(chantier)) {
     return `${build} ; ensuite clôturer : /atelier:close`
   }
   if (review === 'current') {
@@ -892,6 +1023,58 @@ export function nextStep(chantier, review = 'none', children = []) {
     return 'Le code ou la spec a changé depuis la revue : refaire relire : /atelier:review'
   }
   return `${build} ; ensuite faire relire : /atelier:review`
+}
+
+// ---------- Slices ----------
+
+// Number of slices of a plan: the highest number among the first-level numbered entries of its
+// « Tranches » section (HTML comments and indented sub-lists ignored); 0 without such entries.
+export function planSliceCount(planText) {
+  const lines = (planText ?? '').replace(/\r\n/g, '\n').replace(/<!--[\s\S]*?-->/g, '').split('\n')
+  const start = lines.findIndex((line) => /^##\s+Tranches\s*$/.test(line))
+  if (start < 0) {
+    return 0
+  }
+  let count = 0
+  for (const line of lines.slice(start + 1)) {
+    if (/^#{1,2}\s/.test(line)) {
+      break
+    }
+    const match = /^(\d+)\.\s/.exec(line)
+    if (match) {
+      count = Math.max(count, Number(match[1]))
+    }
+  }
+  return count
+}
+
+// Where the chantier stands in its slices. `model`:
+// 'none'   : SPIKE without TDD, outside the slice cycle;
+// 'legacy' : signed before slices existed (no `slice`, but a freeze, a review or a reopening);
+// 'single' : a single slice (no plan, or a plan with at most one slice): today's cycle;
+// 'sliced' : several slices; `slice` is the current one (a number, or 'chantier' for the
+//            review of the whole chantier) and `sliceCount` the number of slices of the plan.
+// `slice` and `sliceCount` are null unless the model is 'sliced'.
+export function sliceState(chantier) {
+  const data = chantier?.spec?.data ?? {}
+  const flat = (model) => ({ model, slice: null, sliceCount: null })
+  if ((data.type ?? '').toUpperCase() === 'SPIKE' && data.tdd !== 'yes') {
+    return flat('none')
+  }
+  const written = String(data.slice ?? '').trim()
+  if (!written) {
+    const reopenedOrRefrozen = parseAmendments(chantier?.spec?.body ?? '').entries
+      .some((entry) => /^(tests rouverts|tests regelés)/.test(entry.replace(ENTRY_START, '')))
+    if (data.tests_commit || data.reviewed_commit || reopenedOrRefrozen) {
+      return flat('legacy')
+    }
+  }
+  const slice = written === 'chantier' ? 'chantier' : Number(written || 1)
+  const sliceCount = planSliceCount(chantier?.plan)
+  if (sliceCount <= 1 && slice === 1) {
+    return flat('single')
+  }
+  return { model: 'sliced', slice, sliceCount }
 }
 
 // ---------- Test-driven phases ----------
@@ -988,7 +1171,7 @@ export function applyToolEdit(currentText, toolName, toolInput) {
 
 // Spec header fields written only by the atelier command (sign, set-status, freeze-tests,
 // reopen-tests, set-reviewed).
-export const COMMAND_SPEC_FIELDS = ['status', 'signed_by', 'signed_at', 'done_at', 'tests_commit', 'reviewed_commit']
+export const COMMAND_SPEC_FIELDS = ['status', 'signed_by', 'signed_at', 'done_at', 'tests_commit', 'reviewed_commit', 'slice', 'slice_base', 'last_slice']
 
 // Fields that cannot change through the edit tool once the spec is no longer a draft, besides
 // the command fields: `tdd` changes through `atelier set-tdd`; `id` and `type` are bound to the

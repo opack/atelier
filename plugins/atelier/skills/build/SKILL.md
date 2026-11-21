@@ -1,13 +1,13 @@
 ---
 description: Étapes 4 et 5 du TDD pour le chantier actif — implémenter jusqu'à ce que tous les tests passent sans jamais les modifier, vérifier l'absence de surapprentissage avec un sous-agent indépendant, puis commiter après validation.
-argument-hint: "[tranche à implémenter]"
+argument-hint: "[tranche, seulement pour un SPIKE sans TDD]"
 ---
 
 # Implémenter (TDD, étapes 4 et 5)
 
 > La commande `atelier` est fournie par le plugin. Si elle est introuvable, utilise `node "${CLAUDE_PLUGIN_ROOT}/bin/atelier"`.
 
-Tranche demandée : `$ARGUMENTS` (sinon : la prochaine tranche non faite de `plan.md`, ou tout le chantier s'il n'y a pas de plan).
+Tu travailles sur **la tranche en cours** (`slice` dans `atelier status --json`, `null` pour un chantier à tranche unique : tout le chantier). Pendant la revue du chantier (`slice: "chantier"`), tu corriges les points de cette revue. L'argument `$ARGUMENTS` ne sert qu'à un `SPIKE` sans TDD, hors du découpage en tranches : la tranche demandée, sinon la prochaine tranche non faite de `plan.md`.
 
 ## 0. Préalables
 
@@ -40,7 +40,7 @@ Présente un résumé de la tranche : fichiers modifiés, tests passés, points 
 Seulement après son accord :
 1. Vérifie `atelier tests-changed` : aucun test ne doit avoir changé depuis leur commit.
 2. Commite la tranche : `<prefix>(<scope>): [<ID>] <description>` (un commit par tranche).
-3. S'il reste des tranches dans le plan, propose la suivante (`/atelier:build <tranche>`). Sinon : `/atelier:review`. Si la tranche corrige un point de revue, retour à `/atelier:review`.
+3. Suite : `/atelier:review`, la revue de la tranche (ou du chantier si tu corrigeais ses points). C'est la validation de cette revue qui fait passer à la tranche suivante. Pour un `SPIKE` sans TDD : la tranche suivante du plan (`/atelier:build <tranche>`), puis `/atelier:close` (revue facultative).
 
 ## Sans TDD (`tdd: no`)
 

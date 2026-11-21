@@ -1,12 +1,23 @@
 # 6. Revue
 
-**Objectif** : faire relire le chantier par un regard indépendant, traiter chaque point, et enregistrer **quel commit** a été relu.
+**Objectif** : faire relire chaque tranche, puis le chantier, par un regard indépendant, traiter chaque point, et enregistrer **quel commit** a été relu.
 
 ## Avec atelier
 
 ```text
 /atelier:review
 ```
+
+## Revue de tranche, revue du chantier
+
+La revue se fait **par tranche**, juste après son implémentation : un diff de la taille d’une tranche se relit vraiment, et un défaut de la tranche 1 est vu avant que la tranche 2 ne s’appuie dessus.
+
+| Revue | Quand | Diff relu | Mandat |
+|---|---|---|---|
+| **De tranche** | Après chaque tranche | Depuis le début de la tranche (`slice_base`), depuis la branche par défaut pour la tranche 1 | Ligne à ligne, les huit dimensions ci-dessous |
+| **Du chantier** | Après la dernière tranche | Tout le chantier, depuis la branche par défaut | Transversal : chaque CA couvert par un test, cohérence entre tranches, restes de tranches précédentes, écarts entre spec, plan, décisions et code |
+
+Un chantier sans plan, ou à une seule tranche, a une seule revue, sur tout le diff, ligne à ligne : pas de revue du chantier.
 
 ## 1. Contrôles
 
@@ -17,7 +28,7 @@
 
 ## 2. Relecture indépendante
 
-Le sous-agent `reviewer` relit le diff depuis la branche par défaut **sans avoir participé à l’écriture du code**. Il ne modifie rien. Il vérifie :
+Le sous-agent `reviewer` relit le diff **sans avoir participé à l’écriture du code**. Il ne modifie rien. Il vérifie :
 
 | Dimension | Exemples |
 |---|---|
@@ -46,13 +57,21 @@ Vous décidez du traitement de chaque point :
 | Un écart que vous assumez | Exception, acceptée **explicitement** par vous, avec sa raison |
 | Rien de fondé | Écarté, avec la raison |
 
-Après des corrections, on relance la revue : c’est un **nouveau tour**. On continue jusqu’à **zéro point bloquant**.
+Après des corrections, on relance une **revue**. On continue jusqu’à **zéro point bloquant**.
 
-## 4. Consigner et enregistrer
+## 4. Consigner, valider, passer à la suite
 
-Chaque tour est consigné dans `revue.md`, dans le dossier du chantier : date, commit revu, points et leur traitement. Le relecteur lit les tours précédents pour ne pas revenir sur ce qui est tranché.
+Chaque revue est consignée dans `revue.md`, dans le dossier du chantier : sa portée (tranche N ou chantier), la date, le commit revu, les points et leur traitement. Le relecteur lit les revues précédentes pour ne pas revenir sur ce qui est tranché.
 
-Quand plus rien ne bloque, `atelier set-reviewed` écrit le hash complet du commit revu (`reviewed_commit`) dans l’en-tête de la spec, puis la spec et `revue.md` sont commitées (`docs(chantiers): [<ID>] review`). La commande refuse sans spec signée, avec du code ou une spec non commités, ou en TDD si les tests ne sont pas figés ou ont changé depuis leur gel.
+Quand plus rien ne bloque, l’agent vous présente le résultat et vous demande **explicitement** de valider. Sans votre accord, rien n’est écrit : la tranche reste en cours. Après votre « oui », `atelier set-reviewed` :
+
+- **tranche N avant la dernière** : passe à la tranche N+1. Le début de la nouvelle tranche (`slice_base`) est le commit revu ; en TDD, elle repart en phase « tests d’abord » ;
+- **dernière tranche** : passe à la revue du chantier (`slice: chantier`) ;
+- **revue du chantier**, ou chantier à tranche unique : écrit le hash complet du commit revu (`reviewed_commit`), celui que la clôture vérifie.
+
+Puis la spec et `revue.md` sont commitées (`docs(chantiers): [<ID>] review <tranche>`). Il n’y a pas de commande « tranche suivante » : c’est la validation de la revue qui fait avancer.
+
+La commande refuse sans spec signée, avec du code ou une spec non commités, en TDD si les tests ne sont pas figés ou ont changé depuis leur gel, pour une tranche sans aucun commit de code (« tranche vide »), ou si le début de la tranche n’est plus un ancêtre de `HEAD` (après un rebase : c’est à vous de corriger `slice_base`).
 
 ## Une revue qui devient obsolète
 
@@ -65,4 +84,4 @@ La [clôture](./cloture) vérifie que le code clôturé est **celui qui a été 
 
 Les commits de documentation (chemins libres, dossier du chantier) ne la rendent pas obsolète : le bilan s’écrit après. `/atelier:status` indique si la revue est à jour, et sinon pourquoi.
 
-Un `SPIKE`, dont le code est jetable et jamais fusionné, n’a pas de revue obligatoire.
+Un `SPIKE` sans TDD, dont le code est jetable et jamais fusionné, n’a pas de revue obligatoire. En TDD, il suit le cycle complet, revues comprises.
