@@ -1345,6 +1345,22 @@ describe('FEAT-4 next step of an EPIC', () => {
       assert.doesNotMatch(step, /\/atelier:review/, name)
     }
   })
+
+  it('CA-10 : tous les enfants clos sans aucun done : propose l’abandon, pas la clôture', () => {
+    const directory = makeChantiersRepository({
+      main: [
+        { id: 'EPIC-5', files: epicPlan },
+        { id: 'FEAT-6', status: 'abandoned', relations: { rel_parent: 'EPIC-5' } },
+        { id: 'FEAT-17', status: 'abandoned', relations: { rel_parent: 'EPIC-5' } },
+      ],
+      branches: { 'epic/EPIC-5-x': [] },
+      checkout: 'epic/EPIC-5-x',
+    })
+    const step = nextStepOf(directory)
+    assert.match(step, /set-status abandoned/)
+    assert.doesNotMatch(step, /\/atelier:close/)
+    assert.doesNotMatch(step, /\/atelier:review/)
+  })
 })
 
 describe('FEAT-4 relations shown by status', () => {
@@ -1438,6 +1454,22 @@ describe('FEAT-4 process section of CLAUDE.md', () => {
     for (const line of lines.filter((candidate) => candidate !== missing)) {
       assert.ok(!partial.output.includes(line.trim()), `présente, non signalée : ${line}`)
     }
+  })
+
+  it('CA-12 : la ligne des chantiers est attendue avec le chantiersDir du projet, sans / final', () => {
+    const directory = makeRepository('main')
+    writeFileSync(join(directory, '.claude', 'atelier.json'), JSON.stringify({ chantiersDir: 'work/chantiers/' }))
+    const lines = processLines()
+    const chantiersLine = lines.find((line) => line.includes('docs/chantiers/'))
+    assert.ok(chantiersLine, 'le template nomme docs/chantiers/')
+    const adapted = lines.map((line) => line.replaceAll('docs/chantiers/', 'work/chantiers/'))
+    writeFileSync(join(directory, 'CLAUDE.md'), `# Projet\n\n${adapted.join('\n')}\n`)
+    const ok = atelierRun(directory, 'check-process')
+    assert.equal(ok.status, 0, ok.output)
+    writeFileSync(join(directory, 'CLAUDE.md'), `# Projet\n\n${lines.join('\n')}\n`)
+    const stale = atelierRun(directory, 'check-process')
+    assert.equal(stale.status, 2)
+    assert.ok(stale.output.includes(chantiersLine.replaceAll('docs/chantiers/', 'work/chantiers/').trim()), stale.output)
   })
 })
 
