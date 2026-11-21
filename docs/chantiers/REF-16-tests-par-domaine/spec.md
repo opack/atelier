@@ -4,6 +4,7 @@ type: REF
 title: Tests rangés par domaine
 status: draft
 tdd: no
+rel_parent: EPIC-17
 created_at: 2026-11-21
 signed_by:
 signed_at:
@@ -20,9 +21,9 @@ signed_at:
 - Noms des `describe` et des `it` de ce fichier.
 
 Hors périmètre :
-- `lib/core.mjs` (1388 lignes) et `lib/cli.mjs` (946 lignes) : leur découpage est un autre chantier.
-- Le process qui a produit ce fichier (règle de rangement et d'étiquetage dans `write-tests`, contrôle de l'organisation des tests par le reviewer, gel qui distingue un test déplacé d'un test modifié) : chantier FIX séparé.
-- `highestChantierNumber` (`lib/core.mjs:481`) prend `CA-27` d'un sujet de commit pour un identifiant de chantier (`atelier next-id REF` donne REF-28 au lieu de REF-16) : chantier FIX séparé.
+- `lib/core.mjs` (1388 lignes) et `lib/cli.mjs` (946 lignes) : leur découpage est un autre enfant d'EPIC-17.
+- Le process qui a produit ce fichier (règle de rangement et d'étiquetage dans `write-tests`, contrôle de l'organisation des tests par le reviewer, gel qui distingue un test déplacé d'un test modifié) : autre enfant d'EPIC-17.
+- `highestChantierNumber` (`lib/core.mjs:481`) prend `CA-27` d'un sujet de commit pour un identifiant de chantier (`atelier next-id REF` donne REF-28 au lieu de REF-16) : FIX isolé, hors EPIC-17.
 - La durée de la suite (environ 60 s).
 
 ## 2. Pourquoi maintenant
