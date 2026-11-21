@@ -599,9 +599,14 @@ export function checkSpec(text) {
 // Lines of the process section template missing from that section of the project's CLAUDE.md
 // (null when the file does not exist), compared trimmed: all of them when the section is absent.
 // The section runs from its heading (the template's first line) to the next heading of the same
-// level or above. Lines added by the project are not a problem.
-export function checkProcessProblems(templateText, claudeText) {
-  const expected = templateText.split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
+// level or above. Lines added by the project are not a problem. The template names the default
+// chantiers directory: the project's `chantiersDir` (without trailing `/`) is expected instead.
+export function checkProcessProblems(templateText, claudeText, chantiersDir = DEFAULT_CONFIG.chantiersDir) {
+  const expected = templateText
+    .replaceAll(`${DEFAULT_CONFIG.chantiersDir}/`, `${chantiersDir.replace(/[\\/]+$/, '')}/`)
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
   const lines = (claudeText ?? '').split(/\r?\n/).map((line) => line.trim())
   const start = lines.indexOf(expected[0])
   if (start < 0) {
@@ -865,6 +870,9 @@ export function nextStep(chantier, review = 'none', children = []) {
     if (open.length) {
       return `${open.length} enfant(s) encore ouvert(s) : ${open.map((child) => child.id).join(', ')}. Les mener à terme (et ouvrir les lots restants du plan : /atelier:new), puis clôturer l’EPIC.`
     }
+    if (!children.some((child) => child.status === 'done')) {
+      return 'Tous les enfants sont clos, aucun n’est done : la vision n’a pas été réalisée. Abandonner l’EPIC : atelier set-status abandoned'
+    }
     return 'Tous les enfants sont clos : clôturer l’EPIC (bilan prévu / réalisé) : /atelier:close'
   }
   const phase = testDrivenPhase(chantier)
@@ -1119,7 +1127,7 @@ export function decideWrite(context) {
   if ((chantier.spec.data.type ?? '').toUpperCase() === 'EPIC') {
     return {
       allowed: false,
-      reason: `atelier : ${chantier.id} est un EPIC : il n’implémente rien, il définit un cadre que d’autres chantiers concrétisent. Seuls les chemins libres (docs/…) s’écrivent ici ; pour coder, ouvre un chantier rattaché (rel_parent: ${chantier.id}) avec /atelier:new.`,
+      reason: `atelier : ${chantier.id} est un EPIC : il n’implémente rien, il définit un cadre que d’autres chantiers concrétisent. Seuls les chemins libres (freePaths de .claude/atelier.json) s’écrivent ici ; pour coder, ouvre un chantier rattaché (rel_parent: ${chantier.id}) avec /atelier:new.`,
     }
   }
   const isTestFile = matches(config.testPaths)

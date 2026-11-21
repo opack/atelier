@@ -54,3 +54,8 @@
 - Contexte : le plan prévoyait un commit par tranche ; les tests de tous les CA étaient figés d'un bloc et le contrôle de fin de tour (`npm test`) restait rouge tant que toutes les tranches n'étaient pas faites.
 - Écarté : un découpage artificiel en commits par type de fichier après coup, qui ne raconte pas la construction.
 - Conséquence : un commit d'implémentation (b4377e7). Le défaut de méthode (tests figés pour tout le chantier, contrôle global) relève d'un chantier à part : écrire et figer les tests tranche par tranche.
+
+## 2026-11-21 : `chantiersDir` normalisé seulement dans `check-process` (revue, tour 2)
+- Contexte : CA-12 attend la ligne du template avec le `chantiersDir` sans `/` final ; la règle passe de `cli.mjs` à `checkProcessProblems` (`core.mjs`), qui retire les `/` et `\` finaux.
+- Écarté : normaliser `chantiersDir` une fois pour toutes dans `loadConfig`, qui corrigerait aussi les motifs `${chantiersDir}/**` (déjà `//**` avec un `/` final) : comportement antérieur à FEAT-4, hors périmètre.
+- Conséquence : les autres usages de `chantiersDir` restent à normaliser dans un chantier à part.
