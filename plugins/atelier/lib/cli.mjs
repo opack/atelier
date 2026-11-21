@@ -265,6 +265,10 @@ function formatStatus(summary) {
       'writing-tests': 'tests d’abord — aucune implémentation tant que les tests ne sont pas commités',
       implementing: 'implémentation — tests figés, ne pas les modifier',
     }
+    const { slice, sliceCount } = summary.chantier
+    if (typeof slice === 'number' && slice > sliceCount) {
+      lines.push(`Tranche ${slice} absente du plan : la revue de la tranche mène à la revue du chantier.`)
+    }
     if (status === 'signed' && phaseLabels[summary.chantier.testDrivenPhase]) {
       lines.push(`Phase TDD : ${phaseLabels[summary.chantier.testDrivenPhase]}`)
     }
@@ -929,7 +933,7 @@ function hookSessionStart() {
   const summary = {
     branch,
     chantierSource: source,
-    chantier: chantier ? { id: chantier.id, title: chantier.spec?.data.title, type: chantier.spec?.data.type, status: chantier.spec?.data.status, files: chantier.files, ...review, relations } : null,
+    chantier: chantier ? { id: chantier.id, title: chantier.spec?.data.title, type: chantier.spec?.data.type, status: chantier.spec?.data.status, files: chantier.files, ...(chantier.spec ? slicePosition(chantier) : {}), ...review, relations } : null,
     bypass: readBypass(projectRoot, branch),
     nextStep: nextStep(chantier, review.reviewState, relations?.children),
   }

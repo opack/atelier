@@ -890,9 +890,37 @@ export function setReviewedUpdate(chantier, head) {
 
 // ---------- Close ----------
 
-// A SPIKE (throwaway code, never merged) and an EPIC (no code) are closed without a review.
+// An EPIC (no code) and a SPIKE without TDD (throwaway code, never merged) are closed without a
+// review. A SPIKE in TDD follows the whole process, review included.
 export function isReviewExempt(chantier) {
-  return ['SPIKE', 'EPIC'].includes((chantier?.spec?.data?.type ?? '').toUpperCase())
+  const type = (chantier?.spec?.data?.type ?? '').toUpperCase()
+  return type === 'EPIC' || sliceState(chantier).model === 'none'
+}
+
+// « Tranche N/M », or « Tranche N (absente du plan) » once the plan no longer counts it.
+function sliceLabel(slice, sliceCount) {
+  return slice > sliceCount ? `Tranche ${slice} (absente du plan)` : `Tranche ${slice}/${sliceCount}`
+}
+
+// Close problems of the slice cycle: a slice still in progress, a slice added to the plan after
+// the last slice review, or the review of the whole chantier not recorded yet.
+function sliceCloseProblems(chantier) {
+  const { model, slice, sliceCount } = sliceState(chantier)
+  if (model !== 'sliced') {
+    return []
+  }
+  if (slice !== 'chantier') {
+    return [`${sliceLabel(slice, sliceCount)} en cours : la mener à terme et la faire valider (/atelier:review), jusqu’à la revue du chantier.`]
+  }
+  const problems = []
+  const lastSlice = Number(chantier.spec.data.last_slice) || 0
+  if (sliceCount > lastSlice) {
+    problems.push(`Tranche ${sliceCount} du plan non revue (dernière tranche revue : ${lastSlice}) : elle a été ajoutée au plan après la dernière revue de tranche.`)
+  }
+  if (!chantier.spec.data.reviewed_commit) {
+    problems.push('Revue du chantier non enregistrée : faire relire l’ensemble (/atelier:review).')
+  }
+  return problems
 }
 
 // Why the chantier cannot be closed, as a list (empty when it can). `context` = { chantier,
@@ -905,7 +933,8 @@ export function closeProblems({ chantier, reviewFacts, uncommittedCode, uncommit
   if (specStatus(chantier?.spec) !== 'signed') {
     return [`La spec de ${chantier?.id ?? 'ce chantier'} n’est pas signée (statut : ${specStatus(chantier?.spec)}).`]
   }
-  const problems = isReviewExempt(chantier) ? [] : reviewProblems(reviewFacts)
+  const sliceProblems = sliceCloseProblems(chantier)
+  const problems = isReviewExempt(chantier) || sliceProblems.length ? sliceProblems : reviewProblems(reviewFacts)
   if (index) {
     problems.push(...relationCloseProblems(chantier.id, chantier.spec.data, index))
   }
@@ -962,6 +991,18 @@ export function nextStep(chantier, review = 'none', children = []) {
     }
     return 'Tous les enfants sont clos : clôturer l’EPIC (bilan prévu / réalisé) : /atelier:close'
   }
+  const { model, slice, sliceCount } = sliceState(chantier)
+  if (model === 'sliced' && slice !== 'chantier') {
+    return `${sliceLabel(slice, sliceCount)} : ${phaseStep(chantier)}`
+  }
+  if (model === 'sliced' && review === 'none' && testDrivenPhase(chantier) !== 'writing-tests') {
+    return 'Revue du chantier : faire relire l’ensemble : /atelier:review'
+  }
+  return phaseStep(chantier, review)
+}
+
+// Next step of the current phase (tests, build, review, close), for a slice or the chantier.
+function phaseStep(chantier, review = 'none') {
   const phase = testDrivenPhase(chantier)
   if (phase === 'writing-tests') {
     return 'Tests d’abord : écrire les tests, vérifier qu’ils échouent, les commiter (aucune implémentation) : /atelier:write-tests'
@@ -969,7 +1010,7 @@ export function nextStep(chantier, review = 'none', children = []) {
   const build = phase === 'implementing'
     ? 'Implémenter jusqu’à ce que tous les tests passent, sans modifier les tests, puis commiter : /atelier:build'
     : 'Implémenter (sans TDD pour ce chantier), puis commiter : /atelier:build'
-  if (type === 'SPIKE') {
+  if (isReviewExempt(chantier)) {
     return `${build} ; ensuite clôturer : /atelier:close`
   }
   if (review === 'current') {
