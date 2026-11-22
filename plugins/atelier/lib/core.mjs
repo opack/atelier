@@ -1046,7 +1046,7 @@ export function isTreatment(cell) {
 
 // « reporté (tranche 2) », and its loose spellings (« reporté en tranche 3 », « reporté (tranche 2, avec
 // CA-6) »): at close, a point taken for a postponement to another chantier would slip through.
-const isPostponedToSlice = (treatment) => /^reporté(?!\p{L})[^)]*?\btranche\s+\d+/iu.test(treatment.normalize('NFC').trim())
+const isPostponedToSlice = (treatment) => /^reporté\p{L}*[^)]*?\btranche\s+\d+/iu.test(treatment.normalize('NFC').trim())
 
 // The id a « requalifié (RB4) » treatment points to; null for a « requalifié » without one,
 // undefined for another treatment.
@@ -1063,8 +1063,8 @@ function requalifiedTarget(treatment) {
 // whose last occurrence has no treatment, an id presented as new twice, a point in the wrong
 // table, a malformed row, a near-miss table title, a point row outside a point table, a
 // `(repris)` or `(ex-<ID>)` with nothing above to refer to, a `requalifié (<ID>)` that no
-// `<ID> (ex-…)` takes up further down. With
-// `atClose`, a point whose last occurrence is « reporté (tranche N) » is a problem too.
+// `<ID> (ex-…)` takes up further down. With `atClose`, a point whose last occurrence is
+// « reporté (tranche N) » is a problem too.
 // A legacy revue.md (`## Tour` sections) is not checked.
 export function reviewPointProblems(parsed, { atClose = false } = {}) {
   if (parsed.legacy) {
@@ -1113,7 +1113,7 @@ export function reviewPointProblems(parsed, { atClose = false } = {}) {
       lastOccurrence.set(row.id, { ...row, section: section.title, sectionIndex })
       inSection.set(row.id, [...(inSection.get(row.id) ?? []), row.line])
       if (row.marker !== 'repris') {
-        newOccurrences.set(row.id, [...(newOccurrences.get(row.id) ?? []), { section: section.title, line: row.line }])
+        newOccurrences.set(row.id, [...(newOccurrences.get(row.id) ?? []), { section: section.title, sectionIndex, line: row.line }])
       }
     }
     for (const [id, lines] of inSection) {
@@ -1123,18 +1123,18 @@ export function reviewPointProblems(parsed, { atClose = false } = {}) {
     }
   }
   for (const [id, places] of newOccurrences) {
-    if (new Set(places.map((place) => place.section)).size > 1) {
+    if (new Set(places.map((place) => place.sectionIndex)).size > 1) {
       const listed = places.map((place) => `section « ${place.section} », ligne ${place.line}`).join(' ; ')
       problems.push(`${id} présenté comme nouveau dans plusieurs sections (${listed}) : un point repris s’écrit « ${id} (repris). … », un nouveau point prend le numéro suivant.`)
     }
   }
   for (const [id, row] of lastOccurrence) {
     const where = `section « ${row.section} », ligne ${row.line}`
+    const target = requalifiedTarget(row.treatment)
     if (!isTreatment(row.treatment)) {
       const found = row.treatment.trim() ? `traitement « ${row.treatment.trim()} » non reconnu` : 'pas de traitement'
       problems.push(`${id}. ${row.title} (${where}) : ${found} ; la colonne Traitement commence par l’un de ces mots : ${TREATMENTS.join(', ')}.`)
-    } else if (requalifiedTarget(row.treatment) !== undefined) {
-      const target = requalifiedTarget(row.treatment)
+    } else if (target !== undefined) {
       const takenUp = target && occurrences.some((later) =>
         later.sectionIndex >= row.sectionIndex && later.row.id === target && later.row.marker === `ex-${id}`)
       if (!takenUp) {
