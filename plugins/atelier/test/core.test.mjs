@@ -2384,4 +2384,48 @@ describe('TEC-15 checking the review points', () => {
     assert.match(problems[0], /\bRB4\b/)
     assert.match(problems[0], /\bRD3\b/)
   })
+
+  it('CA-18 : dans une même section, la requalification est reprise même si le tableau Bloquant précède (OD19)', () => {
+    const text = revueOf([{
+      title: 'Revue : tranche 1 : 2026-11-21',
+      blocking: [['RB4 (ex-RD3). Commit non signé', '`a.mjs`', 'corrigé (abc1234)']],
+      discuss: [['RD3. Commit non signé', '`a.mjs`', 'requalifié (RB4)']],
+    }])
+    assert.deepEqual(pointProblems(text), [])
+  })
+
+  it('CA-18 : entre sections, l’ordre compte : ex- et repris avant le point d’origine sont signalés (OD22)', () => {
+    const exBefore = revueOf([
+      { title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB4 (ex-RD3). Commit non signé', '`a.mjs`', 'corrigé (abc1234)']] },
+      { title: 'Revue : tranche 1 : 2026-11-22', discuss: [['RD3. Commit non signé', '`a.mjs`', 'requalifié (RB4)']] },
+    ])
+    const exProblems = pointProblems(exBefore)
+    assert.equal(citing(exProblems, /^RB4 \(ex-RD3\)/).length, 1)
+    assert.equal(citing(exProblems, /^RD3\b/).length, 1)
+    const reprisBefore = revueOf([
+      { title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB7 (repris). Push', '`a.mjs`', 'corrigé (abc1234)']] },
+      { title: 'Revue : tranche 1 : 2026-11-22', blocking: [['RB7. Push', '`a.mjs`', 'corrigé (def5678)']] },
+    ])
+    assert.equal(citing(pointProblems(reprisBefore), /\bRB7\b/).length, 1)
+  })
+
+  it('CA-18 : une reprise qui renvoie à un autre point (RB4 ex-RD9) ne ferme pas la requalification de RD3 (OD22)', () => {
+    const text = revueOf([
+      { title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD3. Commit non signé', '`a.mjs`', 'requalifié (RB4)'], ['RD9. Autre', '`b.mjs`', 'requalifié (RB4)']] },
+      { title: 'Revue : tranche 1 : 2026-11-22', blocking: [['RB4 (ex-RD9). Autre', '`b.mjs`', 'corrigé (abc1234)']] },
+    ])
+    const problems = pointProblems(text)
+    assert.equal(citing(problems, /^RD3\b/).length, 1)
+    assert.deepEqual(citing(problems, /^RD9\b/), [])
+  })
+
+  it('CA-18 : un requalifié sans identifiant est signalé ; un identifiant suivi d’un commentaire est lu (OD20)', () => {
+    const withoutId = revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD3. Commit non signé', '`a.mjs`', 'requalifié en bloquant']] }])
+    assert.equal(citing(pointProblems(withoutId), /^RD3\b/).length, 1)
+    const withComment = revueOf([
+      { title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD3. Commit non signé', '`a.mjs`', 'requalifié (RB4, plus grave)']] },
+      { title: 'Revue : tranche 1 : 2026-11-22', blocking: [['RB4 (ex-RD3). Commit non signé', '`a.mjs`', 'corrigé (abc1234)']] },
+    ])
+    assert.deepEqual(pointProblems(withComment), [])
+  })
 })
