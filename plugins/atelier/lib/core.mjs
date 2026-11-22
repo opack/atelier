@@ -1048,9 +1048,22 @@ export function isTreatment(cell) {
 // CA-6) »): at close, a point taken for a postponement to another chantier would slip through.
 const isPostponedToSlice = (treatment) => /^reporté(?!\p{L})[^)]*?\btranche\s+\d+/iu.test(treatment.normalize('NFC').trim())
 
+// The id a « requalifié (RB4) » treatment points to; null for a « requalifié » without one,
+// undefined for another treatment.
+function requalifiedTarget(treatment) {
+  const text = treatment.normalize('NFC').trim()
+  // Same prefix rule as isTreatment: « Requalifiée (RB4) » is a treatment, so it is checked too.
+  if (!/^requalifié/iu.test(text)) {
+    return undefined
+  }
+  return /^requalifié\p{L}*\s*\(\s*(R[BD]\d+)\b/iu.exec(text)?.[1].toUpperCase() ?? null
+}
+
 // The problems of the points of a parsed revue.md (see parseReviewPoints), as messages: a point
 // whose last occurrence has no treatment, an id presented as new twice, a point in the wrong
-// table, a malformed row, a near-miss table title, a point row outside a point table. With
+// table, a malformed row, a near-miss table title, a point row outside a point table, a
+// `(repris)` or `(ex-<ID>)` with nothing above to refer to, a `requalifié (<ID>)` that no
+// `<ID> (ex-…)` takes up further down. With
 // `atClose`, a point whose last occurrence is « reporté (tranche N) » is a problem too.
 // A legacy revue.md (`## Tour` sections) is not checked.
 export function reviewPointProblems(parsed, { atClose = false } = {}) {
@@ -1060,6 +1073,8 @@ export function reviewPointProblems(parsed, { atClose = false } = {}) {
   const problems = []
   const lastOccurrence = new Map()
   const newOccurrences = new Map()
+  // Every row with an id, in file order: what `(repris)`, `(ex-…)` and `requalifié (…)` refer to.
+  const seen = []
   for (const section of parsed.sections) {
     const where = (line) => `section « ${section.title} », ligne ${line}`
     // Twice in one section, whatever the marker: the last one would hide the other.
@@ -1083,6 +1098,14 @@ export function reviewPointProblems(parsed, { atClose = false } = {}) {
       if (row.table !== expectedTable) {
         problems.push(`${row.id} (${where(row.line)}) : rangé dans « ${row.table} », il va dans « ${expectedTable} ».`)
       }
+      if (row.marker === 'repris' && !seen.some((earlier) => earlier.id === row.id)) {
+        problems.push(`${row.id} (repris) (${where(row.line)}) : aucune occurrence de ${row.id} plus haut ; un nouveau point s’écrit sans « (repris) ».`)
+      }
+      const formerId = row.marker?.startsWith('ex-') ? row.marker.slice(3) : null
+      if (formerId && !seen.some((earlier) => earlier.id === formerId)) {
+        problems.push(`${row.id} (ex-${formerId}) (${where(row.line)}) : aucune occurrence de ${formerId} plus haut.`)
+      }
+      seen.push(row)
       lastOccurrence.set(row.id, { ...row, section: section.title })
       inSection.set(row.id, [...(inSection.get(row.id) ?? []), row.line])
       if (row.marker !== 'repris') {
@@ -1106,6 +1129,14 @@ export function reviewPointProblems(parsed, { atClose = false } = {}) {
     if (!isTreatment(row.treatment)) {
       const found = row.treatment.trim() ? `traitement « ${row.treatment.trim()} » non reconnu` : 'pas de traitement'
       problems.push(`${id}. ${row.title} (${where}) : ${found} ; la colonne Traitement commence par l’un de ces mots : ${TREATMENTS.join(', ')}.`)
+    } else if (requalifiedTarget(row.treatment) !== undefined) {
+      const target = requalifiedTarget(row.treatment)
+      const takenUp = target && seen.some((later) => later.line > row.line && later.id === target && later.marker === `ex-${id}`)
+      if (!takenUp) {
+        problems.push(target
+          ? `${id}. ${row.title} (${where}) : requalifié, mais aucun point « ${target} (ex-${id}). … » plus loin ; le point disparaîtrait.`
+          : `${id}. ${row.title} (${where}) : requalifié sans identifiant ; écrire « requalifié (<ID>) » et reprendre le point en « <ID> (ex-${id}). … ».`)
+      }
     } else if (atClose && isPostponedToSlice(row.treatment)) {
       problems.push(`${id}. ${row.title} (${where}) : reporté à une tranche et jamais repris ; le traiter avant de clore.`)
     }
