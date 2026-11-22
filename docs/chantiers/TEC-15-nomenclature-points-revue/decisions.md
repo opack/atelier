@@ -48,3 +48,10 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Retenu : comme en CommonMark, seule une ligne qui ouvre un tableau (la ligne précédente n'est pas une ligne `|`) et qu'un séparateur suit peut être l'en-tête ; elle doit en plus avoir une cellule `Point` et aucun point. Une ligne en plein tableau est toujours un point.
 - Écarté : un filtre de plus sur le contenu, parce qu'il laisserait la famille ouverte.
 - Reporté en tranche 2, avec CA-6 : le cas de RD10 rejoint ceux de RD6 et RD7 dans les tests attendus.
+
+## 2026-11-22 : un en-tête de tableau de points n'a que des noms de colonnes (RD11)
+- Contexte : revue 5 de la tranche 1 : la règle de position (RD10) ne fermait pas la famille, contrairement à ce que disait l'entrée précédente ; une ligne mal formée qui ouvre un tableau après une rupture (ligne vide, texte, commentaire) devenait encore l'en-tête.
+- Retenu : un en-tête ouvre un tableau, est suivi d'un séparateur, et toutes ses cellules sont des noms de colonnes (`Point`, plus `Fichier` ou `Traitement`, dans n'importe quel ordre). La seule ligne qui puisse être prise pour l'en-tête est un vrai en-tête : aucun point ne peut plus se perdre ainsi.
+- Écarté : les filtres « contient `Point` » et « ne contient pas de point », qui laissaient chaque fois un cas ouvert.
+- Conséquence : un en-tête mal écrit (`File`, `**Point**`) est lu comme un point mal formé, signalé en tranche 2.
+- Reporté en tranche 2, avec CA-6 : le cas de RD11 (après une ligne vide et après un commentaire) rejoint ceux de RD6, RD7 et RD10.

@@ -76,3 +76,19 @@ Traitement d'un point : corrigé (commit), test ajouté, spec amendée, exceptio
 | RD10. Un point mal formé qui contient une cellule `Point`, suivi d'un séparateur, est pris pour l'en-tête et fausse les lignes suivantes | `plugins/atelier/lib/core.mjs:984-985` | corrigé (6941c37) : en-tête décidé par sa position ; test en tranche 2 avec CA-6 (`decisions.md`) |
 
 - Bilan de la revue : aucun point bloquant ; RD10 corrigé à la racine ; revue 5 à mener sur 6941c37.
+
+## Revue : tranche 1 : 2026-11-22 (5)
+- Commit revu : e311c7a
+- Base : aa01962
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD11. Une ligne de point mal formée qui ouvre un tableau après une rupture devient l'en-tête et disparaît sans signalement | `plugins/atelier/lib/core.mjs:985-986` | corrigé (765f871) : un en-tête n'a que des noms de colonnes ; test en tranche 2 avec CA-6 (`decisions.md`) |
+
+- Bilan de la revue : aucun point bloquant ; RD11 corrigé ; revue 6 à mener sur 765f871.
