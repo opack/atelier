@@ -20,7 +20,7 @@
 
 ## Tranches
 1. Analyse de `revue.md` : `parseReviewPoints`, `chantier.revue` — CA couverts : CA-12, CA-15
-2. Contrôle des points : `isTreatment`, `reviewPointProblems` (dernière occurrence, mots-clés, doublons, point dans le mauvais tableau, format, `requalifié`, `reporté (tranche N)` à la clôture, format antérieur, ligne de point hors tableau, titre proche) — CA couverts : CA-3, CA-4, CA-5, CA-6, CA-7, CA-13, CA-14, CA-16, CA-17
+2. Contrôle des points : `isTreatment`, `reviewPointProblems` (dernière occurrence, mots-clés, doublons, point dans le mauvais tableau, format, `requalifié`, `reporté (tranche N)` à la clôture, format antérieur, ligne de point hors tableau, titre proche, `repris`, `ex-` et `requalifié` sans renvoi) — CA couverts : CA-3, CA-4, CA-5, CA-6, CA-7, CA-13, CA-14, CA-16, CA-17, CA-18
 3. Numérotation : `nextReviewIds`, commande `atelier review-ids [--json]` — CA couverts : CA-1, CA-2, CA-10
 4. Refus dans la CLI : `set-reviewed`, `close-check`, `set-status done` (points ouverts, `revue.md` non commité) — CA couverts : CA-8, CA-9, CA-16
 5. Agents, skills, templates : préfixes, numéros par `review-ids`, `(repris)`, traitements `reporté` / `requalifié`, commits qui citent un point, bilan §7 par identifiant — CA couverts : CA-11
