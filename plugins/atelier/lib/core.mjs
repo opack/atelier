@@ -952,8 +952,9 @@ function visibleLines(text) {
 
 // Reads the points of a revue.md: one section per `## ` heading, the point tables being those under
 // `### Bloquant` and `### À discuter`. As in CommonMark, a table header is decided by its position:
-// a row that opens a table (the line before is not a row), followed by a delimiter row; it must also
-// have a `Point` cell and no point. Any other row is a point, malformed or not. A table without a
+// a row that opens a table (the line before is not a row), followed by a delimiter row; its cells
+// must also be column names only (Point and any of Fichier, Traitement), so that no point can be
+// taken for a header. Any other row is a point, malformed or not. A table without a
 // header is read with the template columns (Point, Fichier, Traitement). Every `|` row up to the
 // next heading is read, even after free text: a row read in excess is reported by the review
 // checks, a row skipped would be lost. `Aucun` rows are skipped.
@@ -983,7 +984,7 @@ export function parseReviewPoints(text) {
     }
     const cells = tableCells(line)
     const opensTable = !(lines[index - 1] ?? '').trim().startsWith('|')
-    const isHeader = opensTable && cells.includes('Point') && !cells.some((cell) => POINT_PATTERN.test(cell))
+    const isHeader = opensTable && cells.includes('Point') && cells.every((cell) => POINT_COLUMNS.includes(cell))
     if (isHeader && isDelimiterRow(lines[index + 1] ?? '')) {
       header = cells
       return
