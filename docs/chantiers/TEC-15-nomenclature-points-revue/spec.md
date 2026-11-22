@@ -8,7 +8,7 @@ created_at: 2026-11-21
 signed_by: Opack
 signed_at: 2026-11-21
 rel_depends_on: FEAT-7
-tests_commit: a834c53
+tests_commit: 
 slice: 2
 slice_base: 6f04b01722fc85db6cf01cfd586cacea6da6fe50
 ---
@@ -158,3 +158,4 @@ Revert de la PR et publication d'une version suivante du plugin. Les `revue.md` 
 - 2026-11-21 : tests regelés : 9e36525
 - 2026-11-22 : contrôle ajouté (§3, CA-17) : une ligne de point hors tableau de points, ou un titre `###` proche de « Bloquant » / « À discuter », est signalé, parce que les points d'un tableau mal titré (`### Bloquants`) disparaissaient sans signalement (OD1 de la vérification de surapprentissage de la tranche 1, reporté en tranche 2)
 - 2026-11-22 : contrôles ajoutés (§3, CA-18) : un `requalifié (<ID>)` sans `<ID> (ex-…)` plus loin, et un `(repris)` ou un `(ex-<ID>)` sans occurrence plus haut, sont signalés, parce qu'un point requalifié vers un identifiant jamais écrit disparaissait sans signalement (OD14 et OD13 de la vérification de surapprentissage de la tranche 2)
+- 2026-11-22 : tests rouverts (gel quitté : a834c53) : Spec amendée (CA-18 : requalifié sans renvoi, repris / ex- sans occurrence antérieure) ; tests manquants de OB2 (identifiant repris deux fois dans une section) et OD12 (formes libres de reporté … tranche N)
