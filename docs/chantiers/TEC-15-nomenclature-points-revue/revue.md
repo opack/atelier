@@ -108,3 +108,24 @@ Traitement d'un point : corrigé (commit), test ajouté, spec amendée, exceptio
 | Aucun | | |
 
 - Bilan de la revue : aucun point ; RD11 confirmé corrigé ; RD5 et RD8 restent reportés en tranche 2. Cas théorique noté : un en-tête avec une colonne en plus n'est plus reconnu, ses lignes sont signalées (messages de CA-6, tranche 2).
+
+## Revue : tranche 2 : 2026-11-22
+- Commit revu : 2c4a305
+- Base : 6f04b01
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| RB1. Un identifiant présenté comme nouveau dans deux sections de même titre n'est pas signalé, et un point non traité disparaît | `plugins/atelier/lib/core.mjs:1126` | corrigé (aea10c1) : sections comptées par position ; test ajouté (c98dee6) |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD5 (repris). `legacy` vaut vrai dès qu'une seule section `## Tour` existe | `plugins/atelier/lib/core.mjs` | test ajouté (9a00da6) : une section `## Tour` suffit, limite assumée au §4 de la spec ; OD3 fermé dans `decisions.md` |
+| RD8 (repris). Le test de RD6 attendu en tranche 2 n'est tracé que dans `revue.md` | `plugins/atelier/test/core.test.mjs` | test ajouté (9a00da6) : RD6, RD7, RD10, RD11 et l'en-tête mal écrit couverts avec CA-6 |
+| RD12. « Reportée (tranche 2) » passe la clôture | `plugins/atelier/lib/core.mjs:1049` | corrigé (aea10c1) : `reporté\p{L}*` ; test ajouté (c98dee6) |
+| RD13. La moitié numérotation de CA-13 n'est couverte par aucune tranche | `docs/chantiers/TEC-15-nomenclature-points-revue/plan.md` | corrigé : CA-13 (numérotation) ajouté à la tranche 3 du plan |
+| RD14. RD5 et RD8 réglés dans le code mais encore reportés dans `revue.md` | `docs/chantiers/TEC-15-nomenclature-points-revue/revue.md` | corrigé : RD5 et RD8 repris dans cette revue |
+| RD15. Commentaire coupé de `reviewPointProblems`, `requalifiedTarget` appelé deux fois | `plugins/atelier/lib/core.mjs:1066`, `:1139` | corrigé (aea10c1) |
+
+- Bilan de la revue : RB1 corrigé ; RD5, RD8, RD12 à RD15 traités ; revue 2 à mener sur le commit corrigé.
