@@ -42,3 +42,9 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Retenu : une ligne est l'en-tête si elle a une cellule `Point`, aucune cellule au format d'un point, et qu'une ligne de séparation la suit ; toute autre ligne `|` est un point, bien formé ou non.
 - Écarté : la règle « aucune cellule au format d'un point » seule (RD6 : un `B1.` devenait l'en-tête), puis « une cellule `Point` » seule (RD7 : `| RB1. x | Point | c |` devenait l'en-tête).
 - Reporté en tranche 2, à l'écriture des tests de CA-6 : `| B1. … |` suivi de `|---|---|---|` signalé (RD6) ; `| RB1. x | Point | c |` suivi d'un séparateur lu comme point (RD7) ; un en-tête mal écrit (`point`, `**Point**`) est signalé comme point mal formé, le message doit évoquer un en-tête non reconnu.
+
+## 2026-11-22 : l'en-tête d'un tableau de points se décide par sa position (RD10)
+- Contexte : revue 4 de la tranche 1 : `| B1. x | Point | c |` suivi d'un séparateur, en plein tableau, devenait un nouvel en-tête ; troisième défaut de la même famille (RD6, RD7), chaque fois corrigé par un filtre sur le contenu de la ligne.
+- Retenu : comme en CommonMark, seule une ligne qui ouvre un tableau (la ligne précédente n'est pas une ligne `|`) et qu'un séparateur suit peut être l'en-tête ; elle doit en plus avoir une cellule `Point` et aucun point. Une ligne en plein tableau est toujours un point.
+- Écarté : un filtre de plus sur le contenu, parce qu'il laisserait la famille ouverte.
+- Reporté en tranche 2, avec CA-6 : le cas de RD10 rejoint ceux de RD6 et RD7 dans les tests attendus.

@@ -60,3 +60,19 @@ Traitement d'un point : corrigé (commit), test ajouté, spec amendée, exceptio
 | RD9. Commentaire de `parseReviewPoints` mal recoupé | `plugins/atelier/lib/core.mjs:956` | corrigé (24e212a) |
 
 - Bilan de la revue : aucun point bloquant ; RD7 et RD9 corrigés, RD8 reporté en tranche 2 ; revue 4 à mener sur 24e212a.
+
+## Revue : tranche 1 : 2026-11-22 (4)
+- Commit revu : bd64b07
+- Base : aa01962
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD10. Un point mal formé qui contient une cellule `Point`, suivi d'un séparateur, est pris pour l'en-tête et fausse les lignes suivantes | `plugins/atelier/lib/core.mjs:984-985` | corrigé (6941c37) : en-tête décidé par sa position ; test en tranche 2 avec CA-6 (`decisions.md`) |
+
+- Bilan de la revue : aucun point bloquant ; RD10 corrigé à la racine ; revue 5 à mener sur 6941c37.
