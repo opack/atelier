@@ -1073,9 +1073,14 @@ export function reviewPointProblems(parsed, { atClose = false } = {}) {
   const problems = []
   const lastOccurrence = new Map()
   const newOccurrences = new Map()
-  // Every row with an id, in file order: what `(repris)`, `(ex-…)` and `requalifié (…)` refer to.
-  const seen = []
-  for (const section of parsed.sections) {
+  // Every row with an id and its section: what `(repris)`, `(ex-…)` and `requalifié (…)` refer to.
+  // « Above » is an earlier section or the same one, « further down » the same section or a later
+  // one: within a section the Bloquant table comes first, so row order there means nothing.
+  const occurrences = parsed.sections.flatMap((section, sectionIndex) =>
+    section.rows.filter((row) => row.id).map((row) => ({ row, sectionIndex })))
+  const occursAbove = (id, sectionIndex, except) =>
+    occurrences.some((other) => other.row !== except && other.row.id === id && other.sectionIndex <= sectionIndex)
+  for (const [sectionIndex, section] of parsed.sections.entries()) {
     const where = (line) => `section « ${section.title} », ligne ${line}`
     // Twice in one section, whatever the marker: the last one would hide the other.
     const inSection = new Map()
@@ -1098,15 +1103,14 @@ export function reviewPointProblems(parsed, { atClose = false } = {}) {
       if (row.table !== expectedTable) {
         problems.push(`${row.id} (${where(row.line)}) : rangé dans « ${row.table} », il va dans « ${expectedTable} ».`)
       }
-      if (row.marker === 'repris' && !seen.some((earlier) => earlier.id === row.id)) {
+      if (row.marker === 'repris' && !occursAbove(row.id, sectionIndex, row)) {
         problems.push(`${row.id} (repris) (${where(row.line)}) : aucune occurrence de ${row.id} plus haut ; un nouveau point s’écrit sans « (repris) ».`)
       }
       const formerId = row.marker?.startsWith('ex-') ? row.marker.slice(3) : null
-      if (formerId && !seen.some((earlier) => earlier.id === formerId)) {
+      if (formerId && !occursAbove(formerId, sectionIndex, row)) {
         problems.push(`${row.id} (ex-${formerId}) (${where(row.line)}) : aucune occurrence de ${formerId} plus haut.`)
       }
-      seen.push(row)
-      lastOccurrence.set(row.id, { ...row, section: section.title })
+      lastOccurrence.set(row.id, { ...row, section: section.title, sectionIndex })
       inSection.set(row.id, [...(inSection.get(row.id) ?? []), row.line])
       if (row.marker !== 'repris') {
         newOccurrences.set(row.id, [...(newOccurrences.get(row.id) ?? []), { section: section.title, line: row.line }])
@@ -1131,7 +1135,8 @@ export function reviewPointProblems(parsed, { atClose = false } = {}) {
       problems.push(`${id}. ${row.title} (${where}) : ${found} ; la colonne Traitement commence par l’un de ces mots : ${TREATMENTS.join(', ')}.`)
     } else if (requalifiedTarget(row.treatment) !== undefined) {
       const target = requalifiedTarget(row.treatment)
-      const takenUp = target && seen.some((later) => later.line > row.line && later.id === target && later.marker === `ex-${id}`)
+      const takenUp = target && occurrences.some((later) =>
+        later.sectionIndex >= row.sectionIndex && later.row.id === target && later.row.marker === `ex-${id}`)
       if (!takenUp) {
         problems.push(target
           ? `${id}. ${row.title} (${where}) : requalifié, mais aucun point « ${target} (ex-${id}). … » plus loin ; le point disparaîtrait.`
