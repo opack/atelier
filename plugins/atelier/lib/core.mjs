@@ -834,7 +834,7 @@ export function amendmentsDiffer(text, otherText) {
 
 // Why `atelier set-reviewed` is refused, or null. `context` = { chantier, uncommittedCode (code
 // files changed and not committed), specUncommitted, changedTests (frozen tests changed since
-// tests_commit) }.
+// tests_commit) }. The points of `chantier.revue` (working copy of revue.md) must all be treated.
 // `sliceBaseIsAncestor` is false when `slice_base` is no longer an ancestor of HEAD;
 // `sliceCodeFiles` are the code files committed since the start of the current slice, or null
 // when the review is not that of a slice of a chantier with several slices.
@@ -860,6 +860,10 @@ export function setReviewedRefusal({ chantier, uncommittedCode, specUncommitted,
   }
   if (sliceCodeFiles && !sliceCodeFiles.length) {
     return 'tranche vide : aucun code commité depuis le début de la tranche. Implémente-la (/atelier:build) avant de la faire valider.'
+  }
+  const pointProblems = reviewPointProblems(parseReviewPoints(chantier.revue))
+  if (pointProblems.length) {
+    return `revue.md a des points sans traitement ou mal formés :\n${pointProblems.map((problem) => `- ${problem}`).join('\n')}`
   }
   return null
 }
@@ -1228,12 +1232,21 @@ function sliceCloseProblems(chantier) {
 // null when the chantier has no relation and is not an EPIC) }. A SPIKE (throwaway code, never
 // merged) and an EPIC (no code) skip everything related to the review.
 // `uncommittedError` is the git error met while listing uncommitted files, if any.
-export function closeProblems({ chantier, reviewFacts, uncommittedCode, uncommittedError, checksFailure, index = null }) {
+// `revueUncommitted` is true when revue.md has uncommitted changes; the points of `chantier.revue`
+// (working copy) must all be treated, a point postponed to a slice included.
+export function closeProblems({ chantier, reviewFacts, uncommittedCode, uncommittedError, revueUncommitted = false, checksFailure, index = null }) {
   if (specStatus(chantier?.spec) !== 'signed') {
     return [`La spec de ${chantier?.id ?? 'ce chantier'} n’est pas signée (statut : ${specStatus(chantier?.spec)}).`]
   }
   const sliceProblems = sliceCloseProblems(chantier)
-  const problems = isReviewExempt(chantier) || sliceProblems.length ? sliceProblems : reviewProblems(reviewFacts)
+  const exempt = isReviewExempt(chantier)
+  const problems = exempt || sliceProblems.length ? sliceProblems : reviewProblems(reviewFacts)
+  if (!exempt) {
+    if (revueUncommitted) {
+      problems.push('revue.md a des modifications non commitées : commite-le.')
+    }
+    problems.push(...reviewPointProblems(parseReviewPoints(chantier.revue), { atClose: true }).map((problem) => `revue.md : ${problem}`))
+  }
   if (index) {
     problems.push(...relationCloseProblems(chantier.id, chantier.spec.data, index))
   }
