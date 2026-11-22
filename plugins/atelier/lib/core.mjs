@@ -1149,6 +1149,42 @@ export function reviewPointProblems(parsed, { atClose = false } = {}) {
   return problems
 }
 
+const REVIEW_ID_PREFIXES = ['RB', 'RD', 'SB', 'SD', 'OB', 'OD']
+
+// The next number of each review point prefix and the open review points of a chantier, from the
+// texts of its revue.md, spec.md and decisions.md (null when absent). RB/RD come from the table
+// rows of revue.md, `ex-` references included, so that a number is never reused; SB/SD/OB/OD,
+// which have no file of their own, from any mention in spec.md and decisions.md. A point is open
+// when its last occurrence has no recognised treatment; open points are in file order.
+export function nextReviewIds({ revue, spec, decisions }) {
+  const highest = Object.fromEntries(REVIEW_ID_PREFIXES.map((prefix) => [prefix, 0]))
+  const record = (id) => {
+    const [, prefix, number] = /^([A-Z]{2})(\d+)$/.exec(id)
+    highest[prefix] = Math.max(highest[prefix], Number(number))
+  }
+  // Every RB/RD on a table row counts, malformed rows, rows under a near-miss title and
+  // `requalifié (<ID>)` targets included: a gap costs nothing, a reused number breaks the trace.
+  for (const line of visibleLines(revue).filter((candidate) => candidate.trim().startsWith('|'))) {
+    for (const [id] of line.matchAll(/\b(?:RB|RD)\d+\b/g)) {
+      record(id)
+    }
+  }
+  const lastOccurrence = new Map()
+  for (const section of parseReviewPoints(revue).sections) {
+    for (const row of section.rows.filter((candidate) => candidate.id)) {
+      lastOccurrence.set(row.id, { ...row, section: section.title })
+    }
+  }
+  for (const [, id] of `${spec ?? ''}\n${decisions ?? ''}`.matchAll(/\b((?:SB|SD|OB|OD)\d+)\b/g)) {
+    record(id)
+  }
+  const open = [...lastOccurrence.values()]
+    .filter((row) => !isTreatment(row.treatment))
+    .sort((a, b) => a.line - b.line)
+    .map(({ id, title, section }) => ({ id, title, section }))
+  return { next: Object.fromEntries(REVIEW_ID_PREFIXES.map((prefix) => [prefix, highest[prefix] + 1])), open }
+}
+
 // ---------- Close ----------
 
 // An EPIC (no code) and a SPIKE without TDD (throwaway code, never merged) are closed without a

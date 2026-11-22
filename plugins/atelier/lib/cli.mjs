@@ -33,6 +33,7 @@ import {
   isReviewExempt,
   loadConfig,
   nextChantierId,
+  nextReviewIds,
   matchesAny,
   nextStep,
   openChildren,
@@ -75,6 +76,7 @@ const commands = {
   'set-reviewed': commandSetReviewed,
   'close-check': commandCloseCheck,
   'tests-changed': commandTestsChanged,
+  'review-ids': commandReviewIds,
   bypass: commandBypass,
   checks: commandChecks,
   'hook-guard': hookGuard,
@@ -729,6 +731,25 @@ function commandCloseCheck() {
     return
   }
   console.log('Clôture possible : revue à jour, travail commité, contrôles verts.')
+}
+
+function commandReviewIds(options) {
+  const projectRoot = findProjectRoot()
+  const config = requireConfig(projectRoot)
+  const chantier = requireActiveChantier(projectRoot, config)
+  const readText = (name) => {
+    const filePath = join(chantier.directory, name)
+    return existsSync(filePath) ? readFileSync(filePath, 'utf8') : null
+  }
+  const ids = nextReviewIds({ revue: chantier.revue, spec: readText('spec.md'), decisions: readText('decisions.md') })
+  if (options.includes('--json')) {
+    console.log(JSON.stringify(ids, null, 2))
+    return
+  }
+  const next = Object.entries(ids.next).map(([prefix, number]) => `${prefix}${number}`).join(', ')
+  const open = ids.open.map(({ id, title, section }) => `- ${id}. ${title} (section « ${section} »)`)
+  console.log(`Prochains identifiants : ${next}.`)
+  console.log(open.length ? `Points de revue ouverts :\n${open.join('\n')}` : 'Aucun point de revue ouvert.')
 }
 
 function commandTestsChanged() {
