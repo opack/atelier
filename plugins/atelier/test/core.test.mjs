@@ -2209,6 +2209,14 @@ describe('TEC-15 checking the review points', () => {
     assert.match(problems[0], /Revue : tranche 2 : 2026-11-22/)
   })
 
+  it('CA-5 : un identifiant nouveau dans deux sections de même titre est signalé, et le premier point ouvert n’est pas masqué', () => {
+    const text = revueOf([
+      { title: 'Revue : 2026-11-22', blocking: [['RB1. Premier', '`a.mjs`', '']] },
+      { title: 'Revue : 2026-11-22', blocking: [['RB1. Autre chose', '`b.mjs`', 'corrigé (def5678)']] },
+    ])
+    assert.equal(citing(pointProblems(text), /présenté comme nouveau/).length, 1)
+  })
+
   it('CA-5 : un identifiant présent deux fois dans une même section est signalé', () => {
     const text = revueOf([{
       title: 'Revue : 2026-11-21',
@@ -2353,6 +2361,14 @@ describe('TEC-15 checking the review points', () => {
 
   it('CA-16 : un report à une tranche écrit librement est aussi refusé à la clôture (OD12)', () => {
     for (const treatment of ['reporté en tranche 3', 'Reporté (tranche 2, avec CA-6)']) {
+      const text = revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD1. Reporté', '`a.mjs`', treatment]] }])
+      assert.deepEqual(pointProblems(text), [], treatment)
+      assert.equal(citing(pointProblems(text, { atClose: true }), /\bRD1\b/).length, 1, treatment)
+    }
+  })
+
+  it('CA-16 : un report à une tranche accordé au féminin est aussi refusé à la clôture', () => {
+    for (const treatment of ['Reportée (tranche 2)', 'reportée en tranche 3']) {
       const text = revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD1. Reporté', '`a.mjs`', treatment]] }])
       assert.deepEqual(pointProblems(text), [], treatment)
       assert.equal(citing(pointProblems(text, { atClose: true }), /\bRD1\b/).length, 1, treatment)
