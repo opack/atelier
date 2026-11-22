@@ -951,9 +951,9 @@ function visibleLines(text) {
 }
 
 // Reads the points of a revue.md: one section per `## ` heading, the point tables being those under
-// `### Bloquant` and `### À discuter`. A table header is the row followed by a delimiter row, unless
-// it holds a point; a table without one is read with the template columns (Point, Fichier,
-// Traitement). Every `|` row up to the next heading is read, even after free text: a row read in
+// `### Bloquant` and `### À discuter`. A table header is a row with a `Point` cell followed by a
+// delimiter row (any other row is a point, malformed or not); a table without one is read with the
+// template columns (Point, Fichier, Traitement). Every `|` row up to the next heading is read, even after free text: a row read in
 // excess is reported by the review checks, a row skipped would be lost. `Aucun` rows are skipped.
 // `legacy` is true for a revue.md written before FEAT-7 (`## Tour …` sections), which the review
 // checks leave alone.
@@ -980,7 +980,7 @@ export function parseReviewPoints(text) {
       return
     }
     const cells = tableCells(line)
-    if (isDelimiterRow(lines[index + 1] ?? '') && !cells.some((cell) => POINT_PATTERN.test(cell))) {
+    if (isDelimiterRow(lines[index + 1] ?? '') && cells.includes('Point')) {
       header = cells
       return
     }
