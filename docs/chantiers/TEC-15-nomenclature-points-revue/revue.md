@@ -145,3 +145,19 @@ Traitement d'un point : corrigé (commit), test ajouté, spec amendée, exceptio
 | Aucun | | |
 
 - Bilan de la revue : aucun point ; RB1, RD12 et RD15 confirmés corrigés, RD13 et RD14 confirmés traités ; le contrôle des points ne signale rien sur ce `revue.md`, avec ou sans `atClose`.
+
+## Revue : tranche 3 : 2026-11-23
+- Commit revu : fc15dab
+- Base : 49ff2d5
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+- Bilan de la revue : aucun point ; CA-1, CA-2, CA-10 et CA-13 (numérotation) couverts, 228 tests verts ; essai réel de `atelier review-ids` sur ce dépôt : RB3, RD16, SB2, SD3, OB3, OD33, aucun point ouvert. Remarque mineure non numérotée : `commandReviewIds` relit `spec.md` et calcule `visibleLines(revue)` deux fois, coût négligeable.
