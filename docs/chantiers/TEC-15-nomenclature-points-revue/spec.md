@@ -8,7 +8,7 @@ created_at: 2026-11-21
 signed_by: Opack
 signed_at: 2026-11-21
 rel_depends_on: FEAT-7
-tests_commit: 
+tests_commit: c98dee6
 slice: 2
 slice_base: 6f04b01722fc85db6cf01cfd586cacea6da6fe50
 ---
@@ -166,3 +166,4 @@ Revert de la PR et publication d'une version suivante du plugin. Les `revue.md` 
 - 2026-11-22 : tests rouverts (gel quitté : af925e0) : Spec amendée (CA-18 : ordre indifférent dans une même section, OD19) ; tests manquants de OD20 (requalifié sans identifiant, identifiant suivi d'un commentaire) et OD22 (ordre et mauvais renvoi ex-)
 - 2026-11-22 : tests regelés : 9a00da6
 - 2026-11-22 : tests rouverts (gel quitté : 9a00da6) : Revue tranche 2 : RB1 (identifiant nouveau dans deux sections de même titre, CA-5) et RD12 (« Reportée (tranche 2) » à la clôture, test OD12)
+- 2026-11-22 : tests regelés : c98dee6
