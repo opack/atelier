@@ -958,12 +958,16 @@ function visibleLines(text) {
 // header is read with the template columns (Point, Fichier, Traitement). Every `|` row up to the
 // next heading is read, even after free text: a row read in excess is reported by the review
 // checks, a row skipped would be lost. `Aucun` rows are skipped.
+// Each section also lists what would make points vanish unseen: `nearTables`, the `###` titles
+// close to a point table title (`### Bloquants`), and `strays`, the rows outside a point table
+// whose first cell starts with a point id.
 // `legacy` is true for a revue.md written before FEAT-7 (`## Tour …` sections), which the review
 // checks leave alone.
 export function parseReviewPoints(text) {
   const sections = []
   let section = null
   let table = null
+  let nearTable = false
   let header = null
   const lines = visibleLines(text)
   lines.forEach((line, index) => {
@@ -971,18 +975,29 @@ export function parseReviewPoints(text) {
     if (heading) {
       header = null
       table = null
+      nearTable = false
       if (heading[1] === '##') {
-        section = { title: heading[2], rows: [] }
+        section = { title: heading[2], rows: [], nearTables: [], strays: [] }
         sections.push(section)
       } else if (POINT_TABLES.includes(heading[2])) {
         table = heading[2]
+      } else if (section && isNearPointTableTitle(heading[2])) {
+        nearTable = true
+        section.nearTables.push({ title: heading[2], line: index + 1 })
       }
       return
     }
-    if (!section || !table || !line.trim().startsWith('|') || isDelimiterRow(line)) {
+    if (!section || !line.trim().startsWith('|') || isDelimiterRow(line)) {
       return
     }
     const cells = tableCells(line)
+    if (!table) {
+      // Rows under a near-miss title are covered by the problem on the title.
+      if (!nearTable && /^(RB|RD)\d+/.test(cells[0] ?? '')) {
+        section.strays.push({ point: cells[0], line: index + 1 })
+      }
+      return
+    }
     const opensTable = !(lines[index - 1] ?? '').trim().startsWith('|')
     const isHeader = opensTable && cells.includes('Point') && cells.every((cell) => POINT_COLUMNS.includes(cell))
     if (isHeader && isDelimiterRow(lines[index + 1] ?? '')) {
@@ -1005,11 +1020,97 @@ export function parseReviewPoints(text) {
       treatment: column('Traitement', 2),
       // A `|` left unescaped in a cell shifts the columns: reported by the review checks.
       cellCountMismatch: cells.length !== (header ?? POINT_COLUMNS).length,
+      // Opens a table and is followed by a delimiter row: a header the parser did not recognise.
+      headerLike: opensTable && isDelimiterRow(lines[index + 1] ?? ''),
       table,
       line: index + 1,
     })
   })
   return { legacy: sections.some((candidate) => /^Tour\b/.test(candidate.title)), sections }
+}
+
+// A `###` title that reads like a point table title without being one: case, accents and `*`
+// ignored, it starts with « bloquant » or « a discuter » (`### Bloquants`, `### A discuter`).
+function isNearPointTableTitle(title) {
+  const plain = normalize(title.replace(/\*/g, ''))
+  return !POINT_TABLES.includes(title) && (plain.startsWith('bloquant') || plain.startsWith('a discuter'))
+}
+
+const TREATMENTS = ['corrigé', 'test ajouté', 'spec amendée', 'exception acceptée', 'écarté', 'reporté', 'requalifié', 'sans objet']
+
+// A treatment cell starts with one of the treatment keywords, case ignored.
+export function isTreatment(cell) {
+  const text = String(cell ?? '').normalize('NFC').trim().toLowerCase()
+  return TREATMENTS.some((keyword) => text.startsWith(keyword))
+}
+
+// « reporté (tranche 2) », and its loose spellings (« reporté en tranche 3 », « reporté (tranche 2, avec
+// CA-6) »): at close, a point taken for a postponement to another chantier would slip through.
+const isPostponedToSlice = (treatment) => /^reporté(?!\p{L})[^)]*?\btranche\s+\d+/iu.test(treatment.normalize('NFC').trim())
+
+// The problems of the points of a parsed revue.md (see parseReviewPoints), as messages: a point
+// whose last occurrence has no treatment, an id presented as new twice, a point in the wrong
+// table, a malformed row, a near-miss table title, a point row outside a point table. With
+// `atClose`, a point whose last occurrence is « reporté (tranche N) » is a problem too.
+// A legacy revue.md (`## Tour` sections) is not checked.
+export function reviewPointProblems(parsed, { atClose = false } = {}) {
+  if (parsed.legacy) {
+    return []
+  }
+  const problems = []
+  const lastOccurrence = new Map()
+  const newOccurrences = new Map()
+  for (const section of parsed.sections) {
+    const where = (line) => `section « ${section.title} », ligne ${line}`
+    // Twice in one section, whatever the marker: the last one would hide the other.
+    const inSection = new Map()
+    for (const { title, line } of section.nearTables) {
+      problems.push(`Titre « ### ${title} » (${where(line)}) : ni « Bloquant » ni « À discuter », ses points ne sont pas lus. Corriger le titre.`)
+    }
+    for (const { point, line } of section.strays) {
+      problems.push(`${point} (${where(line)}) : point hors d’un tableau « ### Bloquant » ou « ### À discuter », il n’est pas lu.`)
+    }
+    for (const row of section.rows) {
+      if (!row.id) {
+        const hint = row.headerLike ? ' ; si c’est l’en-tête du tableau, il n’est pas reconnu : colonnes attendues Point, Fichier, Traitement' : ''
+        problems.push(`« ${row.point} » (${where(row.line)}) : la cellule Point n’a pas la forme « RB1. Intitulé »${hint}.`)
+        continue
+      }
+      if (row.cellCountMismatch) {
+        problems.push(`${row.id} (${where(row.line)}) : nombre de cellules différent de l’en-tête ; un | dans une cellule s’écrit \\|.`)
+      }
+      const expectedTable = row.id.startsWith('RB') ? 'Bloquant' : 'À discuter'
+      if (row.table !== expectedTable) {
+        problems.push(`${row.id} (${where(row.line)}) : rangé dans « ${row.table} », il va dans « ${expectedTable} ».`)
+      }
+      lastOccurrence.set(row.id, { ...row, section: section.title })
+      inSection.set(row.id, [...(inSection.get(row.id) ?? []), row.line])
+      if (row.marker !== 'repris') {
+        newOccurrences.set(row.id, [...(newOccurrences.get(row.id) ?? []), { section: section.title, line: row.line }])
+      }
+    }
+    for (const [id, lines] of inSection) {
+      if (lines.length > 1) {
+        problems.push(`${id} présent ${lines.length} fois dans la section « ${section.title} » (lignes ${lines.join(', ')}) : un point n’apparaît qu’une fois par revue.`)
+      }
+    }
+  }
+  for (const [id, places] of newOccurrences) {
+    if (new Set(places.map((place) => place.section)).size > 1) {
+      const listed = places.map((place) => `section « ${place.section} », ligne ${place.line}`).join(' ; ')
+      problems.push(`${id} présenté comme nouveau dans plusieurs sections (${listed}) : un point repris s’écrit « ${id} (repris). … », un nouveau point prend le numéro suivant.`)
+    }
+  }
+  for (const [id, row] of lastOccurrence) {
+    const where = `section « ${row.section} », ligne ${row.line}`
+    if (!isTreatment(row.treatment)) {
+      const found = row.treatment.trim() ? `traitement « ${row.treatment.trim()} » non reconnu` : 'pas de traitement'
+      problems.push(`${id}. ${row.title} (${where}) : ${found} ; la colonne Traitement commence par l’un de ces mots : ${TREATMENTS.join(', ')}.`)
+    } else if (atClose && isPostponedToSlice(row.treatment)) {
+      problems.push(`${id}. ${row.title} (${where}) : reporté à une tranche et jamais repris ; le traiter avant de clore.`)
+    }
+  }
+  return problems
 }
 
 // ---------- Close ----------

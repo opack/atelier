@@ -55,3 +55,11 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Écarté : les filtres « contient `Point` » et « ne contient pas de point », qui laissaient chaque fois un cas ouvert.
 - Conséquence : un en-tête mal écrit (`File`, `**Point**`) est lu comme un point mal formé, signalé en tranche 2.
 - Reporté en tranche 2, avec CA-6 : le cas de RD11 (après une ligne vide et après un commentaire) rejoint ceux de RD6, RD7 et RD10.
+
+## 2026-11-22 : contrôle des points (tranche 2), suites de la vérification de surapprentissage
+- Contexte : implémentation de `reviewPointProblems` et `isTreatment` ; `overfit-checker` a relevé OB2 et OD12 à OD18.
+- Retenu : un identifiant présent deux fois dans une même section est signalé quel que soit son marqueur, `(repris)` compris (OB2 : la dernière occurrence masquait l'autre) ; « nouveau dans plusieurs sections » ne compte que les occurrences sans `(repris)`. Le report à une tranche est reconnu aussi sous des formes libres (`reporté en tranche 3`, `reporté (tranche 2, avec CA-6)`) : à la clôture, une forme non reconnue passerait pour un report vers un autre chantier (OD12). Le message d'un traitement refusé cite la cellule et la liste des mots-clés (OD16).
+- Retenu : une ligne de point sous un titre proche (`### Bloquants`) n'est pas signalée en plus du titre : un seul problème, sur sa cause.
+- Écarté : retirer les `*` ou les accents avant de reconnaître un traitement (OD16), parce que la spec n'ignore que la casse et que l'erreur va dans le sens prudent (point signalé, pas perdu) ; contrôler le « par qui, pourquoi » d'une `exception acceptée` (OD17), parce que la spec laisse le détail libre après le mot-clé.
+- Signalé à l'utilisateur, hors spec : OD13 (`(repris)` ou `ex-` sans occurrence antérieure), OD14 (`requalifié (RB4)` sans `RB4 (ex-RD3)` ferme le point), OD15 (tableau de points avant le premier `## `).
+- Signalé à l'utilisateur, sans renforcer les tests : OD18 (CA-3 et CA-14 ne vérifient pas la nature du message ; `## tour` en minuscules non testé) ; OB2 et OD12 ne sont pas couverts par les tests figés.
