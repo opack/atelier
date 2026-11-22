@@ -8,7 +8,7 @@ created_at: 2026-11-21
 signed_by: Opack
 signed_at: 2026-11-21
 rel_depends_on: FEAT-7
-tests_commit: 
+tests_commit: 9a00da6
 slice: 2
 slice_base: 6f04b01722fc85db6cf01cfd586cacea6da6fe50
 ---
@@ -164,3 +164,4 @@ Revert de la PR et publication d'une version suivante du plugin. Les `revue.md` 
 - 2026-11-22 : tests regelés : af925e0
 - 2026-11-22 : CA-18 précisé (§3) : « plus haut » et « plus loin » se jugent entre sections ; dans une même section, l'ordre ne compte pas, parce qu'un RD requalifié pendant le traitement de sa revue est repris en `RB4 (ex-RD3)` dans le tableau Bloquant, placé au-dessus, et la revue était refusée à tort (OD19 de la vérification de surapprentissage de la tranche 2)
 - 2026-11-22 : tests rouverts (gel quitté : af925e0) : Spec amendée (CA-18 : ordre indifférent dans une même section, OD19) ; tests manquants de OD20 (requalifié sans identifiant, identifiant suivi d'un commentaire) et OD22 (ordre et mauvais renvoi ex-)
+- 2026-11-22 : tests regelés : 9a00da6
