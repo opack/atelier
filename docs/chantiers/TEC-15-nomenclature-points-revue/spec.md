@@ -85,6 +85,8 @@ Une fonction pure de `lib/core.mjs` lit `revue.md` et renvoie les problèmes :
 - un point dont la dernière occurrence est traitée `requalifié (<ID>)` sans que `<ID> (ex-<ancien ID>)` apparaisse plus loin dans le fichier : le point disparaîtrait ;
 - un `<ID> (repris)` sans occurrence de `<ID>` plus haut dans le fichier, ou un `(ex-<ID>)` dont `<ID>` n'apparaît pas plus haut.
 
+« Plus haut » veut dire : dans une section précédente ou dans la même section ; « plus loin » : dans la même section ou une section suivante. Dans une section, l'ordre des lignes ne compte pas (le tableau Bloquant précède le tableau À discuter).
+
 À la clôture (`close-check`), un point dont la dernière occurrence est `reporté (tranche N)` est aussi un problème.
 
 Un `revue.md` dont les sections s'appellent `## Tour …` est antérieur à FEAT-7 et à ce chantier : pas de contrôle (voir §4). Tout autre `revue.md` est contrôlé, y compris s'il ne contient aucun identifiant `RB`/`RD`.
@@ -140,7 +142,7 @@ Critères d'acceptation (testés dans `plugins/atelier/test/`) :
 - CA-15 : Étant donné une cellule Fichier qui contient `` `a \| b` ``, quand on analyse la ligne, alors la colonne Traitement est lue correctement.
 - CA-16 : Étant donné un point dont la dernière occurrence est `reporté (tranche 2)`, quand on lance `set-reviewed`, alors pas de problème pour ce point ; quand on lance `close-check`, alors la clôture est refusée et le point est listé.
 - CA-17 : Étant donné un titre `### Bloquants` (ou `### A discuter`, `### **Bloquant**`) suivi d'un tableau de points, quand on contrôle, alors le titre est signalé ; étant donné une ligne `| RB1. … |` sous un autre titre `###` d'une section (`### Contrôles`), alors la ligne est signalée ; une phrase hors tableau qui cite `RD1` ne l'est pas.
-- CA-18 : Étant donné `RD3` traité `requalifié (RB4)` sans aucun `RB4 (ex-RD3)` plus loin, quand on contrôle, alors `RD3` est signalé ; étant donné `RB7 (repris)` sans `RB7` plus haut, ou `RB4 (ex-RD3)` sans `RD3` plus haut, alors la ligne est signalée. Le cas de CA-13 (requalification suivie de `RB4 (ex-RD3)`) reste sans problème.
+- CA-18 : Étant donné `RD3` traité `requalifié (RB4)` sans aucun `RB4 (ex-RD3)` plus loin, quand on contrôle, alors `RD3` est signalé ; étant donné `RB7 (repris)` sans `RB7` plus haut, ou `RB4 (ex-RD3)` sans `RD3` plus haut, alors la ligne est signalée. Le cas de CA-13 (requalification suivie de `RB4 (ex-RD3)`) reste sans problème, de même qu'une section dont le tableau Bloquant contient `RB4 (ex-RD3)` et le tableau À discuter `RD3 … requalifié (RB4)` ; en revanche `RB4 (ex-RD3)` dans une section qui précède celle de `RD3` est signalé.
 
 Vérifications d'ensemble :
 - `npm test` vert ; `claude plugin validate .` et `claude plugin validate ./plugins/atelier` ; `npm run build` dans `site/`.
@@ -160,3 +162,4 @@ Revert de la PR et publication d'une version suivante du plugin. Les `revue.md` 
 - 2026-11-22 : contrôles ajoutés (§3, CA-18) : un `requalifié (<ID>)` sans `<ID> (ex-…)` plus loin, et un `(repris)` ou un `(ex-<ID>)` sans occurrence plus haut, sont signalés, parce qu'un point requalifié vers un identifiant jamais écrit disparaissait sans signalement (OD14 et OD13 de la vérification de surapprentissage de la tranche 2)
 - 2026-11-22 : tests rouverts (gel quitté : a834c53) : Spec amendée (CA-18 : requalifié sans renvoi, repris / ex- sans occurrence antérieure) ; tests manquants de OB2 (identifiant repris deux fois dans une section) et OD12 (formes libres de reporté … tranche N)
 - 2026-11-22 : tests regelés : af925e0
+- 2026-11-22 : CA-18 précisé (§3) : « plus haut » et « plus loin » se jugent entre sections ; dans une même section, l'ordre ne compte pas, parce qu'un RD requalifié pendant le traitement de sa revue est repris en `RB4 (ex-RD3)` dans le tableau Bloquant, placé au-dessus, et la revue était refusée à tort (OD19 de la vérification de surapprentissage de la tranche 2)
