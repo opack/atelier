@@ -81,7 +81,9 @@ Une fonction pure de `lib/core.mjs` lit `revue.md` et renvoie les problèmes :
 - un `RB` dans un tableau « À discuter », ou un `RD` dans un tableau « Bloquant » ;
 - une ligne de tableau de points dont la cellule « Point » n'a pas la forme définie ci-dessus (ancien format `B1.`, numéro seul, texte libre), hors ligne `Aucun` ;
 - dans une section, une ligne de tableau dont la première cellule commence par un identifiant `RB`/`RD` (`^(RB|RD)\d+`) hors d'un tableau de points ;
-- un titre `###` dont le texte, casse, accents et `*` ignorés, commence par « bloquant » ou « a discuter » sans être exactement `Bloquant` ou `À discuter` (`### Bloquants`, `### A discuter`, `### **Bloquant**`) : ses points ne seraient pas lus.
+- un titre `###` dont le texte, casse, accents et `*` ignorés, commence par « bloquant » ou « a discuter » sans être exactement `Bloquant` ou `À discuter` (`### Bloquants`, `### A discuter`, `### **Bloquant**`) : ses points ne seraient pas lus ;
+- un point dont la dernière occurrence est traitée `requalifié (<ID>)` sans que `<ID> (ex-<ancien ID>)` apparaisse plus loin dans le fichier : le point disparaîtrait ;
+- un `<ID> (repris)` sans occurrence de `<ID>` plus haut dans le fichier, ou un `(ex-<ID>)` dont `<ID>` n'apparaît pas plus haut.
 
 À la clôture (`close-check`), un point dont la dernière occurrence est `reporté (tranche N)` est aussi un problème.
 
@@ -138,6 +140,7 @@ Critères d'acceptation (testés dans `plugins/atelier/test/`) :
 - CA-15 : Étant donné une cellule Fichier qui contient `` `a \| b` ``, quand on analyse la ligne, alors la colonne Traitement est lue correctement.
 - CA-16 : Étant donné un point dont la dernière occurrence est `reporté (tranche 2)`, quand on lance `set-reviewed`, alors pas de problème pour ce point ; quand on lance `close-check`, alors la clôture est refusée et le point est listé.
 - CA-17 : Étant donné un titre `### Bloquants` (ou `### A discuter`, `### **Bloquant**`) suivi d'un tableau de points, quand on contrôle, alors le titre est signalé ; étant donné une ligne `| RB1. … |` sous un autre titre `###` d'une section (`### Contrôles`), alors la ligne est signalée ; une phrase hors tableau qui cite `RD1` ne l'est pas.
+- CA-18 : Étant donné `RD3` traité `requalifié (RB4)` sans aucun `RB4 (ex-RD3)` plus loin, quand on contrôle, alors `RD3` est signalé ; étant donné `RB7 (repris)` sans `RB7` plus haut, ou `RB4 (ex-RD3)` sans `RD3` plus haut, alors la ligne est signalée. Le cas de CA-13 (requalification suivie de `RB4 (ex-RD3)`) reste sans problème.
 
 Vérifications d'ensemble :
 - `npm test` vert ; `claude plugin validate .` et `claude plugin validate ./plugins/atelier` ; `npm run build` dans `site/`.
@@ -154,3 +157,4 @@ Revert de la PR et publication d'une version suivante du plugin. Les `revue.md` 
 - 2026-11-21 : tests rouverts (gel quitté : 4924cad) : Revue 1 de la tranche 1 : cas oubliés de CA-12 (D1 ligne vide dans un tableau, D2 nombre de cellules différent de l'en-tête, D3 tableau dans un commentaire HTML)
 - 2026-11-21 : tests regelés : 9e36525
 - 2026-11-22 : contrôle ajouté (§3, CA-17) : une ligne de point hors tableau de points, ou un titre `###` proche de « Bloquant » / « À discuter », est signalé, parce que les points d'un tableau mal titré (`### Bloquants`) disparaissaient sans signalement (OD1 de la vérification de surapprentissage de la tranche 1, reporté en tranche 2)
+- 2026-11-22 : contrôles ajoutés (§3, CA-18) : un `requalifié (<ID>)` sans `<ID> (ex-…)` plus loin, et un `(repris)` ou un `(ex-<ID>)` sans occurrence plus haut, sont signalés, parce qu'un point requalifié vers un identifiant jamais écrit disparaissait sans signalement (OD14 et OD13 de la vérification de surapprentissage de la tranche 2)
