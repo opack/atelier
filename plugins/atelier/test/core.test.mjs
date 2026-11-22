@@ -2340,4 +2340,48 @@ describe('TEC-15 checking the review points', () => {
     assert.equal(problems.length, 1)
     assert.match(problems[0], /\bRB1\b/)
   })
+
+  it('CA-5 : un identifiant repris deux fois dans une même section est signalé (OB2)', () => {
+    const text = revueOf([
+      { title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB1. Premier', '`a.mjs`', 'corrigé (abc1234)']] },
+      { title: 'Revue : tranche 1 : 2026-11-22', blocking: [['RB1 (repris). Premier', '`a.mjs`', ''], ['RB1 (repris). Premier', '`a.mjs`', 'corrigé (def5678)']] },
+    ])
+    const problems = citing(pointProblems(text), /\bRB1\b/)
+    assert.equal(problems.length, 1)
+    assert.match(problems[0], /Revue : tranche 1 : 2026-11-22/)
+  })
+
+  it('CA-16 : un report à une tranche écrit librement est aussi refusé à la clôture (OD12)', () => {
+    for (const treatment of ['reporté en tranche 3', 'Reporté (tranche 2, avec CA-6)']) {
+      const text = revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD1. Reporté', '`a.mjs`', treatment]] }])
+      assert.deepEqual(pointProblems(text), [], treatment)
+      assert.equal(citing(pointProblems(text, { atClose: true }), /\bRD1\b/).length, 1, treatment)
+    }
+  })
+
+  it('CA-18 : un point requalifié vers un identifiant qui ne le reprend jamais (ex-) est signalé', () => {
+    const alone = revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD3. Commit non signé', '`a.mjs`', 'requalifié (RB4)']] }])
+    const withoutEx = revueOf([
+      { title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD3. Commit non signé', '`a.mjs`', 'requalifié (RB4)']] },
+      { title: 'Revue : tranche 1 : 2026-11-22', blocking: [['RB4. Autre chose', '`b.mjs`', 'corrigé (abc1234)']] },
+    ])
+    for (const [name, text] of Object.entries({ alone, withoutEx })) {
+      assert.equal(citing(pointProblems(text), /\bRD3\b/).length, 1, name)
+    }
+  })
+
+  it('CA-18 : un point marqué repris sans occurrence plus haut est signalé', () => {
+    const text = revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB7 (repris). Jamais présenté', '`a.mjs`', 'corrigé (abc1234)']] }])
+    const problems = pointProblems(text)
+    assert.equal(problems.length, 1)
+    assert.match(problems[0], /\bRB7\b/)
+  })
+
+  it('CA-18 : un point ex-RD3 sans RD3 plus haut est signalé', () => {
+    const text = revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB4 (ex-RD3). Commit non signé', '`a.mjs`', 'corrigé (abc1234)']] }])
+    const problems = pointProblems(text)
+    assert.equal(problems.length, 1)
+    assert.match(problems[0], /\bRB4\b/)
+    assert.match(problems[0], /\bRD3\b/)
+  })
 })
