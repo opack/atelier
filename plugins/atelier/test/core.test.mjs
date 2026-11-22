@@ -2155,3 +2155,189 @@ describe('TEC-15 reading revue.md', () => {
     assert.equal(core.readChantier(directory, config, 'TEC-31').revue, null)
   })
 })
+
+// The problems found by the review checks in a revue.md text.
+const pointProblems = (text, options = {}) => core.reviewPointProblems(core.parseReviewPoints(text), options)
+const citing = (problems, pattern) => problems.filter((problem) => pattern.test(problem))
+// A revue.md with one review section whose body is given as is.
+const revueWithBody = (body) => `# Revue : TEC-30 Essai\n\n## Revue : 2026-11-21\n\n${body}`
+const pointTable = '| Point | Fichier | Traitement |\n|---|---|---|\n'
+
+describe('TEC-15 checking the review points', () => {
+  it('CA-3 : c’est la dernière occurrence d’un point qui dit s’il est ouvert', () => {
+    const text = revueOf([
+      { title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB1. Premier', '`a.mjs`', ''], ['RB2. Second', '`b.mjs`', 'corrigé (abc1234)']] },
+      { title: 'Revue : tranche 1 : 2026-11-22', blocking: [['RB1 (repris). Premier', '`a.mjs`', 'corrigé (def5678)'], ['RB2 (repris). Second', '`b.mjs`', '']] },
+    ])
+    const problems = pointProblems(text)
+    assert.equal(citing(problems, /\bRB2\b/).length, 1)
+    assert.deepEqual(citing(problems, /\bRB1\b/), [])
+  })
+
+  it('CA-4 : un traitement commence par un mot-clé, quelle que soit sa casse', () => {
+    for (const cell of ['corrigé (abc1234)', 'Corrigé (abc1234)', 'test ajouté (abc1234)', 'Spec amendée (2026-11-21)',
+      'exception acceptée par Opack : coût', 'écarté : hors périmètre', 'Écarté : doublon', 'reporté (FIX-12)',
+      'reporté (tranche 3)', 'requalifié (RB4)', 'sans objet : code supprimé', 'SANS OBJET']) {
+      assert.equal(core.isTreatment(cell), true, cell)
+    }
+    for (const cell of ['', '   ', 'À corriger au build', 'TODO', 'à voir', 'correction à faire']) {
+      assert.equal(core.isTreatment(cell), false, cell)
+    }
+  })
+
+  it('CA-4 : un point sans traitement reconnu est signalé avec son identifiant et son intitulé, RB comme RD', () => {
+    const text = revueOf([{
+      title: 'Revue : 2026-11-21',
+      blocking: [['RB1. Push non vérifié', '`a.mjs`', ''], ['RB2. Commit non signé', '`b.mjs`', '   '], ['RB3. Bien traité', '`c.mjs`', 'Corrigé (abc1234)']],
+      discuss: [['RD1. Nom ambigu', '`d.mjs`', 'À corriger au build'], ['RD2. Doublon', '`e.mjs`', 'écarté : hors périmètre']],
+    }])
+    const problems = pointProblems(text)
+    assert.equal(problems.length, 3)
+    assert.equal(citing(problems, /\bRB1\b.*Push non vérifié/).length, 1)
+    assert.equal(citing(problems, /\bRB2\b.*Commit non signé/).length, 1)
+    assert.equal(citing(problems, /\bRD1\b.*Nom ambigu/).length, 1)
+  })
+
+  it('CA-5 : un identifiant présenté comme nouveau dans deux sections est signalé avec les titres des deux sections', () => {
+    const text = revueOf([
+      { title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB1. Premier', '`a.mjs`', 'corrigé (abc1234)']] },
+      { title: 'Revue : tranche 2 : 2026-11-22', blocking: [['RB1. Autre chose', '`b.mjs`', 'corrigé (def5678)']] },
+    ])
+    const problems = citing(pointProblems(text), /\bRB1\b/)
+    assert.equal(problems.length, 1)
+    assert.match(problems[0], /Revue : tranche 1 : 2026-11-21/)
+    assert.match(problems[0], /Revue : tranche 2 : 2026-11-22/)
+  })
+
+  it('CA-5 : un identifiant présent deux fois dans une même section est signalé', () => {
+    const text = revueOf([{
+      title: 'Revue : 2026-11-21',
+      blocking: [['RB1. Premier', '`a.mjs`', 'corrigé (abc1234)'], ['RB1. Second', '`b.mjs`', 'corrigé (abc1234)']],
+    }])
+    const problems = citing(pointProblems(text), /\bRB1\b/)
+    assert.equal(problems.length, 1)
+    assert.match(problems[0], /Revue : 2026-11-21/)
+  })
+
+  it('CA-6 : une cellule Point qui n’a pas la forme définie est signalée, avec son contenu', () => {
+    const cells = ['B1. Ancien format', '1. Numéro seul', 'Texte libre sans identifiant', 'RB1 Sans point final', 'RB2.Sans espace', 'Aucun']
+    const text = revueOf([{ title: 'Revue : 2026-11-21', blocking: cells.map((cell) => [cell, '`a.mjs`', 'corrigé (abc1234)']) }])
+    const problems = pointProblems(text)
+    for (const cell of cells) {
+      assert.equal(citing(problems, new RegExp(cell.replace(/[.()]/g, '\\$&'))).length, 1, cell)
+    }
+  })
+
+  it('CA-6 : la ligne « Aucun » (ou « aucun. ») seule n’est pas signalée', () => {
+    const text = revueOf([{ title: 'Revue : 2026-11-21', blocking: [['Aucun', '', '']], discuss: [['aucun.', '', '']] }])
+    assert.deepEqual(pointProblems(text), [])
+  })
+
+  it('CA-6 : une ligne dont le nombre de cellules diffère de l’en-tête est signalée (| non échappé)', () => {
+    const text = revueOf([{ title: 'Revue : 2026-11-21', blocking: [['RB1. Pipe non échappé', '`a.mjs`', 'corrigé (abc1234)', 'en trop']] }])
+    assert.equal(citing(pointProblems(text), /\bRB1\b/).length, 1)
+  })
+
+  it('CA-6 : une ligne mal formée suivie d’un séparateur n’est jamais prise pour l’en-tête (RD6, RD10, RD11)', () => {
+    const one = '| RB1. Un | `a.mjs` | corrigé (abc1234) |\n'
+    const two = '| RB2. Deux | `b.mjs` | corrigé (abc1234) |\n'
+    const cases = {
+      'RD6, ouvre le tableau': `### Bloquant\n| B1. Ancien | \`a.mjs\` | corrigé (abc1234) |\n|---|---|---|\n${two}`,
+      'RD10, en plein tableau': `### Bloquant\n${pointTable}${one}| B1. Ancien | Point | c |\n|---|---|---|\n${two}`,
+      'RD11, après une ligne vide': `### Bloquant\n${pointTable}${one}\n| B1. Ancien | Point | Traitement |\n|---|---|---|\n${two}`,
+      'RD11, après un commentaire': `### Bloquant\n${pointTable}${one}<!-- note -->\n| B1. Ancien | Point | Traitement |\n|---|---|---|\n${two}`,
+    }
+    for (const [name, body] of Object.entries(cases)) {
+      assert.equal(citing(pointProblems(revueWithBody(body)), /B1\. Ancien/).length, 1, name)
+    }
+  })
+
+  it('CA-6 : un point bien formé qui contient une cellule « Point », suivi d’un séparateur, est lu comme un point (RD7)', () => {
+    const text = revueWithBody(`### Bloquant\n| RB1. x | Point | c |\n|---|---|---|\n| RB2. Deux | \`b.mjs\` | corrigé (abc1234) |\n`)
+    assert.equal(citing(pointProblems(text), /\bRB1\b/).length, 1)
+  })
+
+  it('CA-6 : un en-tête mal écrit est signalé comme un en-tête non reconnu', () => {
+    for (const header of ['| point | Fichier | Traitement |', '| **Point** | Fichier | Traitement |', '| Point | File | Traitement |']) {
+      const text = revueWithBody(`### Bloquant\n${header}\n|---|---|---|\n| RB1. Un | \`a.mjs\` | corrigé (abc1234) |\n`)
+      assert.equal(citing(pointProblems(text), /en-tête/i).length, 1, header)
+    }
+  })
+
+  it('CA-7 : un revue.md aux sections « ## Tour » (antérieur à FEAT-7) n’est pas contrôlé', () => {
+    const text = revueOf([
+      { title: 'Tour 1', blocking: [['B1. Ancien format', '`a.mjs`', '']], discuss: [['1. Numéro seul', '`b.mjs`', '']] },
+      { title: 'Tour 2', blocking: [['B1. Ancien format', '`a.mjs`', 'À corriger']] },
+    ])
+    assert.deepEqual(pointProblems(text), [])
+    assert.deepEqual(pointProblems(text, { atClose: true }), [])
+  })
+
+  it('CA-7 : un revue.md qui garde une section « ## Tour » échappe au contrôle, même avec d’autres sections (RD5, spec §4)', () => {
+    const text = revueOf([
+      { title: 'Tour 1', blocking: [['B1. Ancien format', '`a.mjs`', 'corrigé (abc1234)']] },
+      { title: 'Revue : 2026-11-22', blocking: [['B2. Nouveau', '`b.mjs`', '']] },
+    ])
+    assert.deepEqual(pointProblems(text), [])
+  })
+
+  it('CA-7 : un revue.md aux autres sections, sans aucun RB/RD mais avec des points B1., est contrôlé', () => {
+    const text = revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', blocking: [['B1. Ancien format', '`a.mjs`', 'corrigé (abc1234)']], discuss: [['D1. Autre', '`b.mjs`', 'écarté : doublon']] }])
+    const problems = pointProblems(text)
+    assert.equal(citing(problems, /B1\. Ancien format/).length, 1)
+    assert.equal(citing(problems, /D1\. Autre/).length, 1)
+  })
+
+  it('CA-13 : un RD requalifié en RB, puis traité sous son nouvel identifiant, ne laisse aucun problème', () => {
+    const text = revueOf([
+      { title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD3. Commit non signé', '`a.mjs`', 'requalifié (RB4)']] },
+      { title: 'Revue : tranche 1 : 2026-11-22', blocking: [['RB4 (ex-RD3). Commit non signé', '`a.mjs`', 'corrigé (abc1234)']] },
+    ])
+    assert.deepEqual(pointProblems(text), [])
+    assert.deepEqual(pointProblems(text, { atClose: true }), [])
+  })
+
+  it('CA-14 : un RB dans le tableau « À discuter » ou un RD dans le tableau « Bloquant » est signalé', () => {
+    const text = revueOf([{
+      title: 'Revue : 2026-11-21',
+      blocking: [['RD1. Mal rangé', '`a.mjs`', 'corrigé (abc1234)']],
+      discuss: [['RB1. Mal rangé aussi', '`b.mjs`', 'corrigé (abc1234)']],
+    }])
+    const problems = pointProblems(text)
+    assert.equal(citing(problems, /\bRD1\b/).length, 1)
+    assert.equal(citing(problems, /\bRB1\b/).length, 1)
+  })
+
+  it('CA-16 : un point reporté à une tranche est accepté à l’enregistrement de la revue, refusé à la clôture', () => {
+    const text = revueOf([{
+      title: 'Revue : tranche 1 : 2026-11-21',
+      discuss: [['RD1. Reporté en tranche', '`a.mjs`', 'Reporté (tranche 2) : avec CA-6'], ['RD2. Reporté ailleurs', '`b.mjs`', 'reporté (FIX-12)']],
+    }])
+    assert.deepEqual(pointProblems(text), [])
+    const atClose = pointProblems(text, { atClose: true })
+    assert.equal(atClose.length, 1)
+    assert.match(atClose[0], /\bRD1\b/)
+  })
+
+  it('CA-16 : un point reporté à une tranche puis traité dans une revue suivante n’est pas refusé à la clôture', () => {
+    const text = revueOf([
+      { title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD1. Reporté', '`a.mjs`', 'reporté (tranche 2)']] },
+      { title: 'Revue : tranche 2 : 2026-11-22', discuss: [['RD1 (repris). Reporté', '`a.mjs`', 'corrigé (abc1234)']] },
+    ])
+    assert.deepEqual(pointProblems(text, { atClose: true }), [])
+  })
+
+  it('CA-17 : un titre ### proche de « Bloquant » ou « À discuter » est signalé', () => {
+    for (const title of ['Bloquants', 'bloquant', 'A discuter', 'À discuter :', '**Bloquant**']) {
+      const text = revueWithBody(`### ${title}\n${pointTable}| RB1. Un | \`a.mjs\` | corrigé (abc1234) |\n`)
+      assert.equal(citing(pointProblems(text), new RegExp(title.replace(/[*]/g, '\\$&'))).length, 1, title)
+    }
+  })
+
+  it('CA-17 : une ligne de point hors d’un tableau de points est signalée, une phrase qui cite un point ne l’est pas', () => {
+    const text = `${revueOf([{ title: 'Revue : 2026-11-21', discuss: [['RD1. Un', '`a.mjs`', 'corrigé (abc1234)']] }])}\n- RD1 corrigé, voir plus haut.\n\n### Contrôles\n${pointTable}| RB1. Perdu | \`x\` | corrigé (abc1234) |\n`
+    const problems = pointProblems(text)
+    assert.equal(problems.length, 1)
+    assert.match(problems[0], /\bRB1\b/)
+  })
+})
