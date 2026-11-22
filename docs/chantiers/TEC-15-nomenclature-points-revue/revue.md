@@ -23,3 +23,22 @@ Traitement d'un point : corrigé (commit), test ajouté, spec amendée, exceptio
 | RD5. `legacy` vaut vrai dès qu'une seule section `## Tour` existe | `plugins/atelier/lib/core.mjs:981` | reporté (tranche 2) : OD3 de `decisions.md`, à trancher par un test avec CA-7 |
 
 - Bilan de la revue : aucun point bloquant ; RD1 à RD3 à corriger avant la revue 2 de la tranche 1.
+
+## Revue : tranche 1 : 2026-11-22 (2)
+- Commit revu : ab308d8
+- Base : aa01962
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD1 (repris). Une ligne vide ou un tableau sans ligne d'en-tête fait perdre un point sans signalement | `plugins/atelier/lib/core.mjs` | corrigé (ab308d8) |
+| RD2 (repris). Une ligne dont le nombre de cellules diffère de l'en-tête est acceptée en silence | `plugins/atelier/lib/core.mjs` | corrigé (ab308d8) : `cellCountMismatch`, contre l'en-tête ou les colonnes du template ; signalement en tranche 2 (CA-6) |
+| RD3 (repris). Un tableau dans un commentaire HTML est lu comme de vrais points | `plugins/atelier/lib/core.mjs` | corrigé (ab308d8) : commentaire masqué s'il ouvre une ligne (OB1) |
+| RD6. Un point mal formé suivi d'une ligne de séparation est pris pour l'en-tête et disparaît sans signalement | `plugins/atelier/lib/core.mjs:983` | corrigé (37616d4) : en-tête seulement avec une cellule `Point` ; test en tranche 2 (CA-6) |
+
+- Bilan de la revue : aucun point bloquant ; RD1 à RD3 et RD6 corrigés, revue 3 à mener sur 37616d4.
