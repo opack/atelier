@@ -3,7 +3,7 @@ id: FIX-18
 type: FIX
 title: next-id ne compte plus les CA-n des commits
 status: draft
-tdd:                 # yes | no : décision humaine, obligatoire avant signature
+tdd: yes
 created_at: 2026-11-22
 source: constat sur ce dépôt (EPIC-14 attribué après FEAT-7) ; hors périmètre d'EPIC-17, spec §« Hors périmètre »
 signed_by:
