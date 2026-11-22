@@ -2526,3 +2526,75 @@ describe('TEC-15 numbering the review points', () => {
     })
   })
 })
+
+describe('TEC-15 refusing open review points in the CLI', () => {
+  const revuePath = (directory) => join(chantierDirectoryOf(directory, 'FEAT-20'), 'revue.md')
+  const openPoint = revueOf([{ title: 'Revue : tranche 2 : 2026-11-22', blocking: [['RB1. Push non vérifié', '`src/now.mjs`', '']], discuss: [['RD1. Nom peu clair', '`src/now.mjs`', 'écarté : convention du projet']] }])
+  const allTreated = revueOf([{ title: 'Revue : tranche 2 : 2026-11-22', blocking: [['RB1. Push non vérifié', '`src/now.mjs`', 'corrigé (abc1234)']], discuss: [['RD1. Nom peu clair', '`src/now.mjs`', 'écarté : convention du projet']] }])
+  const postponed = revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB1. Push non vérifié', '`src/now.mjs`', 'corrigé (abc1234)']], discuss: [['RD1. Message d’erreur vague', '`src/now.mjs`', 'reporté (tranche 2)']] }])
+
+  // Code and revue.md committed, then the review recorded at that commit (spec committed after it).
+  function reviewedWithRevue(revue) {
+    const directory = makeSlicedRepository({ tdd: 'no' })
+    commitFiles(directory, { 'src/a.mjs': 'code\n', [path.relative(directory, revuePath(directory))]: revue }, 'feat: a')
+    setHeader(directory, 'FEAT-20', { slice: 'chantier', last_slice: '3', reviewed_commit: headOf(directory) })
+    return directory
+  }
+
+  for (const [label, options] of [['revue de tranche', { slice: 2 }], ['revue du chantier', { slice: 'chantier', extra: { last_slice: '3' } }]]) {
+    it(`CA-8 : set-reviewed refuse un point ouvert de la copie de travail de revue.md (${label}), sans rien écrire dans la spec`, () => {
+      const { directory } = implementedSlice(options)
+      writeFileSync(revuePath(directory), openPoint)
+      const before = specFileText(directory, 'FEAT-20')
+      const { status, output } = atelierRun(directory, 'set-reviewed')
+      assert.notEqual(status, 0, output)
+      assert.match(output, /RB1\b.*Push non vérifié/)
+      assert.doesNotMatch(output, /RD1\b/, 'un point traité n’est pas listé')
+      assert.equal(specFileText(directory, 'FEAT-20'), before)
+    })
+  }
+
+  it('CA-8 : set-reviewed enregistre la revue quand tous les points de la copie de travail sont traités', () => {
+    const { directory } = implementedSlice({ slice: 2 })
+    writeFileSync(revuePath(directory), allTreated)
+    atelierOk(directory, 'set-reviewed')
+    assert.equal(specData(directory, 'FEAT-20').slice, '3')
+  })
+
+  for (const command of [['close-check'], ['set-status', 'done']]) {
+    it(`CA-9 : ${command.join(' ')} refuse la clôture avec un point ouvert dans un revue.md commité`, () => {
+      const directory = reviewedWithRevue(openPoint)
+      const before = specFileText(directory, 'FEAT-20')
+      const { status, output } = atelierRun(directory, ...command)
+      assert.notEqual(status, 0, output)
+      assert.match(output, /RB1\b.*Push non vérifié/)
+      assert.equal(specFileText(directory, 'FEAT-20'), before)
+    })
+
+    it(`CA-9 : ${command.join(' ')} refuse la clôture quand revue.md a des modifications non commitées`, () => {
+      const directory = reviewedWithRevue(allTreated)
+      writeFileSync(revuePath(directory), `${allTreated}\n- Note ajoutée après coup.\n`)
+      const { status, output } = atelierRun(directory, ...command)
+      assert.notEqual(status, 0, output)
+      assert.match(output, /revue\.md/)
+    })
+  }
+
+  it('CA-9 : close-check accepte la clôture avec un revue.md commité dont tous les points sont traités', () => {
+    const { status, output } = atelierRun(reviewedWithRevue(allTreated), 'close-check')
+    assert.equal(status, 0, output)
+  })
+
+  it('CA-16 : un point reporté (tranche 2) ne bloque pas set-reviewed', () => {
+    const { directory } = implementedSlice({ slice: 2 })
+    writeFileSync(revuePath(directory), postponed)
+    atelierOk(directory, 'set-reviewed')
+    assert.equal(specData(directory, 'FEAT-20').slice, '3')
+  })
+
+  it('CA-16 : un point dont la dernière occurrence est reporté (tranche 2) bloque la clôture et est listé', () => {
+    const { status, output } = atelierRun(reviewedWithRevue(postponed), 'close-check')
+    assert.notEqual(status, 0, output)
+    assert.match(output, /RD1\b.*Message d’erreur vague/)
+  })
+})
