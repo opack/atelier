@@ -42,3 +42,21 @@ Traitement d'un point : corrigé (commit), test ajouté, spec amendée, exceptio
 | RD6. Un point mal formé suivi d'une ligne de séparation est pris pour l'en-tête et disparaît sans signalement | `plugins/atelier/lib/core.mjs:983` | corrigé (37616d4) : en-tête seulement avec une cellule `Point` ; test en tranche 2 (CA-6) |
 
 - Bilan de la revue : aucun point bloquant ; RD1 à RD3 et RD6 corrigés, revue 3 à mener sur 37616d4.
+
+## Revue : tranche 1 : 2026-11-22 (3)
+- Commit revu : 792334a
+- Base : aa01962
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD7. Une ligne de point qui contient une cellule `Point`, suivie d'un séparateur, est prise pour l'en-tête | `plugins/atelier/lib/core.mjs:983` | corrigé (24e212a) |
+| RD8. Le test de RD6 attendu en tranche 2 n'est tracé que dans `revue.md` | `docs/chantiers/TEC-15-nomenclature-points-revue/revue.md:42` | reporté (tranche 2) : tests de RD6 et RD7 avec CA-6, consignés dans `decisions.md` |
+| RD9. Commentaire de `parseReviewPoints` mal recoupé | `plugins/atelier/lib/core.mjs:956` | corrigé (24e212a) |
+
+- Bilan de la revue : aucun point bloquant ; RD7 et RD9 corrigés, RD8 reporté en tranche 2 ; revue 4 à mener sur 24e212a.
