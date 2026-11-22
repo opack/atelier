@@ -129,3 +129,19 @@ Traitement d'un point : corrigé (commit), test ajouté, spec amendée, exceptio
 | RD15. Commentaire coupé de `reviewPointProblems`, `requalifiedTarget` appelé deux fois | `plugins/atelier/lib/core.mjs:1066`, `:1139` | corrigé (aea10c1) |
 
 - Bilan de la revue : RB1 corrigé ; RD5, RD8, RD12 à RD15 traités ; revue 2 à mener sur le commit corrigé.
+
+## Revue : tranche 2 : 2026-11-22 (2)
+- Commit revu : 49ff2d5
+- Base : 6f04b01
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+- Bilan de la revue : aucun point ; RB1, RD12 et RD15 confirmés corrigés, RD13 et RD14 confirmés traités ; le contrôle des points ne signale rien sur ce `revue.md`, avec ou sans `atClose`.
