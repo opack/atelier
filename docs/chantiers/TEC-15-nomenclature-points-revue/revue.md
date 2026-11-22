@@ -92,3 +92,19 @@ Traitement d'un point : corrigé (commit), test ajouté, spec amendée, exceptio
 | RD11. Une ligne de point mal formée qui ouvre un tableau après une rupture devient l'en-tête et disparaît sans signalement | `plugins/atelier/lib/core.mjs:985-986` | corrigé (765f871) : un en-tête n'a que des noms de colonnes ; test en tranche 2 avec CA-6 (`decisions.md`) |
 
 - Bilan de la revue : aucun point bloquant ; RD11 corrigé ; revue 6 à mener sur 765f871.
+
+## Revue : tranche 1 : 2026-11-22 (6)
+- Commit revu : 6f04b01
+- Base : aa01962
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+- Bilan de la revue : aucun point ; RD11 confirmé corrigé ; RD5 et RD8 restent reportés en tranche 2. Cas théorique noté : un en-tête avec une colonne en plus n'est plus reconnu, ses lignes sont signalées (messages de CA-6, tranche 2).

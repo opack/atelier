@@ -8,8 +8,9 @@ created_at: 2026-11-21
 signed_by: Opack
 signed_at: 2026-11-21
 rel_depends_on: FEAT-7
-tests_commit: 9e36525
-slice: 1
+tests_commit: 
+slice: 2
+slice_base: 6f04b01722fc85db6cf01cfd586cacea6da6fe50
 ---
 
 # TEC-15 Identifiants stables des points de relecture
