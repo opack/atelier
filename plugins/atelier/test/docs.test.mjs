@@ -3,17 +3,9 @@ import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import {
-  template,
-  makeRepository, atelier,
-  atelierRun,
-} from './helpers.mjs'
+import { template, makeRepository, atelier, atelierRun } from './helpers.mjs'
 
-
-// ---------- FEAT-4: relations between chantiers, EPIC type ----------
-
-
-describe('FEAT-4 process section of CLAUDE.md', () => {
+describe('process section of CLAUDE.md', () => {
   const processLines = () => template('process').split(/\r?\n/).filter((line) => line.trim())
 
   it('le template de la section Process existe et parle de l’EPIC et des relations [FEAT-4 CA-12]', () => {
@@ -65,7 +57,7 @@ describe('FEAT-4 process section of CLAUDE.md', () => {
   })
 })
 
-describe('FEAT-4 site', () => {
+describe('site chantier types', () => {
   const site = (relativePath) => readFileSync(fileURLToPath(new URL(`../../../site/${relativePath}`, import.meta.url)), 'utf8')
 
   // The build itself (`npm run build` in site/) is checked by hand at review: it needs the site's
@@ -80,10 +72,7 @@ describe('FEAT-4 site', () => {
   })
 })
 
-// ---------- FEAT-7: tests, build and review cycle per slice ----------
-
-
-describe('FEAT-7 vocabulary of the review', () => {
+describe('vocabulary of the review', () => {
   const repositoryPath = (relativePath) => fileURLToPath(new URL(`../../../${relativePath}`, import.meta.url))
   const reviewRound = /\btours? de revue\b|\btour \d+\b|\bà chaque tour\b/i
 
@@ -105,7 +94,7 @@ describe('FEAT-7 vocabulary of the review', () => {
   })
 })
 
-describe('TEC-15 prefixes in agents, skills and templates', () => {
+describe('prefixes in agents, skills and templates', () => {
   const pluginText = (relativePath) => readFileSync(fileURLToPath(new URL(`../${relativePath}`, import.meta.url)), 'utf8')
   const mentions = (text, prefix) => new RegExp(`\\b${prefix}(\\d+)?\\b`).test(text)
   const expectedPrefixes = {
@@ -148,7 +137,7 @@ describe('TEC-15 prefixes in agents, skills and templates', () => {
   }
 })
 
-describe('TEC-15 site reference pages', () => {
+describe('site reference pages', () => {
   const site = (relativePath) => readFileSync(fileURLToPath(new URL(`../../../site/${relativePath}`, import.meta.url)), 'utf8')
   // The table row whose first cell starts with `start` (a command or a glossary term).
   const row = (text, start) => text.split(/\r?\n/).find((line) => line.startsWith(`| ${start}`)) ?? ''
