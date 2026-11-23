@@ -11,7 +11,7 @@ Une spec signée est un engagement : elle ne se réécrit pas, elle s’**amende
 ```
 
 0. **Si la décision TDD change** : votre accord à part, `atelier set-tdd`, commit aussitôt, avant le reste de l’amendement.
-1. **Entrée datée d’abord** : une ligne `- AAAA-MM-JJ : quoi, pourquoi` à la fin de la section « Amendements ».
+1. **Entrée datée d’abord** : une ligne `- AAAA-MM-JJ : quoi, pourquoi` à la fin de la section « Amendements ». Si un point de relecture motive l’amendement, l’entrée le cite (`RB2`, `OD14`).
 2. **Éditions ciblées** de la spec, jamais une réécriture.
 3. **Impact** : critères ajoutés, modifiés, supprimés (pour un `TEC`, points de vérification), et ce qu’ils entraînent (tests, code, revue).
 4. **Nouvel accord** : vous validez l’amendement. C’est une petite re-signature : le commit `amend spec` en est la trace, `signed_by` et `signed_at` restent ceux de la signature initiale. Sans votre accord, les modifications de la spec sont annulées. Pour que cette annulation ne perde rien d’autre, la commande exige au départ une spec sans changement non commité.
