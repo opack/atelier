@@ -2836,4 +2836,11 @@ describe('Next identifier: where the counter reads identifiers', () => {
     botBranches.forEach((branch) => assert.deepEqual(core.branchNameIdentifiers(branch), [], branch))
     assert.deepEqual(core.branchNameIdentifiers('origin/fix/BUG-421-x'), ['BUG-421'])
   })
+
+  it('identifiers are read whatever their case, without a closing bracket, at the end of a branch name [FIX-18 CA-1, CA-2, CA-4]', () => {
+    assert.deepEqual(core.commitSubjectIdentifiers('test(plugin): [feat-7] add'), ['FEAT-7'])
+    assert.deepEqual(core.commitSubjectIdentifiers('test(plugin): [TEC-437 CA-3] cover'), ['TEC-437'])
+    assert.deepEqual(core.branchNameIdentifiers('fix/fix-18-x'), ['FIX-18'])
+    assert.deepEqual(core.branchNameIdentifiers('feature/JIRA-123'), ['JIRA-123'])
+  })
 })
