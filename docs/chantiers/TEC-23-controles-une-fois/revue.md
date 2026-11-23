@@ -22,3 +22,19 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD3. Étape 4 du contrôle de fin de tour muette sur l’origine du vert | `site/reference/configuration.md:44` | corrigé (8d06bd4) |
 
 - Bilan de la revue : CA-1 à CA-7 tenus, tests figés intacts depuis 9222907, 267/267 ; la correction `git rm --force` de `workingTreeId` est hors périmètre annoncé mais nécessaire et tracée dans decisions.md. Validée par Didier le 2026-11-23.
+
+## Revue : 2026-11-23 (après fusion de la PR #11)
+- Commit revu : e076e76
+- Base : 974a279
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+- Bilan de la revue : la PR #11 a été fusionnée par squash (1baabe5) avant la clôture ; `main` a été fusionnée dans la branche pour clôturer. `git diff 974a279 HEAD` est vide : contenu identique à l'état revu, rien à relire. Revue réenregistrée pour que `reviewed_commit` soit un ancêtre de la branche de clôture.
