@@ -12,6 +12,7 @@ tests_commit: bdbeb40
 slice: chantier
 slice_base: 3d7f912d9ad9e7285fa1ccb7acdb396d33418c5f
 last_slice: 6
+reviewed_commit: 4a22813bcba96a33b0f99625992d40658d56bd07
 ---
 
 # TEC-15 Identifiants stables des points de relecture
