@@ -16,6 +16,14 @@ claude plugin marketplace add opack/atelier
 claude plugin install atelier@atelier
 ```
 
+## Sous Windows
+
+atelier fonctionne dans PowerShell, cmd et Git Bash. Il faut **Node.js 20 ou plus récent** dans le `PATH` (`node --version` pour vérifier).
+
+Le plugin fournit deux lanceurs pour sa commande `atelier` : `bin/atelier` (script Node, utilisé par Git Bash, Linux et macOS) et `bin/atelier.cmd` (utilisé par PowerShell et cmd). Avec une version d’atelier qui ne fournit pas encore `atelier.cmd`, PowerShell ouvre la fenêtre « Ouvrir avec… » au lieu d’exécuter la commande : mettez à jour le plugin (voir [Mettre à jour](#mettre-a-jour)).
+
+Les arguments transmis par `atelier.cmd` passent par cmd, qui interprète certains caractères : voir [Garanties et limites](../reference/limites#les-arguments-sous-powershell-et-cmd).
+
 ## Dans une session cloud
 
 Les sessions Claude Code cloud n’installent pas les plugins déclarés par le dépôt dans `.claude/settings.json` : cette déclaration passe par la confiance dans le dossier, qu’une session cloud ne demande jamais. Ajoutez les deux commandes au script d’installation de l’environnement cloud :

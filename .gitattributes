@@ -1,0 +1,4 @@
+# Windows launcher: cmd expects CRLF line endings.
+*.cmd text eol=crlf
+# Node CLI run through its shebang: a CR would break `#!/usr/bin/env node`.
+plugins/atelier/bin/atelier text eol=lf
