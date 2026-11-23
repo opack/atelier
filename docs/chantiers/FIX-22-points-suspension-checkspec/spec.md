@@ -8,7 +8,7 @@ created_at: 2026-11-23
 source: revue tranche 6 de TEC-15, point RD20
 signed_by: Claude
 signed_at: 2026-11-23
-tests_commit: 2a3cb9b
+tests_commit: 
 slice: 1
 ---
 
@@ -103,3 +103,4 @@ Pas de données à réparer : le contrôle ne modifie aucun fichier.
 ## Amendements
 <!-- Après signature : une entrée datée par modification de la spec. -->
 - 2026-11-23 : recherche des `…` sur le texte de la section (commentaires neutralisés) plutôt que sur `meaningfulContent`, ouvertures de bloc après une puce ou un `>`, tests dans un fichier à part ; CA-4 précisé, CA-10 à CA-12 ajoutés ; commentaire de format de la §5 refermé (la signature l'avait laissé ouvert, ce qui masquait les critères au rendu). Pourquoi : la vérification de surapprentissage a montré que `meaningfulContent` retire les puces collées (`-…` signalé à tort) et que les tests de clôture de bloc et de code en ligne laissaient passer une implémentation fausse.
+- 2026-11-23 : tests rouverts (gel quitté : 2a3cb9b) : tests trop faibles selon la vérification de surapprentissage (clôtures de bloc, code en ligne à plusieurs accents graves, puces collées, message exact) ; CA-10 à CA-12 ajoutés par amendement
