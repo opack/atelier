@@ -118,3 +118,21 @@ Traitement d'un point : corrigé (commit), test ajouté, spec amendée, exceptio
 | D1. Titre de l'entrée « tous les tests renommés sur place avant les déplacements » et « leurs tests étant déjà étiquetés » au §5 encore ambigus | `decisions.md:68`, `spec.md:96` | écarté : la règle et le contrôle n'en dépendent pas, la conséquence de l'entrée précise déjà « restés dans `core.test.mjs` », et un test sans critère n'a pas d'étiquette à recevoir ; un amendement et une revue de plus pour deux mots n'apportent rien (décision de l'utilisateur) |
 
 - Bilan de la revue : aucun bloquant, 1 à discuter écarté. Traitements de la revue 3 fidèles ; `npm test` (314 verts) et `check-moves.mjs` (OK) relancés par le relecteur.
+
+## Revue : tranche 3 : 2026-11-23
+- Commit revu : 7ce8c19
+- Base : 7bcff52
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| D1. Un sous-ensemble de tests part sans les fonctions locales à son `describe` (`reviewedChantier` de `FEAT-7 close and next step`, tranche 4) | `move-tests.mjs:164-177` | reporté à la tranche 4 : le script y est retouché avant usage ; vérifier que `next-step.test.mjs` ne contient pas `reviewedChantier` |
+| D2. `helpers` ne déplace que des `function name(`, pas les `const` de niveau fichier (`pointProblems`, `citing`, `revueWithBody`, `pointTable`) | `move-tests.mjs:132-154` | reporté à la tranche 4 |
+| D3. Sans `describe` restant, `core.test.mjs` est réécrit incohérent | `move-tests.mjs:246` | reporté à la tranche 4 |
+| D4. Constante `NODE` morte ; titre d'un sous-ensemble non échappé | `move-tests.mjs:204-206`, `:179` | reporté à la tranche 4 |
+
+- Bilan de la revue : aucun bloquant, 4 à discuter reportés à la tranche 4 (ils portent sur l'outil de la tranche 4, pas sur le résultat de la tranche 3 ; décision de l'utilisateur). `check-moves.mjs` relancé par le relecteur : OK (314 tests, 232 renommés, écart de describe 3) ; chacun des 5 fichiers passe seul.
