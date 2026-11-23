@@ -22,7 +22,7 @@ La clôture ne relit pas et ne corrige pas le code : c'est le rôle de `/atelier
 À partir de la spec, du plan, de `decisions.md`, du diff et de `revue.md`, écris `bilan.md` depuis `atelier template bilan` :
 - **Livré vs spécifié** : chaque `CA` avec son statut et le test qui le couvre.
 - **Choix techniques**, **éléments de code principaux** (ce qu'un nouveau venu doit lire en premier), **pistes écartées**, **dette et suites**.
-- **Verdict de revue** : repris de `revue.md` (revues de tranche et du chantier, points bloquants traités, exceptions acceptées).
+- **Verdict de revue** : repris de `revue.md` (revues de tranche et du chantier), puis un point par identifiant (`RB1`, `RD1`…) avec son traitement final, celui de sa dernière occurrence (exceptions acceptées comprises). Un point `reporté` vers « Dette et suites » y figure aussi.
 - Pour un `FIX` : la cause réelle, confirmée ou non par rapport à la cause probable, et les autres endroits où le même schéma existe.
 - Pour un `SPIKE` : la réponse à la question, et la suite (ADR, nouveau chantier, abandon).
 - Pour un `EPIC` : le prévu (`plan.md`) confronté au réalisé (enfants donnés par `atelier status`, avec leur statut), les écarts de `decisions.md`, et l'atteinte de chaque CA global. Pas de section de revue.
@@ -36,7 +36,7 @@ Demande le verdict à l'utilisateur : **accepté**, **accepté avec exceptions**
 
 - **Refusé** : ne clôture pas. Selon ce qui est à reprendre : `/atelier:build`, `/atelier:write-tests` ou `/atelier:amend`, puis `/atelier:review`.
 - **Accepté** :
-  1. `atelier close-check`, maintenant et pas avant : il vérifie les tranches (toutes revues, revue du chantier faite) et la revue (présente, ancêtre de `HEAD`, aucun commit de code ni amendement depuis ; sauf `SPIKE` sans TDD et `EPIC`), les dépendances (`rel_depends_on` : toutes `done` dans cette branche), les enfants d'un EPIC, l'absence de code non commité, les tests figés en TDD, et lance les contrôles. S'il échoue, présente les problèmes et renvoie vers `/atelier:review` (pour un SPIKE sans TDD ou un EPIC, sans revue : corriger puis relancer `/atelier:close` ; une dépendance pas livrée ou pas fusionnée : la livrer, puis fusionner la branche par défaut ; une dépendance abandonnée : la retirer par `/atelier:amend` ou dépendre du chantier qui la remplace).
+  1. `atelier close-check`, maintenant et pas avant : il vérifie les tranches (toutes revues, revue du chantier faite) et la revue (présente, ancêtre de `HEAD`, aucun commit de code ni amendement depuis ; sauf `SPIKE` sans TDD et `EPIC`), les dépendances (`rel_depends_on` : toutes `done` dans cette branche), les enfants d'un EPIC, l'absence de code non commité, les tests figés en TDD, les points de `revue.md` (aucun `RB` ni `RD` sans traitement, aucun encore `reporté (tranche N)`, `revue.md` commité ; sauf `SPIKE` sans TDD et `EPIC`), et lance les contrôles. S'il échoue, présente les problèmes et renvoie vers `/atelier:review` (pour un SPIKE sans TDD ou un EPIC, sans revue : corriger puis relancer `/atelier:close` ; une dépendance pas livrée ou pas fusionnée : la livrer, puis fusionner la branche par défaut ; une dépendance abandonnée : la retirer par `/atelier:amend` ou dépendre du chantier qui la remplace).
   2. `atelier set-status done` (qui refait les mêmes vérifications) ; `atelier bypass off`.
   3. Commite : `docs(chantiers): [<ID>] close` (spec et bilan).
   4. Propose la PR : titre `[<ID>] <titre>`, description avec le résumé du bilan et les liens vers `spec.md`, `revue.md` et `bilan.md`. Ne la crée que si l'utilisateur le demande.

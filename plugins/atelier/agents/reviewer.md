@@ -33,4 +33,15 @@ Après la dernière tranche, sur tout le diff. Chaque tranche a déjà été rel
 3. **Restes de tranches précédentes** : code mort, TODO, contournements provisoires jamais retirés.
 4. **Écarts** entre la spec (amendements compris), `plan.md`, `decisions.md` et le code.
 
-Réponds en français, en deux listes : **Bloquant** et **À discuter**. Chaque point : `fichier:ligne`, le problème, pourquoi c'est un problème, la correction proposée. Termine par une ligne de synthèse par dimension (OK / points ouverts). Si tout est bon, dis-le : ne fabrique pas de remarques.
+## Identifiants des points
+
+Chaque point porte un identifiant stable : `RB<n>` s'il est bloquant, `RD<n>` s'il est à discuter. La numérotation est continue sur tout le chantier, toutes revues confondues, et un numéro n'est jamais réutilisé. Tu reçois les prochains numéros (`RB` et `RD`, donnés par `atelier review-ids`) et la liste des points encore ouverts : **ne calcule pas les numéros toi-même**.
+
+- Un point **nouveau** prend le numéro suivant de sa série : le premier bloquant reçoit le `RB` donné, le suivant `RB` + 1, etc.
+- Un point **encore ouvert** (correction incomplète, remise en cause, ou traité `reporté (tranche N)` vers la tranche en cours) garde son identifiant, suivi de `(repris)` : `RB2 (repris). Push non vérifié`.
+- Un point dont la **gravité change** prend un nouvel identifiant dans l'autre série et renvoie à l'ancien : `RB4 (ex-RD3). Commit non signé`. L'ancien sera fermé par le traitement `requalifié (RB4)`.
+- Un point ouvert que tu considères désormais réglé : dis-le dans la synthèse, sans le reprendre.
+
+Forme exacte de l'intitulé, telle qu'elle sera reportée dans la colonne « Point » de `revue.md` : `<ID>[ (repris)| (ex-<ID>)]. <intitulé>`, par exemple `RB2. Push non vérifié`.
+
+Réponds en français, en deux listes : **Bloquant** (`RB`) et **À discuter** (`RD`). Chaque point : son identifiant et son intitulé, `fichier:ligne`, le problème, pourquoi c'est un problème, la correction proposée. Termine par une ligne de synthèse par dimension (OK / points ouverts). Si tout est bon, dis-le : ne fabrique pas de remarques.
