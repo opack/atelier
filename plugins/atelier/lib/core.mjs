@@ -573,6 +573,36 @@ export function meaningfulContent(lines) {
     .join('\n')
 }
 
+// An ellipsis written apart (after a line start, a space or a table bar) stands for missing text.
+// Glued to the previous character, it is punctuation.
+const UNFINISHED_TEXT = /(?:^|[\s|])…/m
+
+// Hides code from the search for unfinished text. Fenced blocks are removed: opened by ``` or ~~~,
+// possibly indented, in a list item or in a quote; closed by a fence of the same character, at
+// least as long, preceded only by indentation or quote markers; or running to the end of the text.
+// Inline spans (a run of N backticks closed by exactly N on the same line) become a neutral
+// character, neither a space nor a `|`, so that an ellipsis glued to a span stays glued.
+export function hideCode(text) {
+  const kept = []
+  let fence = null
+  for (const line of text.split('\n')) {
+    if (fence) {
+      const closing = line.match(/^\s*(?:>\s*)*(`{3,}|~{3,})\s*$/)
+      if (closing && closing[1][0] === fence[0] && closing[1].length >= fence.length) {
+        fence = null
+      }
+      continue
+    }
+    const marker = line.match(/^\s*(?:>\s*)*(?:(?:[-*+]|\d+\.)\s+(?:\[[ xX]\]\s+)?)?(`{3,}|~{3,})(.*)$/)
+    if (marker && !(marker[1][0] === '`' && marker[2].includes('`'))) {
+      fence = marker[1]
+      continue
+    }
+    kept.push(line.replace(/(?<!`)(`+)(?!`).+?(?<!`)\1(?!`)/g, 'x'))
+  }
+  return kept.join('\n')
+}
+
 export function checkSpec(text) {
   const problems = []
   const { data, body } = parseFrontMatter(text)
@@ -605,8 +635,8 @@ export function checkSpec(text) {
       problems.push(`Section « ${title} » vide.`)
       continue
     }
-    if (content.includes('…')) {
-      problems.push(`Section « ${title} » : texte à compléter (« … »).`)
+    if (UNFINISHED_TEXT.test(hideCode(section.lines.join('\n').replace(/<!--[\s\S]*?-->/g, 'x')))) {
+      problems.push(`Section « ${title} » : texte à compléter (« … » isolé). S'il est voulu, mets-le en code en ligne.`)
     }
     if (CRITERIA_SECTIONS[type] === title && !/\bCA-\d+\b/.test(content)) {
       problems.push(`Section « ${title} » : aucun critère numéroté (CA-1, CA-2…).`)
