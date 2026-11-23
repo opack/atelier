@@ -2,11 +2,11 @@
 id: TEC-19
 type: TEC
 title: Plugin atelier actif dans les sessions sur ce dépôt
-status: draft
-tdd:                 # yes | no : décision humaine, obligatoire avant signature
+status: signed
+tdd: no
 created_at: 2026-11-22
-signed_by:
-signed_at:
+signed_by: Opack
+signed_at: 2026-11-23
 ---
 
 # TEC-19 Plugin atelier actif dans les sessions sur ce dépôt
