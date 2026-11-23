@@ -3,7 +3,7 @@ id: FIX-26
 type: FIX
 title: La prochaine étape ignore l'implémentation déjà commitée
 status: draft
-tdd:                 # yes | no : décision humaine, obligatoire avant signature
+tdd: yes
 created_at: 2026-11-23
 source: constat sur REF-16 (tranche 4/4), signalé par Didier
 signed_by:
@@ -28,7 +28,7 @@ Reproduit : oui, par lecture du code et par un dépôt de test.
 2. Commiter un fichier de code (hors `docs/chantiers/`) après `slice_base`.
 3. `atelier status` : la prochaine étape est « Tranche 2/2 : Implémenter (sans TDD pour ce chantier), puis commiter : /atelier:build ; ensuite faire relire : /atelier:review ».
 
-Même constat pour un FIX à tranche unique, et en TDD (phase `implementing`) après un commit de code postérieur au gel des tests.
+Même constat pour un FIX à tranche unique, et en TDD (phase `implementing`) après un commit de code postérieur au gel des tests (`tests_commit`).
 
 ## 3. Cause probable
 <!-- Hypothèse AVEC sa preuve (ligne de code, trace, breadcrumb). Confiance : forte / moyenne / faible.
@@ -44,7 +44,19 @@ Confiance : forte.
 Questions si manquant : corrige-t-on la cause ou le symptôme ? Des données déjà corrompues sont-elles à réparer ? -->
 Correction de la cause : la prochaine étape reçoit le signal « du code a été commité depuis le début de la tranche ».
 
-**Signal retenu** : celui de la règle « tranche vide » de `atelier set-reviewed`, pour que `status` propose la revue exactement quand `set-reviewed` ne la refusera plus pour ce motif. Il y a implémentation commitée quand au moins un fichier de code (au sens de `reviewCodeFiles` : hors dossier des chantiers, `freePaths` et `.atelier/`) a été modifié par un commit de `<début>..HEAD`, où `<début>` est `slice_base`, ou à défaut la base de fusion avec la branche par défaut. En TDD, les fichiers de tests ne comptent pas (le commit des tests ouvre chaque tranche). Si `<début>` est incalculable, le signal est absent et le comportement actuel est conservé.
+**Signal retenu** : celui de la règle « tranche vide » de `atelier set-reviewed` (`sliceCodeFiles`, réutilisée). Pour une tranche d'un chantier `sliced`, `status` propose donc la revue exactement quand `set-reviewed` ne la refusera plus pour ce motif. Pour `single`, `legacy` et le SPIKE sans TDD, `set-reviewed` n'a pas de règle « tranche vide » : le signal leur est étendu, sans équivalent côté refus (SD2).
+
+Il y a implémentation commitée quand au moins un fichier de code (au sens de `reviewCodeFiles` : hors dossier des chantiers, `freePaths` et `.atelier/`) a été modifié par un commit de `<début>..HEAD`. `<début>` vaut :
+- en TDD : `tests_commit` (le gel des tests de la tranche en cours), et les fichiers de tests ne comptent pas. Après une réouverture puis un nouveau gel des tests, le code commité avant le nouveau gel ne compte donc plus (SD1) ;
+- sans TDD : `slice_base`, ou à défaut la base de fusion avec la branche par défaut.
+
+**Signal incalculable** (SB1) : `codeCommitted` vaut `null` et le texte actuel est conservé, sans erreur, quand :
+- aucune base n'est trouvée ;
+- une commande git échoue (base introuvable, pas d'ancêtre commun, dépôt sans commit) ;
+- `<début>` n'est pas un ancêtre de HEAD (rebase, historique réécrit), vérifié comme le fait `atelier set-reviewed`.
+Le hook de début de session ne doit jamais échouer à cause de ce calcul.
+
+**Calcul seulement s'il peut changer la prochaine étape** (SD4) : `status` et le hook ne lancent git que pour un chantier signé, hors EPIC, hors phase `writing-tests`, hors tranche `chantier`, et dont la revue vaut `none`. Sinon `codeCommitted` vaut `null`.
 
 **Pas de condition sur les tests verts en TDD** : `status` ne lance pas la suite. La revue lance les contrôles et trouvera une suite rouge.
 
@@ -56,8 +68,8 @@ Correction de la cause : la prochaine étape reçoit le signal « du code a ét�
 Préfixées de « Tranche N/M : » pour une tranche en cours, comme aujourd'hui.
 
 **Fichiers touchés** :
-- `plugins/atelier/lib/core.mjs` : `nextStep` et `phaseStep` reçoivent un booléen `codeCommitted` (fonction pure, l'appelant fournit le fait).
-- `plugins/atelier/lib/cli.mjs` : `status` et `hookSessionStart` calculent ce booléen avec `sliceCodeFiles` (réutilisée, pas dupliquée) et le passent à `nextStep` ; `status --json` l'expose (`codeCommitted` : `true`, `false` ou `null` si incalculable).
+- `plugins/atelier/lib/core.mjs` : `nextStep(chantier, review, children, codeCommitted = null)` reçoit `codeCommitted` en 4e paramètre positionnel (SD5), qu'elle transmet à `phaseStep`. Fonction pure : l'appelant fournit le fait. Les appels et tests existants restent inchangés.
+- `plugins/atelier/lib/cli.mjs` : `status` et `hookSessionStart` calculent ce booléen avec `sliceCodeFiles` (réutilisée, pas dupliquée) et le passent à `nextStep` ; `status --json` l'expose dans l'objet `chantier` (`codeCommitted` : `true`, `false`, ou `null` quand il n'est pas calculé ou est incalculable).
 - `plugins/atelier/test/next-step.test.mjs` : cas purs ; un test de bout en bout sur dépôt temporaire pour `status` et le hook de début de session (exigence du dépôt pour un changement de hook).
 - `site/reference/commandes.md` : champ `codeCommitted` de `atelier status --json`.
 
@@ -73,12 +85,15 @@ Pas de données à réparer : la prochaine étape est recalculée à chaque appe
 - [ ] CA-6 : Étant donné `codeCommitted: true`, quand la phase est `writing-tests`, ou la revue `current` ou `stale`, ou la tranche `chantier`, alors `nextStep` renvoie exactement ce qu'elle renvoie avec `codeCommitted: false`.
 - [ ] CA-7 : Étant donné un dépôt temporaire avec un chantier `sliced` sans TDD, tranche 2/2, `slice_base` posé, quand seul un fichier du dossier du chantier est commité après `slice_base`, alors `atelier status --json` donne `codeCommitted: false` et une prochaine étape « Implémenter » ; quand un fichier de code est ensuite commité, alors il donne `codeCommitted: true` et une prochaine étape « Implémentation commitée : faire relire ».
 - [ ] CA-8 : Étant donné le dépôt de CA-7 après le commit de code, quand le hook de début de session s'exécute, alors la prochaine étape qu'il affiche contient « Implémentation commitée : faire relire : /atelier:review ».
-- [ ] CA-9 : Étant donné un chantier en TDD sur un dépôt temporaire, quand seul le commit des tests suit le début de la tranche, alors `atelier status --json` donne `codeCommitted: false`.
+- [ ] CA-9 : Étant donné un chantier en TDD sur un dépôt temporaire, quand seul le commit des tests suit le début de la tranche, alors `atelier status --json` donne `codeCommitted: false` ; quand un fichier de code a été commité avant `tests_commit` et aucun après, il donne aussi `codeCommitted: false`.
+- [ ] CA-10 : Étant donné le dépôt de CA-7 dont `slice_base` désigne un commit inexistant, puis un commit qui n'est pas un ancêtre de HEAD, quand on lance `atelier status --json` et le hook de début de session, alors `codeCommitted` vaut `null`, la prochaine étape est le texte actuel « Implémenter », et ni l'une ni l'autre commande n'échoue.
+- [ ] CA-11 : Étant donné un chantier dont la revue vaut `current`, ou en phase `writing-tests`, quand on lance `atelier status --json`, alors `codeCommitted` vaut `null`.
 
 ## 6. Notes complémentaires
 <!-- Hors périmètre, contournement temporaire, communication utilisateur, autres endroits où ce schéma existe. Optionnel. -->
 - Hors périmètre : du code modifié mais non commité. `status` ne regarde que les commits ; la revue et `set-reviewed` refusent déjà le code non commité.
 - Hors périmètre : savoir si l'implémentation est finie. Le rappel « ou reprendre /atelier:build » couvre le cas d'une implémentation partielle commitée.
+- Hors périmètre : un chantier dont la spec est sur la branche par défaut sans `slice_base`. La base de fusion y vaut HEAD, le signal reste `false` et le comportement actuel est conservé (SD3).
 - Contournement en attendant : ignorer la prochaine étape et lancer /atelier:review.
 
 ## Amendements
