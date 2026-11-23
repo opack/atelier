@@ -8,6 +8,8 @@ created_at: 2026-11-23
 source: constaté par Didier sous Windows (PowerShell), plugin 0.4.0
 signed_by: Opack
 signed_at: 2026-11-23
+tests_commit: 391f2cb
+slice: 1
 ---
 
 # FIX-25 Lancer atelier depuis PowerShell et cmd sous Windows
