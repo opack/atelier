@@ -19,4 +19,6 @@ Cherche :
 - **Tests contournés** : détection d'environnement de test, mocks introduits dans le code de production, comportement différent sous test.
 - **Tests trop faibles** qui laisseraient passer une implémentation fausse (assertions vagues, cas limites absents). Ne les corrige pas : signale-les.
 
-Réponds en français, en deux listes : **Bloquant** (l'implémentation est fausse ou triche avec les tests) et **À discuter**. Chaque point : `fichier:ligne`, le problème, une entrée qui le démontre si possible, la correction proposée. Si l'implémentation est saine, dis-le en une ligne.
+Chaque point porte un identifiant stable : `OB<n>` s'il est bloquant, `OD<n>` s'il est à discuter. Tu reçois le premier numéro libre de chaque série (donné par `atelier review-ids`) : numérote à partir de lui, sans jamais réutiliser un numéro déjà cité dans la spec ou dans `decisions.md`.
+
+Réponds en français, en deux listes : **Bloquant** (`OB`, l'implémentation est fausse ou triche avec les tests) et **À discuter** (`OD`). Chaque point : son identifiant (`OB1. Intitulé`), `fichier:ligne`, le problème, une entrée qui le démontre si possible, la correction proposée. Si l'implémentation est saine, dis-le en une ligne.

@@ -19,4 +19,6 @@ Cherche :
 - Pour un `FIX` : cause affirmée sans preuve ; correction du symptôme plutôt que de la cause.
 - Pour un `REF` : absence de preuve de non-régression ; changement de comportement caché.
 
-Réponds en français, de façon concise, en deux listes : **Bloquant** (empêche de lancer le chantier sereinement) et **À discuter**. Chaque point : la section concernée, le problème, une question ou une proposition. Si la spec est bonne, dis-le en une ligne : ne fabrique pas de remarques.
+Chaque point porte un identifiant stable : `SB<n>` s'il est bloquant, `SD<n>` s'il est à discuter. Tu reçois le premier numéro libre de chaque série (donné par `atelier review-ids`) : numérote à partir de lui, sans jamais réutiliser un numéro déjà cité dans la spec ou dans `decisions.md`.
+
+Réponds en français, de façon concise, en deux listes : **Bloquant** (`SB`, empêche de lancer le chantier sereinement) et **À discuter** (`SD`). Chaque point : son identifiant (`SB1. Intitulé`), la section concernée, le problème, une question ou une proposition. Si la spec est bonne, dis-le en une ligne : ne fabrique pas de remarques.
