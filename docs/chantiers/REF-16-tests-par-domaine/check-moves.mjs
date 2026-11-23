@@ -101,22 +101,24 @@ async function runSuite(directory) {
   }
 }
 
-function take(counts, name) {
-  const count = counts.get(name) ?? 0
-  if (count === 0) return false
-  counts.set(name, count - 1)
+// Removes from `remaining` one test named `name` (in `file`, when given); tells whether there was one.
+function take(remaining, name, file) {
+  const index = remaining.findIndex((test) => test.name === name && (file === undefined || test.file === file))
+  if (index < 0) return false
+  remaining.splice(index, 1)
   return true
 }
 
-function compareNames(baseTests, currentTests, baseFileStillThere) {
-  const remaining = new Map()
-  currentTests.forEach(({ name }) => remaining.set(name, (remaining.get(name) ?? 0) + 1))
+// A renamed test may be in any file; a test under its old name only in its base file, which it has
+// not left yet.
+function compareNames(baseTests, currentTests) {
+  const remaining = currentTests.map(({ name, file }) => ({ name, file }))
   const expected = baseTests.map((test) => ({ old: test.name, new: renamed(test.name, test.suites), file: test.file }))
   expected.forEach((entry) => { entry.found = take(remaining, entry.new) ? 'new' : null })
   expected.filter((entry) => !entry.found).forEach((entry) => {
-    entry.found = baseFileStillThere(entry.file) && take(remaining, entry.old) ? 'old' : null
+    entry.found = take(remaining, entry.old, entry.file) ? 'old' : null
   })
-  const extra = [...remaining].flatMap(([name, count]) => Array(count).fill(name))
+  const extra = remaining.map(({ name, file }) => `${name} (${file})`)
   return { expected, missing: expected.filter((entry) => !entry.found), extra }
 }
 
@@ -249,7 +251,7 @@ async function main() {
     console.log('\n## Noms')
     const baseFileStillThere = (file) => baseFiles.includes(file) && existsSync(join(testDirectory, file))
     const remainingBaseFiles = baseFiles.filter(baseFileStillThere)
-    const names = compareNames(base.tests, current.tests, baseFileStillThere)
+    const names = compareNames(base.tests, current.tests)
     const renamedCount = names.expected.filter((entry) => entry.found === 'new' && entry.new !== entry.old).length
     const pendingCount = names.expected.filter((entry) => entry.found === 'old' && entry.new !== entry.old).length
     console.log(`- ${renamedCount} renommés, ${pendingCount} pas encore renommés${remainingBaseFiles.length ? ` (existent encore : ${remainingBaseFiles.join(', ')})` : ''}`)

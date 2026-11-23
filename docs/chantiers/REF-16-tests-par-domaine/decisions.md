@@ -58,3 +58,8 @@
 - Contexte : les tests générés en boucle de FIX-22 (`it(name, …)`) reçoivent l'étiquette de leur `describe` : `` it(`${name} [FIX-22 CA-2]`, …) ``.
 - Écarté : mettre l'étiquette dans les clés des tableaux de données, qui modifierait des lignes de données.
 - Conséquence : le contrôle de lignes lit `it(name,` comme `` it(`${name}`, `` avant de retirer l'étiquette. Sabotages rejoués : étiquette héritée fausse et assertion affaiblie dans un test généré, tous deux refusés.
+
+## 2026-11-23 : le commit de fusion de main reste tel quel (revue de la tranche 2, D2)
+- Contexte : `6585ba5` porte le message par défaut de git, sans `[REF-16]`, et la suite y est rouge jusqu'à `aa47b2f` (import de `spawnSync` déplacé dans `helpers.mjs` par la tranche 1).
+- Écarté : refaire la fusion, qui réécrit l'historique (§6) alors que la branche est déjà sur `origin`.
+- Conséquence : pour les fusions suivantes, `git merge --no-commit main`, suite relancée et corrigée avant le commit, message `chore(merge): [REF-16] fusion de main (<sha>)`.
