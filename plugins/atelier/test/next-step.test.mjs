@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { nextStep } from '../lib/core.mjs'
-import { signedChantier, draftChantier, implementingChantier, signedTec, atelier, makeChantiersRepository, assertLine, epicPlan, slicedChantier, makeSlicedRepository, atelierOk, atSliceTwo } from './helpers.mjs'
+import { signedChantier, draftChantier, implementingChantier, signedTec, atelier, makeChantiersRepository, assertLine, epicPlan, slicedChantier, makeSlicedRepository, atelierOk, atSliceTwo, planOf, commitFiles, setHeader, headOf, git } from './helpers.mjs'
 
 describe('next step', () => {
   it('follows the process order', () => {
@@ -149,5 +149,154 @@ describe('next step of a sliced chantier', () => {
     const { directory } = atSliceTwo()
     assert.match(atelierOk(directory, 'hook-session-start'), /Tranche 2\/3/)
     assert.doesNotMatch(atelierOk(makeSlicedRepository({ plan: null }), 'hook-session-start'), /tranche/i)
+  })
+})
+
+describe('next step once the implementation is committed', () => {
+  const twoSlices = planOf([1, 2])
+  const base = 'a'.repeat(40)
+  // Typographic and straight apostrophes are the same text for the user.
+  const plain = (text) => text.replaceAll('’', "'")
+  const sameText = (actual, expected, label) => assert.equal(plain(actual), plain(expected), label)
+  const toReview = 'Implémentation commitée : faire relire : /atelier:review (ou reprendre /atelier:build si elle n\'est pas finie)'
+  const toClose = 'Implémentation commitée : clôturer : /atelier:close (ou reprendre /atelier:build si elle n\'est pas finie)'
+  const buildWithoutTdd = 'Implémenter (sans TDD pour ce chantier), puis commiter : /atelier:build ; ensuite faire relire : /atelier:review'
+  const buildWithTdd = 'Implémenter jusqu\'à ce que tous les tests passent, sans modifier les tests, puis commiter : /atelier:build ; ensuite faire relire : /atelier:review'
+  const slicedWithoutTdd = slicedChantier({ slice: '2', slice_base: base }, { plan: twoSlices, type: 'REF', tdd: 'no' })
+  const slicedImplementing = slicedChantier({ slice: '2', slice_base: base, tests_commit: 'abc1234' }, { plan: twoSlices })
+  const fix = (data) => ({ id: 'FIX-9', directory: '/p/docs/chantiers/FIX-9-x', spec: { data: { status: 'signed', type: 'FIX', ...data }, body: '# x\n' }, files: ['spec.md'] })
+  const singleImplementing = fix({ tdd: 'yes', tests_commit: 'abc1234', slice: '1' })
+  const singleWithoutTdd = fix({ tdd: 'no' })
+  const legacyImplementing = fix({ tdd: 'yes', tests_commit: 'abc1234' })
+  const spike = { ...signedTec, id: 'SPIKE-4', spec: { data: { status: 'signed', type: 'SPIKE', tdd: 'no' } } }
+
+  it('tranche en cours sans TDD, code commité : faire relire [FIX-26 CA-1]', () => {
+    sameText(nextStep(slicedWithoutTdd, 'none', [], true), `Tranche 2/2 : ${toReview}`)
+  })
+
+  it('tranche en cours sans TDD, sans code commité ou signal absent : texte actuel [FIX-26 CA-2]', () => {
+    for (const codeCommitted of [false, null, undefined]) {
+      sameText(nextStep(slicedWithoutTdd, 'none', [], codeCommitted), `Tranche 2/2 : ${buildWithoutTdd}`, String(codeCommitted))
+    }
+  })
+
+  it('TDD en phase implementing : faire relire si du code est commité, sinon implémenter [FIX-26 CA-3]', () => {
+    sameText(nextStep(slicedImplementing, 'none', [], true), `Tranche 2/2 : ${toReview}`)
+    sameText(nextStep(singleImplementing, 'none', [], true), toReview)
+    sameText(nextStep(slicedImplementing, 'none', [], false), `Tranche 2/2 : ${buildWithTdd}`)
+    sameText(nextStep(singleImplementing, 'none', [], false), buildWithTdd)
+  })
+
+  it('chantier single et legacy, code commité : faire relire, sans préfixe de tranche [FIX-26 CA-4]', () => {
+    sameText(nextStep(singleWithoutTdd, 'none', [], true), toReview, 'single')
+    sameText(nextStep(legacyImplementing, 'none', [], true), toReview, 'legacy')
+  })
+
+  it('SPIKE sans TDD, code commité : clôturer [FIX-26 CA-5]', () => {
+    sameText(nextStep(spike, 'none', [], true), toClose)
+  })
+
+  it('le signal ne change rien en écriture des tests, avec une revue, ni en revue du chantier [FIX-26 CA-6]', () => {
+    const cases = [
+      ['writing-tests', slicedChantier({ slice: '2', slice_base: base }, { plan: twoSlices }), 'none'],
+      ['writing-tests single', fix({ tdd: 'yes' }), 'none'],
+      ['revue current', singleWithoutTdd, 'current'],
+      ['revue stale', singleWithoutTdd, 'stale'],
+      ['revue current sliced', slicedWithoutTdd, 'current'],
+      ['revue stale sliced', slicedWithoutTdd, 'stale'],
+      ['tranche chantier', slicedChantier({ slice: 'chantier', last_slice: '2', slice_base: base }, { plan: twoSlices, type: 'REF', tdd: 'no' }), 'none'],
+      ['tranche chantier revue current', slicedChantier({ slice: 'chantier', last_slice: '2', slice_base: base }, { plan: twoSlices, type: 'REF', tdd: 'no' }), 'current'],
+    ]
+    for (const [label, chantier, review] of cases) {
+      assert.equal(nextStep(chantier, review, [], true), nextStep(chantier, review, [], false), label)
+    }
+  })
+})
+
+describe('status and session start once the implementation is committed', () => {
+  const status = (directory) => JSON.parse(atelierOk(directory, 'status', '--json'))
+  const plain = (text) => text.replaceAll('’', "'")
+  const reviewPattern = /Implémentation commitée : faire relire : \/atelier:review/
+
+  // REF-20 without TDD, slice 2/2 started after slice 1's code, only the spec committed since.
+  function refAtSliceTwo() {
+    const directory = makeSlicedRepository({ id: 'REF-20', tdd: 'no', plan: planOf([1, 2]) })
+    commitFiles(directory, { 'src/one.mjs': 'export const one = 1\n' }, 'refactor: one')
+    setHeader(directory, 'REF-20', { slice: '2', slice_base: headOf(directory) })
+    return directory
+  }
+
+  it('status : codeCommitted false tant que seul le dossier du chantier change, puis true après un commit de code [FIX-26 CA-7]', () => {
+    const directory = refAtSliceTwo()
+    commitFiles(directory, { 'docs/chantiers/REF-20-x/notes.md': 'notes\n' }, 'docs: notes')
+    const before = status(directory)
+    assert.equal(before.chantier.codeCommitted, false)
+    assert.match(before.nextStep, /^Tranche 2\/2 : Implémenter/)
+    commitFiles(directory, { 'src/two.mjs': 'export const two = 2\n' }, 'refactor: two')
+    const after = status(directory)
+    assert.equal(after.chantier.codeCommitted, true)
+    assert.match(plain(after.nextStep), /^Tranche 2\/2 : Implémentation commitée : faire relire : \/atelier:review \(ou reprendre \/atelier:build si elle n'est pas finie\)$/)
+  })
+
+  it('le hook de début de session affiche la revue comme prochaine étape [FIX-26 CA-8]', () => {
+    const directory = refAtSliceTwo()
+    commitFiles(directory, { 'src/two.mjs': 'export const two = 2\n' }, 'refactor: two')
+    assertLine(atelierOk(directory, 'hook-session-start'), [/^Prochaine étape :/, reviewPattern])
+  })
+
+  it('TDD : le commit des tests et le code commité avant le gel ne comptent pas [FIX-26 CA-9]', () => {
+    const frozen = (directory) => {
+      commitFiles(directory, { 'test/fix.test.mjs': 'test\n' }, 'test: fix')
+      setHeader(directory, 'FIX-20', { tests_commit: git(directory, 'rev-parse', '--short', 'HEAD').trim(), slice: '1' })
+    }
+    const onlyTests = makeSlicedRepository({ id: 'FIX-20', tdd: 'yes', plan: null })
+    frozen(onlyTests)
+    assert.equal(status(onlyTests).chantier.codeCommitted, false, 'seul le commit des tests')
+
+    const codeBeforeFreeze = makeSlicedRepository({ id: 'FIX-20', tdd: 'yes', plan: null })
+    commitFiles(codeBeforeFreeze, { 'src/early.mjs': 'export const early = 1\n' }, 'fix: early')
+    frozen(codeBeforeFreeze)
+    assert.equal(status(codeBeforeFreeze).chantier.codeCommitted, false, 'code commité avant le gel')
+
+    commitFiles(codeBeforeFreeze, { 'src/fix.mjs': 'export const fix = 1\n' }, 'fix: fix')
+    const after = status(codeBeforeFreeze)
+    assert.equal(after.chantier.codeCommitted, true, 'code commité après le gel')
+    assert.match(after.nextStep, reviewPattern)
+  })
+
+  it('début de tranche introuvable ou hors de l’historique : null, texte actuel, sans échec [FIX-26 CA-10]', () => {
+    const missing = refAtSliceTwo()
+    commitFiles(missing, { 'src/two.mjs': 'export const two = 2\n' }, 'refactor: two')
+    setHeader(missing, 'REF-20', { slice_base: 'f'.repeat(40) })
+
+    const notAncestor = refAtSliceTwo()
+    commitFiles(notAncestor, { 'src/two.mjs': 'export const two = 2\n' }, 'refactor: two')
+    git(notAncestor, 'switch', '-q', '-c', 'other')
+    commitFiles(notAncestor, { 'src/other.mjs': 'export const other = 1\n' }, 'chore: other')
+    const outside = headOf(notAncestor)
+    git(notAncestor, 'switch', '-q', 'ref/REF-20-x')
+    setHeader(notAncestor, 'REF-20', { slice_base: outside })
+
+    for (const [label, directory] of [['introuvable', missing], ['hors historique', notAncestor]]) {
+      const summary = status(directory)
+      assert.equal(summary.chantier.codeCommitted, null, label)
+      assert.match(summary.nextStep, /^Tranche 2\/2 : Implémenter/, label)
+      assertLine(atelierOk(directory, 'hook-session-start'), [/^Prochaine étape :/, /Implémenter/], label)
+    }
+  })
+
+  it('revue à jour ou tests pas encore figés : codeCommitted vaut null [FIX-26 CA-11]', () => {
+    const reviewed = makeSlicedRepository({ id: 'FIX-20', tdd: 'no', plan: null })
+    commitFiles(reviewed, { 'src/fix.mjs': 'export const fix = 1\n' }, 'fix: fix')
+    setHeader(reviewed, 'FIX-20', { reviewed_commit: headOf(reviewed), slice: '1' })
+    const reviewedSummary = status(reviewed)
+    assert.equal(reviewedSummary.chantier.reviewState, 'current', 'précondition')
+    assert.equal(reviewedSummary.chantier.codeCommitted, null, 'revue à jour')
+
+    const writingTests = makeSlicedRepository({ id: 'FIX-20', tdd: 'yes', plan: null })
+    commitFiles(writingTests, { 'src/fix.mjs': 'export const fix = 1\n' }, 'fix: fix')
+    const writingSummary = status(writingTests)
+    assert.equal(writingSummary.chantier.testDrivenPhase, 'writing-tests', 'précondition')
+    assert.equal(writingSummary.chantier.codeCommitted, null, 'tests pas encore figés')
   })
 })
