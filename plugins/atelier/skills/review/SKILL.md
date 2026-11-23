@@ -60,7 +60,7 @@ Un `|` dans une cellule s'écrit `\|`. Un `revue.md` aux points sans identifiant
 
 ## 5. Faire valider, puis enregistrer
 
-Quand plus aucun point de `revue.md` n'est ouvert (`atelier review-ids` : aucun point ouvert ; il ne voit pas les lignes mal formées ni les doublons, que seul `set-reviewed` signale) et que tout est commité, présente le résultat à l'utilisateur et **demande-lui explicitement s'il valide** la revue de la tranche (ou du chantier). Sans son « oui », n'écris rien : la tranche reste en cours.
+Quand plus aucun point de `revue.md` n'est ouvert (`atelier review-ids` : aucun point ouvert ; il ne signale que les points sans traitement ; les autres problèmes de `revue.md` (forme, tableau, doublon, renvoi manquant) ne sont vus que par `set-reviewed`) et que tout est commité, présente le résultat à l'utilisateur et **demande-lui explicitement s'il valide** la revue de la tranche (ou du chantier). Sans son « oui », n'écris rien : la tranche reste en cours.
 
 Seulement après son accord :
 1. `atelier set-reviewed`. Selon la portée :
@@ -68,7 +68,7 @@ Seulement après son accord :
    - dernière tranche (ou tranche retirée du plan entre-temps) : passe à la revue du chantier (`slice: chantier`, `last_slice`, `slice_base` ; tests toujours figés) ;
    - revue du chantier ou chantier à tranche unique : écrit `reviewed_commit` (hash complet de `HEAD`).
 
-   La commande refuse sans spec signée, avec du code non commité, avec des changements non commités de `spec.md`, en TDD si les tests ne sont pas figés ou ont changé depuis leur gel, si `slice_base` n'est plus un ancêtre de `HEAD` (seul l'utilisateur corrige ce champ), pour une tranche sans aucun commit de code (« tranche vide »), ou si `revue.md` (copie de travail) a un point sans traitement reconnu ou mal formé : elle liste alors les problèmes, à traiter à l'étape 3 ou 4.
+   La commande refuse sans spec signée, avec du code non commité, avec des changements non commités de `spec.md`, en TDD si les tests ne sont pas figés ou ont changé depuis leur gel, si `slice_base` n'est plus un ancêtre de `HEAD` (seul l'utilisateur corrige ce champ), pour une tranche sans aucun commit de code (« tranche vide »), ou si `revue.md` (copie de travail) a un point sans traitement reconnu ou mal formé : elle liste alors les problèmes, à traiter à l'étape 3 ou 4, puis redemande la validation à l'utilisateur.
 2. Commite aussitôt la spec et `revue.md` : `git add <dossier du chantier>/spec.md <dossier du chantier>/revue.md` puis `git commit -m "docs(chantiers): [<ID>] review <tranche>"` (`<tranche>` : son numéro, ou `chantier` ; rien pour un chantier à tranche unique).
 3. Suite, donnée par la commande :
    - tranche suivante : `/atelier:write-tests` en TDD, sinon `/atelier:build` ;
