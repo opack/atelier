@@ -28,6 +28,8 @@ atelier est un plugin Claude Code : ses commandes `/atelier:*` se lancent **dans
 
 Puis, dans chaque projet : `/atelier:init`. Il déclare aussi le plugin dans le `.claude/settings.json` du projet : toute personne qui ouvre le projet se voit proposer atelier automatiquement, sans commande.
 
+Sessions Claude Code cloud : elles ignorent les plugins déclarés par le dépôt. Mets les deux commandes d'installation ci-dessus dans le script d'installation de l'environnement cloud.
+
 Pour tester une branche du plugin avant sa fusion, ajoute la référence : `claude plugin marketplace add "opack/atelier#<branche>"`.
 
 ## Mise à jour
@@ -44,7 +46,7 @@ Puis redémarre Claude Code. Claude Code ne récupère une nouvelle version que 
 claude --plugin-dir <chemin>/atelier/plugins/atelier
 ```
 
-Puis `/reload-plugins` après chaque modification. Tests : `npm test`. Validation : `claude plugin validate .`.
+Puis `/reload-plugins` après chaque modification. Cette version remplace, pour la session, le plugin installé du même nom. Tests : `npm test`. Validation : `claude plugin validate .`.
 
 ## Types de chantier
 

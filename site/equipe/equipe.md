@@ -7,7 +7,7 @@ atelier est conçu pour un développeur seul, mais tient en petite équipe (quel
 Tout ce qui fait la méthode est versionné :
 
 - le `CLAUDE.md` et les règles `.claude/rules/` ;
-- le plugin, déclaré dans `.claude/settings.json` : chacun se le voit proposer en ouvrant le projet ;
+- le plugin, déclaré dans `.claude/settings.json` : chacun se le voit proposer en ouvrant le projet (en session cloud, par le script d'installation de l'environnement, voir [Installation](../projet/installation#dans-une-session-cloud)) ;
 - les templates de spec, de bilan, la checklist de revue ;
 - le socle commun (à venir).
 
