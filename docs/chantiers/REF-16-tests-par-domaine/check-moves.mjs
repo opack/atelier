@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // REF-16: checks that splitting plugins/atelier/test/core.test.mjs by domain lost, duplicated or
 // altered nothing (spec §4). Run from anywhere: node docs/chantiers/REF-16-tests-par-domaine/check-moves.mjs
+// Never run it twice at the same time in the same repository: each run first removes the
+// `ref16-base-*` worktrees it finds, including another run's.
 import { execFileSync, spawn } from 'node:child_process'
 import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'

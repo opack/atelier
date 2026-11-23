@@ -34,6 +34,10 @@
 - Contexte : le §4 tolère les différences de titre des `describe`, des `it` et des libellés de `cases`.
 - Écarté : ignorer ces lignes en entier, ce qui laisserait passer un changement du reste de la ligne (`async`, contenu d'un cas de `cases`).
 - Conséquence : `check-moves.mjs` remplace seulement le premier littéral de chaîne de ces lignes par `<titre>` et compare le reste.
+- Révisé le 2026-11-23 (revue de la tranche 1, D1) : seuls les titres des `describe` deviennent `<titre>`. Ceux des `it` et les libellés de `cases` deviennent `<titre:…>`, leur texte sans étiquette (amendement du §4), et chaque ligne du corps d'un `it` est préfixée par ce titre (`<titre:…> ¦ <ligne>`).
+  - Écarté : comparer seulement les titres sans étiquette, qui laisse passer l'échange de deux titres ou le déplacement d'une assertion d'un test à l'autre (le multiensemble des lignes est le même).
+  - Conséquence : plus strict que le §4. Tout changement du corps d'un test, ou de son titre hors étiquette, fait échouer le contrôle ; un échec de lignes s'affiche préfixé du titre du test concerné.
+  - Limite acceptée : les lignes hors d'un corps d'`it` (utilitaires de `helpers.mjs`, fonctions et variables au niveau d'un `describe`) ne sont rattachées à rien ; échanger une ligne entre deux utilitaires passerait. Les utilitaires ont été déplacés à l'identique en tranche 1 (vérifié à l'octet près en revue) et les tranches suivantes déplacent des blocs entiers.
 
 ## 2026-11-23 : imports et exports tolérés sous leur seule forme d'instruction
 - Contexte : les lignes d'import et d'export entre fichiers sont tolérées.
