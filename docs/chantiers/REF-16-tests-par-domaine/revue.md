@@ -55,3 +55,20 @@ Traitement d'un point : corrigé (commit), test ajouté, spec amendée, exceptio
 |---|---|---|
 
 - Bilan de la revue : aucun point ; traitements de la revue précédente vérifiés fidèles, écartement de D4 fondé.
+
+## Revue : tranche 2 : 2026-11-23
+- Commit revu : 491febe
+- Base : 7c65a01 (travail propre à la tranche : 6585ba5..491febe, après la fusion de `main` 8c1a799)
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| D1. Un test déplacé sans renommage passe tant que son fichier de base existe | `check-moves.mjs:111-121` | corrigé (de24fdb) : un nom ancien n'est accepté que dans le fichier d'origine du test ; sabotage rejoué (CA-8 déplacé sous son ancien nom dans `identifiers.test.mjs`) → échec |
+| D2. Commit de fusion 6585ba5 sans `[REF-16]`, suite rouge jusqu'à aa47b2f | commit 6585ba5 | corrigé (de24fdb) : consigné dans `decisions.md`, pas de réécriture d'historique ; procédure pour les fusions suivantes |
+| D3. Domaine `checks` ajouté au §3 sans trace dans l'entrée d'amendement | `spec.md:56` | spec amendée (e0b4ea6) : nouvelle entrée datée |
+
+- Bilan de la revue : aucun bloquant, 3 à discuter traités. `check-moves.mjs` relancé par le relecteur : OK (314 tests, 71 renommés). Fusion vérifiée sans perte dans `test/`.
