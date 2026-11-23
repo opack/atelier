@@ -38,6 +38,7 @@ Restent locaux : `addChantierSpec`, `makeDeductionRepository`, `makeRepositoryWi
 
 ## Fichiers et couches touchés
 - `docs/chantiers/REF-16-tests-par-domaine/check-moves.mjs` : script de contrôle (nouveau).
+- `docs/chantiers/REF-16-tests-par-domaine/move-tests.mjs` : script de déplacement d'un domaine (nouveau, versionné à partir de la tranche 3).
 - `plugins/atelier/test/helpers.mjs` : utilitaires partagés (nouveau).
 - `plugins/atelier/test/<domaine>.test.mjs` : 17 fichiers (nouveaux), plus `spec-ellipsis.test.mjs` (renommé depuis `check-spec-ellipsis.test.mjs`).
 - `plugins/atelier/test/core.test.mjs` : vidé puis supprimé.

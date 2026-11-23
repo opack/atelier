@@ -69,3 +69,8 @@
 - Contexte : la tolérance des noms anciens tant que leur fichier de base existe a laissé passer un test déplacé sans renommage (revue 1, D1), puis s'est écartée du contrôle corrigé (revue 2, D1).
 - Écarté : préciser la tolérance dans la spec, qui garde une règle de transition jusqu'à la tranche 4.
 - Conséquence : les 161 tests restés dans `core.test.mjs` sont renommés sur place en tranche 2 (libellés du tableau `cases` compris) ; `check-moves.mjs` n'accepte plus que la forme nouvelle. Les `describe` gardent leur nom jusqu'à leur déplacement, qui le fixe selon le fichier d'arrivée. Sabotage rejoué : un test remis sous son ancien nom dans `core.test.mjs` → échec.
+
+## 2026-11-23 : le script de déplacement est versionné dans le dossier du chantier
+- Contexte : les tranches 2 et 3 déplacent les domaines avec un script (sélection des `describe` et des tests scindés, en-têtes d'import, imports élagués dans `core.test.mjs`), d'abord tenu hors du dépôt.
+- Écarté : le garder hors du dépôt, où il peut disparaître, et où le relecteur ne voit pas comment les fichiers ont été produits.
+- Conséquence : `move-tests.mjs` à côté de `check-moves.mjs`, hors de `npm test`. Il n'est pas une preuve : c'est `check-moves.mjs` qui garantit le résultat. Les domaines de la tranche 2 y restent comme trace et ne se rejouent plus.
