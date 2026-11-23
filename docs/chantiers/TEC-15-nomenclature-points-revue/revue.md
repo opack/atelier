@@ -161,3 +161,19 @@ Traitement d'un point : corrigé (commit), test ajouté, spec amendée, exceptio
 | Aucun | | |
 
 - Bilan de la revue : aucun point ; CA-1, CA-2, CA-10 et CA-13 (numérotation) couverts, 228 tests verts ; essai réel de `atelier review-ids` sur ce dépôt : RB3, RD16, SB2, SD3, OB3, OD33, aucun point ouvert. Remarque mineure non numérotée : `commandReviewIds` relit `spec.md` et calcule `visibleLines(revue)` deux fois, coût négligeable.
+
+## Revue : tranche 4 : 2026-11-23
+- Commit revu : d168062
+- Base : fc15dab
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+- Bilan de la revue : aucun point ; CA-8 (`set-reviewed` refuse les points ouverts), CA-9 (`close-check` et `set-status done` refusent les points ouverts et un `revue.md` non commité) et CA-16 (`reporté (tranche N)` admis par `set-reviewed`, refusé à la clôture) couverts, 238 tests verts, tests inchangés depuis d5e8741. Remarque mineure non numérotée : `reviewFacts` (`cli.mjs:518`) construit le chemin de `spec.md` à la main alors que `chantierFilePath` existe ; code préexistant, laissé en l'état.
