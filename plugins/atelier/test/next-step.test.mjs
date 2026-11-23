@@ -285,6 +285,36 @@ describe('status and session start once the implementation is committed', () => 
     }
   })
 
+  it('sans TDD ni slice_base, le code est compté depuis la base de fusion avec la branche par défaut [FIX-26 CA-4]', () => {
+    const directory = makeSlicedRepository({ id: 'FIX-20', tdd: 'no', plan: null })
+    const before = status(directory)
+    assert.equal(before.chantier.codeCommitted, false, 'seule la spec depuis la base de fusion')
+    assert.match(before.nextStep, /^Implémenter/)
+    commitFiles(directory, { 'src/fix.mjs': 'export const fix = 1\n' }, 'fix: fix')
+    const after = status(directory)
+    assert.equal(after.chantier.codeCommitted, true)
+    assert.match(plain(after.nextStep), /^Implémentation commitée : faire relire : \/atelier:review \(ou reprendre \/atelier:build si elle n'est pas finie\)$/)
+    assertLine(atelierOk(directory, 'hook-session-start'), [/^Prochaine étape :/, reviewPattern])
+  })
+
+  it('SPIKE sans TDD, code commité : status propose la clôture [FIX-26 CA-5]', () => {
+    const directory = makeSlicedRepository({ id: 'SPIKE-20', tdd: 'no', plan: null })
+    commitFiles(directory, { 'src/spike.mjs': 'export const spike = 1\n' }, 'chore: spike')
+    const summary = status(directory)
+    assert.equal(summary.chantier.codeCommitted, true)
+    assert.match(summary.nextStep, /^Implémentation commitée : clôturer : \/atelier:close/)
+  })
+
+  it('revue obsolète : codeCommitted vaut null [FIX-26 CA-11]', () => {
+    const directory = makeSlicedRepository({ id: 'FIX-20', tdd: 'no', plan: null })
+    commitFiles(directory, { 'src/fix.mjs': 'export const fix = 1\n' }, 'fix: fix')
+    setHeader(directory, 'FIX-20', { reviewed_commit: headOf(directory), slice: '1' })
+    commitFiles(directory, { 'src/more.mjs': 'export const more = 1\n' }, 'fix: more')
+    const summary = status(directory)
+    assert.equal(summary.chantier.reviewState, 'stale', 'précondition')
+    assert.equal(summary.chantier.codeCommitted, null)
+  })
+
   it('revue à jour ou tests pas encore figés : codeCommitted vaut null [FIX-26 CA-11]', () => {
     const reviewed = makeSlicedRepository({ id: 'FIX-20', tdd: 'no', plan: null })
     commitFiles(reviewed, { 'src/fix.mjs': 'export const fix = 1\n' }, 'fix: fix')
