@@ -193,7 +193,6 @@ function specFileText(directory, id) {
   return readFileSync(join(chantierDirectoryOf(directory, id), 'spec.md'), 'utf8')
 }
 
-
 function atelierOk(directory, ...cliArguments) {
   const result = atelierRun(directory, ...cliArguments)
   assert.equal(result.status, 0, result.output)
@@ -235,9 +234,9 @@ function revueOf(sections) {
 }
 
 export {
-  templatesDirectory, template,
+  template,
   signedChantier, draftChantier, implementingChantier, signedTec, decide,
-  atelierBin, gitIdentity, temporaryDirectories, temporaryDirectory, git, commit, makeRepository, atelier,
+  atelierBin, temporaryDirectory, git, commit, makeRepository, atelier,
   completeBodies, specText, chantierDirectoryOf, writeChantier, makeChantiersRepository, atelierRun, specData, assertLine, epicPlan,
   planOf, threeSlices, slicedChantier, makeSlicedRepository, commitFiles, headOf, commitSpec, setHeader, specFileText, atelierOk, atSliceTwo, implementedSlice,
   revueOf,

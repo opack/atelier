@@ -4,12 +4,13 @@
 import { execFileSync, spawn } from 'node:child_process'
 import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const BASE_COMMIT = 'ae55ab5'
 const BASE_TEST_COUNT = 256
 const TEST_DIRECTORY = 'plugins/atelier/test'
+const WORKTREE_PREFIX = 'ref16-base-'
 const root = fileURLToPath(new URL('../../../', import.meta.url))
 
 // Chantier of the describes that carry V-x tests without an ID prefix (spec §3).
@@ -100,31 +101,59 @@ function compareNames(baseTests, currentTests, coreStillThere) {
 
 // ---------- lines
 
-// Replaces the first string literal of `line` (a title) by a placeholder.
+const STRING_LITERAL = /'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|`(?:\\.|[^`\\])*`/
+const SECTION_COMMENT = /^\/\/ -+ [A-Z]+-\d+: .* -+$/
+const OPENING = 'describe(<titre>, () => {'
+
+// Replaces the first string literal of `line` (a describe title) by a placeholder.
 function withoutTitle(line) {
-  return line.replace(/'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|`(?:\\.|[^`\\])*`/, '<titre>')
+  return line.replace(STRING_LITERAL, '<titre>')
 }
 
-// Non-empty lines without their indentation, minus import and export statements, titles replaced.
+// Replaces the first string literal of `line` (a test title) by its text without label, quotes or
+// escapes: a base title and its renamed form give the same line.
+function withUnlabeledTitle(line) {
+  return line.replace(STRING_LITERAL, (literal) => {
+    const title = literal.slice(1, -1).replace(/\\(.)/g, '$1')
+    const unlabeled = (LABEL.exec(title)?.[2] ?? title).replace(/ \[[A-Z]+-\d+ CA-\d+(?:, CA-\d+)*\]$/, '')
+    return `<titre:${unlabeled}>`
+  })
+}
+
+// Non-empty lines without their indentation, minus import and export statements and the base's
+// section comments per chantier, titles replaced. A line of a test body is prefixed by the
+// unlabeled title of its test, so that swapping two titles, or moving a line from one test to
+// another, changes the multiset.
 function significantLines(text) {
   const lines = []
   let describes = 0
   let block = null
+  let test = null
   for (const raw of text.split(/\r?\n/)) {
     const line = raw.trim()
     if (line === '') continue
+    const indentation = raw.length - raw.trimStart().length
+    if (test && indentation <= test.indentation) test = null
+    if (test) { lines.push(`${test.title} ¦ ${line}`); continue }
     if (block === 'import') { if (/^\} from '[^']+'$/.test(line)) block = null; continue }
     if (block === 'export') { if (line === '}') block = null; continue }
     if (/^import .+ from '[^']+'$/.test(line) || /^export \{[^}]*\}$/.test(line)) continue
     if (line === 'import {' || line === 'export {') { block = line.slice(0, 6); continue }
-    if (/^(describe|it)\(/.test(line)) {
-      if (line.startsWith('describe(')) describes++
+    if (SECTION_COMMENT.test(line)) continue
+    if (line.startsWith('describe(')) {
+      describes++
       lines.push(withoutTitle(line))
+      continue
+    }
+    if (line.startsWith('it(')) {
+      const title = withUnlabeledTitle(line)
+      lines.push(title)
+      if (!line.endsWith('})')) test = { title, indentation }
       continue
     }
     if (block === 'cases') {
       if (line === ']') block = null
-      else { lines.push(withoutTitle(line)); continue }
+      else { lines.push(withUnlabeledTitle(line)); continue }
     }
     if (line === 'const cases = [') block = 'cases'
     lines.push(line)
@@ -140,9 +169,11 @@ function compareLines(baseText, currentTexts) {
   current.flatMap(({ lines }) => lines).forEach((line) => counts.set(line, (counts.get(line) ?? 0) + 1))
   const describeDelta = current.reduce((sum, { describes }) => sum + describes, 0) - base.describes
   const closingDelta = counts.get('})') ?? 0
+  const openingDelta = counts.get(OPENING) ?? 0
   counts.delete('})')
+  counts.delete(OPENING)
   const differences = [...counts].filter(([, delta]) => delta !== 0)
-  return { differences, describeDelta, closingDelta }
+  return { differences, describeDelta, closingDelta, openingDelta }
 }
 
 // ---------- main
@@ -151,8 +182,21 @@ function git(...gitArguments) {
   return execFileSync('git', gitArguments, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
 }
 
+// Removes the base worktrees an interrupted run (Ctrl-C) left behind.
+function removeLeftoverWorktrees() {
+  git('worktree', 'list', '--porcelain').split(/\r?\n/)
+    .filter((line) => line.startsWith('worktree ') && basename(line.slice(9)).startsWith(WORKTREE_PREFIX))
+    .forEach((line) => {
+      const path = line.slice(9)
+      try { git('worktree', 'remove', '--force', path) } catch {}
+      rmSync(path, { recursive: true, force: true })
+    })
+  git('worktree', 'prune')
+}
+
 async function main() {
-  const worktree = mkdtempSync(join(tmpdir(), 'ref16-base-'))
+  removeLeftoverWorktrees()
+  const worktree = mkdtempSync(join(tmpdir(), WORKTREE_PREFIX))
   try {
     git('worktree', 'add', '--detach', '-q', worktree, BASE_COMMIT)
     const [base, current] = await Promise.all([runSuite(worktree), runSuite(root)])
@@ -184,10 +228,11 @@ async function main() {
 
     console.log('\n## Lignes')
     const lines = compareLines(baseText, currentTexts)
-    console.log(`- écart de describe : ${lines.describeDelta}, écart de « }) » : ${lines.closingDelta}`)
+    console.log(`- écart de describe : ${lines.describeDelta}, écart d'ouvertures « ${OPENING} » : ${lines.openingDelta}, écart de « }) » : ${lines.closingDelta}`)
     lines.differences.forEach(([line, delta]) => console.log(`- ${delta > 0 ? `en plus (${delta})` : `en moins (${-delta})`} : ${line}`))
     if (lines.differences.length) problems.push('des lignes diffèrent de la base')
     if (lines.closingDelta !== lines.describeDelta) problems.push('l’écart de « }) » diffère de l’écart de describe')
+    if (lines.openingDelta !== lines.describeDelta) problems.push('l’écart d’ouvertures de describe diffère de l’écart de describe')
 
     console.log('\n## Table ancien nom → nouveau nom')
     names.expected.filter((entry) => entry.new !== entry.old)
