@@ -2601,7 +2601,7 @@ describe('TEC-15 refusing open review points in the CLI', () => {
 
 describe('TEC-15 prefixes in agents, skills and templates', () => {
   const pluginText = (relativePath) => readFileSync(fileURLToPath(new URL(`../${relativePath}`, import.meta.url)), 'utf8')
-  const mentions = (text, prefix) => new RegExp(`\b${prefix}(\d+)?\b`).test(text)
+  const mentions = (text, prefix) => new RegExp(`\\b${prefix}(\\d+)?\\b`).test(text)
   const expectedPrefixes = {
     'agents/reviewer.md': ['RB', 'RD'],
     'agents/spec-critic.md': ['SB', 'SD'],
