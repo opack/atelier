@@ -2,11 +2,11 @@
 id: FEAT-24
 type: FEAT
 title: Afficher la version d'atelier sur le site
-status: draft
+status: signed
 tdd: no
 created_at: 2026-11-23
-signed_by:
-signed_at:
+signed_by: Claude
+signed_at: 2026-11-23
 ---
 
 # FEAT-24 Afficher la version d'atelier sur le site
