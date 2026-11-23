@@ -2,7 +2,7 @@
 id: TEC-15
 type: TEC
 title: Identifiants stables des points de relecture
-status: signed
+status: done
 tdd: yes
 created_at: 2026-11-21
 signed_by: Opack
@@ -13,6 +13,7 @@ slice: chantier
 slice_base: 3d7f912d9ad9e7285fa1ccb7acdb396d33418c5f
 last_slice: 6
 reviewed_commit: 4a22813bcba96a33b0f99625992d40658d56bd07
+done_at: 2026-11-23
 ---
 
 # TEC-15 Identifiants stables des points de relecture
