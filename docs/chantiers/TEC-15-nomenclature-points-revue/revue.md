@@ -177,3 +177,36 @@ Traitement d'un point : corrigé (commit), test ajouté, spec amendée, exceptio
 | Aucun | | |
 
 - Bilan de la revue : aucun point ; CA-8 (`set-reviewed` refuse les points ouverts), CA-9 (`close-check` et `set-status done` refusent les points ouverts et un `revue.md` non commité) et CA-16 (`reporté (tranche N)` admis par `set-reviewed`, refusé à la clôture) couverts, 238 tests verts, tests inchangés depuis d5e8741. Remarque mineure non numérotée : `reviewFacts` (`cli.mjs:518`) construit le chemin de `spec.md` à la main alors que `chantierFilePath` existe ; code préexistant, laissé en l'état.
+
+## Revue : tranche 5 : 2026-11-23
+- Commit revu : 85feeec
+- Base : d168062
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| RB3. Une revue relancée reprend les numéros de la précédente, `revue.md` n'étant écrit qu'après | `plugins/atelier/skills/review/SKILL.md:47` | corrigé (76d577f) : la revue est consignée avant d'être relancée |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD16. La description de l'agent `reviewer` dit encore « jusqu'à zéro point bloquant » | `plugins/atelier/agents/reviewer.md:3` | corrigé (76d577f) |
+| RD17. Points `reporté (tranche N)` : agent et skill divergent, traitement d'un report réglé non défini | `plugins/atelier/agents/reviewer.md:41` | corrigé (76d577f) : tranche en cours ou passée ; le traitement remplace le report en le citant |
+| RD18. Dans `close`, « y figure aussi » est ambigu | `plugins/atelier/skills/close/SKILL.md:25` | corrigé (76d577f) |
+
+- Bilan de la revue : un point bloquant et trois à discuter, tous corrigés ; revue 2 à mener sur 76d577f.
+## Revue : tranche 5 : 2026-11-23
+- Commit revu : 76d577f
+- Base : d168062
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+- Bilan de la revue : aucun point ; RB3, RD16, RD17 et RD18 confirmés corrigés ; `corrigé (…), reporté de la tranche N` accepté par `isTreatment` et non pris pour un report à la clôture ; 254 tests verts, tests inchangés depuis aa41f9f. Remarque mineure non numérotée : à `review/SKILL.md:45`, « un point repris que le reviewer juge réglé » peut se confondre avec le marqueur `(repris)`.
