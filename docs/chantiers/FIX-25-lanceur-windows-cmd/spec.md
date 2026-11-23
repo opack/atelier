@@ -3,7 +3,7 @@ id: FIX-25
 type: FIX
 title: Lancer atelier depuis PowerShell et cmd sous Windows
 status: draft
-tdd:                 # yes | no : décision humaine, obligatoire avant signature
+tdd: yes
 created_at: 2026-11-23
 source: constaté par Didier sous Windows (PowerShell), plugin 0.4.0
 signed_by:
