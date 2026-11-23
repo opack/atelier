@@ -5,7 +5,7 @@ title: Afficher la version d'atelier sur le site
 status: signed
 tdd: no
 created_at: 2026-11-23
-signed_by: Claude
+signed_by: Didier (opack)
 signed_at: 2026-11-23
 ---
 
