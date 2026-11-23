@@ -8,6 +8,8 @@ created_at: 2026-11-23
 source: diagnostic de lenteur des scripts atelier (fil « Accélérer les contrôles d'atelier », 2026-11-23)
 signed_by: Opack
 signed_at: 2026-11-23
+tests_commit: 9222907
+slice: 1
 ---
 
 # TEC-23 Lancer les contrôles une seule fois par état du code
