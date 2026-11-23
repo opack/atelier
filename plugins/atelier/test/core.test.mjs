@@ -2598,3 +2598,46 @@ describe('TEC-15 refusing open review points in the CLI', () => {
     assert.match(output, /RD1\b.*Message d’erreur vague/)
   })
 })
+
+describe('TEC-15 prefixes in agents, skills and templates', () => {
+  const pluginText = (relativePath) => readFileSync(fileURLToPath(new URL(`../${relativePath}`, import.meta.url)), 'utf8')
+  const mentions = (text, prefix) => new RegExp(`\b${prefix}(\d+)?\b`).test(text)
+  const expectedPrefixes = {
+    'agents/reviewer.md': ['RB', 'RD'],
+    'agents/spec-critic.md': ['SB', 'SD'],
+    'agents/overfit-checker.md': ['OB', 'OD'],
+    'skills/review/SKILL.md': ['RB', 'RD'],
+    'skills/sign/SKILL.md': ['SB', 'SD'],
+    'skills/build/SKILL.md': ['OB', 'OD'],
+    'skills/close/SKILL.md': ['RB', 'RD'],
+    'templates/revue.md': ['RB', 'RD'],
+    'templates/bilan.md': ['RB', 'RD'],
+  }
+
+  for (const [file, prefixes] of Object.entries(expectedPrefixes)) {
+    it(`CA-11 : ${file} mentionne ${prefixes.join(' et ')}`, () => {
+      const text = pluginText(file)
+      assert.deepEqual(prefixes.filter((prefix) => !mentions(text, prefix)), [])
+    })
+  }
+
+  it('CA-11 : la skill amend cite un identifiant de point de relecture', () => {
+    assert.ok(['RB', 'RD', 'SB', 'SD', 'OB', 'OD'].some((prefix) => mentions(pluginText('skills/amend/SKILL.md'), prefix)))
+  })
+
+  for (const file of ['skills/review/SKILL.md', 'skills/sign/SKILL.md', 'skills/build/SKILL.md']) {
+    it(`CA-11 : ${file} obtient les numéros par atelier review-ids`, () => {
+      assert.match(pluginText(file), /atelier review-ids/)
+    })
+  }
+
+  for (const file of ['templates/revue.md', 'agents/reviewer.md', 'skills/review/SKILL.md']) {
+    it(`CA-11 : ${file} donne la forme (repris), (ex-…) et les traitements reporté et requalifié`, () => {
+      const text = pluginText(file)
+      assert.match(text, /\(repris\)/)
+      assert.match(text, /\(ex-R[BD]\d+\)/)
+      assert.match(text, /reporté/i)
+      assert.match(text, /requalifié/i)
+    })
+  }
+})
