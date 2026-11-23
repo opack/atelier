@@ -3,7 +3,7 @@ id: FEAT-21
 type: FEAT
 title: EPIC en branche d'intégration
 status: draft
-tdd:                 # yes | no : décision humaine, obligatoire avant signature
+tdd: yes
 created_at: 2026-11-23
 signed_by:
 signed_at:
@@ -62,10 +62,12 @@ Hors périmètre :
 ## 4. Questions ouvertes
 <!-- Questions à trancher avant ou pendant la conception. Les réponses vont dans decisions.md. Optionnel. -->
 
-- Q1. Revue d'ensemble de l'EPIC obligatoire avec l'option ? Proposé : oui (§2).
-- Q2. Rebase interdit dans la branche d'intégration et fusion des enfants sans squash, vérifiés par `close-check` de l'EPIC (CA-9) ? Proposé : oui, refus sans échappatoire autre que rétablir l'historique (reflog, branche distante).
-- Q3. Changer l'option après l'ouverture du premier enfant : proposé hors périmètre, avec un refus dans `check-spec` (CA-3) plutôt qu'une simple consigne.
-- Q4. Ordre vis-à-vis d'EPIC-17 : implémenter après son lot 2 (`rel_depends_on` à ajouter quand ce lot aura un identifiant), ou avant son ouverture ?
+Tranchées par Didier le 2026-11-23 (recommandations retenues) :
+
+- Q1. Revue d'ensemble de l'EPIC obligatoire avec l'option : **oui** (§2, CA-8).
+- Q2. Rebase interdit dans la branche d'intégration et fusion des enfants sans squash, vérifiés par `close-check` de l'EPIC : **oui**, refus sans autre échappatoire que rétablir l'historique (reflog, branche distante) (CA-9).
+- Q3. Changer l'option après l'ouverture du premier enfant : **hors périmètre**, refusé par `check-spec` (CA-3).
+- Q4. Ordre vis-à-vis d'EPIC-17 : **après son lot 2** (`lib/` rangé par domaine). `rel_depends_on` sera ajouté par `/atelier:amend` quand ce lot aura un identifiant ; pas d'implémentation avant.
 
 ## 5. Critères d'acceptation
 <!-- Format : - [ ] CA-1 : Étant donné …, quand …, alors …
