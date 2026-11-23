@@ -8,7 +8,7 @@ created_at: 2026-11-21
 signed_by: Opack
 signed_at: 2026-11-21
 rel_depends_on: FEAT-7
-tests_commit: 546ad74
+tests_commit: 
 slice: 5
 slice_base: d1680627a00307c6214dfc37998648224971c479
 ---
@@ -167,3 +167,4 @@ Revert de la PR et publication d'une version suivante du plugin. Les `revue.md` 
 - 2026-11-22 : tests regelés : 9a00da6
 - 2026-11-22 : tests rouverts (gel quitté : 9a00da6) : Revue tranche 2 : RB1 (identifiant nouveau dans deux sections de même titre, CA-5) et RD12 (« Reportée (tranche 2) » à la clôture, test OD12)
 - 2026-11-22 : tests regelés : c98dee6
+- 2026-11-23 : tests rouverts (gel quitté : 546ad74) : CA-11 : doubler l'échappement de \b et \d dans mentions
