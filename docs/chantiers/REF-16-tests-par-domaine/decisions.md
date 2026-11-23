@@ -29,3 +29,13 @@
 - Contexte : scinder un `describe` ajoute une ligne `})`, que le §4 ne tolère pas.
 - Écarté : réunir les tests scindés dans un `describe` existant de la destination, qui mêle des origines.
 - Conséquence : amendement de la spec (§4) avant la tranche 1 : écart du nombre de `})` toléré à hauteur de l'écart du nombre de `describe`.
+
+## 2026-11-23 : les lignes de titre sont normalisées, pas écartées
+- Contexte : le §4 tolère les différences de titre des `describe`, des `it` et des libellés de `cases`.
+- Écarté : ignorer ces lignes en entier, ce qui laisserait passer un changement du reste de la ligne (`async`, contenu d'un cas de `cases`).
+- Conséquence : `check-moves.mjs` remplace seulement le premier littéral de chaîne de ces lignes par `<titre>` et compare le reste.
+
+## 2026-11-23 : imports et exports tolérés sous leur seule forme d'instruction
+- Contexte : les lignes d'import et d'export entre fichiers sont tolérées.
+- Écarté : tolérer toute ligne commençant par `export`, qui laisserait passer une définition modifiée en `export function …`.
+- Conséquence : seules les instructions `import … from '…'` (sur une ou plusieurs lignes) et les blocs `export { … }` sont écartés de la comparaison.
