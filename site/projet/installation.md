@@ -1,3 +1,9 @@
+<script setup>
+import { useData } from 'vitepress'
+
+const { theme } = useData()
+</script>
+
 # Installer atelier
 
 ## Sur votre machine
@@ -40,6 +46,14 @@ Dans une session Claude Code ouverte sur le répertoire du projet (les commandes
 Si le projet a déjà des identifiants de chantier dans son historique, le compteur les continue.
 
 ## Mettre à jour
+
+Version actuelle d’atelier : **{{ theme.version }}**. Pour connaître la version installée chez vous, cherchez la ligne `Version:` d’atelier dans la sortie de :
+
+```bash
+claude plugin list
+```
+
+Si elle est plus ancienne :
 
 ```bash
 claude plugin marketplace update atelier && claude plugin update atelier@atelier
