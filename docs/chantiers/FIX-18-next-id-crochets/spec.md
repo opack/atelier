@@ -8,7 +8,7 @@ created_at: 2026-11-22
 source: constat sur ce dépôt (EPIC-14 attribué après FEAT-7) ; hors périmètre d'EPIC-17, spec §« Hors périmètre »
 signed_by: Didier
 signed_at: 2026-11-23
-tests_commit: 
+tests_commit: 2aee2d3
 slice: 1
 ---
 
@@ -76,3 +76,4 @@ Données déjà corrompues : aucune réparation. `CA-17` reste dans l'historique
 ## Amendements
 <!-- Après signature : une entrée datée par modification de la spec. -->
 - 2026-11-23 : tests rouverts (gel quitté : b396098) : OD2 : couvrir la casse, le crochet fermant non exigé et l'identifiant en fin de nom de branche
+- 2026-11-23 : tests regelés : 2aee2d3
