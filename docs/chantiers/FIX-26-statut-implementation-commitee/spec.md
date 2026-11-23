@@ -8,7 +8,7 @@ created_at: 2026-11-23
 source: constat sur REF-16 (tranche 4/4), signalé par Didier
 signed_by: Opack
 signed_at: 2026-11-23
-tests_commit: 
+tests_commit: 0df1e7d
 slice: 1
 ---
 
@@ -101,3 +101,4 @@ Pas de données à réparer : la prochaine étape est recalculée à chaque appe
 ## Amendements
 <!-- Après signature : une entrée datée par modification de la spec. -->
 - 2026-11-23 : tests rouverts (gel quitté : 6a82789) : OD3 : aucun test de bout en bout du signal calculé depuis la base de fusion (sans TDD, sans slice_base)
+- 2026-11-23 : tests regelés : 0df1e7d
