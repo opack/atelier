@@ -8,7 +8,7 @@ created_at: 2026-11-23
 source: revue tranche 6 de TEC-15, point RD20
 signed_by: Claude
 signed_at: 2026-11-23
-tests_commit: 
+tests_commit: 4ff0cdc
 slice: 1
 ---
 
@@ -108,3 +108,4 @@ Pas de données à réparer : le contrôle ne modifie aucun fichier.
 - 2026-11-23 : tests regelés : e0f1408
 - 2026-11-23 : la clôture d'un bloc n'accepte plus de puce devant elle (CA-11 complété) ; limite ajoutée en §6 pour un `<!--` cité en code. Pourquoi : points D1 et D2 de la revue 1.
 - 2026-11-23 : tests rouverts (gel quitté : e0f1408) : D1 de la revue 1 : une ligne '- ```' dans un bloc ne doit pas le fermer (CA-11 amendé)
+- 2026-11-23 : tests regelés : 4ff0cdc
