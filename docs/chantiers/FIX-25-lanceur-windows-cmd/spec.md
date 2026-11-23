@@ -28,7 +28,7 @@ Question si manquant : arrive-t-on à reproduire ? Sinon, quel signal prouvera q
 
 `Get-Command atelier` renvoie une `Application` pointant sur `bin/atelier`.
 
-Reproduit en local : non (la CI et les sessions cloud tournent sous Linux). La correction est prouvée par un test sur le contenu du lanceur et ses attributs git (§5), et par l'essai manuel de Didier : avec `bin/atelier.cmd` ajouté à la main, `atelier status` s'affiche normalement dans PowerShell.
+Reproduit en local : non (les sessions cloud tournent sous Linux ; le dépôt n'a pas de CI de tests, SD9). La correction est prouvée par des tests automatiques sur le contenu du lanceur et ses attributs git (CA-1 à CA-3), et par un essai manuel sous Windows avec le plugin de la branche (CA-5, SB2). Didier a déjà constaté qu'avec un `bin/atelier.cmd` ajouté à la main, `atelier status` s'affiche normalement dans PowerShell.
 
 ## 3. Cause probable
 <!-- Hypothèse AVEC sa preuve (ligne de code, trace, breadcrumb). Confiance : forte / moyenne / faible.
@@ -46,27 +46,33 @@ Corrige la cause : donner à Windows un lanceur qu'il sait exécuter, comme npm 
 
 - **`plugins/atelier/bin/atelier.cmd`** (nouveau), une seule ligne :
   `@node "%~dp0atelier" %*`
-  `%~dp0` est le dossier du `.cmd` (avec la barre finale), `%*` transmet tous les arguments. Le code de sortie de `node` est celui du `.cmd`.
+  `%~dp0` est le dossier du `.cmd` (avec la barre finale). `%*` transmet les arguments, mais après une nouvelle analyse par cmd (SB1) : voir « Limite connue » plus bas. `node` étant la dernière commande, son code de sortie est celui du `.cmd`.
 - **`.gitattributes`** (nouveau, à la racine) :
-  - `*.cmd text eol=crlf` : cmd tolère mal les fins de ligne LF ; un dépôt cloné sous Linux ou macOS garde ainsi un `.cmd` valide une fois copié sur Windows.
+  - `*.cmd text eol=crlf` : précaution (SD3). Un `.cmd` d'une ligne marche aussi en LF, mais cmd gère mal les fins LF dès qu'il y a des étiquettes ; CRLF est la forme attendue sous Windows. Ne vaut que pour une installation extraite par git (marketplace) : avec `--plugin-dir` ou une marketplace en dossier local, le fichier reste tel quel sur disque.
   - `plugins/atelier/bin/atelier text eol=lf` : un poste Windows avec `core.autocrlf=true` convertirait sinon le shebang en `#!/usr/bin/env node\r`, ce qui casse le lancement sous Git Bash, Linux et macOS.
 - **Pas de `atelier.ps1`** : le `.cmd` suffit pour PowerShell et cmd, et un `.ps1` se heurterait à la stratégie d'exécution de PowerShell (`Restricted` par défaut sur les postes clients).
 - **Phrase de repli des skills inchangée** : le `.cmd` supprime la cause. Élargir le repli à « ne renvoie rien » ferait relancer en double des commandes à effet de bord, et masquerait un futur défaut au lieu de le révéler.
-- **Site** : `site/projet/installation.md` gagne une courte section « Sous Windows » (Node ≥ 20 dans le PATH ; PowerShell, cmd et Git Bash pris en charge). `site/guide/demarrage-rapide.md` ajoute Node ≥ 20 aux prérequis, absent aujourd'hui alors que la CLI en dépend partout.
+- **Version** : passage en version corrective (`npm run version:patch`) dans ce chantier (SD4). Claude Code met son cache à jour d'après la `version` de `plugin.json` : sans passage de version, les installations en 0.4.0 ne recevraient jamais `atelier.cmd`.
+- **Site** : `site/projet/installation.md` gagne une courte section « Sous Windows » (Node ≥ 20 dans le PATH ; PowerShell, cmd et Git Bash pris en charge). `site/guide/demarrage-rapide.md` ajoute Node ≥ 20 aux prérequis, absent aujourd'hui alors que la CLI en dépend partout. `site/reference/limites.md` documente la limite connue ci-dessous (SD10).
+
+**Limite connue (SB1, SD8).** Les arguments passés par `%*` sont réanalysés par cmd : `&`, `|`, `<`, `>`, `^` hors guillemets et `%VAR%` y sont interprétés (défaut commun à tous les lanceurs `.cmd`, dont ceux de npm). Les raisons libres (`bypass on`, `set-tdd no`, `reopen-tests`) contenant ces caractères peuvent être tronquées sous PowerShell et cmd. Parade retenue : la documenter, sans nouveau mécanisme de passage d'arguments, faute de cas réel. De même, `"atelier" status` (nom de commande entre guillemets) dans cmd peut fausser `%~dp0` ; un agent n'écrit pas la commande ainsi.
 
 Aucune donnée à réparer.
 
 ## 5. Critère de non-régression
 <!-- Format : - [ ] CA-1 : Étant donné …, quand …, alors … (le test échoue avant la correction). -->
-- [ ] CA-1 : Étant donné le plugin, quand on lit `plugins/atelier/bin/atelier.cmd`, alors le fichier existe et sa seule commande, sans écho (`@`), lance `node` sur `"%~dp0atelier"` (chemin entre guillemets, relatif au dossier du lanceur) suivi de `%*`.
-- [ ] CA-2 : Étant donné le dépôt, quand on interroge les attributs git de `plugins/atelier/bin/atelier.cmd` (`git check-attr eol`), alors `eol` vaut `crlf`.
-- [ ] CA-3 : Étant donné le dépôt, quand on interroge les attributs git de `plugins/atelier/bin/atelier` (`git check-attr eol`), alors `eol` vaut `lf`.
-- [ ] CA-4 : Étant donné le plugin, quand on lance `claude plugin validate ./plugins/atelier`, alors la validation passe avec le nouveau fichier dans `bin/`.
+- [ ] CA-1 : Étant donné le plugin, quand on lit `plugins/atelier/bin/atelier.cmd`, alors le fichier existe et contient une seule ligne non vide qui, sans écho (`@`), lance `node` sur `"%~dp0atelier"` (chemin entre guillemets, relatif au dossier du lanceur) suivi de `%*`. Le test ignore les `\r` et le saut de ligne final : le fichier est en LF chez son auteur sous Linux jusqu'à la prochaine extraction (SD2).
+- [ ] CA-2 : Étant donné le dépôt, quand on interroge les attributs git de `plugins/atelier/bin/atelier.cmd` (`git check-attr eol`, dans un dépôt temporaire qui reçoit le `.gitattributes` du projet, pour que le test tourne aussi hors d'un clone, SD1), alors `eol` vaut `crlf`.
+- [ ] CA-3 : Étant donné le dépôt, quand on interroge les attributs git de `plugins/atelier/bin/atelier` (même méthode que CA-2), alors `eol` vaut `lf`.
+- [ ] CA-4 : Étant donné le plugin, quand on lance `claude plugin validate ./plugins/atelier`, alors la validation passe avec le nouveau fichier dans `bin/`. Vérification manuelle (la CLI Claude ne tourne pas dans `npm test`), non probante avant la correction (SD11).
+- [ ] CA-5 (manuel, Windows, SB2, SD7) : Étant donné le plugin installé depuis cette branche (`.cmd` extrait par git), quand on lance dans Windows PowerShell 5.1, PowerShell 7 et cmd `atelier status --json`, puis une commande en échec, puis `atelier set-tdd no "raison avec espaces et l'apostrophe"` sur un chantier jetable, alors la sortie s'affiche, le code de sortie de l'échec est non nul (`$LASTEXITCODE` / `%ERRORLEVEL%`), et la raison est enregistrée intacte. Échoue avant la correction (fenêtre « Ouvrir avec… », sortie vide).
+- [ ] CA-6 (relecture) : Étant donné le site, quand on lit `site/projet/installation.md`, `site/guide/demarrage-rapide.md` et `site/reference/limites.md`, alors on y trouve la section « Sous Windows », Node ≥ 20 dans les prérequis et la limite connue sur les arguments réanalysés par cmd.
 
 ## 6. Notes complémentaires
 <!-- Hors périmètre, contournement temporaire, communication utilisateur, autres endroits où ce schéma existe. Optionnel. -->
 - Contournement en attendant la correction : sous Windows, lancer les skills depuis Git Bash, ou créer `bin/atelier.cmd` à la main dans le cache du plugin.
-- Hors périmètre : tester la résolution de commande de PowerShell (impossible sous Linux) ; un `.ps1`.
+- Hors périmètre : tester automatiquement la résolution de commande de PowerShell (impossible sous Linux) ; un `.ps1` ; une CI qui lance `npm test` (idée de chantier TEC, SD9).
+- Repli des skills sous PowerShell (SD5) : Claude Code remplace `${CLAUDE_PLUGIN_ROOT}` par le chemin réel dans le texte chargé de la skill (constaté : la skill affiche le chemin du cache en clair), donc PowerShell ne voit jamais la syntaxe `${…}`.
 - Le test vit dans `plugins/atelier/test/` (convention du dépôt pour tout ce qui touche à l'exécution).
 
 ## Amendements
