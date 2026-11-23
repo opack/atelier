@@ -2,12 +2,12 @@
 id: REF-16
 type: REF
 title: Tests rangés par domaine
-status: draft
+status: signed
 tdd: no
 rel_parent: EPIC-17
 created_at: 2026-11-21
-signed_by:
-signed_at:
+signed_by: Opack
+signed_at: 2026-11-23
 ---
 
 # REF-16 Tests rangés par domaine
