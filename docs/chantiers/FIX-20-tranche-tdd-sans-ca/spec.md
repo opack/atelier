@@ -2,12 +2,12 @@
 id: FIX-20
 type: FIX
 title: TDD décidé tranche par tranche
-status: draft
+status: signed
 tdd: yes            # yes | no : décision humaine, obligatoire avant signature
 created_at: 2026-11-23
 source: TEC-15, tranche 6 (site, README, montée de version)
-signed_by:
-signed_at:
+signed_by: Opack
+signed_at: 2026-11-23
 ---
 
 
