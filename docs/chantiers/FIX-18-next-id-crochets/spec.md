@@ -2,7 +2,7 @@
 id: FIX-18
 type: FIX
 title: next-id ne compte plus les CA-n des commits
-status: signed
+status: done
 tdd: yes
 created_at: 2026-11-22
 source: constat sur ce dépôt (EPIC-14 attribué après FEAT-7) ; hors périmètre d'EPIC-17, spec §« Hors périmètre »
@@ -11,6 +11,7 @@ signed_at: 2026-11-23
 tests_commit: 2aee2d3
 slice: 1
 reviewed_commit: f791c96874769b5ef17f594961daa077e220a7b8
+done_at: 2026-11-23
 ---
 
 # FIX-18 next-id ne compte plus les CA-n des commits
