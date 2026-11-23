@@ -136,3 +136,17 @@ Traitement d'un point : corrigé (commit), test ajouté, spec amendée, exceptio
 | D4. Constante `NODE` morte ; titre d'un sous-ensemble non échappé | `move-tests.mjs:204-206`, `:179` | reporté à la tranche 4 |
 
 - Bilan de la revue : aucun bloquant, 4 à discuter reportés à la tranche 4 (ils portent sur l'outil de la tranche 4, pas sur le résultat de la tranche 3 ; décision de l'utilisateur). `check-moves.mjs` relancé par le relecteur : OK (314 tests, 232 renommés, écart de describe 3) ; chacun des 5 fichiers passe seul.
+
+## Revue : tranche 4 : 2026-11-23
+- Commit revu : d86c86a
+- Base : c744410
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+
+- Bilan de la revue : aucun bloquant, aucun à discuter. D1 à D4 reportés de la tranche 3 traités (ef5a709) : `reviewedChantier` seul dans `close.test.mjs`, `const` de `review-points-checks` locaux, `core.test.mjs` supprimé dans le commit `docs`, `NODE` retiré et titre échappé. Chacun des 8 fichiers passe seul ; `check-moves.mjs` relancé par le relecteur : OK (314 tests, 232 renommés, écart de describe 4) ; CA-1 et CA-2 tenus en entier ; aucune référence résiduelle à `core.test.mjs` hors documents de chantiers.
