@@ -72,3 +72,18 @@ Traitement d'un point : corrigé (commit), test ajouté, spec amendée, exceptio
 | D3. Domaine `checks` ajouté au §3 sans trace dans l'entrée d'amendement | `spec.md:56` | spec amendée (e0b4ea6) : nouvelle entrée datée |
 
 - Bilan de la revue : aucun bloquant, 3 à discuter traités. `check-moves.mjs` relancé par le relecteur : OK (314 tests, 71 renommés). Fusion vérifiée sans perte dans `test/`.
+
+## Revue : tranche 2 : 2026-11-23
+- Commit revu : 1941567
+- Base : 7c65a01 (travail propre à la tranche : 6585ba5..1941567)
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| D1. Le §4 tolère encore un nom ancien tant que le fichier de base existe, plus souple que le contrôle corrigé | `spec.md:87`, `decisions.md:53` | spec amendée (57c8647) : plus aucun nom ancien accepté ; tous les tests restés dans `core.test.mjs` renommés sur place (edac463) ; contrôle simplifié, plan et décisions (d6f911c) ; sabotage rejoué (test remis sous son ancien nom) → échec |
+
+- Bilan de la revue : aucun bloquant, 1 à discuter traité. Traitements de la revue 1 jugés fidèles ; `check-moves.mjs` relancé par le relecteur : OK.
