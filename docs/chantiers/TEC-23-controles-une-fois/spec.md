@@ -10,7 +10,7 @@ signed_by: Opack
 signed_at: 2026-11-23
 tests_commit: 9222907
 slice: 1
-reviewed_commit: 9ba0147b6a6493dcd1e85eec5bf197b15def0c5e
+reviewed_commit: 9eb5eb4fc19639053838f2dbae34693965ab10ae
 ---
 
 # TEC-23 Lancer les contrôles une seule fois par état du code
