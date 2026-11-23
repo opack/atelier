@@ -35,8 +35,9 @@ jobs:
       - name: Fail when the plugin version is missing
         run: |
           version=$(node -p "require('../plugins/atelier/.claude-plugin/plugin.json').version")
-          grep -qF "v$version" .vitepress/dist/index.html || { echo "v$version absent de la nav"; exit 1; }
-          grep -qF "$version" .vitepress/dist/projet/installation.html || { echo "$version absent de la page d'installation"; exit 1; }
+          # Match rendered markup: the raw version is also in the page's site data JSON.
+          grep -qF ">v$version</span>" .vitepress/dist/index.html || { echo "v$version absent de la nav"; exit 1; }
+          grep -qF "<strong>$version</strong>" .vitepress/dist/projet/installation.html || { echo "$version absent de la page d'installation"; exit 1; }
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site/.vitepress/dist
