@@ -558,21 +558,23 @@ export function meaningfulContent(lines) {
 // Glued to the previous character, it is punctuation.
 const UNFINISHED_TEXT = /(?:^|[\s|])…/m
 
-// Hides code from the search for unfinished text. Fenced blocks (``` or ~~~, possibly indented or
-// opened in a list item or a quote, closed by a fence of the same character at least as long, or
-// running to the end of the text) are removed. Inline spans (a run of N backticks closed by exactly N on the same line) become a
-// neutral character, neither a space nor a `|`, so that an ellipsis glued to a span stays glued.
+// Hides code from the search for unfinished text. Fenced blocks are removed: opened by ``` or ~~~,
+// possibly indented, in a list item or in a quote; closed by a fence of the same character, at
+// least as long, preceded only by indentation or quote markers; or running to the end of the text.
+// Inline spans (a run of N backticks closed by exactly N on the same line) become a neutral
+// character, neither a space nor a `|`, so that an ellipsis glued to a span stays glued.
 export function hideCode(text) {
   const kept = []
   let fence = null
   for (const line of text.split('\n')) {
-    const marker = line.match(/^\s*(?:>\s*)*(?:(?:[-*+]|\d+\.)\s+(?:\[[ xX]\]\s+)?)?(`{3,}|~{3,})(.*)$/)
     if (fence) {
-      if (marker && marker[1][0] === fence[0] && marker[1].length >= fence.length && !marker[2].trim()) {
+      const closing = line.match(/^\s*(?:>\s*)*(`{3,}|~{3,})\s*$/)
+      if (closing && closing[1][0] === fence[0] && closing[1].length >= fence.length) {
         fence = null
       }
       continue
     }
+    const marker = line.match(/^\s*(?:>\s*)*(?:(?:[-*+]|\d+\.)\s+(?:\[[ xX]\]\s+)?)?(`{3,}|~{3,})(.*)$/)
     if (marker && !(marker[1][0] === '`' && marker[2].includes('`'))) {
       fence = marker[1]
       continue
