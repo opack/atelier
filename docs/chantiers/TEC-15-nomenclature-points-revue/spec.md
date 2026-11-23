@@ -8,7 +8,7 @@ created_at: 2026-11-21
 signed_by: Opack
 signed_at: 2026-11-21
 rel_depends_on: FEAT-7
-tests_commit: 
+tests_commit: bdbeb40
 slice: 6
 slice_base: 76d577f4e45f29d54b32f26aae2a6e36e89398f5
 ---
