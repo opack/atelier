@@ -10,6 +10,7 @@ signed_by: Opack
 signed_at: 2026-11-23
 tests_commit: 0df1e7d
 slice: 1
+reviewed_commit: 308ca5967930e3f20db0b69d90175804b793aaa4
 ---
 
 # FIX-26 La prochaine étape ignore l'implémentation déjà commitée
