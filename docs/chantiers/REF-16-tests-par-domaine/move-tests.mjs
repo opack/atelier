@@ -56,6 +56,37 @@ const DOMAINS = {
     { describe: 'FEAT-7 freezing the tests of a slice' },
   ],
   slices: [{ describe: 'FEAT-7 plan and current slice' }],
+  // ---------- tranche 4
+  review: [{ describe: 'review state' }, { describe: 'FEAT-7 review and next slice' }],
+  'review-points-reading': [{ helpers: ['pointsOf'] }, { describe: 'TEC-15 reading revue.md' }],
+  'review-points-checks': [
+    { helpers: ['pointProblems', 'citing', 'revueWithBody', 'pointTable'] },
+    { describe: 'TEC-15 checking the review points' },
+  ],
+  'review-points-numbering': [{ describe: 'TEC-15 numbering the review points' }],
+  'review-points-refusal': [{ describe: 'TEC-15 refusing open review points in the CLI' }],
+  close: [
+    { describe: 'close decision' },
+    { describe: 'FEAT-4 dependencies checked at close' },
+    { describe: 'FEAT-4 closing an EPIC' },
+    {
+      describe: 'FEAT-7 close and next step', name: 'close of a sliced chantier',
+      locals: ['reviewedChantier'], tests: /\[FEAT-7 CA-(21|22|23|25)\]$/,
+    },
+  ],
+  'next-step': [
+    { describe: 'next step' },
+    { describe: 'FEAT-4 next step of an EPIC' },
+    { describe: 'FEAT-4 relations shown by status' },
+    { describe: 'FEAT-7 close and next step', name: 'next step of a sliced chantier' },
+  ],
+  docs: [
+    { describe: 'FEAT-4 process section of CLAUDE.md' },
+    { describe: 'FEAT-4 site', name: 'site chantier types' },
+    { describe: 'FEAT-7 vocabulary of the review' },
+    { describe: 'TEC-15 prefixes in agents, skills and templates' },
+    { describe: 'TEC-15 site reference pages' },
+  ],
 }
 
 const UNPREFIXED = {
@@ -129,12 +160,14 @@ function describeRange(name) {
   return [start, end]
 }
 
+// A file-level `function name(` up to its closing `}`, or a one-line `const name =`, with the comment
+// lines just above it.
 function functionRange(name) {
-  const start = lines.findIndex((l) => l.startsWith(`function ${name}(`))
-  if (start < 0) throw new Error(`function not found: ${name}`)
+  const start = lines.findIndex((l) => l.startsWith(`function ${name}(`) || l.startsWith(`const ${name} = `))
+  if (start < 0) throw new Error(`helper not found: ${name}`)
   let first = start
   while (first > 0 && lines[first - 1].startsWith('//') && !/^\/\/ -+ /.test(lines[first - 1])) first--
-  const end = lines.findIndex((l, i) => i > start && l === '}')
+  const end = lines[start].startsWith('const ') ? start : lines.findIndex((l, i) => i > start && l === '}')
   return [first, end]
 }
 
@@ -161,8 +194,19 @@ for (const unit of units) {
     out.push([`describe('${title.replace(/'/g, "\\'")}', () => {`, ...body, '})'].join('\n'))
     continue
   }
-  // Subset: tests at indent 2 whose title matches.
+  // Subset: the describe-level functions named by unit.locals, then the tests at indent 2 whose title
+  // matches.
   const picked = []
+  for (const name of unit.locals ?? []) {
+    const start = lines.findIndex((l, i) => i > s && i < e && l.startsWith(`  function ${name}(`))
+    if (start < 0) throw new Error(`local function not found: ${name}`)
+    let first = start
+    while (lines[first - 1].startsWith('  //')) first--
+    const end = lines.findIndex((l, i) => i > start && l === '  }')
+    picked.push(lines.slice(first, end + 1).join('\n'))
+    for (let k = first; k <= end; k++) taken.add(k)
+    if (lines[end + 1] === '') taken.add(end + 1)
+  }
   for (let i = s + 1; i < e; i++) {
     const m = /^  it\('((?:\\.|[^'\\])*)'/.exec(lines[i])
     if (!m || !unit.tests.test(m[1])) continue
@@ -176,7 +220,7 @@ for (const unit of units) {
     i = j
   }
   if (!picked.length) throw new Error(`no test picked in ${unit.describe}`)
-  out.push([`describe('${title}', () => {`, picked.join('\n\n'), '})'].join('\n'))
+  out.push([`describe('${title.replace(/'/g, "\\'")}', () => {`, picked.join('\n\n'), '})'].join('\n'))
 }
 
 // Remove moved lines, then collapse runs of blank lines left behind (max 2, as in the base).
@@ -201,9 +245,6 @@ while (collapsed.at(-1) === '' && collapsed.at(-2) === '') collapsed.pop()
 function withoutStrings(text) {
   return text.replace(/'(?:\\.|[^'\\\n])*'|"(?:\\.|[^"\\\n])*"/g, "''")
 }
-const NODE = [
-  ['assert', "import assert from 'node:assert/strict'", /\bassert\b/],
-]
 function headerFor(text) {
   const body = withoutStrings(text)
   const used = (name) => new RegExp(`(?<![\\w$])(?<![^.]\\.)${name}(?![\\w$])`).test(body)
@@ -241,11 +282,17 @@ const target = join(dir, `${domain}.test.mjs`)
 if (existsSync(target)) throw new Error(`exists: ${target}`)
 writeFileSync(target, `${headerFor(newBody)}\n\n${newBody}\n`.replace(/\n/g, '\r\n'))
 
-// Prune now-unused imports of core.test.mjs.
-const coreText = collapsed.join('\n')
-const headerEnd = coreText.indexOf('\ndescribe(')
-const head = coreText.slice(0, headerEnd)
-const rest = coreText.slice(headerEnd)
+// Once no describe is left, core.test.mjs is deleted instead of rewritten (spec §5, step 4).
+if (!collapsed.some((l) => l.startsWith('describe('))) {
+  rmSync(corePath)
+  console.log(`moved ${taken.size} lines to ${domain}.test.mjs; core.test.mjs was empty and is deleted`)
+  process.exit(0)
+}
+
+// Prune now-unused imports of core.test.mjs: its header ends at its last import line.
+const lastImport = collapsed.findLastIndex((l) => /^import .+ from '[^']+'$|^\} from '[^']+'$/.test(l))
+const head = collapsed.slice(0, lastImport + 1).join('\n')
+const rest = `\n${collapsed.slice(lastImport + 1).join('\n')}`
 const restCode = withoutStrings(rest)
 const stillUsed = (name) => new RegExp(`(?<![\\w$])(?<![^.]\\.)${name}(?![\\w$])`).test(restCode)
 const prunedHead = head.split('\n').map((l) => {
@@ -265,6 +312,6 @@ const prunedHead = head.split('\n').map((l) => {
   const kept = names.filter(stillUsed)
   if (!kept.length) return null
   return `  ${kept.join(', ')}${l.trim().endsWith(',') ? ',' : ''}`
-}).filter((l) => l !== null).join('\n')
+}).filter((l) => l !== null).join('\n').replace(/^import \{\n\} from '[^']+'\n?/gm, '')
 writeFileSync(corePath, (prunedHead + rest).replace(/\n/g, '\r\n'))
 console.log(`moved ${taken.size} lines to ${domain}.test.mjs`)

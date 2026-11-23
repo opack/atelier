@@ -74,3 +74,8 @@
 - Contexte : les tranches 2 et 3 déplacent les domaines avec un script (sélection des `describe` et des tests scindés, en-têtes d'import, imports élagués dans `core.test.mjs`), d'abord tenu hors du dépôt.
 - Écarté : le garder hors du dépôt, où il peut disparaître, et où le relecteur ne voit pas comment les fichiers ont été produits.
 - Conséquence : `move-tests.mjs` à côté de `check-moves.mjs`, hors de `npm test`. Il n'est pas une preuve : c'est `check-moves.mjs` qui garantit le résultat. Les domaines de la tranche 2 y restent comme trace et ne se rejouent plus.
+
+## 2026-11-23 : move-tests.mjs retouché pour la tranche 4 (revue de la tranche 3, D1 à D4)
+- Contexte : la tranche 4 scinde `FEAT-7 close and next step`, dont une fonction locale (`reviewedChantier`) ne sert qu'aux tests de clôture, déplace quatre `const` de niveau fichier et vide `core.test.mjs`.
+- Écarté : déplacer ces morceaux à la main, hors du script versionné.
+- Conséquence : un sous-ensemble emporte les fonctions locales qu'il nomme (`locals`) ; `helpers` déplace aussi une `const` d'une ligne ; l'en-tête d'import de `core.test.mjs` s'arrête à sa dernière ligne d'import (il s'arrêtait au premier `describe`, et un commentaire de section placé avant aurait été lu comme une liste de noms) ; `core.test.mjs` vidé est supprimé dans le commit du dernier domaine.
