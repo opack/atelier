@@ -14,7 +14,7 @@ C’est aussi ce qui permet le principe « pas de code sans intention validée �
 /atelier:sign
 ```
 
-1. **Complétude** : la signature est refusée tant que la spec est incomplète.
+1. **Complétude** : la signature est refusée tant que la spec est incomplète : une section obligatoire absente ou vide, un critère non numéroté, ou un texte à compléter. Un texte à compléter, c’est un « … » écrit à part (en début de ligne, après une espace ou dans une cellule de tableau), comme dans la ligne de format « Étant donné …, quand …, alors … » recopiée sans être remplie. Collé au mot qui précède (« CA-1, CA-2… »), c’est de la ponctuation. Le code n’est pas fouillé à la recherche de « … » : pour citer un « … » voulu, mettez-le en code en ligne (`` `RB2. …` ``).
 2. **Relecture critique** : le sous-agent `spec-critic` relit la spec **sans voir la conversation** qui l’a produite, comme un développeur qui la découvre. Il signale ambiguïtés, cas limites oubliés, critères invérifiables, contradictions avec le code.
 3. **Vous tranchez** : vous retenez ou écartez chaque remarque. Si vous ne signez pas tout de suite, les retouches sont commitées et poussées comme un brouillon (`spec draft`).
 4. **Résumé et confirmation** : atelier résume ce que la spec engage (périmètre, critères clés, hors périmètre, TDD) et vous demande explicitement de signer.
