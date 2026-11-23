@@ -3,7 +3,7 @@ id: FEAT-27
 type: FEAT
 title: Modèle et effort réglés par étape
 status: draft
-tdd:                 # yes | no : décision humaine, obligatoire avant signature
+tdd: yes
 created_at: 2026-11-23
 signed_by:
 signed_at:
