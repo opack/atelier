@@ -24,6 +24,7 @@ last_slice: 4
 - `plugins/atelier/test/core.test.mjs` : découpé en plusieurs fichiers de tests, un par domaine, plus un module d'utilitaires partagés.
 - Noms des `describe` et des `it` de ce fichier.
 - `plugins/atelier/test/check-spec-ellipsis.test.mjs` (FIX-22, arrivé par la fusion de `main`) : renommé `spec-ellipsis.test.mjs`, noms de ses `describe` et de ses `it`.
+- `CLAUDE.md`, section Structure : une ligne sur le rangement de `plugins/atelier/test/`.
 
 Hors périmètre :
 - `lib/core.mjs` et `lib/cli.mjs` : leur découpage est le lot 2 d'EPIC-17.
@@ -116,6 +117,7 @@ Chaque étape laisse la suite verte et peut être fusionnée seule.
 - CA-2 : Étant donné les fichiers de tests à la fin de REF-16, quand on lit leurs `describe`, alors aucun ne contient d'identifiant de chantier.
 - CA-3 : Étant donné la sortie TAP de `npm test` à la fin de REF-16, quand on lit les noms de tests, alors chaque test qui portait un identifiant de critère se termine par `[<ID> CA-x]` ou `[<ID> CA-x, CA-y]`, aucun nom ne contient de `V-x`, et aucun test sans critère n'a reçu d'étiquette.
 - CA-4 : Étant donné la base `8c1a799`, quand on lance `check-moves.mjs`, alors `npm test` rapporte 314 tests verts sans suite en échec, chaque nom de la base correspond à exactement un nom d'après, et les lignes ne diffèrent que par les différences tolérées du §4.
+- CA-5 : Étant donné le `CLAUDE.md` à la fin de REF-16, quand on lit sa section Structure, alors elle dit que `plugins/atelier/test/` a un fichier `<domaine>.test.mjs` par domaine, scindé en `<domaine>-<sous-domaine>.test.mjs` au-delà de 400 lignes, que `helpers.mjs` ne reçoit que les utilitaires partagés par plusieurs fichiers, et qu'un test lié à un critère porte l'étiquette `[<ID> CA-x]` en suffixe de son nom.
 - Laissé en l'état : le contenu des tests (aucune assertion ajoutée, retirée ou réécrite, même maladroite), leur langue, la durée de la suite, `lib/`.
 
 ## Amendements
@@ -126,3 +128,4 @@ Chaque étape laisse la suite verte et peut être fusionnée seule.
 - 2026-11-23 : §3, ajout du domaine `checks` (contrôles lancés une seule fois par état du code, tests de TEC-23), fait avec l'amendement de la fusion de `main` mais omis de son entrée ; tracé ici (revue de la tranche 2, D3).
 - 2026-11-23 : §4 et §5, revue 2 de la tranche 2 (D1). Plus de nom ancien toléré : tous les tests encore dans `core.test.mjs` sont renommés sur place pendant la tranche 2, avant les déplacements des tranches 3 et 4, et chaque nom de la base doit avoir sa forme nouvelle, quel que soit son fichier. La tolérance des noms anciens laissait passer un test déplacé sans renommage, puis s'écartait du contrôle corrigé ; renommer d'abord la supprime.
 - 2026-11-23 : §5, revue 3 de la tranche 2 (D1). L'étape 3 n'étiquette plus de tests, déjà tous étiquetés par l'étape 2 ; l'étape 2 a suivi les déplacements de la tranche 2, pas précédé. Le §5 décrivait encore l'ordre d'avant l'amendement précédent.
+- 2026-11-23 : §1 et §7, revue du chantier (D5). Une ligne dans la section Structure du `CLAUDE.md` décrit le rangement de `test/` (CA-5 ajouté), parce que sans ce repère un chantier qui ajoute des tests entre la fusion de REF-16 et le lot 3 d'EPIC-17 n'a que le plan de REF-16 pour savoir où les mettre. Les consignes de `write-tests` et `build` restent aux lots 3 et 4.
