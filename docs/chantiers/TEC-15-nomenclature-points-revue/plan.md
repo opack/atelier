@@ -24,7 +24,7 @@
 3. Numérotation : `nextReviewIds`, commande `atelier review-ids [--json]` — CA couverts : CA-1, CA-2, CA-10, CA-13 (numérotation : le prochain `RD` tient compte de `RD3` requalifié)
 4. Refus dans la CLI : `set-reviewed`, `close-check`, `set-status done` (points ouverts, `revue.md` non commité) — CA couverts : CA-8, CA-9, CA-16
 5. Agents, skills, templates : préfixes, numéros par `review-ids`, `(repris)`, traitements `reporté` / `requalifié`, commits qui citent un point, bilan §7 par identifiant — CA couverts : CA-11
-6. Site, README, version : pages du cycle, commandes, glossaire, montée de version — vérifié par `npm run build` et `claude plugin validate`
+6. Site, README, version : pages du cycle, commandes, glossaire, montée de version — CA couverts : CA-19 ; le reste vérifié par `npm run build` et `claude plugin validate`
 
 ## Risques et points d'attention
 - À relire ligne à ligne : l'analyse des tableaux. Un faux négatif rouvre le trou que ce chantier ferme. Tester CRLF, cellules vides, espaces superflus, `\|`.
