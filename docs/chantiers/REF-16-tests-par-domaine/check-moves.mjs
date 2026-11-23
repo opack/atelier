@@ -28,7 +28,7 @@ const LABEL = /^((?:CA|V)-\d+(?:(?:, ?|\/)(?:CA|V)-\d+)*)(?: : | )(.+)$/
 
 // ---------- names
 
-// The name a base test must have once moved: label prefix turned into a `[<ID> CA-x]` suffix. A test
+// The name every base test must have: label prefix turned into a `[<ID> CA-x]` suffix. A test
 // without a label of its own takes the one of its innermost labeled nested describe (spec §3).
 function renamed(name, suites) {
   const describe = suites[0]
