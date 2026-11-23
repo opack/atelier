@@ -73,7 +73,7 @@
 ## 2026-11-23 : le script de déplacement est versionné dans le dossier du chantier
 - Contexte : les tranches 2 et 3 déplacent les domaines avec un script (sélection des `describe` et des tests scindés, en-têtes d'import, imports élagués dans `core.test.mjs`), d'abord tenu hors du dépôt.
 - Écarté : le garder hors du dépôt, où il peut disparaître, et où le relecteur ne voit pas comment les fichiers ont été produits.
-- Conséquence : `move-tests.mjs` à côté de `check-moves.mjs`, hors de `npm test`. Il n'est pas une preuve : c'est `check-moves.mjs` qui garantit le résultat. Les domaines de la tranche 2 y restent comme trace et ne se rejouent plus.
+- Conséquence : `move-tests.mjs` à côté de `check-moves.mjs`, hors de `npm test`. Il n'est pas une preuve : c'est `check-moves.mjs` qui garantit le résultat. Depuis la suppression de `core.test.mjs` en tranche 4, le script n'est plus qu'une trace : aucun domaine ne se rejoue (revue du chantier, D3).
 
 ## 2026-11-23 : move-tests.mjs retouché pour la tranche 4 (revue de la tranche 3, D1 à D4)
 - Contexte : la tranche 4 scinde `FEAT-7 close and next step`, dont une fonction locale (`reviewedChantier`) ne sert qu'aux tests de clôture, déplace quatre `const` de niveau fichier et vide `core.test.mjs`.

@@ -3,6 +3,8 @@
 // altered nothing (spec §4). Run from anywhere: node docs/chantiers/REF-16-tests-par-domaine/check-moves.mjs
 // Never run it twice at the same time in the same repository: each run first removes the
 // `ref16-base-*` worktrees it finds, including another run's.
+// Proof valid at the closing commit of REF-16 only: base and test count are fixed, so any test added
+// afterwards makes it fail without a regression.
 import { execFileSync, spawn } from 'node:child_process'
 import { mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'

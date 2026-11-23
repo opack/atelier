@@ -3,7 +3,7 @@
 // domain file, with the imports the moved code uses; prunes the imports core.test.mjs no longer uses.
 // One domain per run, from a clean tree, then check-moves.mjs, then one commit per domain (plan.md).
 // usage: node docs/chantiers/REF-16-tests-par-domaine/move-tests.mjs <domain>
-// The domains of tranche 2 are done: kept as the record of what was moved, they no longer run.
+// Record only: every domain has been moved and core.test.mjs is gone, so nothing runs any more.
 import { readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
