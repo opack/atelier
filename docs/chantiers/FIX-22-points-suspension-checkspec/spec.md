@@ -10,6 +10,7 @@ signed_by: Claude
 signed_at: 2026-11-23
 tests_commit: 4ff0cdc
 slice: 1
+reviewed_commit: 7290fe9880181de3234b15eddf068f9da2152cf2
 ---
 
 # FIX-22 Faux positifs de checkSpec sur « … »
