@@ -87,3 +87,19 @@ Traitement d'un point : corrigé (commit), test ajouté, spec amendée, exceptio
 | D1. Le §4 tolère encore un nom ancien tant que le fichier de base existe, plus souple que le contrôle corrigé | `spec.md:87`, `decisions.md:53` | spec amendée (57c8647) : plus aucun nom ancien accepté ; tous les tests restés dans `core.test.mjs` renommés sur place (edac463) ; contrôle simplifié, plan et décisions (d6f911c) ; sabotage rejoué (test remis sous son ancien nom) → échec |
 
 - Bilan de la revue : aucun bloquant, 1 à discuter traité. Traitements de la revue 1 jugés fidèles ; `check-moves.mjs` relancé par le relecteur : OK.
+
+## Revue : tranche 2 : 2026-11-23
+- Commit revu : 0eb8e92
+- Base : 7c65a01 (travail propre à la tranche : 6585ba5..0eb8e92)
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| D1. §5 resté à l'ordre d'avant l'amendement : l'étape 3 étiquette encore des tests, l'étape 2 semble précéder les déplacements de la tranche 2 | `spec.md:96` | spec amendée (28c5448) |
+| D2. Commentaire périmé « once moved » | `check-moves.mjs:31` | corrigé (297e06e) |
+
+- Bilan de la revue : aucun bloquant, 2 à discuter traités. CA-3 vérifié sur toute la suite (TAP relancé : 314 tests, 237 étiquetés, 77 sans étiquette inchangés) ; renommages de edac463 conformes au §3.
