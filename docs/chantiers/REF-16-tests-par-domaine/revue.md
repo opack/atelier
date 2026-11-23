@@ -103,3 +103,18 @@ Traitement d'un point : corrigé (commit), test ajouté, spec amendée, exceptio
 | D2. Commentaire périmé « once moved » | `check-moves.mjs:31` | corrigé (297e06e) |
 
 - Bilan de la revue : aucun bloquant, 2 à discuter traités. CA-3 vérifié sur toute la suite (TAP relancé : 314 tests, 237 étiquetés, 77 sans étiquette inchangés) ; renommages de edac463 conformes au §3.
+
+## Revue : tranche 2 : 2026-11-23
+- Commit revu : 3bed81d
+- Base : 7c65a01 (travail propre à la tranche : 6585ba5..3bed81d)
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| D1. Titre de l'entrée « tous les tests renommés sur place avant les déplacements » et « leurs tests étant déjà étiquetés » au §5 encore ambigus | `decisions.md:68`, `spec.md:96` | écarté : la règle et le contrôle n'en dépendent pas, la conséquence de l'entrée précise déjà « restés dans `core.test.mjs` », et un test sans critère n'a pas d'étiquette à recevoir ; un amendement et une revue de plus pour deux mots n'apportent rien (décision de l'utilisateur) |
+
+- Bilan de la revue : aucun bloquant, 1 à discuter écarté. Traitements de la revue 3 fidèles ; `npm test` (314 verts) et `check-moves.mjs` (OK) relancés par le relecteur.
