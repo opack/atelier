@@ -40,7 +40,7 @@ Il s’exécute quand l’agent s’apprête à rendre la main.
 1. **Phase tests (TDD)** : aucun contrôle, des tests rouges sont attendus.
 2. **Phase implémentation (TDD)** : si un test figé a été modifié depuis `tests_commit`, y compris par le shell ou par un commit, le tour est bloqué.
 3. **Code modifié sans chantier signé** : du code changé hors des chemins libres, sans débrayage (typiquement par le shell), bloque le tour **une fois** et l’agent doit vous le signaler. Un même état de l’arbre de travail n’est signalé qu’une fois.
-4. **Contrôles du projet** (`checks`) : lancés seulement si du code a changé hors des chemins libres, de `chantiersDir` et de `.atelier/`, **et** si cet état n’est pas déjà passé au vert. Rouge : l’agent continue.
+4. **Contrôles du projet** (`checks`) : lancés seulement si du code a changé hors des chemins libres, de `chantiersDir` et de `.atelier/`, **et** si cet état n’est pas déjà passé au vert (par ce hook, ou par `atelier checks`, `close-check` ou `set-status done`). Rouge : l’agent continue.
 5. **Anti-boucle** : si l’agent bute sans rien changer à l’arbre de travail depuis le blocage précédent, il est autorisé à s’arrêter, et l’échec vous est montré **une fois**. Les contrôles ne sont pas relancés sur un état connu comme rouge. Tant que l’agent fait progresser le code, il continue d’itérer.
 
 En cas d’erreur, ce hook **ne bloque pas**, mais le signale.

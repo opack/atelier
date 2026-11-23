@@ -7,6 +7,7 @@ atelier est un **garde-fou contre l’oubli, pas une barrière**. Il empêche de
 - Les **outils d’édition** de l’agent ne peuvent pas écrire de code sans chantier signé, modifier des tests figés, écrire dans l’état d’atelier, modifier les champs réservés de la spec, ni modifier une spec signée sans trace datée dans « Amendements ». Voir [Garde d’écriture](./configuration#garde-d-ecriture).
 - Le **contrôle de fin de tour** repère, après coup, ce qui a échappé à la garde : du code modifié sans chantier signé, un test figé modifié, des contrôles rouges.
 - La **clôture** refuse un chantier dont du code a changé depuis la revue (commit, fusion, rebase), ou dont la spec a été amendée depuis.
+- Les **contrôles** ne sont pas relancés sur un état du code déjà vert : `atelier checks`, `close-check`, `set-status done` et le contrôle de fin de tour partagent ce résultat. L’état est une empreinte git de l’arbre de travail : un changement limité à un fichier ignoré, à la version de Node ou à l’environnement n’est pas vu, y compris à la clôture. `atelier checks --force` relance.
 - La **trace** (spec, décisions, revue, bilan, commits identifiés) reste dans git, quoi qu’il arrive au plugin.
 
 ## Ce qu’atelier ne garantit pas

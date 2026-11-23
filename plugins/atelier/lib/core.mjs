@@ -1641,8 +1641,6 @@ export function decideWrite(context) {
 
 // ---------- Stop hook ----------
 
-// Decides what happens when the agent wants to stop. Returns { block, message, state }: when
-// `block` is true the agent keeps working on `message`; otherwise `message`, if any, is for the user.
 // Whether the checks already passed on this working tree (`tree` from the gate's index, null
 // when it could not be computed). Shared by the Stop hook and the commands that run the checks.
 export function checksGreenOn(state, tree) {
@@ -1654,6 +1652,8 @@ export function withGreen(state, tree) {
   return tree === null ? state : { ...state, lastGreen: tree }
 }
 
+// Decides what happens when the agent wants to stop. Returns { block, message, state }: when
+// `block` is true the agent keeps working on `message`; otherwise `message`, if any, is for the user.
 // `state` ({ lastGreen, lastBlock, reportedUnsigned }) is persisted between calls.
 // `context` = { config, chantier, bypass, changedFiles (uncommitted), changedTests (frozen tests
 // modified since tests_commit), tree (identifies the working tree content, null when unknown),
