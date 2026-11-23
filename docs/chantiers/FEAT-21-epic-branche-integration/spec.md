@@ -2,11 +2,11 @@
 id: FEAT-21
 type: FEAT
 title: EPIC en branche d'intégration
-status: draft
+status: signed
 tdd: yes
 created_at: 2026-11-23
-signed_by:
-signed_at:
+signed_by: Opack
+signed_at: 2026-11-23
 ---
 
 # FEAT-21 EPIC en branche d'intégration
