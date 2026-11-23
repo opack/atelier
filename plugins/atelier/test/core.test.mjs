@@ -2788,3 +2788,52 @@ describe('TEC-23 checks run once per working tree', () => {
     assert.equal(runs(), 3)
   })
 })
+
+// A repository with atelier installed, the given chantier folders (not committed), one empty
+// commit per subject on main, and the given extra branches pointing at main.
+function makeCounterRepository({ folders = [], subjects = [], branches = [] }) {
+  const directory = makeRepository('main')
+  folders.forEach((folder) => mkdirSync(join(directory, 'docs', 'chantiers', folder), { recursive: true }))
+  subjects.forEach((subject) => commit(directory, subject))
+  branches.forEach((branch) => git(directory, 'branch', branch))
+  return directory
+}
+
+describe('Next identifier: where the counter reads identifiers', () => {
+  it('commit subjects count only bracketed identifiers [FIX-18 CA-1]', () => {
+    const subjects = [
+      'test(plugin): [FEAT-7] add failing tests for CA-13',
+      'fix: support UTF-8 and ISO-8601 dates',
+      'docs: follow RFC-7231',
+    ]
+    const directory = makeCounterRepository({ folders: ['FEAT-7-x'], subjects })
+    assert.equal(atelier(directory, 'next-id', 'EPIC').trim(), 'EPIC-8')
+    assert.deepEqual(core.commitSubjectIdentifiers(subjects[0]), ['FEAT-7'])
+    assert.deepEqual(core.commitSubjectIdentifiers(subjects[1]), [])
+    assert.deepEqual(core.commitSubjectIdentifiers(subjects[2]), [])
+  })
+
+  it('bracketed identifiers keep the counter going, legacy prefixes included [FIX-18 CA-2]', () => {
+    const directory = makeCounterRepository({
+      subjects: ['feat(envelopes): [FEA-26] add', '[BUG-421] fix', 'test(plugin): [TEC-437 CA-3] cover'],
+    })
+    assert.equal(atelier(directory, 'next-id', 'FIX').trim(), 'FIX-438')
+  })
+
+  it('branch names and chantier folders count without any bracketed commit [FIX-18 CA-3]', () => {
+    const directory = makeCounterRepository({
+      folders: ['FEA-26-y'],
+      subjects: ['docs: CA-900 checked'],
+      branches: ['fix/BUG-421-x'],
+    })
+    assert.equal(atelier(directory, 'next-id', 'FEAT').trim(), 'FEAT-422')
+  })
+
+  it('branch names count only an identifier opening a segment [FIX-18 CA-4]', () => {
+    const botBranches = ['renovate/node-20.x', 'dependabot/npm_and_yarn/vite-5.4.12']
+    const directory = makeCounterRepository({ folders: ['FEAT-7-x'], branches: botBranches })
+    assert.equal(atelier(directory, 'next-id', 'FEAT').trim(), 'FEAT-8')
+    botBranches.forEach((branch) => assert.deepEqual(core.branchNameIdentifiers(branch), [], branch))
+    assert.deepEqual(core.branchNameIdentifiers('origin/fix/BUG-421-x'), ['BUG-421'])
+  })
+})
