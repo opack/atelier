@@ -31,7 +31,7 @@ atelier est un plugin Claude Code : ses commandes `/atelier:*` se lancent **dans
 /atelier:init
 ```
 
-atelier détecte vos commandes de contrôle, crée `docs/chantiers/` et `docs/decisions/`, ajoute une section « Process » au `CLAUDE.md` et déclare le plugin dans `.claude/settings.json` : vos coéquipiers se le verront proposer automatiquement.
+atelier détecte vos commandes de contrôle, crée `docs/chantiers/` et `docs/decisions/`, ajoute une section « Process » au `CLAUDE.md` et déclare le plugin dans `.claude/settings.json` : vos coéquipiers se le verront proposer automatiquement (sauf en session cloud, voir [Installation](../projet/installation#dans-une-session-cloud)).
 
 ## 3. Ouvrir un chantier
 

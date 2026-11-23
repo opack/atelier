@@ -487,27 +487,44 @@ export function highestChantierNumber(names) {
   return highest
 }
 
+// Identifiers a commit subject carries: only bracketed ones (`[FEAT-7]`, `[TEC-15 CA-3]`), so that
+// prose tokens such as CA-13, UTF-8 or ISO-8601 never move the counter.
+export function commitSubjectIdentifiers(subject) {
+  return [...subject.matchAll(/\[([A-Z]{2,6})-(\d+)\b/gi)].map((match) => `${match[1].toUpperCase()}-${match[2]}`)
+}
+
+// Identifiers a branch name carries: only one opening a segment and followed by `-` or the end
+// (`fix/BUG-421-x`, `feature/JIRA-123`), so that bot branches such as `renovate/node-20.x` don't count.
+export function branchNameIdentifiers(name) {
+  return [...name.matchAll(/(?:^|\/)([A-Z]{2,6})-(\d+)(?=-|$)/gi)].map((match) => `${match[1].toUpperCase()}-${match[2]}`)
+}
+
+function gitLines(projectRoot, gitArguments) {
+  try {
+    return execFileSync('git', gitArguments, {
+      cwd: projectRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).split('\n').filter(Boolean)
+  } catch {
+    // No git history yet: directory names are enough.
+    return []
+  }
+}
+
+// Each source has its own extraction rule: chantier folders as they are, bracketed identifiers of
+// commit subjects, identifiers opening a segment of branch names.
 export function collectUsedIdentifiers(projectRoot, config) {
   const names = []
   const chantiersRoot = join(projectRoot, config.chantiersDir)
   if (existsSync(chantiersRoot)) {
     names.push(...readdirSync(chantiersRoot))
   }
-  const gitSources = [
-    ['log', '--all', '--format=%s', '-n', '5000'],
-    ['branch', '--all', '--format=%(refname:short)'],
-  ]
-  for (const gitArguments of gitSources) {
-    try {
-      const output = execFileSync('git', gitArguments, {
-        cwd: projectRoot,
-        encoding: 'utf8',
-        stdio: ['ignore', 'pipe', 'ignore'],
-      })
-      names.push(...output.split('\n').map((line) => line.toUpperCase()))
-    } catch {
-      // No git history yet: directory names are enough.
-    }
+  for (const subject of gitLines(projectRoot, ['log', '--all', '--format=%s', '-n', '5000'])) {
+    names.push(...commitSubjectIdentifiers(subject))
+  }
+  for (const branch of gitLines(projectRoot, ['branch', '--all', '--format=%(refname:short)'])) {
+    names.push(...branchNameIdentifiers(branch))
   }
   return names
 }
@@ -556,6 +573,36 @@ export function meaningfulContent(lines) {
     .join('\n')
 }
 
+// An ellipsis written apart (after a line start, a space or a table bar) stands for missing text.
+// Glued to the previous character, it is punctuation.
+const UNFINISHED_TEXT = /(?:^|[\s|])…/m
+
+// Hides code from the search for unfinished text. Fenced blocks are removed: opened by ``` or ~~~,
+// possibly indented, in a list item or in a quote; closed by a fence of the same character, at
+// least as long, preceded only by indentation or quote markers; or running to the end of the text.
+// Inline spans (a run of N backticks closed by exactly N on the same line) become a neutral
+// character, neither a space nor a `|`, so that an ellipsis glued to a span stays glued.
+export function hideCode(text) {
+  const kept = []
+  let fence = null
+  for (const line of text.split('\n')) {
+    if (fence) {
+      const closing = line.match(/^\s*(?:>\s*)*(`{3,}|~{3,})\s*$/)
+      if (closing && closing[1][0] === fence[0] && closing[1].length >= fence.length) {
+        fence = null
+      }
+      continue
+    }
+    const marker = line.match(/^\s*(?:>\s*)*(?:(?:[-*+]|\d+\.)\s+(?:\[[ xX]\]\s+)?)?(`{3,}|~{3,})(.*)$/)
+    if (marker && !(marker[1][0] === '`' && marker[2].includes('`'))) {
+      fence = marker[1]
+      continue
+    }
+    kept.push(line.replace(/(?<!`)(`+)(?!`).+?(?<!`)\1(?!`)/g, 'x'))
+  }
+  return kept.join('\n')
+}
+
 export function checkSpec(text) {
   const problems = []
   const { data, body } = parseFrontMatter(text)
@@ -588,8 +635,8 @@ export function checkSpec(text) {
       problems.push(`Section « ${title} » vide.`)
       continue
     }
-    if (content.includes('…')) {
-      problems.push(`Section « ${title} » : texte à compléter (« … »).`)
+    if (UNFINISHED_TEXT.test(hideCode(section.lines.join('\n').replace(/<!--[\s\S]*?-->/g, 'x')))) {
+      problems.push(`Section « ${title} » : texte à compléter (« … » isolé). S'il est voulu, mets-le en code en ligne.`)
     }
     if (CRITERIA_SECTIONS[type] === title && !/\bCA-\d+\b/.test(content)) {
       problems.push(`Section « ${title} » : aucun critère numéroté (CA-1, CA-2…).`)
@@ -1641,6 +1688,17 @@ export function decideWrite(context) {
 
 // ---------- Stop hook ----------
 
+// Whether the checks already passed on this working tree (`tree` from the gate's index, null
+// when it could not be computed). Shared by the Stop hook and the commands that run the checks.
+export function checksGreenOn(state, tree) {
+  return tree !== null && state?.lastGreen === tree
+}
+
+// The gate state once the checks passed on `tree`; unchanged when the tree is unknown.
+export function withGreen(state, tree) {
+  return tree === null ? state : { ...state, lastGreen: tree }
+}
+
 // Decides what happens when the agent wants to stop. Returns { block, message, state }: when
 // `block` is true the agent keeps working on `message`; otherwise `message`, if any, is for the user.
 // `state` ({ lastGreen, lastBlock, reportedUnsigned }) is persisted between calls.
@@ -1682,7 +1740,7 @@ export function decideStop(context) {
       state: { ...state, reportedUnsigned: tree },
     }
   }
-  if (config.checks.length === 0 || (tree !== null && state.lastGreen === tree)) {
+  if (config.checks.length === 0 || checksGreenOn(state, tree)) {
     return pass()
   }
   if (tree !== null && state.lastBlock === tree) {
@@ -1691,7 +1749,7 @@ export function decideStop(context) {
   }
   const failure = runChecks()
   if (!failure) {
-    return pass({ ...state, lastGreen: tree })
+    return pass(withGreen(state, tree))
   }
   return block(`atelier : le contrôle « ${failure.check.name} » échoue (${failure.check.command}). Continue à corriger l’implémentation jusqu’à ce que tout passe, sans modifier les tests.\n\n${failure.output}`)
 }

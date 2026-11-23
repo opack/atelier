@@ -3,7 +3,7 @@ name: Site
 on:
   push:
     branches: [main]
-    paths: ['site/**', 'plugins/atelier/templates/**', '.github/workflows/site.yml']
+    paths: ['site/**', 'plugins/atelier/templates/**', 'plugins/atelier/.claude-plugin/plugin.json', '.github/workflows/site.yml']
   workflow_dispatch:
 
 permissions:
@@ -32,6 +32,12 @@ jobs:
       - run: npm run build
       - name: Fail on unresolved template includes
         run: "! grep -q '@include' .vitepress/dist/reference/templates.html"
+      - name: Fail when the plugin version is missing
+        run: |
+          version=$(node -p "require('../plugins/atelier/.claude-plugin/plugin.json').version")
+          # Match rendered markup: the raw version is also in the page's site data JSON.
+          grep -qF ">v$version</span>" .vitepress/dist/index.html || { echo "v$version absent de la nav"; exit 1; }
+          grep -qF "<strong>$version</strong>" .vitepress/dist/projet/installation.html || { echo "$version absent de la page d'installation"; exit 1; }
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site/.vitepress/dist
