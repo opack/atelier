@@ -45,11 +45,11 @@ Restent locaux : `addChantierSpec`, `makeDeductionRepository`, `makeRepositoryWi
 
 ## Tranches
 1. `check-moves.mjs` vert sur la base, puis extraction de `helpers.mjs` importé par `core.test.mjs`, suite verte — CA couverts : CA-4
-2. Socle et lecture : `common`, `identifiers` (FIX-18 compris), `relations`, `spec` (première scission : `FEAT-4 EPIC type`), `spec-ellipsis`, un commit par domaine — CA couverts : CA-1, CA-2, CA-3, CA-4
+2. Socle et lecture : `common`, `identifiers` (FIX-18 compris), `relations`, `spec` (première scission : `FEAT-4 EPIC type`), `spec-ellipsis`, un commit par domaine, puis renommage sur place de tous les tests restés dans `core.test.mjs` (amendement du §5, revue 2 de la tranche 2) — CA couverts : CA-1, CA-2, CA-3, CA-4
 3. Garde et TDD : `write-guard`, `stop-hook`, `checks`, `tdd`, `slices`, un commit par domaine — CA couverts : CA-1, CA-2, CA-3, CA-4
 4. Revue, clôture, documentation : `review`, `review-points-*` (4 fichiers), `close`, `next-step`, `docs`, un commit par domaine, puis suppression de `core.test.mjs` — CA couverts : CA-1, CA-2, CA-3, CA-4
 
-CA-1 à CA-3 ne sont tenus en entier qu'à la fin de la tranche 4.
+CA-3 est tenu dès la fin de la tranche 2 (tous les tests renommés) ; CA-1 et CA-2 ne sont tenus en entier qu'à la fin de la tranche 4. Les tranches 3 et 4 déplacent des tests déjà renommés et ne renomment plus que les `describe`.
 
 ## Risques et points d'attention
 - Script trop permissif (zone critique, relue ligne à ligne en tranche 1) : en tranche 1, trois sabotages non commités doivent le faire échouer : une assertion modifiée, un test supprimé, un test renommé hors de la règle.

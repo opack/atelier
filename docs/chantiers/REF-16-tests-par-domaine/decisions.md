@@ -53,6 +53,7 @@
 - Contexte : depuis la fusion de `main`, un nom de test garde sa forme ancienne tant que son fichier de la base existe ; il faut donc connaître le fichier de chaque test. La sortie TAP ne donne `location` que pour un test en échec.
 - Écarté : retrouver le fichier par le titre du `describe` de tête, fragile (titres échappés, doublons possibles).
 - Conséquence : un `node --test` par fichier, comme `node --test` le fait déjà en interne ; nombres et suites en échec additionnés.
+- Révisé le 2026-11-23 (revue 2 de la tranche 2, D1) : plus aucun nom ancien n'est accepté (amendement du §4), le fichier ne sert plus à la correspondance des noms. Le processus par fichier est gardé : il nomme le fichier d'un test sans correspondance, sans rien coûter de plus.
 
 ## 2026-11-23 : un titre de test donné par une variable se lit comme un gabarit
 - Contexte : les tests générés en boucle de FIX-22 (`it(name, …)`) reçoivent l'étiquette de leur `describe` : `` it(`${name} [FIX-22 CA-2]`, …) ``.
@@ -63,3 +64,8 @@
 - Contexte : `6585ba5` porte le message par défaut de git, sans `[REF-16]`, et la suite y est rouge jusqu'à `aa47b2f` (import de `spawnSync` déplacé dans `helpers.mjs` par la tranche 1).
 - Écarté : refaire la fusion, qui réécrit l'historique (§6) alors que la branche est déjà sur `origin`.
 - Conséquence : pour les fusions suivantes, `git merge --no-commit main`, suite relancée et corrigée avant le commit, message `chore(merge): [REF-16] fusion de main (<sha>)`.
+
+## 2026-11-23 : tous les tests renommés sur place avant les déplacements (revue 2 de la tranche 2, D1)
+- Contexte : la tolérance des noms anciens tant que leur fichier de base existe a laissé passer un test déplacé sans renommage (revue 1, D1), puis s'est écartée du contrôle corrigé (revue 2, D1).
+- Écarté : préciser la tolérance dans la spec, qui garde une règle de transition jusqu'à la tranche 4.
+- Conséquence : les 161 tests restés dans `core.test.mjs` sont renommés sur place en tranche 2 (libellés du tableau `cases` compris) ; `check-moves.mjs` n'accepte plus que la forme nouvelle. Les `describe` gardent leur nom jusqu'à leur déplacement, qui le fixe selon le fichier d'arrivée. Sabotage rejoué : un test remis sous son ancien nom dans `core.test.mjs` → échec.

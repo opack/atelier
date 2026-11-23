@@ -4,7 +4,7 @@
 // Never run it twice at the same time in the same repository: each run first removes the
 // `ref16-base-*` worktrees it finds, including another run's.
 import { execFileSync, spawn } from 'node:child_process'
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs'
+import { mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -101,22 +101,14 @@ async function runSuite(directory) {
   }
 }
 
-// Removes from `remaining` one test named `name` (in `file`, when given); tells whether there was one.
-function take(remaining, name, file) {
-  const index = remaining.findIndex((test) => test.name === name && (file === undefined || test.file === file))
-  if (index < 0) return false
-  remaining.splice(index, 1)
-  return true
-}
-
-// A renamed test may be in any file; a test under its old name only in its base file, which it has
-// not left yet.
+// Every base test must be found under its new name, in any file (spec §4: no old name accepted).
 function compareNames(baseTests, currentTests) {
   const remaining = currentTests.map(({ name, file }) => ({ name, file }))
-  const expected = baseTests.map((test) => ({ old: test.name, new: renamed(test.name, test.suites), file: test.file }))
-  expected.forEach((entry) => { entry.found = take(remaining, entry.new) ? 'new' : null })
-  expected.filter((entry) => !entry.found).forEach((entry) => {
-    entry.found = take(remaining, entry.old, entry.file) ? 'old' : null
+  const expected = baseTests.map((test) => ({ old: test.name, new: renamed(test.name, test.suites) }))
+  expected.forEach((entry) => {
+    const index = remaining.findIndex((test) => test.name === entry.new)
+    entry.found = index >= 0
+    if (entry.found) remaining.splice(index, 1)
   })
   const extra = remaining.map(({ name, file }) => `${name} (${file})`)
   return { expected, missing: expected.filter((entry) => !entry.found), extra }
@@ -249,12 +241,9 @@ async function main() {
     if (current.failedSuites.length) problems.push(`des suites échouent : ${current.failedSuites.join(', ')}`)
 
     console.log('\n## Noms')
-    const baseFileStillThere = (file) => baseFiles.includes(file) && existsSync(join(testDirectory, file))
-    const remainingBaseFiles = baseFiles.filter(baseFileStillThere)
     const names = compareNames(base.tests, current.tests)
-    const renamedCount = names.expected.filter((entry) => entry.found === 'new' && entry.new !== entry.old).length
-    const pendingCount = names.expected.filter((entry) => entry.found === 'old' && entry.new !== entry.old).length
-    console.log(`- ${renamedCount} renommés, ${pendingCount} pas encore renommés${remainingBaseFiles.length ? ` (existent encore : ${remainingBaseFiles.join(', ')})` : ''}`)
+    const renamedCount = names.expected.filter((entry) => entry.found && entry.new !== entry.old).length
+    console.log(`- ${renamedCount} renommés`)
     names.missing.forEach((entry) => console.log(`- introuvable : « ${entry.old} » (attendu : « ${entry.new} »)`))
     names.extra.forEach((name) => console.log(`- sans correspondance dans la base : « ${name} »`))
     if (names.missing.length || names.extra.length) problems.push('des noms de tests ne correspondent pas')
@@ -269,7 +258,7 @@ async function main() {
 
     console.log('\n## Table ancien nom → nouveau nom')
     names.expected.filter((entry) => entry.new !== entry.old)
-      .forEach((entry) => console.log(`- ${entry.old} → ${entry.new}${entry.found === 'old' ? ' (pas encore renommé)' : ''}`))
+      .forEach((entry) => console.log(`- ${entry.old} → ${entry.new}`))
 
     console.log(problems.length ? `\nÉCHEC :\n${problems.map((problem) => `- ${problem}`).join('\n')}` : '\nOK')
     process.exitCode = problems.length ? 1 : 0
