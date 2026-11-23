@@ -2,7 +2,7 @@
 id: TEC-23
 type: TEC
 title: Lancer les contrôles une seule fois par état du code
-status: signed
+status: done
 tdd: yes
 created_at: 2026-11-23
 source: diagnostic de lenteur des scripts atelier (fil « Accélérer les contrôles d'atelier », 2026-11-23)
@@ -11,6 +11,7 @@ signed_at: 2026-11-23
 tests_commit: 9222907
 slice: 1
 reviewed_commit: 9eb5eb4fc19639053838f2dbae34693965ab10ae
+done_at: 2026-11-23
 ---
 
 # TEC-23 Lancer les contrôles une seule fois par état du code
