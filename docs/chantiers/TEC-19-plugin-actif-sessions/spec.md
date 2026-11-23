@@ -2,13 +2,14 @@
 id: TEC-19
 type: TEC
 title: Plugin atelier actif dans les sessions sur ce dépôt
-status: signed
+status: done
 tdd: no
 created_at: 2026-11-22
 signed_by: Opack
 signed_at: 2026-11-23
 reviewed_commit: f472003cfad21926867d63f5db9ec800a4f94c8d
 slice: 1
+done_at: 2026-11-23
 ---
 
 # TEC-19 Plugin atelier actif dans les sessions sur ce dépôt

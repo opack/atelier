@@ -47,6 +47,6 @@ Une revue (chantier à tranche unique), commit revu b7059e4, aucun point bloquan
 | RD2. Montée de version hors périmètre | écarté : nécessaire pour que les installations récupèrent la nouvelle skill `init` |
 | RD3. Réserve cloud absente de deux pages du site | corrigé (81d9d08) |
 
-- Verdict :
-- Validé par :
-- Date :
+- Verdict : accepté
+- Validé par : Didier (Opack)
+- Date : 2026-11-23
