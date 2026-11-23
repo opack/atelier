@@ -48,5 +48,5 @@ Une revue (chantier à tranche unique, 2026-11-23, commit 1c7f9e4) : aucun bloqu
 | RD2. Écart useData() / $theme non reporté en amendement | spec amendée |
 
 - Verdict : accepté
-- Validé par : Didier (opack)
+- Validé par : Opack
 - Date : 2026-11-23

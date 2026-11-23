@@ -5,7 +5,7 @@ title: Afficher la version d'atelier sur le site
 status: done
 tdd: no
 created_at: 2026-11-23
-signed_by: Didier (opack)
+signed_by: Opack
 signed_at: 2026-11-23
 reviewed_commit: 1c7f9e42da47b998749cefca8a0165407c23f59c
 slice: 1
