@@ -43,3 +43,18 @@
 - Contexte : les lignes d'import et d'export entre fichiers sont tolérées.
 - Écarté : tolérer toute ligne commençant par `export`, qui laisserait passer une définition modifiée en `export function …`.
 - Conséquence : seules les instructions `import … from '…'` (sur une ou plusieurs lignes) et les blocs `export { … }` sont écartés de la comparaison.
+
+## 2026-11-23 : le reste de `FEAT-4 EPIC type` garde son titre jusqu'à la tranche 3
+- Contexte : la tranche 2 en retire CA-6 (`identifiers`) et les quatre CA-7 (`spec`) ; CA-8 part dans `write-guard` en tranche 3.
+- Écarté : renommer dès maintenant le `describe` restant en `write guard on an EPIC`, qui ferait toucher en tranche 2 un domaine de la tranche 3.
+- Conséquence : `core.test.mjs` garde un `describe('FEAT-4 EPIC type')` réduit à CA-8, renommé au déplacement.
+
+## 2026-11-23 : check-moves.mjs lance un processus par fichier de test
+- Contexte : depuis la fusion de `main`, un nom de test garde sa forme ancienne tant que son fichier de la base existe ; il faut donc connaître le fichier de chaque test. La sortie TAP ne donne `location` que pour un test en échec.
+- Écarté : retrouver le fichier par le titre du `describe` de tête, fragile (titres échappés, doublons possibles).
+- Conséquence : un `node --test` par fichier, comme `node --test` le fait déjà en interne ; nombres et suites en échec additionnés.
+
+## 2026-11-23 : un titre de test donné par une variable se lit comme un gabarit
+- Contexte : les tests générés en boucle de FIX-22 (`it(name, …)`) reçoivent l'étiquette de leur `describe` : `` it(`${name} [FIX-22 CA-2]`, …) ``.
+- Écarté : mettre l'étiquette dans les clés des tableaux de données, qui modifierait des lignes de données.
+- Conséquence : le contrôle de lignes lit `it(name,` comme `` it(`${name}`, `` avant de retirer l'étiquette. Sabotages rejoués : étiquette héritée fausse et assertion affaiblie dans un test généré, tous deux refusés.

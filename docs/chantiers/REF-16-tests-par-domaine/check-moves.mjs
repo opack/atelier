@@ -9,8 +9,8 @@ import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const BASE_COMMIT = 'ae55ab5'
-const BASE_TEST_COUNT = 256
+const BASE_COMMIT = '8c1a799'
+const BASE_TEST_COUNT = 314
 const TEST_DIRECTORY = 'plugins/atelier/test'
 const WORKTREE_PREFIX = 'ref16-base-'
 const root = fileURLToPath(new URL('../../../', import.meta.url))
@@ -23,23 +23,28 @@ const UNPREFIXED_DESCRIBES = {
   'chantier source shown to the user': 'TEC-6',
   'default branch resolved through origin/HEAD': 'TEC-6',
 }
-const DESCRIBE_PREFIX = /^(FEAT-4|FEAT-7|TEC-15) /
+const DESCRIBE_PREFIX = /^(FEAT-4|FEAT-7|TEC-15|TEC-23|FIX-22)(?: :)? /
 const LABEL = /^((?:CA|V)-\d+(?:(?:, ?|\/)(?:CA|V)-\d+)*)(?: : | )(.+)$/
 
 // ---------- names
 
-// The name a base test must have once moved: label prefix turned into a `[<ID> CA-x]` suffix.
-function renamed(name, describe) {
+// The name a base test must have once moved: label prefix turned into a `[<ID> CA-x]` suffix. A test
+// without a label of its own takes the one of its innermost labeled nested describe (spec §3).
+function renamed(name, suites) {
+  const describe = suites[0]
   const match = LABEL.exec(name)
-  if (!match) return name
+  const nested = suites.slice(1).reverse().map((suite) => LABEL.exec(suite)).find(Boolean)
+  const label = match?.[1] ?? nested?.[1]
+  if (!label) return name
   const id = DESCRIBE_PREFIX.exec(describe)?.[1] ?? UNPREFIXED_DESCRIBES[describe]
   if (!id) throw new Error(`étiquette sans chantier connu : « ${name} » dans « ${describe} »`)
-  const criteria = match[1].split(/, ?|\//).map((label) => label.replace(/^V-/, 'CA-'))
-  return `${match[2]} [${id} ${criteria.join(', ')}]`
+  const criteria = label.split(/, ?|\//).map((criterion) => criterion.replace(/^V-/, 'CA-'))
+  return `${match ? match[2] : name} [${id} ${criteria.join(', ')}]`
 }
 
-// Tests (not suites) of a TAP stream, with the name of their top-level suite.
-function parseTap(text) {
+// Tests (not suites) of the TAP stream of `file`, with the names of their suites (outermost first);
+// suites reported as failed.
+function parseTap(text, file) {
   const lines = text.split(/\r?\n/)
   const pending = new Map()
   for (let index = 0; index < lines.length; index++) {
@@ -56,13 +61,15 @@ function parseTap(text) {
     pending.set(depth, [...(pending.get(depth) ?? []), item])
   }
   const tests = []
-  const walk = (items, suite) => items.forEach((item) => {
-    if (item.type === 'suite') walk(item.children, suite ?? item.name)
-    else tests.push({ name: item.name, ok: item.ok, suite })
+  const failedSuites = []
+  const walk = (items, suites) => items.forEach((item) => {
+    if (item.type !== 'suite') return tests.push({ name: item.name, ok: item.ok, suites, file })
+    if (!item.ok) failedSuites.push(item.name)
+    walk(item.children, [...suites, item.name])
   })
-  walk(pending.get(0) ?? [], null)
+  walk(pending.get(0) ?? [], [])
   const summary = (key) => Number(new RegExp(`^# ${key} (\\d+)$`, 'm').exec(text)?.[1] ?? NaN)
-  return { tests, total: summary('tests'), failed: summary('fail') }
+  return { tests, failedSuites, total: summary('tests'), failed: summary('fail') }
 }
 
 function testFiles(directory) {
@@ -70,16 +77,28 @@ function testFiles(directory) {
     .map((name) => `${TEST_DIRECTORY}/${name}`)
 }
 
-// Runs the suite of `directory` as `npm test` does (same file pattern), with the TAP reporter.
-function runSuite(directory) {
+// Runs one test file with the TAP reporter; its tests are tagged with the file's name.
+function runFile(directory, file) {
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, ['--test', '--test-reporter=tap', ...testFiles(directory)], { cwd: directory })
+    const child = spawn(process.execPath, ['--test', '--test-reporter=tap', file], { cwd: directory })
     let output = ''
     child.stdout.on('data', (chunk) => { output += chunk })
     child.stderr.on('data', (chunk) => { output += chunk })
     child.on('error', reject)
-    child.on('close', () => resolve(parseTap(output)))
+    child.on('close', () => resolve(parseTap(output, basename(file))))
   })
+}
+
+// Runs the files `npm test` runs (same pattern), one process per file as `node --test` does, so that
+// each test is known with its file.
+async function runSuite(directory) {
+  const results = await Promise.all(testFiles(directory).map((file) => runFile(directory, file)))
+  return {
+    tests: results.flatMap((result) => result.tests),
+    failedSuites: results.flatMap((result) => result.failedSuites),
+    total: results.reduce((sum, result) => sum + result.total, 0),
+    failed: results.reduce((sum, result) => sum + result.failed, 0),
+  }
 }
 
 function take(counts, name) {
@@ -89,13 +108,13 @@ function take(counts, name) {
   return true
 }
 
-function compareNames(baseTests, currentTests, coreStillThere) {
+function compareNames(baseTests, currentTests, baseFileStillThere) {
   const remaining = new Map()
   currentTests.forEach(({ name }) => remaining.set(name, (remaining.get(name) ?? 0) + 1))
-  const expected = baseTests.map((test) => ({ old: test.name, new: renamed(test.name, test.suite) }))
+  const expected = baseTests.map((test) => ({ old: test.name, new: renamed(test.name, test.suites), file: test.file }))
   expected.forEach((entry) => { entry.found = take(remaining, entry.new) ? 'new' : null })
   expected.filter((entry) => !entry.found).forEach((entry) => {
-    entry.found = coreStillThere && take(remaining, entry.old) ? 'old' : null
+    entry.found = baseFileStillThere(entry.file) && take(remaining, entry.old) ? 'old' : null
   })
   const extra = [...remaining].flatMap(([name, count]) => Array(count).fill(name))
   return { expected, missing: expected.filter((entry) => !entry.found), extra }
@@ -113,9 +132,10 @@ function withoutTitle(line) {
 }
 
 // Replaces the first string literal of `line` (a test title) by its text without label, quotes or
-// escapes: a base title and its renamed form give the same line.
+// escapes: a base title and its renamed form give the same line. A title given by a variable,
+// `it(name, …)`, reads as `it(`${name}`, …)`, the form it takes once labeled.
 function withUnlabeledTitle(line) {
-  return line.replace(STRING_LITERAL, (literal) => {
+  return line.replace(/^it\(([A-Za-z_$][\w$]*),/, 'it(`${$1}`,').replace(STRING_LITERAL, (literal) => {
     const title = literal.slice(1, -1).replace(/\\(.)/g, '$1')
     const unlabeled = (LABEL.exec(title)?.[2] ?? title).replace(/ \[[A-Z]+-\d+ CA-\d+(?:, CA-\d+)*\]$/, '')
     return `<titre:${unlabeled}>`
@@ -163,8 +183,12 @@ function significantLines(text) {
   return { lines, describes }
 }
 
-function compareLines(baseText, currentTexts) {
-  const base = significantLines(baseText)
+function compareLines(baseTexts, currentTexts) {
+  const base = { lines: [], describes: 0 }
+  baseTexts.map(significantLines).forEach(({ lines, describes }) => {
+    base.lines.push(...lines)
+    base.describes += describes
+  })
   const current = currentTexts.map(significantLines)
   const counts = new Map()
   base.lines.forEach((line) => counts.set(line, (counts.get(line) ?? 0) - 1))
@@ -202,13 +226,15 @@ async function main() {
   try {
     git('worktree', 'add', '--detach', '-q', worktree, BASE_COMMIT)
     const [base, current] = await Promise.all([runSuite(worktree), runSuite(root)])
-    const baseText = readFileSync(join(worktree, TEST_DIRECTORY, 'core.test.mjs'), 'utf8')
+    const baseFiles = testFiles(worktree).map((name) => basename(name))
+    const baseTexts = baseFiles.map((name) => readFileSync(join(worktree, TEST_DIRECTORY, name), 'utf8'))
     const testDirectory = join(root, TEST_DIRECTORY)
     const currentFiles = readdirSync(testDirectory).filter((name) => statSync(join(testDirectory, name)).isFile()).sort()
     const currentTexts = currentFiles.map((name) => readFileSync(join(testDirectory, name), 'utf8'))
     const problems = []
 
     console.log(`# Contrôle REF-16 (base ${BASE_COMMIT})\n`)
+    console.log(`Fichiers de la base : ${baseFiles.join(', ')}`)
     console.log(`Fichiers de test/ : ${currentFiles.join(', ')}\n`)
 
     console.log('## Nombre')
@@ -217,19 +243,22 @@ async function main() {
     if (base.total !== BASE_TEST_COUNT || base.failed !== 0 || base.tests.length !== BASE_TEST_COUNT) problems.push(`la base ne rapporte pas ${BASE_TEST_COUNT} tests verts`)
     if (current.total !== BASE_TEST_COUNT || current.tests.length !== BASE_TEST_COUNT) problems.push(`la suite rapporte ${current.total} tests au lieu de ${BASE_TEST_COUNT}`)
     if (current.failed !== 0 || current.tests.some((test) => !test.ok)) problems.push('des tests échouent')
+    if (base.failedSuites.length) problems.push(`des suites de la base échouent : ${base.failedSuites.join(', ')}`)
+    if (current.failedSuites.length) problems.push(`des suites échouent : ${current.failedSuites.join(', ')}`)
 
     console.log('\n## Noms')
-    const coreStillThere = existsSync(join(testDirectory, 'core.test.mjs'))
-    const names = compareNames(base.tests, current.tests, coreStillThere)
+    const baseFileStillThere = (file) => baseFiles.includes(file) && existsSync(join(testDirectory, file))
+    const remainingBaseFiles = baseFiles.filter(baseFileStillThere)
+    const names = compareNames(base.tests, current.tests, baseFileStillThere)
     const renamedCount = names.expected.filter((entry) => entry.found === 'new' && entry.new !== entry.old).length
     const pendingCount = names.expected.filter((entry) => entry.found === 'old' && entry.new !== entry.old).length
-    console.log(`- ${renamedCount} renommés, ${pendingCount} pas encore renommés${coreStillThere ? ' (core.test.mjs existe encore)' : ''}`)
+    console.log(`- ${renamedCount} renommés, ${pendingCount} pas encore renommés${remainingBaseFiles.length ? ` (existent encore : ${remainingBaseFiles.join(', ')})` : ''}`)
     names.missing.forEach((entry) => console.log(`- introuvable : « ${entry.old} » (attendu : « ${entry.new} »)`))
     names.extra.forEach((name) => console.log(`- sans correspondance dans la base : « ${name} »`))
     if (names.missing.length || names.extra.length) problems.push('des noms de tests ne correspondent pas')
 
     console.log('\n## Lignes')
-    const lines = compareLines(baseText, currentTexts)
+    const lines = compareLines(baseTexts, currentTexts)
     console.log(`- écart de describe : ${lines.describeDelta}, écart d'ouvertures « ${OPENING} » : ${lines.openingDelta}, écart de « }) » : ${lines.closingDelta}`)
     lines.differences.forEach(([line, delta]) => console.log(`- ${delta > 0 ? `en plus (${delta})` : `en moins (${-delta})`} : ${line}`))
     if (lines.differences.length) problems.push('des lignes diffèrent de la base')
