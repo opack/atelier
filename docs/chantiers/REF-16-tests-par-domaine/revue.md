@@ -150,3 +150,38 @@ Traitement d'un point : corrigé (commit), test ajouté, spec amendée, exceptio
 |---|---|---|
 
 - Bilan de la revue : aucun bloquant, aucun à discuter. D1 à D4 reportés de la tranche 3 traités (ef5a709) : `reviewedChantier` seul dans `close.test.mjs`, `const` de `review-points-checks` locaux, `core.test.mjs` supprimé dans le commit `docs`, `NODE` retiré et titre échappé. Chacun des 8 fichiers passe seul ; `check-moves.mjs` relancé par le relecteur : OK (314 tests, 232 renommés, écart de describe 4) ; CA-1 et CA-2 tenus en entier ; aucune référence résiduelle à `core.test.mjs` hors documents de chantiers.
+
+## Revue 1 : chantier : 2026-11-23
+- Commit revu : d3eb8de
+- Base : 8c1a799
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| D1. `templatesDirectory` et `readTemplate` dupliquent `templatesDirectory` et `template` de `helpers.mjs` (hérité de FIX-22, le contrôle de lignes empêchait de le retirer) | `spec-ellipsis.test.mjs:9-13` | reporté au lot 2 d'EPIC-17, noté au bilan |
+| D2. Un nom de test cite « CA-17 et CA-18 » hors de son étiquette finale : fera échouer le test d'architecture (EPIC-17 CA-7) | `spec-ellipsis.test.mjs:69` | reporté au lot 2 d'EPIC-17, noté au bilan |
+| D3. En-tête de `move-tests.mjs` et `decisions.md` périmés : le script ne se rejoue plus du tout | `move-tests.mjs:6`, `decisions.md:76` | corrigé (801f1ad) |
+| D4. Base et nombre de tests en dur : la preuve ne vaut qu'au commit de clôture, rien ne le dit | `check-moves.mjs:12-13` | corrigé : ligne d'en-tête (801f1ad) |
+| D5. Convention de rangement des tests documentée nulle part hors du chantier | `CLAUDE.md` | spec amendée (8480899, CA-5), ligne ajoutée (6b2a81b) |
+| D6. Dernier commentaire d'en-tête par chantier (`// FIX-22:`) | `spec-ellipsis.test.mjs:1` | reporté au lot 2 d'EPIC-17, noté au bilan |
+
+- Bilan de la revue : aucun bloquant, 6 à discuter : 3 traités (D3, D4, D5), 3 reportés au lot 2 et notés au bilan (D1, D2, D6). `check-moves.mjs` relancé par le relecteur : OK.
+
+## Revue 2 : chantier : 2026-11-23
+- Commit revu : 6b2a81b
+- Base : 8c1a799
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| D1. Ligne vide manquante avant la section de la revue 1 du chantier, pas de saut de ligne final | `revue.md` | corrigé avant le commit de la revue |
+
+- Bilan de la revue : aucun bloquant, 1 à discuter corrigé. Traitements de D3, D4 et D5 de la revue 1 fidèles ; CA-5 tenu par `CLAUDE.md:9` ; `check-moves.mjs` relancé par le relecteur : OK (314 tests, 232 renommés, écart de describe 4).
