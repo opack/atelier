@@ -179,4 +179,66 @@ describe('FIX-22 : « … » dans checkSpec', () => {
       assert.deepEqual(problems, [])
     })
   })
+
+  it('CA-4 : le message est exactement celui de la spec', () => {
+    const problems = unfinished(checkSpec(spec('FIX', { 'Cause probable': 'Le crash revient quand …' })))
+    assert.deepEqual(problems, ["Section « Cause probable » : texte à compléter (« … » isolé). S'il est voulu, mets-le en code en ligne."])
+  })
+
+  describe('CA-10 : la recherche porte sur le texte écrit, pas sur le contenu sans puces', () => {
+    const glued = {
+      'glued to a bullet': '-… suite',
+      'glued to a number': '1.… suite',
+      'in italics': 'Un *…* suite',
+      'right after an HTML comment': 'Texte <!-- note -->… suite',
+    }
+    for (const [name, text] of Object.entries(glued)) {
+      it(`not flagged: ${name}`, () => {
+        assert.deepEqual(unfinished(checkSpec(spec('FIX', { 'Cause probable': text }))), [])
+      })
+    }
+    const apart = { 'after a bullet and a space': '- … suite', 'after a number and a space': '1. … suite' }
+    for (const [name, text] of Object.entries(apart)) {
+      it(`flagged: ${name}`, () => {
+        assert.equal(unfinished(checkSpec(spec('FIX', { 'Cause probable': text }))).length, 1)
+      })
+    }
+  })
+
+  describe('CA-11 : clôture et ouverture des blocs', () => {
+    const stillOpen = {
+      'a fence with a language does not close': '```\n```js\n- A : …\n```',
+      'tildes do not close a backtick block': '```\n~~~\n- A : …\n```',
+      'a shorter fence does not close': '````\n```\n- A : …\n````',
+    }
+    for (const [name, text] of Object.entries(stillOpen)) {
+      it(name, () => {
+        assert.deepEqual(unfinished(checkSpec(spec('FIX', { 'Cause probable': text }))), [])
+      })
+    }
+    const prefixed = {
+      'after a bullet': '- ```\n  - A : …\n  ```',
+      'after a checkbox': '- [ ] ```\n  - A : …\n  ```',
+      'in a quote': '> ```\n> - A : …\n> ```',
+    }
+    for (const [name, text] of Object.entries(prefixed)) {
+      it(`opened ${name}`, () => {
+        assert.deepEqual(unfinished(checkSpec(spec('FIX', { 'Cause probable': text }))), [])
+      })
+    }
+  })
+
+  describe('CA-12 : code en ligne à plusieurs accents graves, barre de tableau', () => {
+    it('a double-backtick span holding a backtick, glued ellipsis: not flagged', () => {
+      assert.deepEqual(unfinished(checkSpec(spec('FIX', { 'Cause probable': 'Le motif ``a`b``… est lu.' }))), [])
+    })
+
+    it('two backticks closed by one is not a span: the ellipsis after a space is flagged', () => {
+      assert.equal(unfinished(checkSpec(spec('FIX', { 'Cause probable': 'Le motif ``a` … est lu.' }))).length, 1)
+    })
+
+    it('an ellipsis glued to a table bar is flagged', () => {
+      assert.equal(unfinished(checkSpec(spec('FIX', { 'Cause probable': '| Cas | Résultat |\n|---|---|\n| démarrage |…|' }))).length, 1)
+    })
+  })
 })
