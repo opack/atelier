@@ -103,7 +103,9 @@ Un test oublié ou réellement faux se rouvre explicitement (`/atelier:write-tes
 - **Avant de terminer** : pendant l'implémentation, refuse tout test modifié depuis son gel (même par une commande shell ou un commit) ; signale une fois du code modifié sans chantier signé (écriture par le shell) ; si du code a changé hors des chemins libres, lance les contrôles de `.claude/atelier.json`, sauf sur un état déjà passé au vert, et l'agent continue tant qu'ils échouent. Si l'agent bute sans rien changer, il est autorisé à s'arrêter et l'échec t'est montré. Pendant l'écriture des tests, des tests rouges sont attendus : rien n'est lancé.
 - **Au démarrage d'une session** : rappelle le chantier actif, son statut, sa tranche en cours, l'état de sa revue et la prochaine étape.
 
-La clôture (`atelier close-check`, `atelier set-status done`) refuse si une tranche du plan n'a pas été revue, si la revue du chantier manque, si du code a été commité depuis la revue, si la spec a été amendée depuis, ou si le commit revu n'est plus un ancêtre de `HEAD`.
+Chaque point de relecture porte un identifiant stable (`RB1`/`RD1` en revue, `SB1`/`SD1` sur la spec, `OB1`/`OD1` pour le surapprentissage), numéroté sur tout le chantier par `atelier review-ids`. `atelier set-reviewed` refuse d'enregistrer une revue tant qu'un point de `revue.md` n'a pas de traitement consigné (corrigé, écarté, reporté…).
+
+La clôture (`atelier close-check`, `atelier set-status done`) refuse si un point de revue est encore ouvert, si une tranche du plan n'a pas été revue, si la revue du chantier manque, si du code a été commité depuis la revue, si la spec a été amendée depuis, ou si le commit revu n'est plus un ancêtre de `HEAD`.
 
 Les hooks ne font rien dans un projet sans `.claude/atelier.json`. Ce sont des garde-fous contre l'oubli, pas une barrière contre un agent qui chercherait à les contourner : une écriture par le shell n'est détectée qu'en fin de tour, et rien n'est annulé.
 

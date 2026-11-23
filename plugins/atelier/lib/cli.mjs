@@ -33,6 +33,7 @@ import {
   isReviewExempt,
   loadConfig,
   nextChantierId,
+  nextReviewIds,
   matchesAny,
   nextStep,
   openChildren,
@@ -75,6 +76,7 @@ const commands = {
   'set-reviewed': commandSetReviewed,
   'close-check': commandCloseCheck,
   'tests-changed': commandTestsChanged,
+  'review-ids': commandReviewIds,
   bypass: commandBypass,
   checks: commandChecks,
   'hook-guard': hookGuard,
@@ -652,13 +654,22 @@ function commandSetTdd([value, ...reasonWords]) {
     : 'Chantier sans TDD : pas de phase tests d’abord imposée.')
 }
 
-// Records the reviewed commit (full hash of HEAD) once the review has no blocking point left.
+// Project-relative path of a file of the chantier directory, as git lists it.
+function chantierFilePath(projectRoot, chantier, name) {
+  return toProjectRelativePath(projectRoot, join(chantier.directory, name))
+}
+
+function samePath(config, file, other) {
+  return config.ignoreCase ? file.toLowerCase() === other.toLowerCase() : file === other
+}
+
+// Records the reviewed commit (full hash of HEAD) once every point of revue.md is treated.
 function commandSetReviewed() {
   const projectRoot = findProjectRoot()
   const config = requireConfig(projectRoot)
   const chantier = requireActiveChantier(projectRoot, config)
   const uncommitted = uncommittedFiles(projectRoot)
-  const specPath = toProjectRelativePath(projectRoot, join(chantier.directory, 'spec.md'))
+  const specPath = chantierFilePath(projectRoot, chantier, 'spec.md')
   const { model, slice } = sliceState(chantier)
   const sliceBase = chantier.spec.data.slice_base || null
   const sliceBaseIsAncestor = model === 'sliced' && sliceBase ? isAncestorOfHead(projectRoot, sliceBase) : null
@@ -669,7 +680,7 @@ function commandSetReviewed() {
       ? sliceCodeFiles(projectRoot, config, sliceBase, chantier.spec.data.tdd === 'yes')
       : null,
     uncommittedCode: reviewCodeFiles(uncommitted, config),
-    specUncommitted: uncommitted.some((file) => (config.ignoreCase ? file.toLowerCase() === specPath.toLowerCase() : file === specPath)),
+    specUncommitted: uncommitted.some((file) => samePath(config, file, specPath)),
     changedTests: testDrivenPhase(chantier) === 'implementing'
       ? testFilesChangedSince(projectRoot, config, chantier.spec.data.tests_commit)
       : [],
@@ -698,8 +709,12 @@ function sliceCodeFiles(projectRoot, config, sliceBase, testDriven) {
 function closeCheckProblems(projectRoot, config, chantier) {
   let uncommittedCode = []
   let uncommittedError = null
+  let revueUncommitted = false
+  const revuePath = chantierFilePath(projectRoot, chantier, 'revue.md')
   try {
-    uncommittedCode = reviewCodeFiles(uncommittedFiles(projectRoot), config)
+    const uncommitted = uncommittedFiles(projectRoot)
+    uncommittedCode = reviewCodeFiles(uncommitted, config)
+    revueUncommitted = uncommitted.some((file) => samePath(config, file, revuePath))
   } catch (error) {
     uncommittedError = error.message
   }
@@ -708,6 +723,7 @@ function closeCheckProblems(projectRoot, config, chantier) {
     reviewFacts: reviewFacts(projectRoot, config, chantier),
     uncommittedCode,
     uncommittedError,
+    revueUncommitted,
     checksFailure: runChecks(projectRoot, config),
     index: needsIndex(chantier) ? chantierIndex(projectRoot, config) : null,
   })
@@ -729,6 +745,25 @@ function commandCloseCheck() {
     return
   }
   console.log('Clôture possible : revue à jour, travail commité, contrôles verts.')
+}
+
+function commandReviewIds(options) {
+  const projectRoot = findProjectRoot()
+  const config = requireConfig(projectRoot)
+  const chantier = requireActiveChantier(projectRoot, config)
+  const readText = (name) => {
+    const filePath = join(chantier.directory, name)
+    return existsSync(filePath) ? readFileSync(filePath, 'utf8') : null
+  }
+  const ids = nextReviewIds({ revue: chantier.revue, spec: readText('spec.md'), decisions: readText('decisions.md') })
+  if (options.includes('--json')) {
+    console.log(JSON.stringify(ids, null, 2))
+    return
+  }
+  const next = Object.entries(ids.next).map(([prefix, number]) => `${prefix}${number}`).join(', ')
+  const open = ids.open.map(({ id, title, section }) => `- ${id}. ${title} (section « ${section} »)`)
+  console.log(`Prochains identifiants : ${next}.`)
+  console.log(open.length ? `Points de revue ouverts :\n${open.join('\n')}` : 'Aucun point de revue ouvert.')
 }
 
 function commandTestsChanged() {

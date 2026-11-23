@@ -15,7 +15,7 @@ C’est aussi ce qui permet le principe « pas de code sans intention validée �
 ```
 
 1. **Complétude** : la signature est refusée tant que la spec est incomplète.
-2. **Relecture critique** : le sous-agent `spec-critic` relit la spec **sans voir la conversation** qui l’a produite, comme un développeur qui la découvre. Il signale ambiguïtés, cas limites oubliés, critères invérifiables, contradictions avec le code.
+2. **Relecture critique** : le sous-agent `spec-critic` relit la spec **sans voir la conversation** qui l’a produite, comme un développeur qui la découvre. Il signale ambiguïtés, cas limites oubliés, critères invérifiables, contradictions avec le code, en points numérotés : `SB1`… (bloquants), `SD1`… (à discuter), à partir du premier numéro libre du chantier (`atelier review-ids`). Un point qui change la spec est cité dans la spec ou dans `decisions.md`.
 3. **Vous tranchez** : vous retenez ou écartez chaque remarque. Si vous ne signez pas tout de suite, les retouches sont commitées et poussées comme un brouillon (`spec draft`).
 4. **Résumé et confirmation** : atelier résume ce que la spec engage (périmètre, critères clés, hors périmètre, TDD) et vous demande explicitement de signer.
 5. **Signature** : `atelier sign` écrit `status: signed`, `signed_by`, `signed_at` dans l’en-tête, puis la spec est commitée seule (`docs(chantiers): [<ID>] sign spec`), qu’un brouillon ait déjà été commité ou non. Ce commit est le seul à porter `status: signed` ; le diff depuis le dernier `spec draft` montre ce que la relecture a changé. Seule une spec en brouillon peut être signée.
