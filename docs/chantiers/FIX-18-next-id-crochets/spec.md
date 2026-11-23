@@ -8,6 +8,8 @@ created_at: 2026-11-22
 source: constat sur ce dépôt (EPIC-14 attribué après FEAT-7) ; hors périmètre d'EPIC-17, spec §« Hors périmètre »
 signed_by: Didier
 signed_at: 2026-11-23
+tests_commit: b396098
+slice: 1
 ---
 
 # FIX-18 next-id ne compte plus les CA-n des commits
