@@ -3,7 +3,7 @@ id: FIX-22
 type: FIX
 title: Faux positifs de checkSpec sur « … »
 status: draft
-tdd:                 # yes | no : décision humaine, obligatoire avant signature
+tdd: yes
 created_at: 2026-11-23
 source: revue tranche 6 de TEC-15, point RD20
 signed_by:
