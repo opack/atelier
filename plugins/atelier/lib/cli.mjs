@@ -19,6 +19,7 @@ import {
   childrenOf,
   describeRelation,
   closeProblems,
+  codeCommittedMatters,
   collectUsedIdentifiers,
   configPath,
   currentBranch,
@@ -175,6 +176,7 @@ function commandStatus(options) {
   const bypass = readBypass(projectRoot, branch)
   const review = reviewSummary(projectRoot, config, chantier)
   const relations = relationsSummary(projectRoot, config, chantier)
+  const codeCommitted = codeCommittedFact(projectRoot, config, chantier, review.reviewState)
   const summary = {
     installed: true,
     branch,
@@ -190,13 +192,14 @@ function commandStatus(options) {
           testsCommit: chantier.spec?.data.tests_commit || null,
           ...slicePosition(chantier),
           ...review,
+          codeCommitted,
           relations,
           files: chantier.files,
           specProblems: chantier.spec ? checkSpec(readFileSync(join(chantier.directory, 'spec.md'), 'utf8')) : [],
         }
       : null,
     bypass,
-    nextStep: nextStep(chantier, review.reviewState, relations?.children),
+    nextStep: nextStep(chantier, review.reviewState, relations?.children, codeCommitted),
   }
   if (options.includes('--json')) {
     console.log(JSON.stringify(summary, null, 2))
@@ -696,6 +699,23 @@ function commandSetReviewed() {
   console.log(message)
 }
 
+// Whether code was committed in the current slice, for the next step (see nextStep): since the
+// freeze of its tests in TDD (test files excluded), otherwise since `slice_base` or the merge base
+// with the default branch. null when it cannot change the next step, or cannot be computed (no
+// base, git error, start of the slice no longer an ancestor of HEAD).
+function codeCommittedFact(projectRoot, config, chantier, review) {
+  if (!codeCommittedMatters(chantier, review)) return null
+  try {
+    const testDriven = chantier.spec.data.tdd === 'yes'
+    const start = (testDriven ? chantier.spec.data.tests_commit : chantier.spec.data.slice_base) || null
+    if (start && !isAncestorOfHead(projectRoot, start)) return null
+    const files = sliceCodeFiles(projectRoot, config, start, testDriven)
+    return files === null ? null : files.length > 0
+  } catch {
+    return null
+  }
+}
+
 // Code files committed since the start of the current slice: `slice_base`, or for the first
 // slice the merge base with the default branch; null (no check) without one. In TDD, test files
 // do not count: each slice starts with the commit of its tests.
@@ -1025,7 +1045,7 @@ function hookSessionStart() {
     chantierSource: source,
     chantier: chantier ? { id: chantier.id, title: chantier.spec?.data.title, type: chantier.spec?.data.type, status: chantier.spec?.data.status, files: chantier.files, ...(chantier.spec ? slicePosition(chantier) : {}), ...review, relations } : null,
     bypass: readBypass(projectRoot, branch),
-    nextStep: nextStep(chantier, review.reviewState, relations?.children),
+    nextStep: nextStep(chantier, review.reviewState, relations?.children, codeCommittedFact(projectRoot, config, chantier, review.reviewState)),
   }
   const statusText = summary.chantier
     ? formatStatus({ ...summary, chantier: { ...summary.chantier, specProblems: [] } })
