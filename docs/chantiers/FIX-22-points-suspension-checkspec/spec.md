@@ -8,6 +8,8 @@ created_at: 2026-11-23
 source: revue tranche 6 de TEC-15, point RD20
 signed_by: Claude
 signed_at: 2026-11-23
+tests_commit: 2a3cb9b
+slice: 1
 ---
 
 # FIX-22 Faux positifs de checkSpec sur « … »
