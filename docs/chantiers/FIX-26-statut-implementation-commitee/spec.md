@@ -8,6 +8,8 @@ created_at: 2026-11-23
 source: constat sur REF-16 (tranche 4/4), signalé par Didier
 signed_by: Opack
 signed_at: 2026-11-23
+tests_commit: 6a82789
+slice: 1
 ---
 
 # FIX-26 La prochaine étape ignore l'implémentation déjà commitée
