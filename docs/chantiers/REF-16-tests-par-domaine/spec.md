@@ -8,6 +8,9 @@ rel_parent: EPIC-17
 created_at: 2026-11-21
 signed_by: Opack
 signed_at: 2026-11-23
+slice: 2
+slice_base: 7c65a01f297caa481563369bfaa0f1c7a505461a
+tests_commit: 
 ---
 
 # REF-16 Tests rangés par domaine
