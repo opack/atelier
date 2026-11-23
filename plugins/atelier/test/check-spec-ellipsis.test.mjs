@@ -241,4 +241,9 @@ describe('FIX-22 : « … » dans checkSpec', () => {
       assert.equal(unfinished(checkSpec(spec('FIX', { 'Cause probable': '| Cas | Résultat |\n|---|---|\n| démarrage |…|' }))).length, 1)
     })
   })
+
+  it('CA-11 : une ligne « - ``` » dans un bloc ouvert ne le ferme pas', () => {
+    const problems = checkSpec(spec('FIX', { 'Cause probable': '```md\n- ```\n- A : …\n```' }))
+    assert.deepEqual(unfinished(problems), [])
+  })
 })
