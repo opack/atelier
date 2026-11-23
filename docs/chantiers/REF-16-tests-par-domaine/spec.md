@@ -39,7 +39,7 @@ Question si manquant : quel bénéfice concret, et pour quand ? -->
 ## 3. État actuel → état cible
 <!-- Ce qui existe, ce qu'on veut obtenir. -->
 
-**Actuel** : `test/core.test.mjs`, utilitaires (fixtures, dépôts git temporaires, appel de la CLI) définis au fil du fichier, `describe` préfixés par `FEAT-4`, `FEAT-7` ou `TEC-15`, tests nommés `CA-x : <comportement>` (133 tests) ou `V-x : <comportement>` (17 tests : 1 de TEC-5, 16 de TEC-6), les autres sans étiquette.
+**Actuel** : `test/core.test.mjs`, utilitaires (fixtures, dépôts git temporaires, appel de la CLI) définis au fil du fichier, `describe` préfixés par `FEAT-4`, `FEAT-7` ou `TEC-15`, tests nommés `CA-x : <comportement>` (133 dans le source) ou `V-x` (30 à l'exécution : 14 de TEC-5, dont 13 générés par le tableau `cases` du `describe` de la ligne 309 avec des libellés `'V-1 draft: <cas>'` et `'V-2 signed, not committed: <cas>'`, et 16 de TEC-6), les autres sans étiquette. Le cadre d'EPIC-17 parle de 17 tests `V-x` : le compte juste est 30, la règle ne change pas.
 
 **Cible** :
 - un fichier `test/<domaine>.test.mjs` par domaine, nom en anglais ; un domaine est un comportement observable du plugin, ou le socle (`common`) qui regroupe les utilitaires partagés (front matter, chemins et motifs, sortie git). Découpage proposé, confirmé au plan :
@@ -52,32 +52,39 @@ Question si manquant : quel bénéfice concret, et pour quand ? -->
   - `review` : état de revue, passage à la tranche suivante ;
   - `review-points` : lecture, contrôle et numérotation des points de `revue.md`, refus des points ouverts ;
   - `close` : clôture (dépendances, EPIC, tranches) ;
-  - `next-step` : prochaine étape et affichage de `status` ;
+  - `next-step` : prochaine étape, affichage de `status` et du hook de démarrage ;
   - `relations` : lecture des relations, enfants d'un EPIC ;
   - `docs` : section Process du `CLAUDE.md`, site, vocabulaire, préfixes dans les agents, skills et templates ;
   - `common` : front matter, chemins et motifs, sortie git, éditions d'outils ;
+- un test qui touche deux domaines va dans celui du comportement que son nom affirme ; le plan fixe la table `describe` (ou test, pour un `describe` scindé) → fichier ;
 - un domaine qui dépasse 400 lignes se scinde en `<domaine>-<sous-domaine>.test.mjs` (probable pour `review-points`, environ 560 lignes aujourd'hui) ;
 - `test/helpers.mjs` (sans `.test.`) : utilitaires partagés par plusieurs fichiers ; un utilitaire utilisé par un seul fichier reste dans ce fichier ;
 - aucun nom de chantier dans un `describe` ; un `describe` actuel qui mêle deux domaines est scindé ;
 - un test lié à un critère porte l'étiquette `[<ID> CA-x]` en suffixe de son nom : `'refuse la clôture tant qu'une tranche est en cours [FEAT-7 CA-21]'`, `'le hook de démarrage affiche les enfants d'un EPIC [FEAT-4 CA-10, CA-11]'` ; un test qui ne vient d'aucun critère n'en porte pas ;
-- les 17 tests `V-x` prennent le `CA-x` de même numéro : `V-n` de TEC-5 et de TEC-6 = `CA-n` (`'V-2/V-3 takes the signed working version'` devient `'takes the signed working version [TEC-5 CA-2, CA-3]'`) ; les specs de TEC-5 et TEC-6 ne changent pas, cette correspondance est notée ici ;
+- l'identifiant de chantier d'une étiquette vient du `describe` d'origine : `FEAT-4`, `FEAT-7` ou `TEC-15` pour les `describe` préfixés ; pour les `V-x`, rangés dans des `describe` sans préfixe, TEC-5 pour `write guard on a spec whose committed version is a draft` (ligne 309), TEC-6 pour `chantier id from commit subjects`, `active chantier deduced from commits`, `chantier source shown to the user` et `default branch resolved through origin/HEAD` (lignes 729 à 987) ;
+- les 30 tests `V-x` prennent mécaniquement le `CA-x` de même numéro, sans critère ajouté ni retiré : `V-n` de TEC-5 et de TEC-6 = `CA-n`. `'V-2/V-3 takes the signed working version'` devient `'takes the signed working version [TEC-5 CA-2, CA-3]'` ; dans le tableau `cases`, `'V-1 draft: full rewrite'` devient `'draft: full rewrite [TEC-5 CA-1]'` et `'V-2 signed, not committed: back to draft'` devient `'signed, not committed: back to draft [TEC-5 CA-2]'`. Les specs de TEC-5 et TEC-6 ne changent pas, cette correspondance est notée ici ;
+- seuls les noms de tests changent : les `V-x` des corps (messages d'assertion, commentaires), les préfixes `décision :` et `compatibilité :` et les références de points de revue dans les noms (`RD6`, `OB2`, etc.) restent tels quels ;
 - `core.test.mjs` disparaît.
 
 ## 4. Preuve de non-régression
 <!-- Tests existants qui couvrent la zone ; tests de caractérisation à ajouter AVANT de toucher au code ; vérifications manuelles restantes.
 Question si manquant : les tests actuels détecteraient-ils une régression ici ? -->
 
-Aucun code de production ne change : le risque est de perdre, d'affaiblir ou de dupliquer un test en le déplaçant, ou qu'un fichier mal nommé sorte de la suite sans bruit. Base mesurée avant le chantier : `npm test` rapporte 256 tests, tous verts. Contrôles après, par un script jetable (hors dépôt) dont la sortie est jointe à chaque revue :
+Aucun code de production ne change : le risque est de perdre, d'affaiblir ou de dupliquer un test, une fixture ou un utilitaire en le déplaçant, ou qu'un fichier mal nommé sorte de la suite sans bruit.
+
+**Base** : `plugins/atelier/test/core.test.mjs` au commit `ae55ab5` (`main` au départ de la branche), lu par `git show ae55ab5:plugins/atelier/test/core.test.mjs`. `npm test` y rapporte 256 tests, tous verts.
+
+**Script de contrôle** : `docs/chantiers/REF-16-tests-par-domaine/check-moves.mjs`, rangé dans le dossier du chantier, hors de `npm test`, rejouable par le relecteur. Sa sortie est jointe à chaque revue. Il vérifie :
 - nombre : `npm test` rapporte 256 tests, tous verts ;
-- noms : chaque nom d'avant correspond à exactement un nom d'après, par la règle de renommage du §3 (étiquette déplacée en suffixe, identifiant de chantier tiré du `describe` d'origine, `V-n` → `CA-n`) ; la table de correspondance ancien nom → nouveau nom est jointe ;
-- corps : chaque corps de test d'après est identique à celui d'avant, à l'indentation près.
+- noms : lus dans la sortie TAP du runner (`node --test --test-reporter=tap`), y compris ceux des tests générés en boucle ; chaque nom de la base correspond à exactement un nom d'après, par la règle de renommage du §3 ; tant que `core.test.mjs` existe, un nom peut être sous sa forme ancienne ou nouvelle ; la table de correspondance ancien nom → nouveau nom est jointe ;
+- lignes : le multiensemble des lignes non vides, espaces de tête retirés, de la base est égal à celui de l'ensemble des fichiers de `test/`, aux seules différences suivantes : lignes de titre `describe` et `it`, libellés du tableau `cases`, lignes d'import et d'export entre fichiers, en-têtes d'import des nouveaux fichiers. Une fixture, un utilitaire ou une assertion modifié en route fait échouer ce contrôle.
 
 ## 5. Stratégie
 <!-- Étapes petites et réversibles, chacune fusionnable seule.
 Question si manquant : peut-on découper pour que chaque étape soit fusionnable seule ? -->
 
-1. Extraire les utilitaires partagés dans `test/helpers.mjs`, `core.test.mjs` les importe. Suite verte.
-2. Déplacer les `describe` domaine par domaine vers leur fichier, en les renommant sans nom de chantier et en étiquetant leurs tests ; un commit par domaine, suite verte et contrôles du §4 à chaque commit.
+1. Écrire `check-moves.mjs` et le faire passer sur la base. Extraire les utilitaires partagés dans `test/helpers.mjs`, `core.test.mjs` les importe. Suite verte.
+2. Déplacer les `describe` domaine par domaine vers leur fichier, en les renommant sans nom de chantier et en étiquetant leurs tests ; un commit par domaine, suite verte et `check-moves.mjs` vert à chaque commit.
 3. Supprimer `core.test.mjs` une fois vide.
 
 Chaque étape laisse la suite verte et peut être fusionnée seule.
@@ -95,10 +102,10 @@ Chaque étape laisse la suite verte et peut être fusionnée seule.
 ## 7. Critère de fin
 <!-- Quand s'arrête-t-on ? Qu'est-ce qui est volontairement laissé en l'état ? -->
 
-- CA-1 : Étant donné le dépôt à la fin de REF-16, quand on liste `plugins/atelier/test/`, alors `core.test.mjs` n'existe plus, et chaque fichier de tests couvre un seul domaine (ou sous-domaine) et ne dépasse pas 400 lignes (EPIC-17 CA-1).
+- CA-1 : Étant donné le dépôt à la fin de REF-16, quand on liste `plugins/atelier/test/`, alors `core.test.mjs` n'existe plus, chaque `describe` (ou test, pour un `describe` scindé) est dans le fichier que lui donne la table du plan, et chaque fichier de `test/`, `helpers.mjs` compris, ne dépasse pas 400 lignes (EPIC-17 CA-1).
 - CA-2 : Étant donné les fichiers de tests à la fin de REF-16, quand on lit leurs `describe`, alors aucun ne contient d'identifiant de chantier.
-- CA-3 : Étant donné les fichiers de tests à la fin de REF-16, quand on lit les noms de tests, alors chaque test qui portait un identifiant de critère se termine par `[<ID> CA-x]` ou `[<ID> CA-x, CA-y]`, aucun `V-x` ne subsiste, et aucun test sans critère n'a reçu d'étiquette.
-- CA-4 : Étant donné la base mesurée avant le chantier, quand on lance les contrôles du §4, alors `npm test` rapporte 256 tests verts, chaque nom d'avant correspond à exactement un nom d'après et chaque corps est inchangé à l'indentation près.
+- CA-3 : Étant donné la sortie TAP de `npm test` à la fin de REF-16, quand on lit les noms de tests, alors chaque test qui portait un identifiant de critère se termine par `[<ID> CA-x]` ou `[<ID> CA-x, CA-y]`, aucun nom ne contient de `V-x`, et aucun test sans critère n'a reçu d'étiquette.
+- CA-4 : Étant donné la base `ae55ab5`, quand on lance `check-moves.mjs`, alors `npm test` rapporte 256 tests verts, chaque nom de la base correspond à exactement un nom d'après, et les lignes ne diffèrent que par les différences tolérées du §4.
 - Laissé en l'état : le contenu des tests (aucune assertion ajoutée, retirée ou réécrite, même maladroite), leur langue, la durée de la suite, `lib/`.
 
 ## Amendements
