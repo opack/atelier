@@ -244,3 +244,19 @@ Traitement d'un point : corrigé (commit), test ajouté, spec amendée, exceptio
 | Aucun | | |
 
 - Bilan de la revue : aucun point ; RD19 confirmé corrigé (liste des refus fidèle à `reviewPointProblems` et `closeProblems`, ancre valide) ; 256 tests verts, tests inchangés depuis bdbeb40, plugin validé, site construit.
+
+## Revue : chantier : 2026-11-23
+- Commit revu : 883d5cb
+- Base : aa01962
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD21. L'étape 5 de la skill `review` sous-estime ce que `review-ids` ne voit pas | `plugins/atelier/skills/review/SKILL.md:63` | corrigé (2ac8abe) : seuls les points sans traitement sont signalés ; après un refus de `set-reviewed`, redemander la validation |
+
+- Bilan de la revue : un point à discuter, RD21 corrigé ; CA-1 à CA-19 couverts, 256 tests verts, tests inchangés depuis bdbeb40 ; aucune régression sur les `revue.md` antérieurs. Revue 2 à mener sur 2ac8abe.
