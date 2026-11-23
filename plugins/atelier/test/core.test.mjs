@@ -2641,3 +2641,32 @@ describe('TEC-15 prefixes in agents, skills and templates', () => {
     })
   }
 })
+
+describe('TEC-15 site reference pages', () => {
+  const site = (relativePath) => readFileSync(fileURLToPath(new URL(`../../../site/${relativePath}`, import.meta.url)), 'utf8')
+  // The table row whose first cell starts with `start` (a command or a glossary term).
+  const row = (text, start) => text.split(/\r?\n/).find((line) => line.startsWith(`| ${start}`)) ?? ''
+
+  it('CA-19 : la page des commandes documente review-ids et le refus de set-reviewed et close-check sur un point ouvert', () => {
+    const commands = site('reference/commandes.md')
+    const reviewIds = row(commands, '`atelier review-ids')
+    for (const prefix of ['RB', 'RD', 'SB', 'SD', 'OB', 'OD']) {
+      assert.match(reviewIds, new RegExp(`\\b${prefix}\\d*\\b`), `${prefix} absent de la ligne review-ids`)
+    }
+    assert.match(reviewIds, /ouverts?/)
+    assert.match(row(commands, '`atelier set-reviewed`'), /points?[^|]*(ouverts?|sans traitement)/i)
+    assert.match(row(commands, '`atelier close-check`'), /points?[^|]*(ouverts?|sans traitement)/i)
+  })
+
+  it('CA-19 : le glossaire définit le point de relecture, ses six préfixes et le traitement', () => {
+    const glossary = site('reference/glossaire.md')
+    const point = row(glossary, '**Point de relecture**')
+    for (const prefix of ['RB', 'RD', 'SB', 'SD', 'OB', 'OD']) {
+      assert.match(point, new RegExp(`\\b${prefix}\\d*\\b`), `${prefix} absent de la définition du point de relecture`)
+    }
+    const treatment = row(glossary, '**Traitement**')
+    for (const keyword of ['corrigé', 'écarté', 'reporté', 'requalifié']) {
+      assert.match(treatment, new RegExp(keyword), `${keyword} absent de la définition du traitement`)
+    }
+  })
+})
