@@ -22,7 +22,7 @@ La clôture ne relit pas et ne corrige pas le code : c'est le rôle de `/atelier
 À partir de la spec, du plan, de `decisions.md`, du diff et de `revue.md`, écris `bilan.md` depuis `atelier template bilan` :
 - **Livré vs spécifié** : chaque `CA` avec son statut et le test qui le couvre.
 - **Choix techniques**, **éléments de code principaux** (ce qu'un nouveau venu doit lire en premier), **pistes écartées**, **dette et suites**.
-- **Verdict de revue** : repris de `revue.md` (revues de tranche et du chantier), puis un point par identifiant (`RB1`, `RD1`…) avec son traitement final, celui de sa dernière occurrence (exceptions acceptées comprises). Un point `reporté` vers « Dette et suites » y figure aussi.
+- **Verdict de revue** : repris de `revue.md` (revues de tranche et du chantier), puis un point par identifiant (`RB1`, `RD1`…) avec son traitement final, celui de sa dernière occurrence (exceptions acceptées comprises). Un point `reporté` vers « Dette et suites » figure aussi dans la section « Dette et suites » du bilan.
 - Pour un `FIX` : la cause réelle, confirmée ou non par rapport à la cause probable, et les autres endroits où le même schéma existe.
 - Pour un `SPIKE` : la réponse à la question, et la suite (ADR, nouveau chantier, abandon).
 - Pour un `EPIC` : le prévu (`plan.md`) confronté au réalisé (enfants donnés par `atelier status`, avec leur statut), les écarts de `decisions.md`, et l'atteinte de chaque CA global. Pas de section de revue.

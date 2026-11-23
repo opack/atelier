@@ -42,9 +42,9 @@ Désigne chaque point par son identifiant (« je corrige RB2, on écarte RD3 »)
 - **requalifié** (`requalifié (RB4)`) : le point change de gravité ; il reçoit un nouvel identifiant dans l'autre série, écrit `RB4 (ex-RD3)` dans le tableau de sa nouvelle gravité, dans la même revue ou une suivante ;
 - **sans objet** (`sans objet`) : le point ne s'applique plus.
 
-Un nouvel identifiant attribué pendant ce traitement (requalification) prend le numéro qui suit le plus grand de sa série déjà attribué, reviewer compris : `atelier review-ids` ne lit que `revue.md`, où cette revue n'est pas encore écrite, et redonnerait un numéro déjà pris. Un point repris que le reviewer juge désormais réglé reçoit son traitement (`corrigé (<commit>)`, `sans objet`…) dans sa dernière occurrence, la ligne d'une section précédente.
+Un nouvel identifiant attribué pendant ce traitement (requalification) prend le numéro qui suit le plus grand de sa série déjà attribué, reviewer compris : `atelier review-ids` ne lit que `revue.md`, où cette revue n'est pas encore écrite, et redonnerait un numéro déjà pris. Un point repris que le reviewer juge désormais réglé reçoit son traitement (`corrigé (<commit>)`, `sans objet`…) dans sa dernière occurrence, la ligne d'une section précédente ; si cette cellule porte `reporté (tranche N)`, le traitement remplace le report en le citant : `corrigé (abc1234), reporté de la tranche 2`.
 
-Après des corrections, relance l'étape 1 puis l'étape 2 : c'est une nouvelle revue. **Continue jusqu'à ce que chaque point, bloquant ou à discuter, ait un traitement.**
+Avant de relancer, consigne cette revue dans `revue.md` (étape 4) : `atelier review-ids` et le reviewer suivant ne voient que ce qui y est écrit, et redonneraient sinon les mêmes numéros. Puis, après des corrections, relance l'étape 1 et l'étape 2 : c'est une nouvelle revue. **Continue jusqu'à ce que chaque point, bloquant ou à discuter, ait un traitement.**
 
 ## 4. Consigner
 

@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: Revue indépendante du code d'un chantier atelier (/atelier:review) — revue d'une tranche ligne à ligne, ou revue transversale du chantier — conformité à la spec, sécurité, performance, accessibilité, maintenabilité, évolutivité, pièges du code généré. Relancée après chaque correction, jusqu'à zéro point bloquant. Ne modifie rien.
+description: Revue indépendante du code d'un chantier atelier (/atelier:review) — revue d'une tranche ligne à ligne, ou revue transversale du chantier — conformité à la spec, sécurité, performance, accessibilité, maintenabilité, évolutivité, pièges du code généré. Relancée après chaque correction, jusqu'à ce que chaque point ait un traitement. Ne modifie rien.
 tools: Read, Grep, Glob, Bash
 model: opus
 ---
@@ -38,7 +38,7 @@ Après la dernière tranche, sur tout le diff. Chaque tranche a déjà été rel
 Chaque point porte un identifiant stable : `RB<n>` s'il est bloquant, `RD<n>` s'il est à discuter. La numérotation est continue sur tout le chantier, toutes revues confondues, et un numéro n'est jamais réutilisé. Tu reçois les prochains numéros (`RB` et `RD`, donnés par `atelier review-ids`) et la liste des points encore ouverts : **ne calcule pas les numéros toi-même**.
 
 - Un point **nouveau** prend le numéro suivant de sa série : le premier bloquant reçoit le `RB` donné, le suivant `RB` + 1, etc.
-- Un point **encore ouvert** (correction incomplète, remise en cause, ou traité `reporté (tranche N)` vers la tranche en cours) garde son identifiant, suivi de `(repris)` : `RB2 (repris). Push non vérifié`.
+- Un point **encore ouvert** (correction incomplète, remise en cause, ou traité `reporté (tranche N)` vers la tranche en cours ou une tranche passée) garde son identifiant, suivi de `(repris)` : `RB2 (repris). Push non vérifié`.
 - Un point dont la **gravité change** prend un nouvel identifiant dans l'autre série et renvoie à l'ancien : `RB4 (ex-RD3). Commit non signé`. L'ancien sera fermé par le traitement `requalifié (RB4)`.
 - Un point ouvert que tu considères désormais réglé : dis-le dans la synthèse, sans le reprendre.
 
