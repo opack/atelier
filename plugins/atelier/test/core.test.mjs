@@ -248,14 +248,14 @@ describe('write guard on a spec whose committed version is a draft', () => {
     ['reviewed_commit', 'signed_at:', 'signed_at:\nreviewed_commit: abc'],
   ]
   const cases = [
-    ['V-1 draft: full rewrite', draftText, 'Write', { content: draftText.replace('Texte initial.', 'Tout réécrit.') }, true],
-    ['V-1 draft: body edit', draftText, 'Edit', body, true],
-    ['V-1 draft: tdd and title edits', draftText, 'MultiEdit', { edits: [{ old_string: 'tdd: no', new_string: 'tdd: yes' }, { old_string: 'title: Brouillon', new_string: 'title: Autre' }] }, true],
-    ...reserved.map(([field, from, to]) => [`V-1 draft: reserved field ${field}`, draftText, 'Edit', { old_string: from, new_string: to }, false]),
-    ['V-2 signed, not committed: full rewrite', signedText, 'Write', { content: signedText }, false],
-    ['V-2 signed, not committed: body edit without entry', signedText, 'Edit', body, false],
-    ['V-2 signed, not committed: body edit with a new entry', signedText, 'MultiEdit', { edits: [entry, body] }, true],
-    ['V-2 signed, not committed: back to draft', signedText, 'MultiEdit', { edits: [entry, { old_string: 'status: signed', new_string: 'status: draft' }] }, false],
+    ['draft: full rewrite [TEC-5 CA-1]', draftText, 'Write', { content: draftText.replace('Texte initial.', 'Tout réécrit.') }, true],
+    ['draft: body edit [TEC-5 CA-1]', draftText, 'Edit', body, true],
+    ['draft: tdd and title edits [TEC-5 CA-1]', draftText, 'MultiEdit', { edits: [{ old_string: 'tdd: no', new_string: 'tdd: yes' }, { old_string: 'title: Brouillon', new_string: 'title: Autre' }] }, true],
+    ...reserved.map(([field, from, to]) => [`draft: reserved field ${field} [TEC-5 CA-1]`, draftText, 'Edit', { old_string: from, new_string: to }, false]),
+    ['signed, not committed: full rewrite [TEC-5 CA-2]', signedText, 'Write', { content: signedText }, false],
+    ['signed, not committed: body edit without entry [TEC-5 CA-2]', signedText, 'Edit', body, false],
+    ['signed, not committed: body edit with a new entry [TEC-5 CA-2]', signedText, 'MultiEdit', { edits: [entry, body] }, true],
+    ['signed, not committed: back to draft [TEC-5 CA-2]', signedText, 'MultiEdit', { edits: [entry, { old_string: 'status: signed', new_string: 'status: draft' }] }, false],
   ]
 
   for (const [label, current, toolName, input, expected] of cases) {
@@ -266,7 +266,7 @@ describe('write guard on a spec whose committed version is a draft', () => {
     })
   }
 
-  it('V-2/V-3 takes the signed working version as reference, not an older committed draft', () => {
+  it('takes the signed working version as reference, not an older committed draft [TEC-5 CA-2, CA-3]', () => {
     // Draft committed, then touched up by the critical review and signed without committing in between.
     const olderDraft = draftText.replace('Texte initial.', 'Texte du premier brouillon.')
     const noChange = { old_string: 'Texte initial.', new_string: 'Texte initial.' }
@@ -561,7 +561,7 @@ describe('review state', () => {
 
 
 describe('FEAT-4 dependencies checked at close', () => {
-  it('CA-3 : refuse la clôture tant qu’une dépendance n’est pas done dans l’arbre courant, en la nommant avec son statut', () => {
+  it('refuse la clôture tant qu’une dépendance n’est pas done dans l’arbre courant, en la nommant avec son statut [FEAT-4 CA-3]', () => {
     const directory = makeChantiersRepository({
       main: [{ id: 'TEC-8' }, { id: 'TEC-12', status: 'abandoned' }],
       branches: {
@@ -578,7 +578,7 @@ describe('FEAT-4 dependencies checked at close', () => {
     assert.equal(specData(directory, 'SPIKE-13').status, 'signed')
   })
 
-  it('CA-4 : laisse clore quand toutes les dépendances sont done dans l’arbre courant', () => {
+  it('laisse clore quand toutes les dépendances sont done dans l’arbre courant [FEAT-4 CA-4]', () => {
     const directory = makeChantiersRepository({
       main: [{ id: 'TEC-10', status: 'done' }],
       branches: { 'spike/SPIKE-13-x': [{ id: 'SPIKE-13', relations: { rel_depends_on: 'TEC-10' } }] },
@@ -591,7 +591,7 @@ describe('FEAT-4 dependencies checked at close', () => {
 })
 
 describe('FEAT-4 EPIC type', () => {
-  it('CA-8 : sur un EPIC signé, aucune écriture hors des chemins libres ; docs/ et le débrayage restent permis', () => {
+  it('sur un EPIC signé, aucune écriture hors des chemins libres ; docs/ et le débrayage restent permis [FEAT-4 CA-8]', () => {
     const epic = { id: 'EPIC-5', directory: '/p/docs/chantiers/EPIC-5-x', spec: { data: { status: 'signed', type: 'EPIC', tdd: 'no' } }, files: ['spec.md', 'plan.md'] }
     for (const relativePath of ['src/app.ts', 'src/app.test.ts']) {
       const decision = decide({ chantier: epic, relativePath })
@@ -611,7 +611,7 @@ describe('FEAT-4 closing an EPIC', () => {
     checkout: 'epic/EPIC-5-x',
   })
 
-  it('CA-9 : refuse avec la liste des enfants ouverts, sans exiger de revue', () => {
+  it('refuse avec la liste des enfants ouverts, sans exiger de revue [FEAT-4 CA-9]', () => {
     const directory = epicOn(
       [{ id: 'FEAT-6', status: 'done', relations: { rel_parent: 'EPIC-5' } }, { id: 'TEC-18', relations: { rel_parent: 'EPIC-5' } }],
       { 'feat/FEAT-7-x': [{ id: 'FEAT-7', status: 'done', relations: { rel_parent: 'EPIC-5' } }] },
@@ -624,7 +624,7 @@ describe('FEAT-4 closing an EPIC', () => {
     assert.equal(specData(directory, 'EPIC-5').status, 'signed')
   })
 
-  it('CA-9 : refuse sans enfant done (aucun enfant, ou tous abandonnés)', () => {
+  it('refuse sans enfant done (aucun enfant, ou tous abandonnés) [FEAT-4 CA-9]', () => {
     for (const main of [[], [{ id: 'FEAT-6', status: 'abandoned', relations: { rel_parent: 'EPIC-5' } }, { id: 'FEAT-17', status: 'abandoned', relations: { rel_parent: 'EPIC-5' } }]]) {
       const directory = epicOn(main)
       const { status, output } = atelierRun(directory, 'set-status', 'done')
@@ -634,7 +634,7 @@ describe('FEAT-4 closing an EPIC', () => {
     }
   })
 
-  it('CA-9 : permet la clôture quand tous les enfants sont clos et au moins un est done, sans revue enregistrée', () => {
+  it('permet la clôture quand tous les enfants sont clos et au moins un est done, sans revue enregistrée [FEAT-4 CA-9]', () => {
     const directory = epicOn([
       { id: 'FEAT-6', status: 'done', relations: { rel_parent: 'EPIC-5' } },
       { id: 'FEAT-17', status: 'abandoned', relations: { rel_parent: 'EPIC-5' } },
@@ -644,7 +644,7 @@ describe('FEAT-4 closing an EPIC', () => {
     assert.equal(specData(directory, 'EPIC-5').status, 'done')
   })
 
-  it('CA-9 : un EPIC enfant ouvert bloque la clôture de son EPIC parent', () => {
+  it('un EPIC enfant ouvert bloque la clôture de son EPIC parent [FEAT-4 CA-9]', () => {
     const directory = makeChantiersRepository({
       main: [
         { id: 'EPIC-21', files: epicPlan },
@@ -659,7 +659,7 @@ describe('FEAT-4 closing an EPIC', () => {
     assertLine(output, [/EPIC-20/])
   })
 
-  it('CA-9 : l’abandon reste permis avec des enfants ouverts, qui sont listés', () => {
+  it('l’abandon reste permis avec des enfants ouverts, qui sont listés [FEAT-4 CA-9]', () => {
     const directory = epicOn([{ id: 'TEC-18', relations: { rel_parent: 'EPIC-5' } }])
     const { status, output } = atelierRun(directory, 'set-status', 'abandoned')
     assert.equal(status, 0, output)
@@ -671,7 +671,7 @@ describe('FEAT-4 closing an EPIC', () => {
 describe('FEAT-4 next step of an EPIC', () => {
   const nextStepOf = (directory) => JSON.parse(atelier(directory, 'status', '--json')).nextStep
 
-  it('CA-10 : concevoir le découpage sans plan, puis les enfants ouverts et leur nombre, puis la clôture ; jamais la revue', () => {
+  it('concevoir le découpage sans plan, puis les enfants ouverts et leur nombre, puis la clôture ; jamais la revue [FEAT-4 CA-10]', () => {
     const withoutPlan = makeChantiersRepository({ branches: { 'epic/EPIC-5-x': [{ id: 'EPIC-5' }] }, checkout: 'epic/EPIC-5-x' })
     const open = makeChantiersRepository({
       main: [{ id: 'EPIC-5', files: epicPlan }, { id: 'FEAT-6', status: 'done', relations: { rel_parent: 'EPIC-5' } }],
@@ -694,7 +694,7 @@ describe('FEAT-4 next step of an EPIC', () => {
     }
   })
 
-  it('CA-10 : tous les enfants clos sans aucun done : propose l’abandon, pas la clôture', () => {
+  it('tous les enfants clos sans aucun done : propose l’abandon, pas la clôture [FEAT-4 CA-10]', () => {
     const directory = makeChantiersRepository({
       main: [
         { id: 'EPIC-5', files: epicPlan },
@@ -712,7 +712,7 @@ describe('FEAT-4 next step of an EPIC', () => {
 })
 
 describe('FEAT-4 relations shown by status', () => {
-  it('CA-11 : affiche parent, dépendances avec leur statut, origine, remplacement', () => {
+  it('affiche parent, dépendances avec leur statut, origine, remplacement [FEAT-4 CA-11]', () => {
     const directory = makeChantiersRepository({
       main: [{ id: 'EPIC-5' }, { id: 'TEC-8' }, { id: 'TEC-10', status: 'done' }, { id: 'FEAT-3', status: 'abandoned' }],
       branches: {
@@ -735,7 +735,7 @@ describe('FEAT-4 relations shown by status', () => {
     ])
   })
 
-  it('CA-11 : pour un EPIC, affiche ses enfants directs calculés avec leur statut', () => {
+  it('pour un EPIC, affiche ses enfants directs calculés avec leur statut [FEAT-4 CA-11]', () => {
     const directory = makeChantiersRepository({
       main: [
         { id: 'EPIC-5', files: epicPlan },
@@ -751,7 +751,7 @@ describe('FEAT-4 relations shown by status', () => {
     assert.doesNotMatch(text, /FEAT-22/, 'enfants directs seulement')
   })
 
-  it('CA-10, CA-11 : le hook de démarrage affiche les enfants d’un EPIC et sa prochaine étape', () => {
+  it('le hook de démarrage affiche les enfants d’un EPIC et sa prochaine étape [FEAT-4 CA-10, CA-11]', () => {
     const directory = makeChantiersRepository({
       main: [{ id: 'EPIC-5', files: epicPlan }, { id: 'FEAT-6', status: 'done', relations: { rel_parent: 'EPIC-5' } }],
       branches: { 'feat/FEAT-7-x': [{ id: 'FEAT-7', relations: { rel_parent: 'EPIC-5' } }], 'epic/EPIC-5-x': [] },
@@ -772,12 +772,12 @@ describe('FEAT-4 relations shown by status', () => {
 describe('FEAT-4 process section of CLAUDE.md', () => {
   const processLines = () => template('process').split(/\r?\n/).filter((line) => line.trim())
 
-  it('CA-12 : le template de la section Process existe et parle de l’EPIC et des relations', () => {
+  it('le template de la section Process existe et parle de l’EPIC et des relations [FEAT-4 CA-12]', () => {
     assert.ok(processLines().includes('## Process (atelier)'))
     assert.ok(processLines().some((line) => /EPIC/.test(line) && /rel_/.test(line)))
   })
 
-  it('CA-12 : liste toutes les lignes quand la section est absente', () => {
+  it('liste toutes les lignes quand la section est absente [FEAT-4 CA-12]', () => {
     const directory = makeRepository('main')
     writeFileSync(join(directory, 'CLAUDE.md'), '# Projet\n\nRien sur le process.\n')
     const { status, output } = atelierRun(directory, 'check-process')
@@ -787,7 +787,7 @@ describe('FEAT-4 process section of CLAUDE.md', () => {
     }
   })
 
-  it('CA-12 : liste seulement les lignes manquantes ; rien quand tout y est, ajouts du projet compris', () => {
+  it('liste seulement les lignes manquantes ; rien quand tout y est, ajouts du projet compris [FEAT-4 CA-12]', () => {
     const directory = makeRepository('main')
     const lines = processLines()
     const [, missing] = lines.filter((line) => line.startsWith('- '))
@@ -804,7 +804,7 @@ describe('FEAT-4 process section of CLAUDE.md', () => {
     }
   })
 
-  it('CA-12 : la ligne des chantiers est attendue avec le chantiersDir du projet, sans / final', () => {
+  it('la ligne des chantiers est attendue avec le chantiersDir du projet, sans / final [FEAT-4 CA-12]', () => {
     const directory = makeRepository('main')
     writeFileSync(join(directory, '.claude', 'atelier.json'), JSON.stringify({ chantiersDir: 'work/chantiers/' }))
     const lines = processLines()
@@ -826,7 +826,7 @@ describe('FEAT-4 site', () => {
 
   // The build itself (`npm run build` in site/) is checked by hand at review: it needs the site's
   // dependencies and takes too long for the test suite.
-  it('CA-13 : six types dont l’EPIC ; templates spec-epic et plan-epic inclus', () => {
+  it('six types dont l’EPIC ; templates spec-epic et plan-epic inclus [FEAT-4 CA-13]', () => {
     const types = site('fondations/types.md')
     assert.match(types, /Six types/)
     assert.match(types, /^## EPIC/m)
@@ -844,22 +844,22 @@ function amendmentEntries(directory, id) {
 
 
 describe('FEAT-7 plan and current slice', () => {
-  it('CA-1 : compte les entrées numérotées de premier niveau de « Tranches » (sous-listes, commentaires et autres sections ignorés)', () => {
+  it('compte les entrées numérotées de premier niveau de « Tranches » (sous-listes, commentaires et autres sections ignorés) [FEAT-7 CA-1]', () => {
     assert.equal(core.planSliceCount(threeSlices), 3)
     assert.equal(core.planSliceCount(threeSlices.replace(/\n/g, '\r\n')), 3, 'plan en CRLF')
   })
 
-  it('CA-1 : le nombre de tranches est le plus grand numéro', () => {
+  it('le nombre de tranches est le plus grand numéro [FEAT-7 CA-1]', () => {
     assert.equal(core.planSliceCount(planOf([1, 2, 4])), 4)
   })
 
-  it('CA-2 : sans plan, sans section « Tranches » ou avec une seule entrée, une tranche unique', () => {
+  it('sans plan, sans section « Tranches » ou avec une seule entrée, une tranche unique [FEAT-7 CA-2]', () => {
     for (const plan of [null, '# Plan\n\n## Approche\nTexte.\n', planOf([1])]) {
       assert.equal(core.sliceState(slicedChantier({}, { plan })).model, 'single', String(plan))
     }
   })
 
-  it('CA-2 : status --json donne slice et sliceCount null, et ne parle de tranche ni en texte ni dans la prochaine étape', () => {
+  it('status --json donne slice et sliceCount null, et ne parle de tranche ni en texte ni dans la prochaine étape [FEAT-7 CA-2]', () => {
     for (const plan of [null, planOf([1])]) {
       const directory = makeSlicedRepository({ plan })
       const summary = JSON.parse(atelierOk(directory, 'status', '--json'))
@@ -870,21 +870,21 @@ describe('FEAT-7 plan and current slice', () => {
     }
   })
 
-  it('CA-3 : sans champ slice ni trace de l’ancien modèle, la tranche en cours est la 1', () => {
+  it('sans champ slice ni trace de l’ancien modèle, la tranche en cours est la 1 [FEAT-7 CA-3]', () => {
     assert.deepEqual(core.sliceState(slicedChantier()), { model: 'sliced', slice: 1, sliceCount: 3 })
     const summary = JSON.parse(atelierOk(makeSlicedRepository(), 'status', '--json'))
     assert.equal(summary.chantier.slice, 1)
     assert.equal(summary.chantier.sliceCount, 3)
   })
 
-  it('CA-3 : avec slice: 2, la tranche en cours est la 2', () => {
+  it('avec slice: 2, la tranche en cours est la 2 [FEAT-7 CA-3]', () => {
     assert.deepEqual(core.sliceState(slicedChantier({ slice: '2' })), { model: 'sliced', slice: 2, sliceCount: 3 })
     const summary = JSON.parse(atelierOk(makeSlicedRepository({ header: { slice: 2 } }), 'status', '--json'))
     assert.equal(summary.chantier.slice, 2)
     assert.equal(summary.chantier.sliceCount, 3)
   })
 
-  it('CA-4 : un chantier de l’ancien modèle (tests_commit, reviewed_commit, tests rouverts ou regelés) est une tranche unique, quel que soit le plan', () => {
+  it('un chantier de l’ancien modèle (tests_commit, reviewed_commit, tests rouverts ou regelés) est une tranche unique, quel que soit le plan [FEAT-7 CA-4]', () => {
     const withAmendment = (entry) => ({ ...slicedChantier(), spec: { data: { status: 'signed', type: 'FEAT', tdd: 'yes' }, body: `# x\n\n## Amendements\n- ${entry}\n` } })
     const legacy = [
       slicedChantier({ tests_commit: 'abc1234' }),
@@ -898,7 +898,7 @@ describe('FEAT-7 plan and current slice', () => {
     assert.equal(summary.chantier.sliceCount, null)
   })
 
-  it('CA-5 : le hook refuse que l’agent écrive ou modifie slice, slice_base ou last_slice', () => {
+  it('le hook refuse que l’agent écrive ou modifie slice, slice_base ou last_slice [FEAT-7 CA-5]', () => {
     const relativePath = 'docs/chantiers/FEAT-20-x/spec.md'
     const signedText = '---\nid: FEAT-20\ntype: FEAT\ntitle: X\nstatus: signed\ntdd: yes\nslice: 2\n---\n# FEAT-20\n'
     for (const [field, newValue] of [['slice', 'slice: 3'], ['slice_base', 'slice: 2\nslice_base: abc'], ['last_slice', 'slice: 2\nlast_slice: 3']]) {
@@ -916,7 +916,7 @@ describe('FEAT-7 plan and current slice', () => {
 })
 
 describe('FEAT-7 freezing the tests of a slice', () => {
-  it('CA-6 : le premier gel écrit tests_commit et slice: 1, avec ou sans plan, SPIKE compris', () => {
+  it('le premier gel écrit tests_commit et slice: 1, avec ou sans plan, SPIKE compris [FEAT-7 CA-6]', () => {
     for (const options of [{}, { plan: null }, { id: 'SPIKE-20' }]) {
       const id = options.id ?? 'FEAT-20'
       const directory = makeSlicedRepository(options)
@@ -932,7 +932,7 @@ describe('FEAT-7 freezing the tests of a slice', () => {
     ['ligne modifiée', { 'test/one.test.mjs': 'ligne a\nligne B\nligne c\n' }],
     ['fichier supprimé', { 'test/one.test.mjs': null }],
   ]) {
-    it(`CA-7 : en tranche 2, refuse le gel quand une ligne de test antérieure a changé (${label})`, () => {
+    it(`en tranche 2, refuse le gel quand une ligne de test antérieure a changé (${label}) [FEAT-7 CA-7]`, () => {
       const { directory } = atSliceTwo()
       commitFiles(directory, { ...change, 'test/two.test.mjs': 'test 2\n' }, 'test: two')
       const before = specFileText(directory, 'FEAT-20')
@@ -945,7 +945,7 @@ describe('FEAT-7 freezing the tests of a slice', () => {
     })
   }
 
-  it('CA-7 : en tranche 2, un fichier de test renommé compte comme supprimé', () => {
+  it('en tranche 2, un fichier de test renommé compte comme supprimé [FEAT-7 CA-7]', () => {
     const { directory } = atSliceTwo()
     git(directory, 'mv', 'test/one.test.mjs', 'test/renamed.test.mjs')
     commit(directory, 'test: rename')
@@ -956,7 +956,7 @@ describe('FEAT-7 freezing the tests of a slice', () => {
     assert.equal(specFileText(directory, 'FEAT-20'), before)
   })
 
-  it('CA-7 : extrait du diff les fichiers dont des lignes sont retirées', () => {
+  it('extrait du diff les fichiers dont des lignes sont retirées [FEAT-7 CA-7]', () => {
     const diff = [
       'diff --git a/test/one.test.mjs b/test/one.test.mjs',
       'index 1..2 100644',
@@ -984,7 +984,7 @@ describe('FEAT-7 freezing the tests of a slice', () => {
     assert.deepEqual(core.removedTestLines(''), [])
   })
 
-  it('CA-8 : en tranche 2, la réouverture trace le gel quitté (slice_base) ; le gel suivant accepte les modifications et trace le regel', () => {
+  it('en tranche 2, la réouverture trace le gel quitté (slice_base) ; le gel suivant accepte les modifications et trace le regel [FEAT-7 CA-8]', () => {
     const { directory, base } = atSliceTwo()
     atelierOk(directory, 'reopen-tests', 'test', 'faux')
     assert.match(amendmentEntries(directory, 'FEAT-20').at(-1), new RegExp(`tests rouverts \\(gel quitté : ${base.slice(0, 7)}[0-9a-f]*\\) : test faux`))
@@ -995,7 +995,7 @@ describe('FEAT-7 freezing the tests of a slice', () => {
     assert.ok(specData(directory, 'FEAT-20').tests_commit)
   })
 
-  it('CA-8 : une seconde réouverture avant le regel est refusée', () => {
+  it('une seconde réouverture avant le regel est refusée [FEAT-7 CA-8]', () => {
     const { directory } = atSliceTwo()
     atelierOk(directory, 'reopen-tests', 'première')
     commitSpec(directory)
@@ -1004,13 +1004,13 @@ describe('FEAT-7 freezing the tests of a slice', () => {
     assert.match(output, /tests déjà rouverts/)
   })
 
-  it('CA-8 : en phase « tests d’abord » de la tranche 1, la réouverture reste refusée ; en tranche 2 elle est possible', () => {
+  it('en phase « tests d’abord » de la tranche 1, la réouverture reste refusée ; en tranche 2 elle est possible [FEAT-7 CA-8]', () => {
     assert.match(reopenTestsRefusal(slicedChantier({ slice: '1' })), /pas figés/)
     assert.match(reopenTestsRefusal(slicedChantier()), /pas figés/)
     assert.equal(reopenTestsRefusal(slicedChantier({ slice: '2', slice_base: 'a'.repeat(40) })), null)
   })
 
-  it('CA-9 : en tranche 2, des tests seulement ajoutés (lignes, fichiers ; espaces et fins de ligne changés) se figent sans raison', () => {
+  it('en tranche 2, des tests seulement ajoutés (lignes, fichiers ; espaces et fins de ligne changés) se figent sans raison [FEAT-7 CA-9]', () => {
     const { directory } = atSliceTwo()
     commitFiles(directory, {
       'test/one.test.mjs': 'ligne a\r\nligne b  \r\n  ligne    c\r\nligne d\r\n',
@@ -1023,7 +1023,7 @@ describe('FEAT-7 freezing the tests of a slice', () => {
     assert.deepEqual(amendmentEntries(directory, 'FEAT-20'), [], 'aucune entrée de gel')
   })
 
-  it('CA-10 : en revue du chantier, la réouverture vide tests_commit, garde slice: chantier ; le gel suivant accepte les modifications', () => {
+  it('en revue du chantier, la réouverture vide tests_commit, garde slice: chantier ; le gel suivant accepte les modifications [FEAT-7 CA-10]', () => {
     const { directory } = implementedSlice({ slice: 'chantier', extra: { last_slice: '3' } })
     atelierOk(directory, 'reopen-tests', 'CA', 'sans', 'test')
     let data = specData(directory, 'FEAT-20')
@@ -1039,7 +1039,7 @@ describe('FEAT-7 freezing the tests of a slice', () => {
     assert.equal(data.slice, 'chantier')
   })
 
-  it('CA-11 : refuse le gel et la revue quand slice_base n’est plus un ancêtre de HEAD', () => {
+  it('refuse le gel et la revue quand slice_base n’est plus un ancêtre de HEAD [FEAT-7 CA-11]', () => {
     for (const command of ['freeze-tests', 'set-reviewed']) {
       const directory = makeSlicedRepository({ tdd: command === 'freeze-tests' ? 'yes' : 'no' })
       git(directory, 'switch', '-q', '-c', 'side')
@@ -1062,12 +1062,12 @@ describe('FEAT-7 write guard and stop hook per slice', () => {
   const sliceTwoImplementing = slicedChantier({ slice: '2', slice_base: 'a'.repeat(40), tests_commit: 'abc1234' })
   const chantierReview = slicedChantier({ slice: 'chantier', last_slice: '3', slice_base: 'a'.repeat(40), tests_commit: 'abc1234' })
 
-  it('CA-12 : en tranche 2, phase « tests d’abord », refuse le code et accepte les tests', () => {
+  it('en tranche 2, phase « tests d’abord », refuse le code et accepte les tests [FEAT-7 CA-12]', () => {
     assert.equal(decide({ chantier: sliceTwoWriting, relativePath: 'src/budget.ts' }).allowed, false)
     assert.equal(decide({ chantier: sliceTwoWriting, relativePath: 'test/budget.test.ts' }).allowed, true)
   })
 
-  it('CA-13 : en tranche 2, phase d’implémentation, refuse l’écriture d’un test ; le contrôle de fin signale un test modifié', () => {
+  it('en tranche 2, phase d’implémentation, refuse l’écriture d’un test ; le contrôle de fin signale un test modifié [FEAT-7 CA-13]', () => {
     assert.equal(decide({ chantier: sliceTwoImplementing, relativePath: 'test/one.test.ts' }).allowed, false)
     const decision = decideStop({
       config: DEFAULT_CONFIG,
@@ -1083,14 +1083,14 @@ describe('FEAT-7 write guard and stop hook per slice', () => {
     assert.match(decision.message, /git checkout abc1234/)
   })
 
-  it('CA-17 : en revue du chantier, tests figés, refuse un test et accepte le code', () => {
+  it('en revue du chantier, tests figés, refuse un test et accepte le code [FEAT-7 CA-17]', () => {
     assert.equal(decide({ chantier: chantierReview, relativePath: 'test/one.test.ts' }).allowed, false)
     assert.equal(decide({ chantier: chantierReview, relativePath: 'src/budget.ts' }).allowed, true)
   })
 })
 
 describe('FEAT-7 review and next slice', () => {
-  it('CA-14 : la revue validée de la tranche 2 sur 3 passe à la tranche 3', () => {
+  it('la revue validée de la tranche 2 sur 3 passe à la tranche 3 [FEAT-7 CA-14]', () => {
     const { directory } = implementedSlice({ slice: 2 })
     const head = headOf(directory)
     const output = atelierOk(directory, 'set-reviewed')
@@ -1104,7 +1104,7 @@ describe('FEAT-7 review and next slice', () => {
   })
 
   for (const [label, plan] of [['tranche 3 sur 3', threeSlices], ['tranche 3 retirée d’un plan à 2', planOf([1, 2])]]) {
-    it(`CA-15 : la revue validée de la dernière tranche passe à la revue du chantier (${label})`, () => {
+    it(`la revue validée de la dernière tranche passe à la revue du chantier (${label}) [FEAT-7 CA-15]`, () => {
       const { directory, testsCommit } = implementedSlice({ slice: 3, plan })
       const head = headOf(directory)
       const output = atelierOk(directory, 'set-reviewed')
@@ -1119,12 +1119,12 @@ describe('FEAT-7 review and next slice', () => {
     })
   }
 
-  it('CA-15 : status signale une tranche en cours absente du plan', () => {
+  it('status signale une tranche en cours absente du plan [FEAT-7 CA-15]', () => {
     const { directory } = implementedSlice({ slice: 3, plan: planOf([1, 2]) })
     assert.match(atelierOk(directory, 'status'), /tranche 3 absente du plan/i)
   })
 
-  it('CA-16 : en revue du chantier, set-reviewed écrit reviewed_commit sans toucher à slice', () => {
+  it('en revue du chantier, set-reviewed écrit reviewed_commit sans toucher à slice [FEAT-7 CA-16]', () => {
     const { directory } = implementedSlice({ slice: 'chantier', extra: { last_slice: '3' } })
     const head = headOf(directory)
     atelierOk(directory, 'set-reviewed')
@@ -1133,7 +1133,7 @@ describe('FEAT-7 review and next slice', () => {
     assert.equal(data.slice, 'chantier')
   })
 
-  it('CA-16 : un chantier à tranche unique enregistre reviewed_commit comme aujourd’hui', () => {
+  it('un chantier à tranche unique enregistre reviewed_commit comme aujourd’hui [FEAT-7 CA-16]', () => {
     for (const plan of [null, planOf([1])]) {
       const directory = makeSlicedRepository({ tdd: 'no', plan })
       commitFiles(directory, { 'src/a.mjs': 'code\n' }, 'feat: a')
@@ -1143,7 +1143,7 @@ describe('FEAT-7 review and next slice', () => {
     }
   })
 
-  it('CA-18 : sans TDD, la revue de la tranche 1 sur 2 passe à la tranche 2 ; prochaine étape /atelier:build', () => {
+  it('sans TDD, la revue de la tranche 1 sur 2 passe à la tranche 2 ; prochaine étape /atelier:build [FEAT-7 CA-18]', () => {
     const directory = makeSlicedRepository({ tdd: 'no', plan: planOf([1, 2]) })
     commitFiles(directory, { 'src/a.mjs': 'code\n' }, 'feat: a')
     const head = headOf(directory)
@@ -1155,7 +1155,7 @@ describe('FEAT-7 review and next slice', () => {
     assert.match(JSON.parse(atelierOk(directory, 'status', '--json')).nextStep, /\/atelier:build/)
   })
 
-  it('CA-19 : les refus actuels de set-reviewed ne changent pas de tranche', () => {
+  it('les refus actuels de set-reviewed ne changent pas de tranche [FEAT-7 CA-19]', () => {
     const uncommitted = implementedSlice({ slice: 2 }).directory
     writeFileSync(join(uncommitted, 'src', 'pending.mjs'), 'code\n')
     const testsChanged = implementedSlice({ slice: 2 }).directory
@@ -1169,7 +1169,7 @@ describe('FEAT-7 review and next slice', () => {
     }
   })
 
-  it('CA-20 : refuse de passer une tranche sans commit de code depuis son début', () => {
+  it('refuse de passer une tranche sans commit de code depuis son début [FEAT-7 CA-20]', () => {
     const sliceTwo = makeSlicedRepository({ tdd: 'no' })
     commitFiles(sliceTwo, { 'src/one.mjs': 'code\n' }, 'feat: one')
     setHeader(sliceTwo, 'FEAT-20', { slice: '2', slice_base: headOf(sliceTwo) })
@@ -1183,7 +1183,7 @@ describe('FEAT-7 review and next slice', () => {
     }
   })
 
-  it('CA-20 : en TDD, une tranche dont seuls les tests ont été commités est vide', () => {
+  it('en TDD, une tranche dont seuls les tests ont été commités est vide [FEAT-7 CA-20]', () => {
     const directory = makeSlicedRepository({ tdd: 'yes' })
     commitFiles(directory, { 'src/one.mjs': 'code\n' }, 'feat: one')
     const base = headOf(directory)
@@ -1207,7 +1207,7 @@ describe('FEAT-7 close and next step', () => {
     return directory
   }
 
-  it('CA-21 : refuse la clôture tant qu’une tranche est en cours', () => {
+  it('refuse la clôture tant qu’une tranche est en cours [FEAT-7 CA-21]', () => {
     for (const slice of ['2', '3']) {
       const { directory } = implementedSlice({ slice, tdd: 'no' })
       const { status, output } = atelierRun(directory, 'close-check')
@@ -1216,21 +1216,21 @@ describe('FEAT-7 close and next step', () => {
     }
   })
 
-  it('CA-21 : en revue du chantier sans reviewed_commit, demande la revue du chantier', () => {
+  it('en revue du chantier sans reviewed_commit, demande la revue du chantier [FEAT-7 CA-21]', () => {
     const { directory } = implementedSlice({ slice: 'chantier', tdd: 'no', extra: { last_slice: '3' } })
     const { status, output } = atelierRun(directory, 'close-check')
     assert.notEqual(status, 0)
     assert.match(output, /revue du chantier/i)
   })
 
-  it('CA-22 : refuse la clôture quand le plan compte une tranche après last_slice', () => {
+  it('refuse la clôture quand le plan compte une tranche après last_slice [FEAT-7 CA-22]', () => {
     const directory = reviewedChantier({ plan: planOf([1, 2, 3, 4]), header: { slice: 'chantier', last_slice: '3' } })
     const { status, output } = atelierRun(directory, 'close-check')
     assert.notEqual(status, 0)
     assert.match(output, /tranche 4 du plan non revue/i)
   })
 
-  it('CA-23 : clôture possible avec la revue du chantier à jour, et pour un chantier de l’ancien modèle revu', () => {
+  it('clôture possible avec la revue du chantier à jour, et pour un chantier de l’ancien modèle revu [FEAT-7 CA-23]', () => {
     const sliced = reviewedChantier({ header: { slice: 'chantier', last_slice: '3' } })
     const slicedResult = atelierRun(sliced, 'close-check')
     assert.equal(slicedResult.status, 0, slicedResult.output)
@@ -1243,19 +1243,19 @@ describe('FEAT-7 close and next step', () => {
     assert.equal(legacyResult.status, 0, legacyResult.output)
   })
 
-  it('CA-24 : la prochaine étape préfixe le message de la phase par « Tranche N/3 : »', () => {
+  it('la prochaine étape préfixe le message de la phase par « Tranche N/3 : » [FEAT-7 CA-24]', () => {
     assert.match(nextStep(slicedChantier()), /^Tranche 1\/3 : .*\/atelier:write-tests/)
     assert.match(nextStep(slicedChantier({ slice: '2', slice_base: 'a'.repeat(40) })), /^Tranche 2\/3 : .*\/atelier:write-tests/)
     assert.match(nextStep(slicedChantier({ slice: '2', slice_base: 'a'.repeat(40), tests_commit: 'abc1234' })), /^Tranche 2\/3 : .*\/atelier:build.*\/atelier:review/)
   })
 
-  it('CA-24 : en revue du chantier, demande la revue de l’ensemble, puis la clôture', () => {
+  it('en revue du chantier, demande la revue de l’ensemble, puis la clôture [FEAT-7 CA-24]', () => {
     const chantier = slicedChantier({ slice: 'chantier', last_slice: '3', slice_base: 'a'.repeat(40), tests_commit: 'abc1234' })
     assert.match(nextStep(chantier, 'none'), /^Revue du chantier : faire relire l.ensemble : \/atelier:review/)
     assert.match(nextStep(chantier, 'current'), /\/atelier:close/)
   })
 
-  it('CA-25 : un SPIKE en TDD suit le cycle par tranche et sa clôture exige la revue du chantier', () => {
+  it('un SPIKE en TDD suit le cycle par tranche et sa clôture exige la revue du chantier [FEAT-7 CA-25]', () => {
     const spike = slicedChantier({ slice: '2', slice_base: 'a'.repeat(40) }, { type: 'SPIKE' })
     assert.equal(core.sliceState(spike).model, 'sliced')
     assert.match(nextStep(spike), /^Tranche 2\/3 : .*\/atelier:write-tests/)
@@ -1265,7 +1265,7 @@ describe('FEAT-7 close and next step', () => {
     assert.match(output, /revue du chantier/i)
   })
 
-  it('CA-25 : un SPIKE en TDD de l’ancien modèle se clôt sans revue exigée', () => {
+  it('un SPIKE en TDD de l’ancien modèle se clôt sans revue exigée [FEAT-7 CA-25]', () => {
     const directory = makeSlicedRepository({ id: 'SPIKE-20', tdd: 'yes' })
     commitFiles(directory, { 'test/a.test.mjs': 'test\n' }, 'test: a')
     const testsCommit = git(directory, 'rev-parse', '--short', 'HEAD').trim()
@@ -1275,7 +1275,7 @@ describe('FEAT-7 close and next step', () => {
     assert.equal(status, 0, output)
   })
 
-  it('CA-25 : un SPIKE sans TDD reste hors tranches : pas de slice, pas de message de tranche, clôture sans revue', () => {
+  it('un SPIKE sans TDD reste hors tranches : pas de slice, pas de message de tranche, clôture sans revue [FEAT-7 CA-25]', () => {
     const spike = slicedChantier({}, { type: 'SPIKE', tdd: 'no' })
     assert.equal(core.sliceState(spike).model, 'none')
     assert.doesNotMatch(nextStep(spike), /tranche/i)
@@ -1290,7 +1290,7 @@ describe('FEAT-7 close and next step', () => {
     assert.equal(specData(directory, 'SPIKE-20').slice, undefined)
   })
 
-  it('CA-26 : le rappel de début de session indique la tranche, et n’en parle pas pour une tranche unique', () => {
+  it('le rappel de début de session indique la tranche, et n’en parle pas pour une tranche unique [FEAT-7 CA-26]', () => {
     const { directory } = atSliceTwo()
     assert.match(atelierOk(directory, 'hook-session-start'), /Tranche 2\/3/)
     assert.doesNotMatch(atelierOk(makeSlicedRepository({ plan: null }), 'hook-session-start'), /tranche/i)
@@ -1301,7 +1301,7 @@ describe('FEAT-7 vocabulary of the review', () => {
   const repositoryPath = (relativePath) => fileURLToPath(new URL(`../../../${relativePath}`, import.meta.url))
   const reviewRound = /\btours? de revue\b|\btour \d+\b|\bà chaque tour\b/i
 
-  it('CA-27 : plus de « tour » au sens d’un passage de revue dans les skills, l’agent, les templates, le site et le README', () => {
+  it('plus de « tour » au sens d’un passage de revue dans les skills, l’agent, les templates, le site et le README [FEAT-7 CA-27]', () => {
     const siteFiles = readdirSync(repositoryPath('site'), { withFileTypes: true })
       .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.') && !['node_modules', 'public'].includes(entry.name))
       .flatMap((entry) => readdirSync(repositoryPath(`site/${entry.name}`)).filter((name) => name.endsWith('.md')).map((name) => `site/${entry.name}/${name}`))
@@ -1327,7 +1327,7 @@ function pointsOf(parsed) {
 }
 
 describe('TEC-15 reading revue.md', () => {
-  it('CA-12 : extrait l’identifiant, le marqueur (repris, ex-RD3 ou aucun) et l’intitulé de chaque point', () => {
+  it('extrait l’identifiant, le marqueur (repris, ex-RD3 ou aucun) et l’intitulé de chaque point [TEC-15 CA-12]', () => {
     const text = revueOf([
       { title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB2. Intitulé', '`a.mjs`', 'corrigé (abc1234)']], discuss: [['RD3. Autre point', '`b.mjs`', 'requalifié (RB4)']] },
       { title: 'Revue : tranche 2 : 2026-11-22', blocking: [['RB2 (repris). Intitulé', '`a.mjs`', ''], ['RB4 (ex-RD3). Intitulé', '`b.mjs`', 'écarté : hors périmètre']] },
@@ -1340,7 +1340,7 @@ describe('TEC-15 reading revue.md', () => {
     ])
   })
 
-  it('CA-12 : lit un revue.md en CRLF, aux cellules entourées d’espaces superflus', () => {
+  it('lit un revue.md en CRLF, aux cellules entourées d’espaces superflus [TEC-15 CA-12]', () => {
     const text = revueOf([{ title: 'Revue : chantier : 2026-11-21', blocking: [['  RB1. Push non vérifié  ', '`a.mjs`', '   corrigé (abc1234)   ']] }])
       .replace(/\n/g, '\r\n')
     assert.deepEqual(pointsOf(core.parseReviewPoints(text)), [
@@ -1348,12 +1348,12 @@ describe('TEC-15 reading revue.md', () => {
     ])
   })
 
-  it('CA-12 : seuls les tableaux sous « ### Bloquant » et « ### À discuter » sont des tableaux de points', () => {
+  it('seuls les tableaux sous « ### Bloquant » et « ### À discuter » sont des tableaux de points [TEC-15 CA-12]', () => {
     const text = `${revueOf([{ title: 'Revue : 2026-11-21', blocking: [['RB1. Un point', '`a.mjs`', 'corrigé (abc1234)']] }])}\n### Contrôles\n| Point | Fichier | Traitement |\n|---|---|---|\n| RB9. Hors tableau de points | \`x\` | |\n`
     assert.deepEqual(pointsOf(core.parseReviewPoints(text)).map((point) => point.id), ['RB1'])
   })
 
-  it('CA-12 : une ligne vide au milieu d’un tableau de points ne fait perdre aucun point', () => {
+  it('une ligne vide au milieu d’un tableau de points ne fait perdre aucun point [TEC-15 CA-12]', () => {
     const text = revueOf([{ title: 'Revue : 2026-11-21', blocking: [['RB1. Un', '`a.mjs`', 'corrigé (abc1234)'], ['RB2. Deux', '`b.mjs`', ''], ['RB3. Trois', '`c.mjs`', 'écarté : doublon']] }])
       .replace('corrigé (abc1234) |\n', 'corrigé (abc1234) |\n\n')
     assert.deepEqual(pointsOf(core.parseReviewPoints(text)).map(({ id, treatment }) => ({ id, treatment })), [
@@ -1363,12 +1363,12 @@ describe('TEC-15 reading revue.md', () => {
     ])
   })
 
-  it('CA-12 : un tableau de points sans ligne d’en-tête ne perd pas son premier point', () => {
+  it('un tableau de points sans ligne d’en-tête ne perd pas son premier point [TEC-15 CA-12]', () => {
     const text = '# Revue : TEC-30 Essai\n\n## Revue : 2026-11-21\n\n### Bloquant\n| RB1. Un | `a.mjs` | |\n| RB2. Deux | `b.mjs` | |\n'
     assert.deepEqual(pointsOf(core.parseReviewPoints(text)).map((point) => point.id), ['RB1', 'RB2'])
   })
 
-  it('CA-12 : une ligne dont le nombre de cellules diffère de l’en-tête est marquée', () => {
+  it('une ligne dont le nombre de cellules diffère de l’en-tête est marquée [TEC-15 CA-12]', () => {
     const text = revueOf([{ title: 'Revue : 2026-11-21', blocking: [['RB1. Pipe non échappé', '`a | b`', 'corrigé (abc1234)'], ['RB2. Normal', '`c.mjs`', '']] }])
     const rows = core.parseReviewPoints(text).sections[0].rows
     assert.deepEqual(rows.map(({ id, cellCountMismatch }) => ({ id, cellCountMismatch })), [
@@ -1377,13 +1377,13 @@ describe('TEC-15 reading revue.md', () => {
     ])
   })
 
-  it('CA-12 : un tableau dans un commentaire HTML n’est pas lu, comme un bloc de code', () => {
+  it('un tableau dans un commentaire HTML n’est pas lu, comme un bloc de code [TEC-15 CA-12]', () => {
     const text = revueOf([{ title: 'Revue : 2026-11-21', blocking: [['RB1. Vrai point', '`a.mjs`', '']] }])
       .replace('### Bloquant\n', '### Bloquant\n<!-- Exemple :\n| Point | Fichier | Traitement |\n|---|---|---|\n| RB9. Exemple | `x` | |\n-->\n')
     assert.deepEqual(pointsOf(core.parseReviewPoints(text)).map((point) => point.id), ['RB1'])
   })
 
-  it('CA-15 : un \| dans une cellule est un | littéral, pas un séparateur de colonne', () => {
+  it('un | dans une cellule est un | littéral, pas un séparateur de colonne [TEC-15 CA-15]', () => {
     const text = revueOf([{ title: 'Revue : 2026-11-21', blocking: [['RB1. Option a \\| b', '`a \\| b`', 'corrigé (abc1234)']] }])
     const [point] = core.parseReviewPoints(text).sections[0].rows
     assert.equal(point.treatment, 'corrigé (abc1234)')
@@ -1410,7 +1410,7 @@ const revueWithBody = (body) => `# Revue : TEC-30 Essai\n\n## Revue : 2026-11-21
 const pointTable = '| Point | Fichier | Traitement |\n|---|---|---|\n'
 
 describe('TEC-15 checking the review points', () => {
-  it('CA-3 : c’est la dernière occurrence d’un point qui dit s’il est ouvert', () => {
+  it('c’est la dernière occurrence d’un point qui dit s’il est ouvert [TEC-15 CA-3]', () => {
     const text = revueOf([
       { title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB1. Premier', '`a.mjs`', ''], ['RB2. Second', '`b.mjs`', 'corrigé (abc1234)']] },
       { title: 'Revue : tranche 1 : 2026-11-22', blocking: [['RB1 (repris). Premier', '`a.mjs`', 'corrigé (def5678)'], ['RB2 (repris). Second', '`b.mjs`', '']] },
@@ -1420,7 +1420,7 @@ describe('TEC-15 checking the review points', () => {
     assert.deepEqual(citing(problems, /\bRB1\b/), [])
   })
 
-  it('CA-4 : un traitement commence par un mot-clé, quelle que soit sa casse', () => {
+  it('un traitement commence par un mot-clé, quelle que soit sa casse [TEC-15 CA-4]', () => {
     for (const cell of ['corrigé (abc1234)', 'Corrigé (abc1234)', 'test ajouté (abc1234)', 'Spec amendée (2026-11-21)',
       'exception acceptée par Opack : coût', 'écarté : hors périmètre', 'Écarté : doublon', 'reporté (FIX-12)',
       'reporté (tranche 3)', 'requalifié (RB4)', 'sans objet : code supprimé', 'SANS OBJET']) {
@@ -1431,7 +1431,7 @@ describe('TEC-15 checking the review points', () => {
     }
   })
 
-  it('CA-4 : un point sans traitement reconnu est signalé avec son identifiant et son intitulé, RB comme RD', () => {
+  it('un point sans traitement reconnu est signalé avec son identifiant et son intitulé, RB comme RD [TEC-15 CA-4]', () => {
     const text = revueOf([{
       title: 'Revue : 2026-11-21',
       blocking: [['RB1. Push non vérifié', '`a.mjs`', ''], ['RB2. Commit non signé', '`b.mjs`', '   '], ['RB3. Bien traité', '`c.mjs`', 'Corrigé (abc1234)']],
@@ -1444,7 +1444,7 @@ describe('TEC-15 checking the review points', () => {
     assert.equal(citing(problems, /\bRD1\b.*Nom ambigu/).length, 1)
   })
 
-  it('CA-5 : un identifiant présenté comme nouveau dans deux sections est signalé avec les titres des deux sections', () => {
+  it('un identifiant présenté comme nouveau dans deux sections est signalé avec les titres des deux sections [TEC-15 CA-5]', () => {
     const text = revueOf([
       { title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB1. Premier', '`a.mjs`', 'corrigé (abc1234)']] },
       { title: 'Revue : tranche 2 : 2026-11-22', blocking: [['RB1. Autre chose', '`b.mjs`', 'corrigé (def5678)']] },
@@ -1455,7 +1455,7 @@ describe('TEC-15 checking the review points', () => {
     assert.match(problems[0], /Revue : tranche 2 : 2026-11-22/)
   })
 
-  it('CA-5 : un identifiant nouveau dans deux sections de même titre est signalé, et le premier point ouvert n’est pas masqué', () => {
+  it('un identifiant nouveau dans deux sections de même titre est signalé, et le premier point ouvert n’est pas masqué [TEC-15 CA-5]', () => {
     const text = revueOf([
       { title: 'Revue : 2026-11-22', blocking: [['RB1. Premier', '`a.mjs`', '']] },
       { title: 'Revue : 2026-11-22', blocking: [['RB1. Autre chose', '`b.mjs`', 'corrigé (def5678)']] },
@@ -1463,7 +1463,7 @@ describe('TEC-15 checking the review points', () => {
     assert.equal(citing(pointProblems(text), /présenté comme nouveau/).length, 1)
   })
 
-  it('CA-5 : un identifiant présent deux fois dans une même section est signalé', () => {
+  it('un identifiant présent deux fois dans une même section est signalé [TEC-15 CA-5]', () => {
     const text = revueOf([{
       title: 'Revue : 2026-11-21',
       blocking: [['RB1. Premier', '`a.mjs`', 'corrigé (abc1234)'], ['RB1. Second', '`b.mjs`', 'corrigé (abc1234)']],
@@ -1473,7 +1473,7 @@ describe('TEC-15 checking the review points', () => {
     assert.match(problems[0], /Revue : 2026-11-21/)
   })
 
-  it('CA-6 : une cellule Point qui n’a pas la forme définie est signalée, avec son contenu', () => {
+  it('une cellule Point qui n’a pas la forme définie est signalée, avec son contenu [TEC-15 CA-6]', () => {
     const cells = ['B1. Ancien format', '1. Numéro seul', 'Texte libre sans identifiant', 'RB1 Sans point final', 'RB2.Sans espace', 'Aucun']
     const text = revueOf([{ title: 'Revue : 2026-11-21', blocking: cells.map((cell) => [cell, '`a.mjs`', 'corrigé (abc1234)']) }])
     const problems = pointProblems(text)
@@ -1482,17 +1482,17 @@ describe('TEC-15 checking the review points', () => {
     }
   })
 
-  it('CA-6 : la ligne « Aucun » (ou « aucun. ») seule n’est pas signalée', () => {
+  it('la ligne « Aucun » (ou « aucun. ») seule n’est pas signalée [TEC-15 CA-6]', () => {
     const text = revueOf([{ title: 'Revue : 2026-11-21', blocking: [['Aucun', '', '']], discuss: [['aucun.', '', '']] }])
     assert.deepEqual(pointProblems(text), [])
   })
 
-  it('CA-6 : une ligne dont le nombre de cellules diffère de l’en-tête est signalée (| non échappé)', () => {
+  it('une ligne dont le nombre de cellules diffère de l’en-tête est signalée (| non échappé) [TEC-15 CA-6]', () => {
     const text = revueOf([{ title: 'Revue : 2026-11-21', blocking: [['RB1. Pipe non échappé', '`a.mjs`', 'corrigé (abc1234)', 'en trop']] }])
     assert.equal(citing(pointProblems(text), /\bRB1\b/).length, 1)
   })
 
-  it('CA-6 : une ligne mal formée suivie d’un séparateur n’est jamais prise pour l’en-tête (RD6, RD10, RD11)', () => {
+  it('une ligne mal formée suivie d’un séparateur n’est jamais prise pour l’en-tête (RD6, RD10, RD11) [TEC-15 CA-6]', () => {
     const one = '| RB1. Un | `a.mjs` | corrigé (abc1234) |\n'
     const two = '| RB2. Deux | `b.mjs` | corrigé (abc1234) |\n'
     const cases = {
@@ -1506,19 +1506,19 @@ describe('TEC-15 checking the review points', () => {
     }
   })
 
-  it('CA-6 : un point bien formé qui contient une cellule « Point », suivi d’un séparateur, est lu comme un point (RD7)', () => {
+  it('un point bien formé qui contient une cellule « Point », suivi d’un séparateur, est lu comme un point (RD7) [TEC-15 CA-6]', () => {
     const text = revueWithBody(`### Bloquant\n| RB1. x | Point | c |\n|---|---|---|\n| RB2. Deux | \`b.mjs\` | corrigé (abc1234) |\n`)
     assert.equal(citing(pointProblems(text), /\bRB1\b/).length, 1)
   })
 
-  it('CA-6 : un en-tête mal écrit est signalé comme un en-tête non reconnu', () => {
+  it('un en-tête mal écrit est signalé comme un en-tête non reconnu [TEC-15 CA-6]', () => {
     for (const header of ['| point | Fichier | Traitement |', '| **Point** | Fichier | Traitement |', '| Point | File | Traitement |']) {
       const text = revueWithBody(`### Bloquant\n${header}\n|---|---|---|\n| RB1. Un | \`a.mjs\` | corrigé (abc1234) |\n`)
       assert.equal(citing(pointProblems(text), /en-tête/i).length, 1, header)
     }
   })
 
-  it('CA-7 : un revue.md aux sections « ## Tour » (antérieur à FEAT-7) n’est pas contrôlé', () => {
+  it('un revue.md aux sections « ## Tour » (antérieur à FEAT-7) n’est pas contrôlé [TEC-15 CA-7]', () => {
     const text = revueOf([
       { title: 'Tour 1', blocking: [['B1. Ancien format', '`a.mjs`', '']], discuss: [['1. Numéro seul', '`b.mjs`', '']] },
       { title: 'Tour 2', blocking: [['B1. Ancien format', '`a.mjs`', 'À corriger']] },
@@ -1527,7 +1527,7 @@ describe('TEC-15 checking the review points', () => {
     assert.deepEqual(pointProblems(text, { atClose: true }), [])
   })
 
-  it('CA-7 : un revue.md qui garde une section « ## Tour » échappe au contrôle, même avec d’autres sections (RD5, spec §4)', () => {
+  it('un revue.md qui garde une section « ## Tour » échappe au contrôle, même avec d’autres sections (RD5, spec §4) [TEC-15 CA-7]', () => {
     const text = revueOf([
       { title: 'Tour 1', blocking: [['B1. Ancien format', '`a.mjs`', 'corrigé (abc1234)']] },
       { title: 'Revue : 2026-11-22', blocking: [['B2. Nouveau', '`b.mjs`', '']] },
@@ -1535,14 +1535,14 @@ describe('TEC-15 checking the review points', () => {
     assert.deepEqual(pointProblems(text), [])
   })
 
-  it('CA-7 : un revue.md aux autres sections, sans aucun RB/RD mais avec des points B1., est contrôlé', () => {
+  it('un revue.md aux autres sections, sans aucun RB/RD mais avec des points B1., est contrôlé [TEC-15 CA-7]', () => {
     const text = revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', blocking: [['B1. Ancien format', '`a.mjs`', 'corrigé (abc1234)']], discuss: [['D1. Autre', '`b.mjs`', 'écarté : doublon']] }])
     const problems = pointProblems(text)
     assert.equal(citing(problems, /B1\. Ancien format/).length, 1)
     assert.equal(citing(problems, /D1\. Autre/).length, 1)
   })
 
-  it('CA-13 : un RD requalifié en RB, puis traité sous son nouvel identifiant, ne laisse aucun problème', () => {
+  it('un RD requalifié en RB, puis traité sous son nouvel identifiant, ne laisse aucun problème [TEC-15 CA-13]', () => {
     const text = revueOf([
       { title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD3. Commit non signé', '`a.mjs`', 'requalifié (RB4)']] },
       { title: 'Revue : tranche 1 : 2026-11-22', blocking: [['RB4 (ex-RD3). Commit non signé', '`a.mjs`', 'corrigé (abc1234)']] },
@@ -1551,7 +1551,7 @@ describe('TEC-15 checking the review points', () => {
     assert.deepEqual(pointProblems(text, { atClose: true }), [])
   })
 
-  it('CA-14 : un RB dans le tableau « À discuter » ou un RD dans le tableau « Bloquant » est signalé', () => {
+  it('un RB dans le tableau « À discuter » ou un RD dans le tableau « Bloquant » est signalé [TEC-15 CA-14]', () => {
     const text = revueOf([{
       title: 'Revue : 2026-11-21',
       blocking: [['RD1. Mal rangé', '`a.mjs`', 'corrigé (abc1234)']],
@@ -1562,7 +1562,7 @@ describe('TEC-15 checking the review points', () => {
     assert.equal(citing(problems, /\bRB1\b/).length, 1)
   })
 
-  it('CA-16 : un point reporté à une tranche est accepté à l’enregistrement de la revue, refusé à la clôture', () => {
+  it('un point reporté à une tranche est accepté à l’enregistrement de la revue, refusé à la clôture [TEC-15 CA-16]', () => {
     const text = revueOf([{
       title: 'Revue : tranche 1 : 2026-11-21',
       discuss: [['RD1. Reporté en tranche', '`a.mjs`', 'Reporté (tranche 2) : avec CA-6'], ['RD2. Reporté ailleurs', '`b.mjs`', 'reporté (FIX-12)']],
@@ -1573,7 +1573,7 @@ describe('TEC-15 checking the review points', () => {
     assert.match(atClose[0], /\bRD1\b/)
   })
 
-  it('CA-16 : un point reporté à une tranche puis traité dans une revue suivante n’est pas refusé à la clôture', () => {
+  it('un point reporté à une tranche puis traité dans une revue suivante n’est pas refusé à la clôture [TEC-15 CA-16]', () => {
     const text = revueOf([
       { title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD1. Reporté', '`a.mjs`', 'reporté (tranche 2)']] },
       { title: 'Revue : tranche 2 : 2026-11-22', discuss: [['RD1 (repris). Reporté', '`a.mjs`', 'corrigé (abc1234)']] },
@@ -1581,21 +1581,21 @@ describe('TEC-15 checking the review points', () => {
     assert.deepEqual(pointProblems(text, { atClose: true }), [])
   })
 
-  it('CA-17 : un titre ### proche de « Bloquant » ou « À discuter » est signalé', () => {
+  it('un titre ### proche de « Bloquant » ou « À discuter » est signalé [TEC-15 CA-17]', () => {
     for (const title of ['Bloquants', 'bloquant', 'A discuter', 'À discuter :', '**Bloquant**']) {
       const text = revueWithBody(`### ${title}\n${pointTable}| RB1. Un | \`a.mjs\` | corrigé (abc1234) |\n`)
       assert.equal(citing(pointProblems(text), new RegExp(title.replace(/[*]/g, '\\$&'))).length, 1, title)
     }
   })
 
-  it('CA-17 : une ligne de point hors d’un tableau de points est signalée, une phrase qui cite un point ne l’est pas', () => {
+  it('une ligne de point hors d’un tableau de points est signalée, une phrase qui cite un point ne l’est pas [TEC-15 CA-17]', () => {
     const text = `${revueOf([{ title: 'Revue : 2026-11-21', discuss: [['RD1. Un', '`a.mjs`', 'corrigé (abc1234)']] }])}\n- RD1 corrigé, voir plus haut.\n\n### Contrôles\n${pointTable}| RB1. Perdu | \`x\` | corrigé (abc1234) |\n`
     const problems = pointProblems(text)
     assert.equal(problems.length, 1)
     assert.match(problems[0], /\bRB1\b/)
   })
 
-  it('CA-5 : un identifiant repris deux fois dans une même section est signalé (OB2)', () => {
+  it('un identifiant repris deux fois dans une même section est signalé (OB2) [TEC-15 CA-5]', () => {
     const text = revueOf([
       { title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB1. Premier', '`a.mjs`', 'corrigé (abc1234)']] },
       { title: 'Revue : tranche 1 : 2026-11-22', blocking: [['RB1 (repris). Premier', '`a.mjs`', ''], ['RB1 (repris). Premier', '`a.mjs`', 'corrigé (def5678)']] },
@@ -1605,7 +1605,7 @@ describe('TEC-15 checking the review points', () => {
     assert.match(problems[0], /Revue : tranche 1 : 2026-11-22/)
   })
 
-  it('CA-16 : un report à une tranche écrit librement est aussi refusé à la clôture (OD12)', () => {
+  it('un report à une tranche écrit librement est aussi refusé à la clôture (OD12) [TEC-15 CA-16]', () => {
     for (const treatment of ['reporté en tranche 3', 'Reporté (tranche 2, avec CA-6)']) {
       const text = revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD1. Reporté', '`a.mjs`', treatment]] }])
       assert.deepEqual(pointProblems(text), [], treatment)
@@ -1613,7 +1613,7 @@ describe('TEC-15 checking the review points', () => {
     }
   })
 
-  it('CA-16 : un report à une tranche accordé au féminin est aussi refusé à la clôture', () => {
+  it('un report à une tranche accordé au féminin est aussi refusé à la clôture [TEC-15 CA-16]', () => {
     for (const treatment of ['Reportée (tranche 2)', 'reportée en tranche 3']) {
       const text = revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD1. Reporté', '`a.mjs`', treatment]] }])
       assert.deepEqual(pointProblems(text), [], treatment)
@@ -1621,7 +1621,7 @@ describe('TEC-15 checking the review points', () => {
     }
   })
 
-  it('CA-18 : un point requalifié vers un identifiant qui ne le reprend jamais (ex-) est signalé', () => {
+  it('un point requalifié vers un identifiant qui ne le reprend jamais (ex-) est signalé [TEC-15 CA-18]', () => {
     const alone = revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD3. Commit non signé', '`a.mjs`', 'requalifié (RB4)']] }])
     const withoutEx = revueOf([
       { title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD3. Commit non signé', '`a.mjs`', 'requalifié (RB4)']] },
@@ -1632,14 +1632,14 @@ describe('TEC-15 checking the review points', () => {
     }
   })
 
-  it('CA-18 : un point marqué repris sans occurrence plus haut est signalé', () => {
+  it('un point marqué repris sans occurrence plus haut est signalé [TEC-15 CA-18]', () => {
     const text = revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB7 (repris). Jamais présenté', '`a.mjs`', 'corrigé (abc1234)']] }])
     const problems = pointProblems(text)
     assert.equal(problems.length, 1)
     assert.match(problems[0], /\bRB7\b/)
   })
 
-  it('CA-18 : un point ex-RD3 sans RD3 plus haut est signalé', () => {
+  it('un point ex-RD3 sans RD3 plus haut est signalé [TEC-15 CA-18]', () => {
     const text = revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB4 (ex-RD3). Commit non signé', '`a.mjs`', 'corrigé (abc1234)']] }])
     const problems = pointProblems(text)
     assert.equal(problems.length, 1)
@@ -1647,7 +1647,7 @@ describe('TEC-15 checking the review points', () => {
     assert.match(problems[0], /\bRD3\b/)
   })
 
-  it('CA-18 : dans une même section, la requalification est reprise même si le tableau Bloquant précède (OD19)', () => {
+  it('dans une même section, la requalification est reprise même si le tableau Bloquant précède (OD19) [TEC-15 CA-18]', () => {
     const text = revueOf([{
       title: 'Revue : tranche 1 : 2026-11-21',
       blocking: [['RB4 (ex-RD3). Commit non signé', '`a.mjs`', 'corrigé (abc1234)']],
@@ -1656,7 +1656,7 @@ describe('TEC-15 checking the review points', () => {
     assert.deepEqual(pointProblems(text), [])
   })
 
-  it('CA-18 : entre sections, l’ordre compte : ex- et repris avant le point d’origine sont signalés (OD22)', () => {
+  it('entre sections, l’ordre compte : ex- et repris avant le point d’origine sont signalés (OD22) [TEC-15 CA-18]', () => {
     const exBefore = revueOf([
       { title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB4 (ex-RD3). Commit non signé', '`a.mjs`', 'corrigé (abc1234)']] },
       { title: 'Revue : tranche 1 : 2026-11-22', discuss: [['RD3. Commit non signé', '`a.mjs`', 'requalifié (RB4)']] },
@@ -1671,7 +1671,7 @@ describe('TEC-15 checking the review points', () => {
     assert.equal(citing(pointProblems(reprisBefore), /\bRB7\b/).length, 1)
   })
 
-  it('CA-18 : une reprise qui renvoie à un autre point (RB4 ex-RD9) ne ferme pas la requalification de RD3 (OD22)', () => {
+  it('une reprise qui renvoie à un autre point (RB4 ex-RD9) ne ferme pas la requalification de RD3 (OD22) [TEC-15 CA-18]', () => {
     const text = revueOf([
       { title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD3. Commit non signé', '`a.mjs`', 'requalifié (RB4)'], ['RD9. Autre', '`b.mjs`', 'requalifié (RB4)']] },
       { title: 'Revue : tranche 1 : 2026-11-22', blocking: [['RB4 (ex-RD9). Autre', '`b.mjs`', 'corrigé (abc1234)']] },
@@ -1681,7 +1681,7 @@ describe('TEC-15 checking the review points', () => {
     assert.deepEqual(citing(problems, /^RD9\b/), [])
   })
 
-  it('CA-18 : un requalifié sans identifiant est signalé ; un identifiant suivi d’un commentaire est lu (OD20)', () => {
+  it('un requalifié sans identifiant est signalé ; un identifiant suivi d’un commentaire est lu (OD20) [TEC-15 CA-18]', () => {
     const withoutId = revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD3. Commit non signé', '`a.mjs`', 'requalifié en bloquant']] }])
     assert.equal(citing(pointProblems(withoutId), /^RD3\b/).length, 1)
     const withComment = revueOf([
@@ -1696,7 +1696,7 @@ describe('TEC-15 numbering the review points', () => {
   const noFiles = { revue: null, spec: null, decisions: null }
   const allOnes = { RB: 1, RD: 1, SB: 1, SD: 1, OB: 1, OD: 1 }
 
-  it('CA-1 : le prochain numéro suit le plus grand de chaque série, toutes sections confondues', () => {
+  it('le prochain numéro suit le plus grand de chaque série, toutes sections confondues [TEC-15 CA-1]', () => {
     const revue = revueOf([
       { title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB1. Un', '`a.mjs`', 'corrigé (abc1234)']], discuss: [['RD1. Un', '`a.mjs`', 'écarté : doublon'], ['RD7. Sept', '`b.mjs`', 'écarté : doublon']] },
       { title: 'Revue : tranche 2 : 2026-11-22', blocking: [['RB3. Trois', '`c.mjs`', 'corrigé (def5678)']], discuss: [['RD2. Deux', '`d.mjs`', 'écarté : doublon']] },
@@ -1706,24 +1706,24 @@ describe('TEC-15 numbering the review points', () => {
     assert.equal(next.RD, 8)
   })
 
-  it('CA-1 : un identifiant cité seulement dans une référence ex- compte aussi', () => {
+  it('un identifiant cité seulement dans une référence ex- compte aussi [TEC-15 CA-1]', () => {
     const revue = revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB2 (ex-RD9). Requalifié', '`a.mjs`', 'corrigé (abc1234)']], discuss: [['RD1. Un', '`b.mjs`', 'écarté : doublon']] }])
     const { next } = core.nextReviewIds({ ...noFiles, revue })
     assert.equal(next.RB, 3)
     assert.equal(next.RD, 10)
   })
 
-  it('CA-2 : sans aucun fichier, tous les numéros sont à 1 et aucun point n’est ouvert', () => {
+  it('sans aucun fichier, tous les numéros sont à 1 et aucun point n’est ouvert [TEC-15 CA-2]', () => {
     assert.deepEqual(core.nextReviewIds(noFiles), { next: allOnes, open: [] })
   })
 
-  it('CA-2 : un revue.md sans point donne RB1 et RD1, sans point ouvert', () => {
+  it('un revue.md sans point donne RB1 et RD1, sans point ouvert [TEC-15 CA-2]', () => {
     for (const revue of [revueOf([{ title: 'Revue : tranche 1 : 2026-11-21' }]), revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', blocking: [['Aucun', '', '']], discuss: [['aucun.', '', '']] }])]) {
       assert.deepEqual(core.nextReviewIds({ ...noFiles, revue }), { next: allOnes, open: [] })
     }
   })
 
-  it('CA-13 : le prochain RD tient compte d’un RD requalifié, le prochain RB du RB qui le reprend', () => {
+  it('le prochain RD tient compte d’un RD requalifié, le prochain RB du RB qui le reprend [TEC-15 CA-13]', () => {
     const revue = revueOf([
       { title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD3. Commit non signé', '`a.mjs`', 'requalifié (RB4)']] },
       { title: 'Revue : tranche 1 : 2026-11-22', blocking: [['RB4 (ex-RD3). Commit non signé', '`a.mjs`', 'corrigé (abc1234)']] },
@@ -1734,14 +1734,14 @@ describe('TEC-15 numbering the review points', () => {
     assert.deepEqual(open, [])
   })
 
-  it('CA-10 : SB, SD, OB, OD suivent le plus grand numéro cité dans spec.md et decisions.md', () => {
+  it('SB, SD, OB, OD suivent le plus grand numéro cité dans spec.md et decisions.md [TEC-15 CA-10]', () => {
     const spec = '---\nid: TEC-30\n---\n\n# TEC-30\n\nAmendement : SD2 retenu, OD3 écarté. Mot collé : XSB9.\n'
     const decisions = '# Décisions\n\n- OB1 accepté.\n- OD5 reporté.\n- SD1 écarté.\n'
     const { next } = core.nextReviewIds({ revue: null, spec, decisions })
     assert.deepEqual(next, { RB: 1, RD: 1, SB: 1, SD: 3, OB: 2, OD: 6 })
   })
 
-  it('CA-10 : les points ouverts sont ceux dont la dernière occurrence n’a pas de traitement, avec leur intitulé et leur section', () => {
+  it('les points ouverts sont ceux dont la dernière occurrence n’a pas de traitement, avec leur intitulé et leur section [TEC-15 CA-10]', () => {
     const revue = revueOf([
       { title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB1. Premier', '`a.mjs`', ''], ['RB2. Second', '`b.mjs`', 'corrigé (abc1234)']], discuss: [['RD1. Discuté', '`c.mjs`', 'À corriger au build']] },
       { title: 'Revue : tranche 2 : 2026-11-22', blocking: [['RB1 (repris). Premier', '`a.mjs`', 'corrigé (def5678)'], ['RB2 (repris). Second encore', '`b.mjs`', '']] },
@@ -1752,7 +1752,7 @@ describe('TEC-15 numbering the review points', () => {
     ])
   })
 
-  it('CA-10 : atelier review-ids --json lit revue.md, spec.md et decisions.md du chantier actif', () => {
+  it('atelier review-ids --json lit revue.md, spec.md et decisions.md du chantier actif [TEC-15 CA-10]', () => {
     const directory = makeRepository('main')
     git(directory, 'switch', '-q', '-c', 'tec/TEC-30-x')
     const revue = revueOf([
@@ -1788,7 +1788,7 @@ describe('TEC-15 refusing open review points in the CLI', () => {
   }
 
   for (const [label, options] of [['revue de tranche', { slice: 2 }], ['revue du chantier', { slice: 'chantier', extra: { last_slice: '3' } }]]) {
-    it(`CA-8 : set-reviewed refuse un point ouvert de la copie de travail de revue.md (${label}), sans rien écrire dans la spec`, () => {
+    it(`set-reviewed refuse un point ouvert de la copie de travail de revue.md (${label}), sans rien écrire dans la spec [TEC-15 CA-8]`, () => {
       const { directory } = implementedSlice(options)
       writeFileSync(revuePath(directory), openPoint)
       const before = specFileText(directory, 'FEAT-20')
@@ -1800,7 +1800,7 @@ describe('TEC-15 refusing open review points in the CLI', () => {
     })
   }
 
-  it('CA-8 : set-reviewed enregistre la revue quand tous les points de la copie de travail sont traités', () => {
+  it('set-reviewed enregistre la revue quand tous les points de la copie de travail sont traités [TEC-15 CA-8]', () => {
     const { directory } = implementedSlice({ slice: 2 })
     writeFileSync(revuePath(directory), allTreated)
     atelierOk(directory, 'set-reviewed')
@@ -1808,7 +1808,7 @@ describe('TEC-15 refusing open review points in the CLI', () => {
   })
 
   for (const command of [['close-check'], ['set-status', 'done']]) {
-    it(`CA-9 : ${command.join(' ')} refuse la clôture avec un point ouvert dans un revue.md commité`, () => {
+    it(`${command.join(' ')} refuse la clôture avec un point ouvert dans un revue.md commité [TEC-15 CA-9]`, () => {
       const directory = reviewedWithRevue(openPoint)
       const before = specFileText(directory, 'FEAT-20')
       const { status, output } = atelierRun(directory, ...command)
@@ -1817,7 +1817,7 @@ describe('TEC-15 refusing open review points in the CLI', () => {
       assert.equal(specFileText(directory, 'FEAT-20'), before)
     })
 
-    it(`CA-9 : ${command.join(' ')} refuse la clôture quand revue.md a des modifications non commitées`, () => {
+    it(`${command.join(' ')} refuse la clôture quand revue.md a des modifications non commitées [TEC-15 CA-9]`, () => {
       const directory = reviewedWithRevue(allTreated)
       writeFileSync(revuePath(directory), `${allTreated}\n- Note ajoutée après coup.\n`)
       const { status, output } = atelierRun(directory, ...command)
@@ -1826,19 +1826,19 @@ describe('TEC-15 refusing open review points in the CLI', () => {
     })
   }
 
-  it('CA-9 : close-check accepte la clôture avec un revue.md commité dont tous les points sont traités', () => {
+  it('close-check accepte la clôture avec un revue.md commité dont tous les points sont traités [TEC-15 CA-9]', () => {
     const { status, output } = atelierRun(reviewedWithRevue(allTreated), 'close-check')
     assert.equal(status, 0, output)
   })
 
-  it('CA-16 : un point reporté (tranche 2) ne bloque pas set-reviewed', () => {
+  it('un point reporté (tranche 2) ne bloque pas set-reviewed [TEC-15 CA-16]', () => {
     const { directory } = implementedSlice({ slice: 2 })
     writeFileSync(revuePath(directory), postponed)
     atelierOk(directory, 'set-reviewed')
     assert.equal(specData(directory, 'FEAT-20').slice, '3')
   })
 
-  it('CA-16 : un point dont la dernière occurrence est reporté (tranche 2) bloque la clôture et est listé', () => {
+  it('un point dont la dernière occurrence est reporté (tranche 2) bloque la clôture et est listé [TEC-15 CA-16]', () => {
     const { status, output } = atelierRun(reviewedWithRevue(postponed), 'close-check')
     assert.notEqual(status, 0, output)
     assert.match(output, /RD1\b.*Message d’erreur vague/)
@@ -1861,24 +1861,24 @@ describe('TEC-15 prefixes in agents, skills and templates', () => {
   }
 
   for (const [file, prefixes] of Object.entries(expectedPrefixes)) {
-    it(`CA-11 : ${file} mentionne ${prefixes.join(' et ')}`, () => {
+    it(`${file} mentionne ${prefixes.join(' et ')} [TEC-15 CA-11]`, () => {
       const text = pluginText(file)
       assert.deepEqual(prefixes.filter((prefix) => !mentions(text, prefix)), [])
     })
   }
 
-  it('CA-11 : la skill amend cite un identifiant de point de relecture', () => {
+  it('la skill amend cite un identifiant de point de relecture [TEC-15 CA-11]', () => {
     assert.ok(['RB', 'RD', 'SB', 'SD', 'OB', 'OD'].some((prefix) => mentions(pluginText('skills/amend/SKILL.md'), prefix)))
   })
 
   for (const file of ['skills/review/SKILL.md', 'skills/sign/SKILL.md', 'skills/build/SKILL.md']) {
-    it(`CA-11 : ${file} obtient les numéros par atelier review-ids`, () => {
+    it(`${file} obtient les numéros par atelier review-ids [TEC-15 CA-11]`, () => {
       assert.match(pluginText(file), /atelier review-ids/)
     })
   }
 
   for (const file of ['templates/revue.md', 'agents/reviewer.md', 'skills/review/SKILL.md']) {
-    it(`CA-11 : ${file} donne la forme (repris), (ex-…) et les traitements reporté et requalifié`, () => {
+    it(`${file} donne la forme (repris), (ex-…) et les traitements reporté et requalifié [TEC-15 CA-11]`, () => {
       const text = pluginText(file)
       assert.match(text, /\(repris\)/)
       assert.match(text, /\(ex-R[BD]\d+\)/)
@@ -1893,7 +1893,7 @@ describe('TEC-15 site reference pages', () => {
   // The table row whose first cell starts with `start` (a command or a glossary term).
   const row = (text, start) => text.split(/\r?\n/).find((line) => line.startsWith(`| ${start}`)) ?? ''
 
-  it('CA-19 : la page des commandes documente review-ids et le refus de set-reviewed et close-check sur un point ouvert', () => {
+  it('la page des commandes documente review-ids et le refus de set-reviewed et close-check sur un point ouvert [TEC-15 CA-19]', () => {
     const commands = site('reference/commandes.md')
     const reviewIds = row(commands, '`atelier review-ids')
     for (const prefix of ['RB', 'RD', 'SB', 'SD', 'OB', 'OD']) {
@@ -1904,7 +1904,7 @@ describe('TEC-15 site reference pages', () => {
     assert.match(row(commands, '`atelier close-check`'), /points?[^|]*(ouverts?|sans traitement)/i)
   })
 
-  it('CA-19 : le glossaire définit le point de relecture, ses six préfixes et le traitement', () => {
+  it('le glossaire définit le point de relecture, ses six préfixes et le traitement [TEC-15 CA-19]', () => {
     const glossary = site('reference/glossaire.md')
     const point = row(glossary, '**Point de relecture**')
     for (const prefix of ['RB', 'RD', 'SB', 'SD', 'OB', 'OD']) {
@@ -1954,7 +1954,7 @@ describe('TEC-23 checks run once per working tree', () => {
     return { status: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` }
   }
 
-  it('CA-1 : le hook de fin de tour ne relance pas les contrôles que checks vient de passer', () => {
+  it('le hook de fin de tour ne relance pas les contrôles que checks vient de passer [TEC-23 CA-1]', () => {
     const { directory, runs } = closableRepository()
     writeFileSync(join(directory, 'src', 'b.mjs'), 'code non commité\n')
     atelierOk(directory, 'checks')
@@ -1964,7 +1964,7 @@ describe('TEC-23 checks run once per working tree', () => {
     assert.equal(runs(), 1, 'le hook réutilise le vert de checks')
   })
 
-  it('CA-2 : checks ne relance pas des contrôles déjà verts sur cet état du code, et le dit', () => {
+  it('checks ne relance pas des contrôles déjà verts sur cet état du code, et le dit [TEC-23 CA-2]', () => {
     const { directory, runs } = closableRepository()
     atelierOk(directory, 'checks')
     const output = atelierOk(directory, 'checks')
@@ -1972,7 +1972,7 @@ describe('TEC-23 checks run once per working tree', () => {
     assert.match(output, /déjà verts?/i)
   })
 
-  it('CA-2 : checks réutilise le vert enregistré par le hook de fin de tour', () => {
+  it('checks réutilise le vert enregistré par le hook de fin de tour [TEC-23 CA-2]', () => {
     const { directory, runs } = closableRepository()
     writeFileSync(join(directory, 'src', 'b.mjs'), 'code non commité\n')
     assert.equal(hookGate(directory).status, 0)
@@ -1982,7 +1982,7 @@ describe('TEC-23 checks run once per working tree', () => {
   })
 
   for (const command of [['checks'], ['close-check'], ['set-status', 'done']]) {
-    it(`CA-3 : ${command.join(' ')} relance les contrôles quand un fichier a changé depuis le dernier vert`, () => {
+    it(`${command.join(' ')} relance les contrôles quand un fichier a changé depuis le dernier vert [TEC-23 CA-3]`, () => {
       const { directory, runs } = closableRepository()
       atelierOk(directory, 'checks')
       writeFileSync(join(directory, 'docs', 'notes.md'), 'note\n')
@@ -1991,7 +1991,7 @@ describe('TEC-23 checks run once per working tree', () => {
     })
   }
 
-  it('CA-4 : set-status done après un close-check réussi ne relance pas les contrôles', () => {
+  it('set-status done après un close-check réussi ne relance pas les contrôles [TEC-23 CA-4]', () => {
     const { directory, runs } = closableRepository()
     atelierOk(directory, 'close-check')
     assert.equal(runs(), 1)
@@ -2000,7 +2000,7 @@ describe('TEC-23 checks run once per working tree', () => {
     assert.equal(specData(directory, 'FEAT-20').status, 'done')
   })
 
-  it('CA-4 : set-status done refait les autres vérifications de clôture même quand les contrôles sont déjà verts', () => {
+  it('set-status done refait les autres vérifications de clôture même quand les contrôles sont déjà verts [TEC-23 CA-4]', () => {
     const { directory, runs } = closableRepository({ revue: open })
     atelierOk(directory, 'checks')
     const { status, output } = atelierRun(directory, 'set-status', 'done')
@@ -2010,21 +2010,21 @@ describe('TEC-23 checks run once per working tree', () => {
     assert.equal(specData(directory, 'FEAT-20').status, 'signed')
   })
 
-  it('CA-5 : checks --force relance des contrôles déjà verts', () => {
+  it('checks --force relance des contrôles déjà verts [TEC-23 CA-5]', () => {
     const { directory, runs } = closableRepository()
     atelierOk(directory, 'checks')
     atelierOk(directory, 'checks', '--force')
     assert.equal(runs(), 2)
   })
 
-  it('CA-6 : un échec n’est pas mémorisé, checks relance les contrôles', () => {
+  it('un échec n’est pas mémorisé, checks relance les contrôles [TEC-23 CA-6]', () => {
     const { directory, runs } = closableRepository({ fails: true })
     assert.notEqual(atelierRun(directory, 'checks').status, 0)
     assert.notEqual(atelierRun(directory, 'checks').status, 0)
     assert.equal(runs(), 2)
   })
 
-  it('CA-7 : sans empreinte calculable, les contrôles sont lancés comme aujourd’hui', () => {
+  it('sans empreinte calculable, les contrôles sont lancés comme aujourd’hui [TEC-23 CA-7]', () => {
     const { directory, runs } = closableRepository()
     writeFileSync(join(directory, '.atelier'), 'un fichier à la place du dossier\n')
     atelierOk(directory, 'checks')
