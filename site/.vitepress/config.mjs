@@ -1,4 +1,23 @@
+import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vitepress'
+
+// The plugin manifest is the single source of truth for the version shown on the site.
+const manifestUrl = new URL('../../plugins/atelier/.claude-plugin/plugin.json', import.meta.url)
+
+function readPluginVersion() {
+  let version
+  try {
+    version = JSON.parse(readFileSync(manifestUrl, 'utf8')).version
+  } catch (error) {
+    throw new Error(`Version d’atelier illisible dans plugins/atelier/.claude-plugin/plugin.json : ${error.message}`)
+  }
+  if (typeof version !== 'string' || !/^\d+\.\d+\.\d+$/.test(version)) {
+    throw new Error(`Version d’atelier invalide dans plugins/atelier/.claude-plugin/plugin.json : ${JSON.stringify(version)} (attendu : X.Y.Z)`)
+  }
+  return version
+}
+
+const version = readPluginVersion()
 
 export default defineConfig({
   lang: 'fr-FR',
@@ -8,10 +27,13 @@ export default defineConfig({
   cleanUrls: true,
   lastUpdated: true,
   themeConfig: {
+    version,
     nav: [
       { text: 'Démarrage rapide', link: '/guide/demarrage-rapide' },
       { text: 'La méthode', link: '/fondations/principes' },
       { text: 'Référence', link: '/reference/commandes' },
+      // activeMatch matches no page: the entry is a label, not a section to highlight.
+      { text: `v${version}`, link: '/projet/installation#mettre-a-jour', activeMatch: '^$' },
     ],
     sidebar: [
       {
