@@ -487,27 +487,44 @@ export function highestChantierNumber(names) {
   return highest
 }
 
+// Identifiers a commit subject carries: only bracketed ones (`[FEAT-7]`, `[TEC-15 CA-3]`), so that
+// prose tokens such as CA-13, UTF-8 or ISO-8601 never move the counter.
+export function commitSubjectIdentifiers(subject) {
+  return [...subject.matchAll(/\[([A-Z]{2,6})-(\d+)\b/gi)].map((match) => `${match[1].toUpperCase()}-${match[2]}`)
+}
+
+// Identifiers a branch name carries: only one opening a segment and followed by `-` or the end
+// (`fix/BUG-421-x`, `feature/JIRA-123`), so that bot branches such as `renovate/node-20.x` don't count.
+export function branchNameIdentifiers(name) {
+  return [...name.matchAll(/(?:^|\/)([A-Z]{2,6})-(\d+)(?=-|$)/gi)].map((match) => `${match[1].toUpperCase()}-${match[2]}`)
+}
+
+function gitLines(projectRoot, gitArguments) {
+  try {
+    return execFileSync('git', gitArguments, {
+      cwd: projectRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).split('\n').filter(Boolean)
+  } catch {
+    // No git history yet: directory names are enough.
+    return []
+  }
+}
+
+// Each source has its own extraction rule: chantier folders as they are, bracketed identifiers of
+// commit subjects, identifiers opening a segment of branch names.
 export function collectUsedIdentifiers(projectRoot, config) {
   const names = []
   const chantiersRoot = join(projectRoot, config.chantiersDir)
   if (existsSync(chantiersRoot)) {
     names.push(...readdirSync(chantiersRoot))
   }
-  const gitSources = [
-    ['log', '--all', '--format=%s', '-n', '5000'],
-    ['branch', '--all', '--format=%(refname:short)'],
-  ]
-  for (const gitArguments of gitSources) {
-    try {
-      const output = execFileSync('git', gitArguments, {
-        cwd: projectRoot,
-        encoding: 'utf8',
-        stdio: ['ignore', 'pipe', 'ignore'],
-      })
-      names.push(...output.split('\n').map((line) => line.toUpperCase()))
-    } catch {
-      // No git history yet: directory names are enough.
-    }
+  for (const subject of gitLines(projectRoot, ['log', '--all', '--format=%s', '-n', '5000'])) {
+    names.push(...commitSubjectIdentifiers(subject))
+  }
+  for (const branch of gitLines(projectRoot, ['branch', '--all', '--format=%(refname:short)'])) {
+    names.push(...branchNameIdentifiers(branch))
   }
   return names
 }

@@ -25,7 +25,7 @@ Utilisée par les commandes `/atelier:*` et par les hooks : l’agent la lance p
 | Commande | Rôle |
 |---|---|
 | `atelier status [--json]` | État du chantier actif, dont la tranche en cours (`slice` : numéro ou `"chantier"`, `sliceCount` : nombre de tranches du plan ; `null` pour un chantier à tranche unique), l’état de la revue (`reviewedCommit`, `reviewState` : `none`, `current` ou `stale`) et ses relations (parent, dépendances, origine, remplacement, enfants d’un EPIC, avec leur statut dans la branche courante). |
-| `atelier next-id <TYPE>` | Prochain identifiant du projet. |
+| `atelier next-id <TYPE>` | Prochain identifiant du projet. Le compteur est commun à tous les types et suit le plus grand numéro trouvé dans les dossiers de chantier, les identifiants en tête de segment des noms de branche (`fix/BUG-421-x`) et les identifiants entre crochets des sujets de commit (`[FEAT-7]`) : un `CA-13` ou un `UTF-8` dans la prose d’un commit ne compte pas. |
 | `atelier template <nom>` | Affiche un template (`spec-feat`, `spec-epic`, `plan`, `plan-epic`, `process`, `bilan`…). |
 | `atelier check-spec <fichier>` | Liste ce qui manque dans une spec, relations comprises (identifiants connus, parent EPIC unique et ouvert, ni auto-référence ni cycle). |
 | `atelier check-process` | Liste les lignes de la section « Process (atelier) » absentes du `CLAUDE.md` du projet. |
