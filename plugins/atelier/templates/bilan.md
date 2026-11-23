@@ -25,7 +25,10 @@ Pour un FIX : sections 1, 2, 4 et 7 suffisent, plus la cause réelle. -->
 <!-- Ce qui reste à faire, raccourcis assumés, chantiers à ouvrir. -->
 
 ## 7. Verdict de revue
-<!-- Repris de revue.md : revues de tranche et du chantier, points bloquants traités, points à discuter et leur traitement, exceptions acceptées. -->
+<!-- Repris de revue.md : revues de tranche et du chantier, puis un point par identifiant (RB1, RD1…) avec son traitement final, exceptions acceptées comprises. -->
+| Point | Traitement |
+|---|---|
+
 - Verdict :
 - Validé par :
 - Date :

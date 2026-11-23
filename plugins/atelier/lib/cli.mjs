@@ -15,6 +15,7 @@ import {
   chantierTreesOf,
   checkProcessProblems,
   checkSpec,
+  checksGreenOn,
   childrenOf,
   describeRelation,
   closeProblems,
@@ -33,6 +34,7 @@ import {
   isReviewExempt,
   loadConfig,
   nextChantierId,
+  nextReviewIds,
   matchesAny,
   nextStep,
   openChildren,
@@ -57,6 +59,7 @@ import {
   setTddRefusal,
   shortRefName,
   toProjectRelativePath,
+  withGreen,
 } from './core.mjs'
 
 const pluginRoot = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -75,6 +78,7 @@ const commands = {
   'set-reviewed': commandSetReviewed,
   'close-check': commandCloseCheck,
   'tests-changed': commandTestsChanged,
+  'review-ids': commandReviewIds,
   bypass: commandBypass,
   checks: commandChecks,
   'hook-guard': hookGuard,
@@ -652,13 +656,22 @@ function commandSetTdd([value, ...reasonWords]) {
     : 'Chantier sans TDD : pas de phase tests d’abord imposée.')
 }
 
-// Records the reviewed commit (full hash of HEAD) once the review has no blocking point left.
+// Project-relative path of a file of the chantier directory, as git lists it.
+function chantierFilePath(projectRoot, chantier, name) {
+  return toProjectRelativePath(projectRoot, join(chantier.directory, name))
+}
+
+function samePath(config, file, other) {
+  return config.ignoreCase ? file.toLowerCase() === other.toLowerCase() : file === other
+}
+
+// Records the reviewed commit (full hash of HEAD) once every point of revue.md is treated.
 function commandSetReviewed() {
   const projectRoot = findProjectRoot()
   const config = requireConfig(projectRoot)
   const chantier = requireActiveChantier(projectRoot, config)
   const uncommitted = uncommittedFiles(projectRoot)
-  const specPath = toProjectRelativePath(projectRoot, join(chantier.directory, 'spec.md'))
+  const specPath = chantierFilePath(projectRoot, chantier, 'spec.md')
   const { model, slice } = sliceState(chantier)
   const sliceBase = chantier.spec.data.slice_base || null
   const sliceBaseIsAncestor = model === 'sliced' && sliceBase ? isAncestorOfHead(projectRoot, sliceBase) : null
@@ -669,7 +682,7 @@ function commandSetReviewed() {
       ? sliceCodeFiles(projectRoot, config, sliceBase, chantier.spec.data.tdd === 'yes')
       : null,
     uncommittedCode: reviewCodeFiles(uncommitted, config),
-    specUncommitted: uncommitted.some((file) => (config.ignoreCase ? file.toLowerCase() === specPath.toLowerCase() : file === specPath)),
+    specUncommitted: uncommitted.some((file) => samePath(config, file, specPath)),
     changedTests: testDrivenPhase(chantier) === 'implementing'
       ? testFilesChangedSince(projectRoot, config, chantier.spec.data.tests_commit)
       : [],
@@ -698,8 +711,12 @@ function sliceCodeFiles(projectRoot, config, sliceBase, testDriven) {
 function closeCheckProblems(projectRoot, config, chantier) {
   let uncommittedCode = []
   let uncommittedError = null
+  let revueUncommitted = false
+  const revuePath = chantierFilePath(projectRoot, chantier, 'revue.md')
   try {
-    uncommittedCode = reviewCodeFiles(uncommittedFiles(projectRoot), config)
+    const uncommitted = uncommittedFiles(projectRoot)
+    uncommittedCode = reviewCodeFiles(uncommitted, config)
+    revueUncommitted = uncommitted.some((file) => samePath(config, file, revuePath))
   } catch (error) {
     uncommittedError = error.message
   }
@@ -708,7 +725,8 @@ function closeCheckProblems(projectRoot, config, chantier) {
     reviewFacts: reviewFacts(projectRoot, config, chantier),
     uncommittedCode,
     uncommittedError,
-    checksFailure: runChecks(projectRoot, config),
+    revueUncommitted,
+    checksFailure: runChecksOnce(projectRoot, config).failure,
     index: needsIndex(chantier) ? chantierIndex(projectRoot, config) : null,
   })
 }
@@ -729,6 +747,25 @@ function commandCloseCheck() {
     return
   }
   console.log('Clôture possible : revue à jour, travail commité, contrôles verts.')
+}
+
+function commandReviewIds(options) {
+  const projectRoot = findProjectRoot()
+  const config = requireConfig(projectRoot)
+  const chantier = requireActiveChantier(projectRoot, config)
+  const readText = (name) => {
+    const filePath = join(chantier.directory, name)
+    return existsSync(filePath) ? readFileSync(filePath, 'utf8') : null
+  }
+  const ids = nextReviewIds({ revue: chantier.revue, spec: readText('spec.md'), decisions: readText('decisions.md') })
+  if (options.includes('--json')) {
+    console.log(JSON.stringify(ids, null, 2))
+    return
+  }
+  const next = Object.entries(ids.next).map(([prefix, number]) => `${prefix}${number}`).join(', ')
+  const open = ids.open.map(({ id, title, section }) => `- ${id}. ${title} (section « ${section} »)`)
+  console.log(`Prochains identifiants : ${next}.`)
+  console.log(open.length ? `Points de revue ouverts :\n${open.join('\n')}` : 'Aucun point de revue ouvert.')
 }
 
 function commandTestsChanged() {
@@ -787,20 +824,45 @@ function runChecks(projectRoot, config) {
   return null
 }
 
-function commandChecks() {
+// Runs the configured checks unless they already passed on the current working tree (the state
+// shared with the Stop hook), then records a pass. Without a tree id, the checks always run.
+function runChecksOnce(projectRoot, config, { force = false } = {}) {
+  if (config.checks.length === 0) {
+    return { failure: null, reused: false }
+  }
+  const tree = currentTreeId(projectRoot)
+  const state = tree === null ? {} : cachedGateState(projectRoot)
+  if (!force && checksGreenOn(state, tree)) {
+    return { failure: null, reused: true }
+  }
+  const failure = runChecks(projectRoot, config)
+  if (!failure && tree !== null) {
+    try {
+      writeFileSync(gateStatePath(projectRoot), JSON.stringify(withGreen(cachedGateState(projectRoot), tree), null, 2))
+    } catch {
+      // The pass is only a cache: failing to record it means running the checks again next time.
+    }
+  }
+  return { failure, reused: false }
+}
+
+function commandChecks(options) {
   const projectRoot = findProjectRoot()
   const config = requireConfig(projectRoot)
   if (config.checks.length === 0) {
     console.log('Aucun contrôle configuré dans .claude/atelier.json.')
     return
   }
-  const failure = runChecks(projectRoot, config)
+  const { failure, reused } = runChecksOnce(projectRoot, config, { force: options.includes('--force') })
   if (failure) {
     console.log(`❌ ${failure.check.name} (${failure.check.command})\n${failure.output}`)
     process.exitCode = 2
     return
   }
-  console.log(`✅ ${config.checks.map((check) => check.name).join(', ')}`)
+  const names = config.checks.map((check) => check.name).join(', ')
+  console.log(reused
+    ? `✅ ${names} : déjà verts sur cet état du code, non relancés (atelier checks --force pour les relancer).`
+    : `✅ ${names}`)
 }
 
 // ---------- Hooks ----------
@@ -871,13 +933,39 @@ function gateStatePath(projectRoot) {
   return join(projectRoot, '.atelier', 'gate.json')
 }
 
+function readGateState(projectRoot) {
+  const path = gateStatePath(projectRoot)
+  return existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : {}
+}
+
+// The gate state read as a cache: unreadable means empty, so the checks simply run.
+function cachedGateState(projectRoot) {
+  try {
+    return readGateState(projectRoot)
+  } catch {
+    return {}
+  }
+}
+
+// Id of the working tree, or null when git cannot compute it (no repository, `.atelier` unusable).
+function currentTreeId(projectRoot) {
+  try {
+    mkdirSync(join(projectRoot, '.atelier'), { recursive: true })
+    return workingTreeId(projectRoot)
+  } catch {
+    return null
+  }
+}
+
 // Identifies the content of the working tree (tracked and untracked files, `.atelier/` excluded),
 // through a separate index kept in `.atelier/` so that the real index is never touched.
 function workingTreeId(projectRoot) {
   const env = { ...process.env, GIT_INDEX_FILE: join(projectRoot, '.atelier', 'gate-index') }
   // No exclude pathspec: git rejects it when `.atelier/` is ignored, as /atelier:init does.
+  // When it is not ignored, `add` stages the gate's own index, which changes under git's feet:
+  // `--force` lets `rm` drop it anyway (without it, rm fails and no tree id can be computed).
   execFileSync('git', ['add', '--all'], { cwd: projectRoot, env, stdio: 'ignore' })
-  execFileSync('git', ['rm', '-r', '--cached', '--quiet', '--ignore-unmatch', '.atelier'], { cwd: projectRoot, env, stdio: 'ignore' })
+  execFileSync('git', ['rm', '-r', '--cached', '--force', '--quiet', '--ignore-unmatch', '.atelier'], { cwd: projectRoot, env, stdio: 'ignore' })
   return execFileSync('git', ['write-tree'], { cwd: projectRoot, env, encoding: 'utf8' }).trim()
 }
 
@@ -910,7 +998,7 @@ function gate(projectRoot) {
     changedTests: testDrivenPhase(chantier) === 'implementing'
       ? testFilesChangedSince(projectRoot, config, chantier.spec.data.tests_commit)
       : [],
-    state: existsSync(statePath) ? JSON.parse(readFileSync(statePath, 'utf8')) : {},
+    state: readGateState(projectRoot),
     runChecks: () => runChecks(projectRoot, config),
   })
   writeFileSync(statePath, JSON.stringify(decision.state, null, 2))

@@ -16,7 +16,7 @@ La signature est une décision humaine : « cette spec suffit pour lancer le cha
 
 ## 2. Relecture critique
 
-Lance le sous-agent `atelier:spec-critic` avec le chemin de la spec (et le dossier racine du projet). Présente ses remarques classées **bloquant** / **à discuter**, sans les noyer. Pour chaque point retenu par l'utilisateur, modifie la spec. Les points écartés n'ont pas besoin d'être tracés.
+`atelier review-ids --json` donne le premier numéro libre des points de relecture de spec (`next.SB`, `next.SD`). Lance le sous-agent `atelier:spec-critic` avec le chemin de la spec (et le dossier racine du projet) et ces deux numéros. Présente ses remarques classées **bloquant** (`SB1`, `SB2`…) / **à discuter** (`SD1`…), chacune avec son identifiant, sans les noyer. Si tu relances le sous-agent dans la même session, continue la numérotation à la suite de ce que tu as déjà présenté. Pour chaque point retenu par l'utilisateur, modifie la spec ; quand le point change quelque chose, cite son identifiant dans la spec ou dans `decisions.md`. Les points écartés n'ont pas besoin d'être tracés.
 
 ## 3. Confirmation
 

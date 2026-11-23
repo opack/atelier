@@ -2065,3 +2065,782 @@ describe('FEAT-7 vocabulary of the review', () => {
     assert.deepEqual(offenders, [])
   })
 })
+
+// A revue.md with the given sections: { title, blocking: [[point, file, treatment]], discuss: [...] }.
+function revueOf(sections) {
+  const table = (rows) => ['| Point | Fichier | Traitement |', '|---|---|---|', ...rows.map((cells) => `| ${cells.join(' | ')} |`)].join('\n')
+  const body = sections.map(({ title, blocking = [], discuss = [] }) =>
+    `## ${title}\n- Commit revu : abc1234\n\n### Bloquant\n${table(blocking)}\n\n### À discuter\n${table(discuss)}\n\n- Bilan de la revue : ok\n`)
+  return `# Revue : TEC-30 Essai\n\n<!-- consigne -->\n\n${body.join('\n')}`
+}
+
+// The fields of each analysed row that CA-12 and CA-15 are about.
+function pointsOf(parsed) {
+  return parsed.sections.flatMap((section) => section.rows.map(({ id, marker, title, treatment, table }) =>
+    ({ section: section.title, table, id, marker, title, treatment })))
+}
+
+describe('TEC-15 reading revue.md', () => {
+  it('CA-12 : extrait l’identifiant, le marqueur (repris, ex-RD3 ou aucun) et l’intitulé de chaque point', () => {
+    const text = revueOf([
+      { title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB2. Intitulé', '`a.mjs`', 'corrigé (abc1234)']], discuss: [['RD3. Autre point', '`b.mjs`', 'requalifié (RB4)']] },
+      { title: 'Revue : tranche 2 : 2026-11-22', blocking: [['RB2 (repris). Intitulé', '`a.mjs`', ''], ['RB4 (ex-RD3). Intitulé', '`b.mjs`', 'écarté : hors périmètre']] },
+    ])
+    assert.deepEqual(pointsOf(core.parseReviewPoints(text)), [
+      { section: 'Revue : tranche 1 : 2026-11-21', table: 'Bloquant', id: 'RB2', marker: null, title: 'Intitulé', treatment: 'corrigé (abc1234)' },
+      { section: 'Revue : tranche 1 : 2026-11-21', table: 'À discuter', id: 'RD3', marker: null, title: 'Autre point', treatment: 'requalifié (RB4)' },
+      { section: 'Revue : tranche 2 : 2026-11-22', table: 'Bloquant', id: 'RB2', marker: 'repris', title: 'Intitulé', treatment: '' },
+      { section: 'Revue : tranche 2 : 2026-11-22', table: 'Bloquant', id: 'RB4', marker: 'ex-RD3', title: 'Intitulé', treatment: 'écarté : hors périmètre' },
+    ])
+  })
+
+  it('CA-12 : lit un revue.md en CRLF, aux cellules entourées d’espaces superflus', () => {
+    const text = revueOf([{ title: 'Revue : chantier : 2026-11-21', blocking: [['  RB1. Push non vérifié  ', '`a.mjs`', '   corrigé (abc1234)   ']] }])
+      .replace(/\n/g, '\r\n')
+    assert.deepEqual(pointsOf(core.parseReviewPoints(text)), [
+      { section: 'Revue : chantier : 2026-11-21', table: 'Bloquant', id: 'RB1', marker: null, title: 'Push non vérifié', treatment: 'corrigé (abc1234)' },
+    ])
+  })
+
+  it('CA-12 : seuls les tableaux sous « ### Bloquant » et « ### À discuter » sont des tableaux de points', () => {
+    const text = `${revueOf([{ title: 'Revue : 2026-11-21', blocking: [['RB1. Un point', '`a.mjs`', 'corrigé (abc1234)']] }])}\n### Contrôles\n| Point | Fichier | Traitement |\n|---|---|---|\n| RB9. Hors tableau de points | \`x\` | |\n`
+    assert.deepEqual(pointsOf(core.parseReviewPoints(text)).map((point) => point.id), ['RB1'])
+  })
+
+  it('CA-12 : une ligne vide au milieu d’un tableau de points ne fait perdre aucun point', () => {
+    const text = revueOf([{ title: 'Revue : 2026-11-21', blocking: [['RB1. Un', '`a.mjs`', 'corrigé (abc1234)'], ['RB2. Deux', '`b.mjs`', ''], ['RB3. Trois', '`c.mjs`', 'écarté : doublon']] }])
+      .replace('corrigé (abc1234) |\n', 'corrigé (abc1234) |\n\n')
+    assert.deepEqual(pointsOf(core.parseReviewPoints(text)).map(({ id, treatment }) => ({ id, treatment })), [
+      { id: 'RB1', treatment: 'corrigé (abc1234)' },
+      { id: 'RB2', treatment: '' },
+      { id: 'RB3', treatment: 'écarté : doublon' },
+    ])
+  })
+
+  it('CA-12 : un tableau de points sans ligne d’en-tête ne perd pas son premier point', () => {
+    const text = '# Revue : TEC-30 Essai\n\n## Revue : 2026-11-21\n\n### Bloquant\n| RB1. Un | `a.mjs` | |\n| RB2. Deux | `b.mjs` | |\n'
+    assert.deepEqual(pointsOf(core.parseReviewPoints(text)).map((point) => point.id), ['RB1', 'RB2'])
+  })
+
+  it('CA-12 : une ligne dont le nombre de cellules diffère de l’en-tête est marquée', () => {
+    const text = revueOf([{ title: 'Revue : 2026-11-21', blocking: [['RB1. Pipe non échappé', '`a | b`', 'corrigé (abc1234)'], ['RB2. Normal', '`c.mjs`', '']] }])
+    const rows = core.parseReviewPoints(text).sections[0].rows
+    assert.deepEqual(rows.map(({ id, cellCountMismatch }) => ({ id, cellCountMismatch })), [
+      { id: 'RB1', cellCountMismatch: true },
+      { id: 'RB2', cellCountMismatch: false },
+    ])
+  })
+
+  it('CA-12 : un tableau dans un commentaire HTML n’est pas lu, comme un bloc de code', () => {
+    const text = revueOf([{ title: 'Revue : 2026-11-21', blocking: [['RB1. Vrai point', '`a.mjs`', '']] }])
+      .replace('### Bloquant\n', '### Bloquant\n<!-- Exemple :\n| Point | Fichier | Traitement |\n|---|---|---|\n| RB9. Exemple | `x` | |\n-->\n')
+    assert.deepEqual(pointsOf(core.parseReviewPoints(text)).map((point) => point.id), ['RB1'])
+  })
+
+  it('CA-15 : un \| dans une cellule est un | littéral, pas un séparateur de colonne', () => {
+    const text = revueOf([{ title: 'Revue : 2026-11-21', blocking: [['RB1. Option a \\| b', '`a \\| b`', 'corrigé (abc1234)']] }])
+    const [point] = core.parseReviewPoints(text).sections[0].rows
+    assert.equal(point.treatment, 'corrigé (abc1234)')
+    assert.equal(point.file, '`a | b`')
+    assert.equal(point.title, 'Option a | b')
+  })
+
+  it('readChantier expose le texte de revue.md (null sans fichier)', () => {
+    const directory = temporaryDirectory('atelier-tec15-')
+    const config = { ...DEFAULT_CONFIG, chantiersDir: 'docs/chantiers' }
+    const text = revueOf([{ title: 'Revue : 2026-11-21' }])
+    writeChantier(directory, { id: 'TEC-30', files: { 'revue.md': text } })
+    writeChantier(directory, { id: 'TEC-31' })
+    assert.equal(core.readChantier(directory, config, 'TEC-30').revue, text)
+    assert.equal(core.readChantier(directory, config, 'TEC-31').revue, null)
+  })
+})
+
+// The problems found by the review checks in a revue.md text.
+const pointProblems = (text, options = {}) => core.reviewPointProblems(core.parseReviewPoints(text), options)
+const citing = (problems, pattern) => problems.filter((problem) => pattern.test(problem))
+// A revue.md with one review section whose body is given as is.
+const revueWithBody = (body) => `# Revue : TEC-30 Essai\n\n## Revue : 2026-11-21\n\n${body}`
+const pointTable = '| Point | Fichier | Traitement |\n|---|---|---|\n'
+
+describe('TEC-15 checking the review points', () => {
+  it('CA-3 : c’est la dernière occurrence d’un point qui dit s’il est ouvert', () => {
+    const text = revueOf([
+      { title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB1. Premier', '`a.mjs`', ''], ['RB2. Second', '`b.mjs`', 'corrigé (abc1234)']] },
+      { title: 'Revue : tranche 1 : 2026-11-22', blocking: [['RB1 (repris). Premier', '`a.mjs`', 'corrigé (def5678)'], ['RB2 (repris). Second', '`b.mjs`', '']] },
+    ])
+    const problems = pointProblems(text)
+    assert.equal(citing(problems, /\bRB2\b/).length, 1)
+    assert.deepEqual(citing(problems, /\bRB1\b/), [])
+  })
+
+  it('CA-4 : un traitement commence par un mot-clé, quelle que soit sa casse', () => {
+    for (const cell of ['corrigé (abc1234)', 'Corrigé (abc1234)', 'test ajouté (abc1234)', 'Spec amendée (2026-11-21)',
+      'exception acceptée par Opack : coût', 'écarté : hors périmètre', 'Écarté : doublon', 'reporté (FIX-12)',
+      'reporté (tranche 3)', 'requalifié (RB4)', 'sans objet : code supprimé', 'SANS OBJET']) {
+      assert.equal(core.isTreatment(cell), true, cell)
+    }
+    for (const cell of ['', '   ', 'À corriger au build', 'TODO', 'à voir', 'correction à faire']) {
+      assert.equal(core.isTreatment(cell), false, cell)
+    }
+  })
+
+  it('CA-4 : un point sans traitement reconnu est signalé avec son identifiant et son intitulé, RB comme RD', () => {
+    const text = revueOf([{
+      title: 'Revue : 2026-11-21',
+      blocking: [['RB1. Push non vérifié', '`a.mjs`', ''], ['RB2. Commit non signé', '`b.mjs`', '   '], ['RB3. Bien traité', '`c.mjs`', 'Corrigé (abc1234)']],
+      discuss: [['RD1. Nom ambigu', '`d.mjs`', 'À corriger au build'], ['RD2. Doublon', '`e.mjs`', 'écarté : hors périmètre']],
+    }])
+    const problems = pointProblems(text)
+    assert.equal(problems.length, 3)
+    assert.equal(citing(problems, /\bRB1\b.*Push non vérifié/).length, 1)
+    assert.equal(citing(problems, /\bRB2\b.*Commit non signé/).length, 1)
+    assert.equal(citing(problems, /\bRD1\b.*Nom ambigu/).length, 1)
+  })
+
+  it('CA-5 : un identifiant présenté comme nouveau dans deux sections est signalé avec les titres des deux sections', () => {
+    const text = revueOf([
+      { title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB1. Premier', '`a.mjs`', 'corrigé (abc1234)']] },
+      { title: 'Revue : tranche 2 : 2026-11-22', blocking: [['RB1. Autre chose', '`b.mjs`', 'corrigé (def5678)']] },
+    ])
+    const problems = citing(pointProblems(text), /\bRB1\b/)
+    assert.equal(problems.length, 1)
+    assert.match(problems[0], /Revue : tranche 1 : 2026-11-21/)
+    assert.match(problems[0], /Revue : tranche 2 : 2026-11-22/)
+  })
+
+  it('CA-5 : un identifiant nouveau dans deux sections de même titre est signalé, et le premier point ouvert n’est pas masqué', () => {
+    const text = revueOf([
+      { title: 'Revue : 2026-11-22', blocking: [['RB1. Premier', '`a.mjs`', '']] },
+      { title: 'Revue : 2026-11-22', blocking: [['RB1. Autre chose', '`b.mjs`', 'corrigé (def5678)']] },
+    ])
+    assert.equal(citing(pointProblems(text), /présenté comme nouveau/).length, 1)
+  })
+
+  it('CA-5 : un identifiant présent deux fois dans une même section est signalé', () => {
+    const text = revueOf([{
+      title: 'Revue : 2026-11-21',
+      blocking: [['RB1. Premier', '`a.mjs`', 'corrigé (abc1234)'], ['RB1. Second', '`b.mjs`', 'corrigé (abc1234)']],
+    }])
+    const problems = citing(pointProblems(text), /\bRB1\b/)
+    assert.equal(problems.length, 1)
+    assert.match(problems[0], /Revue : 2026-11-21/)
+  })
+
+  it('CA-6 : une cellule Point qui n’a pas la forme définie est signalée, avec son contenu', () => {
+    const cells = ['B1. Ancien format', '1. Numéro seul', 'Texte libre sans identifiant', 'RB1 Sans point final', 'RB2.Sans espace', 'Aucun']
+    const text = revueOf([{ title: 'Revue : 2026-11-21', blocking: cells.map((cell) => [cell, '`a.mjs`', 'corrigé (abc1234)']) }])
+    const problems = pointProblems(text)
+    for (const cell of cells) {
+      assert.equal(citing(problems, new RegExp(cell.replace(/[.()]/g, '\\$&'))).length, 1, cell)
+    }
+  })
+
+  it('CA-6 : la ligne « Aucun » (ou « aucun. ») seule n’est pas signalée', () => {
+    const text = revueOf([{ title: 'Revue : 2026-11-21', blocking: [['Aucun', '', '']], discuss: [['aucun.', '', '']] }])
+    assert.deepEqual(pointProblems(text), [])
+  })
+
+  it('CA-6 : une ligne dont le nombre de cellules diffère de l’en-tête est signalée (| non échappé)', () => {
+    const text = revueOf([{ title: 'Revue : 2026-11-21', blocking: [['RB1. Pipe non échappé', '`a.mjs`', 'corrigé (abc1234)', 'en trop']] }])
+    assert.equal(citing(pointProblems(text), /\bRB1\b/).length, 1)
+  })
+
+  it('CA-6 : une ligne mal formée suivie d’un séparateur n’est jamais prise pour l’en-tête (RD6, RD10, RD11)', () => {
+    const one = '| RB1. Un | `a.mjs` | corrigé (abc1234) |\n'
+    const two = '| RB2. Deux | `b.mjs` | corrigé (abc1234) |\n'
+    const cases = {
+      'RD6, ouvre le tableau': `### Bloquant\n| B1. Ancien | \`a.mjs\` | corrigé (abc1234) |\n|---|---|---|\n${two}`,
+      'RD10, en plein tableau': `### Bloquant\n${pointTable}${one}| B1. Ancien | Point | c |\n|---|---|---|\n${two}`,
+      'RD11, après une ligne vide': `### Bloquant\n${pointTable}${one}\n| B1. Ancien | Point | Traitement |\n|---|---|---|\n${two}`,
+      'RD11, après un commentaire': `### Bloquant\n${pointTable}${one}<!-- note -->\n| B1. Ancien | Point | Traitement |\n|---|---|---|\n${two}`,
+    }
+    for (const [name, body] of Object.entries(cases)) {
+      assert.equal(citing(pointProblems(revueWithBody(body)), /B1\. Ancien/).length, 1, name)
+    }
+  })
+
+  it('CA-6 : un point bien formé qui contient une cellule « Point », suivi d’un séparateur, est lu comme un point (RD7)', () => {
+    const text = revueWithBody(`### Bloquant\n| RB1. x | Point | c |\n|---|---|---|\n| RB2. Deux | \`b.mjs\` | corrigé (abc1234) |\n`)
+    assert.equal(citing(pointProblems(text), /\bRB1\b/).length, 1)
+  })
+
+  it('CA-6 : un en-tête mal écrit est signalé comme un en-tête non reconnu', () => {
+    for (const header of ['| point | Fichier | Traitement |', '| **Point** | Fichier | Traitement |', '| Point | File | Traitement |']) {
+      const text = revueWithBody(`### Bloquant\n${header}\n|---|---|---|\n| RB1. Un | \`a.mjs\` | corrigé (abc1234) |\n`)
+      assert.equal(citing(pointProblems(text), /en-tête/i).length, 1, header)
+    }
+  })
+
+  it('CA-7 : un revue.md aux sections « ## Tour » (antérieur à FEAT-7) n’est pas contrôlé', () => {
+    const text = revueOf([
+      { title: 'Tour 1', blocking: [['B1. Ancien format', '`a.mjs`', '']], discuss: [['1. Numéro seul', '`b.mjs`', '']] },
+      { title: 'Tour 2', blocking: [['B1. Ancien format', '`a.mjs`', 'À corriger']] },
+    ])
+    assert.deepEqual(pointProblems(text), [])
+    assert.deepEqual(pointProblems(text, { atClose: true }), [])
+  })
+
+  it('CA-7 : un revue.md qui garde une section « ## Tour » échappe au contrôle, même avec d’autres sections (RD5, spec §4)', () => {
+    const text = revueOf([
+      { title: 'Tour 1', blocking: [['B1. Ancien format', '`a.mjs`', 'corrigé (abc1234)']] },
+      { title: 'Revue : 2026-11-22', blocking: [['B2. Nouveau', '`b.mjs`', '']] },
+    ])
+    assert.deepEqual(pointProblems(text), [])
+  })
+
+  it('CA-7 : un revue.md aux autres sections, sans aucun RB/RD mais avec des points B1., est contrôlé', () => {
+    const text = revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', blocking: [['B1. Ancien format', '`a.mjs`', 'corrigé (abc1234)']], discuss: [['D1. Autre', '`b.mjs`', 'écarté : doublon']] }])
+    const problems = pointProblems(text)
+    assert.equal(citing(problems, /B1\. Ancien format/).length, 1)
+    assert.equal(citing(problems, /D1\. Autre/).length, 1)
+  })
+
+  it('CA-13 : un RD requalifié en RB, puis traité sous son nouvel identifiant, ne laisse aucun problème', () => {
+    const text = revueOf([
+      { title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD3. Commit non signé', '`a.mjs`', 'requalifié (RB4)']] },
+      { title: 'Revue : tranche 1 : 2026-11-22', blocking: [['RB4 (ex-RD3). Commit non signé', '`a.mjs`', 'corrigé (abc1234)']] },
+    ])
+    assert.deepEqual(pointProblems(text), [])
+    assert.deepEqual(pointProblems(text, { atClose: true }), [])
+  })
+
+  it('CA-14 : un RB dans le tableau « À discuter » ou un RD dans le tableau « Bloquant » est signalé', () => {
+    const text = revueOf([{
+      title: 'Revue : 2026-11-21',
+      blocking: [['RD1. Mal rangé', '`a.mjs`', 'corrigé (abc1234)']],
+      discuss: [['RB1. Mal rangé aussi', '`b.mjs`', 'corrigé (abc1234)']],
+    }])
+    const problems = pointProblems(text)
+    assert.equal(citing(problems, /\bRD1\b/).length, 1)
+    assert.equal(citing(problems, /\bRB1\b/).length, 1)
+  })
+
+  it('CA-16 : un point reporté à une tranche est accepté à l’enregistrement de la revue, refusé à la clôture', () => {
+    const text = revueOf([{
+      title: 'Revue : tranche 1 : 2026-11-21',
+      discuss: [['RD1. Reporté en tranche', '`a.mjs`', 'Reporté (tranche 2) : avec CA-6'], ['RD2. Reporté ailleurs', '`b.mjs`', 'reporté (FIX-12)']],
+    }])
+    assert.deepEqual(pointProblems(text), [])
+    const atClose = pointProblems(text, { atClose: true })
+    assert.equal(atClose.length, 1)
+    assert.match(atClose[0], /\bRD1\b/)
+  })
+
+  it('CA-16 : un point reporté à une tranche puis traité dans une revue suivante n’est pas refusé à la clôture', () => {
+    const text = revueOf([
+      { title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD1. Reporté', '`a.mjs`', 'reporté (tranche 2)']] },
+      { title: 'Revue : tranche 2 : 2026-11-22', discuss: [['RD1 (repris). Reporté', '`a.mjs`', 'corrigé (abc1234)']] },
+    ])
+    assert.deepEqual(pointProblems(text, { atClose: true }), [])
+  })
+
+  it('CA-17 : un titre ### proche de « Bloquant » ou « À discuter » est signalé', () => {
+    for (const title of ['Bloquants', 'bloquant', 'A discuter', 'À discuter :', '**Bloquant**']) {
+      const text = revueWithBody(`### ${title}\n${pointTable}| RB1. Un | \`a.mjs\` | corrigé (abc1234) |\n`)
+      assert.equal(citing(pointProblems(text), new RegExp(title.replace(/[*]/g, '\\$&'))).length, 1, title)
+    }
+  })
+
+  it('CA-17 : une ligne de point hors d’un tableau de points est signalée, une phrase qui cite un point ne l’est pas', () => {
+    const text = `${revueOf([{ title: 'Revue : 2026-11-21', discuss: [['RD1. Un', '`a.mjs`', 'corrigé (abc1234)']] }])}\n- RD1 corrigé, voir plus haut.\n\n### Contrôles\n${pointTable}| RB1. Perdu | \`x\` | corrigé (abc1234) |\n`
+    const problems = pointProblems(text)
+    assert.equal(problems.length, 1)
+    assert.match(problems[0], /\bRB1\b/)
+  })
+
+  it('CA-5 : un identifiant repris deux fois dans une même section est signalé (OB2)', () => {
+    const text = revueOf([
+      { title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB1. Premier', '`a.mjs`', 'corrigé (abc1234)']] },
+      { title: 'Revue : tranche 1 : 2026-11-22', blocking: [['RB1 (repris). Premier', '`a.mjs`', ''], ['RB1 (repris). Premier', '`a.mjs`', 'corrigé (def5678)']] },
+    ])
+    const problems = citing(pointProblems(text), /\bRB1\b/)
+    assert.equal(problems.length, 1)
+    assert.match(problems[0], /Revue : tranche 1 : 2026-11-22/)
+  })
+
+  it('CA-16 : un report à une tranche écrit librement est aussi refusé à la clôture (OD12)', () => {
+    for (const treatment of ['reporté en tranche 3', 'Reporté (tranche 2, avec CA-6)']) {
+      const text = revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD1. Reporté', '`a.mjs`', treatment]] }])
+      assert.deepEqual(pointProblems(text), [], treatment)
+      assert.equal(citing(pointProblems(text, { atClose: true }), /\bRD1\b/).length, 1, treatment)
+    }
+  })
+
+  it('CA-16 : un report à une tranche accordé au féminin est aussi refusé à la clôture', () => {
+    for (const treatment of ['Reportée (tranche 2)', 'reportée en tranche 3']) {
+      const text = revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD1. Reporté', '`a.mjs`', treatment]] }])
+      assert.deepEqual(pointProblems(text), [], treatment)
+      assert.equal(citing(pointProblems(text, { atClose: true }), /\bRD1\b/).length, 1, treatment)
+    }
+  })
+
+  it('CA-18 : un point requalifié vers un identifiant qui ne le reprend jamais (ex-) est signalé', () => {
+    const alone = revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD3. Commit non signé', '`a.mjs`', 'requalifié (RB4)']] }])
+    const withoutEx = revueOf([
+      { title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD3. Commit non signé', '`a.mjs`', 'requalifié (RB4)']] },
+      { title: 'Revue : tranche 1 : 2026-11-22', blocking: [['RB4. Autre chose', '`b.mjs`', 'corrigé (abc1234)']] },
+    ])
+    for (const [name, text] of Object.entries({ alone, withoutEx })) {
+      assert.equal(citing(pointProblems(text), /\bRD3\b/).length, 1, name)
+    }
+  })
+
+  it('CA-18 : un point marqué repris sans occurrence plus haut est signalé', () => {
+    const text = revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB7 (repris). Jamais présenté', '`a.mjs`', 'corrigé (abc1234)']] }])
+    const problems = pointProblems(text)
+    assert.equal(problems.length, 1)
+    assert.match(problems[0], /\bRB7\b/)
+  })
+
+  it('CA-18 : un point ex-RD3 sans RD3 plus haut est signalé', () => {
+    const text = revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB4 (ex-RD3). Commit non signé', '`a.mjs`', 'corrigé (abc1234)']] }])
+    const problems = pointProblems(text)
+    assert.equal(problems.length, 1)
+    assert.match(problems[0], /\bRB4\b/)
+    assert.match(problems[0], /\bRD3\b/)
+  })
+
+  it('CA-18 : dans une même section, la requalification est reprise même si le tableau Bloquant précède (OD19)', () => {
+    const text = revueOf([{
+      title: 'Revue : tranche 1 : 2026-11-21',
+      blocking: [['RB4 (ex-RD3). Commit non signé', '`a.mjs`', 'corrigé (abc1234)']],
+      discuss: [['RD3. Commit non signé', '`a.mjs`', 'requalifié (RB4)']],
+    }])
+    assert.deepEqual(pointProblems(text), [])
+  })
+
+  it('CA-18 : entre sections, l’ordre compte : ex- et repris avant le point d’origine sont signalés (OD22)', () => {
+    const exBefore = revueOf([
+      { title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB4 (ex-RD3). Commit non signé', '`a.mjs`', 'corrigé (abc1234)']] },
+      { title: 'Revue : tranche 1 : 2026-11-22', discuss: [['RD3. Commit non signé', '`a.mjs`', 'requalifié (RB4)']] },
+    ])
+    const exProblems = pointProblems(exBefore)
+    assert.equal(citing(exProblems, /^RB4 \(ex-RD3\)/).length, 1)
+    assert.equal(citing(exProblems, /^RD3\b/).length, 1)
+    const reprisBefore = revueOf([
+      { title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB7 (repris). Push', '`a.mjs`', 'corrigé (abc1234)']] },
+      { title: 'Revue : tranche 1 : 2026-11-22', blocking: [['RB7. Push', '`a.mjs`', 'corrigé (def5678)']] },
+    ])
+    assert.equal(citing(pointProblems(reprisBefore), /\bRB7\b/).length, 1)
+  })
+
+  it('CA-18 : une reprise qui renvoie à un autre point (RB4 ex-RD9) ne ferme pas la requalification de RD3 (OD22)', () => {
+    const text = revueOf([
+      { title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD3. Commit non signé', '`a.mjs`', 'requalifié (RB4)'], ['RD9. Autre', '`b.mjs`', 'requalifié (RB4)']] },
+      { title: 'Revue : tranche 1 : 2026-11-22', blocking: [['RB4 (ex-RD9). Autre', '`b.mjs`', 'corrigé (abc1234)']] },
+    ])
+    const problems = pointProblems(text)
+    assert.equal(citing(problems, /^RD3\b/).length, 1)
+    assert.deepEqual(citing(problems, /^RD9\b/), [])
+  })
+
+  it('CA-18 : un requalifié sans identifiant est signalé ; un identifiant suivi d’un commentaire est lu (OD20)', () => {
+    const withoutId = revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD3. Commit non signé', '`a.mjs`', 'requalifié en bloquant']] }])
+    assert.equal(citing(pointProblems(withoutId), /^RD3\b/).length, 1)
+    const withComment = revueOf([
+      { title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD3. Commit non signé', '`a.mjs`', 'requalifié (RB4, plus grave)']] },
+      { title: 'Revue : tranche 1 : 2026-11-22', blocking: [['RB4 (ex-RD3). Commit non signé', '`a.mjs`', 'corrigé (abc1234)']] },
+    ])
+    assert.deepEqual(pointProblems(withComment), [])
+  })
+})
+
+describe('TEC-15 numbering the review points', () => {
+  const noFiles = { revue: null, spec: null, decisions: null }
+  const allOnes = { RB: 1, RD: 1, SB: 1, SD: 1, OB: 1, OD: 1 }
+
+  it('CA-1 : le prochain numéro suit le plus grand de chaque série, toutes sections confondues', () => {
+    const revue = revueOf([
+      { title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB1. Un', '`a.mjs`', 'corrigé (abc1234)']], discuss: [['RD1. Un', '`a.mjs`', 'écarté : doublon'], ['RD7. Sept', '`b.mjs`', 'écarté : doublon']] },
+      { title: 'Revue : tranche 2 : 2026-11-22', blocking: [['RB3. Trois', '`c.mjs`', 'corrigé (def5678)']], discuss: [['RD2. Deux', '`d.mjs`', 'écarté : doublon']] },
+    ])
+    const { next } = core.nextReviewIds({ ...noFiles, revue })
+    assert.equal(next.RB, 4)
+    assert.equal(next.RD, 8)
+  })
+
+  it('CA-1 : un identifiant cité seulement dans une référence ex- compte aussi', () => {
+    const revue = revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB2 (ex-RD9). Requalifié', '`a.mjs`', 'corrigé (abc1234)']], discuss: [['RD1. Un', '`b.mjs`', 'écarté : doublon']] }])
+    const { next } = core.nextReviewIds({ ...noFiles, revue })
+    assert.equal(next.RB, 3)
+    assert.equal(next.RD, 10)
+  })
+
+  it('CA-2 : sans aucun fichier, tous les numéros sont à 1 et aucun point n’est ouvert', () => {
+    assert.deepEqual(core.nextReviewIds(noFiles), { next: allOnes, open: [] })
+  })
+
+  it('CA-2 : un revue.md sans point donne RB1 et RD1, sans point ouvert', () => {
+    for (const revue of [revueOf([{ title: 'Revue : tranche 1 : 2026-11-21' }]), revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', blocking: [['Aucun', '', '']], discuss: [['aucun.', '', '']] }])]) {
+      assert.deepEqual(core.nextReviewIds({ ...noFiles, revue }), { next: allOnes, open: [] })
+    }
+  })
+
+  it('CA-13 : le prochain RD tient compte d’un RD requalifié, le prochain RB du RB qui le reprend', () => {
+    const revue = revueOf([
+      { title: 'Revue : tranche 1 : 2026-11-21', discuss: [['RD3. Commit non signé', '`a.mjs`', 'requalifié (RB4)']] },
+      { title: 'Revue : tranche 1 : 2026-11-22', blocking: [['RB4 (ex-RD3). Commit non signé', '`a.mjs`', 'corrigé (abc1234)']] },
+    ])
+    const { next, open } = core.nextReviewIds({ ...noFiles, revue })
+    assert.equal(next.RD, 4)
+    assert.equal(next.RB, 5)
+    assert.deepEqual(open, [])
+  })
+
+  it('CA-10 : SB, SD, OB, OD suivent le plus grand numéro cité dans spec.md et decisions.md', () => {
+    const spec = '---\nid: TEC-30\n---\n\n# TEC-30\n\nAmendement : SD2 retenu, OD3 écarté. Mot collé : XSB9.\n'
+    const decisions = '# Décisions\n\n- OB1 accepté.\n- OD5 reporté.\n- SD1 écarté.\n'
+    const { next } = core.nextReviewIds({ revue: null, spec, decisions })
+    assert.deepEqual(next, { RB: 1, RD: 1, SB: 1, SD: 3, OB: 2, OD: 6 })
+  })
+
+  it('CA-10 : les points ouverts sont ceux dont la dernière occurrence n’a pas de traitement, avec leur intitulé et leur section', () => {
+    const revue = revueOf([
+      { title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB1. Premier', '`a.mjs`', ''], ['RB2. Second', '`b.mjs`', 'corrigé (abc1234)']], discuss: [['RD1. Discuté', '`c.mjs`', 'À corriger au build']] },
+      { title: 'Revue : tranche 2 : 2026-11-22', blocking: [['RB1 (repris). Premier', '`a.mjs`', 'corrigé (def5678)'], ['RB2 (repris). Second encore', '`b.mjs`', '']] },
+    ])
+    assert.deepEqual(core.nextReviewIds({ ...noFiles, revue }).open, [
+      { id: 'RD1', title: 'Discuté', section: 'Revue : tranche 1 : 2026-11-21' },
+      { id: 'RB2', title: 'Second encore', section: 'Revue : tranche 2 : 2026-11-22' },
+    ])
+  })
+
+  it('CA-10 : atelier review-ids --json lit revue.md, spec.md et decisions.md du chantier actif', () => {
+    const directory = makeRepository('main')
+    git(directory, 'switch', '-q', '-c', 'tec/TEC-30-x')
+    const revue = revueOf([
+      { title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB1. Un', '`a.mjs`', 'corrigé (abc1234)'], ['RB2. Deux', '`b.mjs`', 'corrigé (abc1234)']], discuss: [['RD1. Un', '`c.mjs`', 'écarté : doublon']] },
+      { title: 'Revue : tranche 2 : 2026-11-22', blocking: [['RB2 (repris). Deux', '`b.mjs`', '']] },
+    ])
+    writeChantier(directory, {
+      id: 'TEC-30',
+      body: `${completeBodies.TEC}\n## Amendements\n- 2026-11-21 : précisé (SD2 de la relecture de spec)\n`,
+      files: { 'revue.md': revue, 'decisions.md': '# Décisions\n\n- OB1 accepté : coût.\n' },
+    })
+    git(directory, 'add', '-A')
+    commit(directory, 'docs(chantiers): [TEC-30] spec')
+    assert.deepEqual(JSON.parse(atelierOk(directory, 'review-ids', '--json')), {
+      next: { RB: 3, RD: 2, SB: 1, SD: 3, OB: 2, OD: 1 },
+      open: [{ id: 'RB2', title: 'Deux', section: 'Revue : tranche 2 : 2026-11-22' }],
+    })
+  })
+})
+
+describe('TEC-15 refusing open review points in the CLI', () => {
+  const revuePath = (directory) => join(chantierDirectoryOf(directory, 'FEAT-20'), 'revue.md')
+  const openPoint = revueOf([{ title: 'Revue : tranche 2 : 2026-11-22', blocking: [['RB1. Push non vérifié', '`src/now.mjs`', '']], discuss: [['RD1. Nom peu clair', '`src/now.mjs`', 'écarté : convention du projet']] }])
+  const allTreated = revueOf([{ title: 'Revue : tranche 2 : 2026-11-22', blocking: [['RB1. Push non vérifié', '`src/now.mjs`', 'corrigé (abc1234)']], discuss: [['RD1. Nom peu clair', '`src/now.mjs`', 'écarté : convention du projet']] }])
+  const postponed = revueOf([{ title: 'Revue : tranche 1 : 2026-11-21', blocking: [['RB1. Push non vérifié', '`src/now.mjs`', 'corrigé (abc1234)']], discuss: [['RD1. Message d’erreur vague', '`src/now.mjs`', 'reporté (tranche 2)']] }])
+
+  // Code and revue.md committed, then the review recorded at that commit (spec committed after it).
+  function reviewedWithRevue(revue) {
+    const directory = makeSlicedRepository({ tdd: 'no' })
+    commitFiles(directory, { 'src/a.mjs': 'code\n', [path.relative(directory, revuePath(directory))]: revue }, 'feat: a')
+    setHeader(directory, 'FEAT-20', { slice: 'chantier', last_slice: '3', reviewed_commit: headOf(directory) })
+    return directory
+  }
+
+  for (const [label, options] of [['revue de tranche', { slice: 2 }], ['revue du chantier', { slice: 'chantier', extra: { last_slice: '3' } }]]) {
+    it(`CA-8 : set-reviewed refuse un point ouvert de la copie de travail de revue.md (${label}), sans rien écrire dans la spec`, () => {
+      const { directory } = implementedSlice(options)
+      writeFileSync(revuePath(directory), openPoint)
+      const before = specFileText(directory, 'FEAT-20')
+      const { status, output } = atelierRun(directory, 'set-reviewed')
+      assert.notEqual(status, 0, output)
+      assert.match(output, /RB1\b.*Push non vérifié/)
+      assert.doesNotMatch(output, /RD1\b/, 'un point traité n’est pas listé')
+      assert.equal(specFileText(directory, 'FEAT-20'), before)
+    })
+  }
+
+  it('CA-8 : set-reviewed enregistre la revue quand tous les points de la copie de travail sont traités', () => {
+    const { directory } = implementedSlice({ slice: 2 })
+    writeFileSync(revuePath(directory), allTreated)
+    atelierOk(directory, 'set-reviewed')
+    assert.equal(specData(directory, 'FEAT-20').slice, '3')
+  })
+
+  for (const command of [['close-check'], ['set-status', 'done']]) {
+    it(`CA-9 : ${command.join(' ')} refuse la clôture avec un point ouvert dans un revue.md commité`, () => {
+      const directory = reviewedWithRevue(openPoint)
+      const before = specFileText(directory, 'FEAT-20')
+      const { status, output } = atelierRun(directory, ...command)
+      assert.notEqual(status, 0, output)
+      assert.match(output, /RB1\b.*Push non vérifié/)
+      assert.equal(specFileText(directory, 'FEAT-20'), before)
+    })
+
+    it(`CA-9 : ${command.join(' ')} refuse la clôture quand revue.md a des modifications non commitées`, () => {
+      const directory = reviewedWithRevue(allTreated)
+      writeFileSync(revuePath(directory), `${allTreated}\n- Note ajoutée après coup.\n`)
+      const { status, output } = atelierRun(directory, ...command)
+      assert.notEqual(status, 0, output)
+      assert.match(output, /revue\.md/)
+    })
+  }
+
+  it('CA-9 : close-check accepte la clôture avec un revue.md commité dont tous les points sont traités', () => {
+    const { status, output } = atelierRun(reviewedWithRevue(allTreated), 'close-check')
+    assert.equal(status, 0, output)
+  })
+
+  it('CA-16 : un point reporté (tranche 2) ne bloque pas set-reviewed', () => {
+    const { directory } = implementedSlice({ slice: 2 })
+    writeFileSync(revuePath(directory), postponed)
+    atelierOk(directory, 'set-reviewed')
+    assert.equal(specData(directory, 'FEAT-20').slice, '3')
+  })
+
+  it('CA-16 : un point dont la dernière occurrence est reporté (tranche 2) bloque la clôture et est listé', () => {
+    const { status, output } = atelierRun(reviewedWithRevue(postponed), 'close-check')
+    assert.notEqual(status, 0, output)
+    assert.match(output, /RD1\b.*Message d’erreur vague/)
+  })
+})
+
+describe('TEC-15 prefixes in agents, skills and templates', () => {
+  const pluginText = (relativePath) => readFileSync(fileURLToPath(new URL(`../${relativePath}`, import.meta.url)), 'utf8')
+  const mentions = (text, prefix) => new RegExp(`\\b${prefix}(\\d+)?\\b`).test(text)
+  const expectedPrefixes = {
+    'agents/reviewer.md': ['RB', 'RD'],
+    'agents/spec-critic.md': ['SB', 'SD'],
+    'agents/overfit-checker.md': ['OB', 'OD'],
+    'skills/review/SKILL.md': ['RB', 'RD'],
+    'skills/sign/SKILL.md': ['SB', 'SD'],
+    'skills/build/SKILL.md': ['OB', 'OD'],
+    'skills/close/SKILL.md': ['RB', 'RD'],
+    'templates/revue.md': ['RB', 'RD'],
+    'templates/bilan.md': ['RB', 'RD'],
+  }
+
+  for (const [file, prefixes] of Object.entries(expectedPrefixes)) {
+    it(`CA-11 : ${file} mentionne ${prefixes.join(' et ')}`, () => {
+      const text = pluginText(file)
+      assert.deepEqual(prefixes.filter((prefix) => !mentions(text, prefix)), [])
+    })
+  }
+
+  it('CA-11 : la skill amend cite un identifiant de point de relecture', () => {
+    assert.ok(['RB', 'RD', 'SB', 'SD', 'OB', 'OD'].some((prefix) => mentions(pluginText('skills/amend/SKILL.md'), prefix)))
+  })
+
+  for (const file of ['skills/review/SKILL.md', 'skills/sign/SKILL.md', 'skills/build/SKILL.md']) {
+    it(`CA-11 : ${file} obtient les numéros par atelier review-ids`, () => {
+      assert.match(pluginText(file), /atelier review-ids/)
+    })
+  }
+
+  for (const file of ['templates/revue.md', 'agents/reviewer.md', 'skills/review/SKILL.md']) {
+    it(`CA-11 : ${file} donne la forme (repris), (ex-…) et les traitements reporté et requalifié`, () => {
+      const text = pluginText(file)
+      assert.match(text, /\(repris\)/)
+      assert.match(text, /\(ex-R[BD]\d+\)/)
+      assert.match(text, /reporté/i)
+      assert.match(text, /requalifié/i)
+    })
+  }
+})
+
+describe('TEC-15 site reference pages', () => {
+  const site = (relativePath) => readFileSync(fileURLToPath(new URL(`../../../site/${relativePath}`, import.meta.url)), 'utf8')
+  // The table row whose first cell starts with `start` (a command or a glossary term).
+  const row = (text, start) => text.split(/\r?\n/).find((line) => line.startsWith(`| ${start}`)) ?? ''
+
+  it('CA-19 : la page des commandes documente review-ids et le refus de set-reviewed et close-check sur un point ouvert', () => {
+    const commands = site('reference/commandes.md')
+    const reviewIds = row(commands, '`atelier review-ids')
+    for (const prefix of ['RB', 'RD', 'SB', 'SD', 'OB', 'OD']) {
+      assert.match(reviewIds, new RegExp(`\\b${prefix}\\d*\\b`), `${prefix} absent de la ligne review-ids`)
+    }
+    assert.match(reviewIds, /ouverts?/)
+    assert.match(row(commands, '`atelier set-reviewed`'), /points?[^|]*(ouverts?|sans traitement)/i)
+    assert.match(row(commands, '`atelier close-check`'), /points?[^|]*(ouverts?|sans traitement)/i)
+  })
+
+  it('CA-19 : le glossaire définit le point de relecture, ses six préfixes et le traitement', () => {
+    const glossary = site('reference/glossaire.md')
+    const point = row(glossary, '**Point de relecture**')
+    for (const prefix of ['RB', 'RD', 'SB', 'SD', 'OB', 'OD']) {
+      assert.match(point, new RegExp(`\\b${prefix}\\d*\\b`), `${prefix} absent de la définition du point de relecture`)
+    }
+    const treatment = row(glossary, '**Traitement**')
+    for (const keyword of ['corrigé', 'écarté', 'reporté', 'requalifié']) {
+      assert.match(treatment, new RegExp(keyword), `${keyword} absent de la définition du traitement`)
+    }
+  })
+})
+
+describe('TEC-23 checks run once per working tree', () => {
+  const treated = revueOf([{ title: 'Revue : chantier : 2026-11-23', blocking: [['RB1. Push non vérifié', '`src/a.mjs`', 'corrigé (abc1234)']] }])
+  const open = revueOf([{ title: 'Revue : chantier : 2026-11-23', blocking: [['RB1. Push non vérifié', '`src/a.mjs`', '']] }])
+
+  // A signed chantier ready to close (code, revue.md and the configuration committed, then the
+  // review recorded at that commit), whose only check counts its runs in a file outside the repository.
+  function closableRepository({ revue = treated, fails = false } = {}) {
+    const counter = join(temporaryDirectory('atelier-tec23-count-'), 'runs').replace(/\\/g, '/')
+    const script = `require('fs').appendFileSync('${counter}', 'x')${fails ? ';process.exit(1)' : ''}`
+    const directory = makeSlicedRepository({ tdd: 'no' })
+    const revuePath = path.relative(directory, join(chantierDirectoryOf(directory, 'FEAT-20'), 'revue.md'))
+    commitFiles(directory, {
+      '.claude/atelier.json': JSON.stringify({ chantiersDir: 'docs/chantiers', checks: [{ name: 'compteur', command: `node -e "${script}"` }] }),
+      'src/a.mjs': 'code\n',
+      [revuePath]: revue,
+    }, 'feat: a')
+    setHeader(directory, 'FEAT-20', { slice: 'chantier', last_slice: '3', reviewed_commit: headOf(directory) })
+    const runs = () => {
+      try {
+        return readFileSync(counter, 'utf8').length
+      } catch {
+        return 0
+      }
+    }
+    return { directory, runs }
+  }
+
+  function hookGate(directory) {
+    const result = spawnSync(process.execPath, [atelierBin, 'hook-gate'], {
+      cwd: directory,
+      encoding: 'utf8',
+      input: JSON.stringify({ cwd: directory }),
+      env: { ...process.env, CLAUDE_PROJECT_DIR: directory },
+    })
+    return { status: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` }
+  }
+
+  it('CA-1 : le hook de fin de tour ne relance pas les contrôles que checks vient de passer', () => {
+    const { directory, runs } = closableRepository()
+    writeFileSync(join(directory, 'src', 'b.mjs'), 'code non commité\n')
+    atelierOk(directory, 'checks')
+    assert.equal(runs(), 1)
+    const { status, output } = hookGate(directory)
+    assert.equal(status, 0, output)
+    assert.equal(runs(), 1, 'le hook réutilise le vert de checks')
+  })
+
+  it('CA-2 : checks ne relance pas des contrôles déjà verts sur cet état du code, et le dit', () => {
+    const { directory, runs } = closableRepository()
+    atelierOk(directory, 'checks')
+    const output = atelierOk(directory, 'checks')
+    assert.equal(runs(), 1)
+    assert.match(output, /déjà verts?/i)
+  })
+
+  it('CA-2 : checks réutilise le vert enregistré par le hook de fin de tour', () => {
+    const { directory, runs } = closableRepository()
+    writeFileSync(join(directory, 'src', 'b.mjs'), 'code non commité\n')
+    assert.equal(hookGate(directory).status, 0)
+    assert.equal(runs(), 1)
+    atelierOk(directory, 'checks')
+    assert.equal(runs(), 1)
+  })
+
+  for (const command of [['checks'], ['close-check'], ['set-status', 'done']]) {
+    it(`CA-3 : ${command.join(' ')} relance les contrôles quand un fichier a changé depuis le dernier vert`, () => {
+      const { directory, runs } = closableRepository()
+      atelierOk(directory, 'checks')
+      writeFileSync(join(directory, 'docs', 'notes.md'), 'note\n')
+      atelierOk(directory, ...command)
+      assert.equal(runs(), 2)
+    })
+  }
+
+  it('CA-4 : set-status done après un close-check réussi ne relance pas les contrôles', () => {
+    const { directory, runs } = closableRepository()
+    atelierOk(directory, 'close-check')
+    assert.equal(runs(), 1)
+    atelierOk(directory, 'set-status', 'done')
+    assert.equal(runs(), 1)
+    assert.equal(specData(directory, 'FEAT-20').status, 'done')
+  })
+
+  it('CA-4 : set-status done refait les autres vérifications de clôture même quand les contrôles sont déjà verts', () => {
+    const { directory, runs } = closableRepository({ revue: open })
+    atelierOk(directory, 'checks')
+    const { status, output } = atelierRun(directory, 'set-status', 'done')
+    assert.notEqual(status, 0, output)
+    assert.match(output, /RB1\b.*Push non vérifié/)
+    assert.equal(runs(), 1)
+    assert.equal(specData(directory, 'FEAT-20').status, 'signed')
+  })
+
+  it('CA-5 : checks --force relance des contrôles déjà verts', () => {
+    const { directory, runs } = closableRepository()
+    atelierOk(directory, 'checks')
+    atelierOk(directory, 'checks', '--force')
+    assert.equal(runs(), 2)
+  })
+
+  it('CA-6 : un échec n’est pas mémorisé, checks relance les contrôles', () => {
+    const { directory, runs } = closableRepository({ fails: true })
+    assert.notEqual(atelierRun(directory, 'checks').status, 0)
+    assert.notEqual(atelierRun(directory, 'checks').status, 0)
+    assert.equal(runs(), 2)
+  })
+
+  it('CA-7 : sans empreinte calculable, les contrôles sont lancés comme aujourd’hui', () => {
+    const { directory, runs } = closableRepository()
+    writeFileSync(join(directory, '.atelier'), 'un fichier à la place du dossier\n')
+    atelierOk(directory, 'checks')
+    atelierOk(directory, 'checks')
+    assert.equal(runs(), 2)
+    atelierOk(directory, 'close-check')
+    assert.equal(runs(), 3)
+  })
+})
+
+// A repository with atelier installed, the given chantier folders (not committed), one empty
+// commit per subject on main, and the given extra branches pointing at main.
+function makeCounterRepository({ folders = [], subjects = [], branches = [] }) {
+  const directory = makeRepository('main')
+  folders.forEach((folder) => mkdirSync(join(directory, 'docs', 'chantiers', folder), { recursive: true }))
+  subjects.forEach((subject) => commit(directory, subject))
+  branches.forEach((branch) => git(directory, 'branch', branch))
+  return directory
+}
+
+describe('Next identifier: where the counter reads identifiers', () => {
+  it('commit subjects count only bracketed identifiers [FIX-18 CA-1]', () => {
+    const subjects = [
+      'test(plugin): [FEAT-7] add failing tests for CA-13',
+      'fix: support UTF-8 and ISO-8601 dates',
+      'docs: follow RFC-7231',
+    ]
+    const directory = makeCounterRepository({ folders: ['FEAT-7-x'], subjects })
+    assert.equal(atelier(directory, 'next-id', 'EPIC').trim(), 'EPIC-8')
+    assert.deepEqual(core.commitSubjectIdentifiers(subjects[0]), ['FEAT-7'])
+    assert.deepEqual(core.commitSubjectIdentifiers(subjects[1]), [])
+    assert.deepEqual(core.commitSubjectIdentifiers(subjects[2]), [])
+  })
+
+  it('bracketed identifiers keep the counter going, legacy prefixes included [FIX-18 CA-2]', () => {
+    const directory = makeCounterRepository({
+      subjects: ['feat(envelopes): [FEA-26] add', '[BUG-421] fix', 'test(plugin): [TEC-437 CA-3] cover'],
+    })
+    assert.equal(atelier(directory, 'next-id', 'FIX').trim(), 'FIX-438')
+  })
+
+  it('branch names and chantier folders count without any bracketed commit [FIX-18 CA-3]', () => {
+    const directory = makeCounterRepository({
+      folders: ['FEA-26-y'],
+      subjects: ['docs: CA-900 checked'],
+      branches: ['fix/BUG-421-x'],
+    })
+    assert.equal(atelier(directory, 'next-id', 'FEAT').trim(), 'FEAT-422')
+  })
+
+  it('branch names count only an identifier opening a segment [FIX-18 CA-4]', () => {
+    const botBranches = ['renovate/node-20.x', 'dependabot/npm_and_yarn/vite-5.4.12']
+    const directory = makeCounterRepository({ folders: ['FEAT-7-x'], branches: botBranches })
+    assert.equal(atelier(directory, 'next-id', 'FEAT').trim(), 'FEAT-8')
+    botBranches.forEach((branch) => assert.deepEqual(core.branchNameIdentifiers(branch), [], branch))
+    assert.deepEqual(core.branchNameIdentifiers('origin/fix/BUG-421-x'), ['BUG-421'])
+  })
+
+  it('identifiers are read whatever their case, without a closing bracket, at the end of a branch name [FIX-18 CA-1, CA-2, CA-4]', () => {
+    assert.deepEqual(core.commitSubjectIdentifiers('test(plugin): [feat-7] add'), ['FEAT-7'])
+    assert.deepEqual(core.commitSubjectIdentifiers('test(plugin): [TEC-437 CA-3] cover'), ['TEC-437'])
+    assert.deepEqual(core.branchNameIdentifiers('fix/fix-18-x'), ['FIX-18'])
+    assert.deepEqual(core.branchNameIdentifiers('feature/JIRA-123'), ['JIRA-123'])
+  })
+})

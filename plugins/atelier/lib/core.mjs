@@ -145,7 +145,9 @@ export function readChantier(projectRoot, config, chantierId) {
   const spec = existsSync(specPath) ? parseFrontMatter(readFileSync(specPath, 'utf8')) : null
   const planPath = join(directory, 'plan.md')
   const plan = existsSync(planPath) ? readFileSync(planPath, 'utf8') : null
-  return { id: chantierId, directory, spec, files: readdirSync(directory), plan }
+  const revuePath = join(directory, 'revue.md')
+  const revue = existsSync(revuePath) ? readFileSync(revuePath, 'utf8') : null
+  return { id: chantierId, directory, spec, files: readdirSync(directory), plan, revue }
 }
 
 // Subjects are ordered from newest to oldest; only a bracketed identifier counts.
@@ -485,27 +487,44 @@ export function highestChantierNumber(names) {
   return highest
 }
 
+// Identifiers a commit subject carries: only bracketed ones (`[FEAT-7]`, `[TEC-15 CA-3]`), so that
+// prose tokens such as CA-13, UTF-8 or ISO-8601 never move the counter.
+export function commitSubjectIdentifiers(subject) {
+  return [...subject.matchAll(/\[([A-Z]{2,6})-(\d+)\b/gi)].map((match) => `${match[1].toUpperCase()}-${match[2]}`)
+}
+
+// Identifiers a branch name carries: only one opening a segment and followed by `-` or the end
+// (`fix/BUG-421-x`, `feature/JIRA-123`), so that bot branches such as `renovate/node-20.x` don't count.
+export function branchNameIdentifiers(name) {
+  return [...name.matchAll(/(?:^|\/)([A-Z]{2,6})-(\d+)(?=-|$)/gi)].map((match) => `${match[1].toUpperCase()}-${match[2]}`)
+}
+
+function gitLines(projectRoot, gitArguments) {
+  try {
+    return execFileSync('git', gitArguments, {
+      cwd: projectRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).split('\n').filter(Boolean)
+  } catch {
+    // No git history yet: directory names are enough.
+    return []
+  }
+}
+
+// Each source has its own extraction rule: chantier folders as they are, bracketed identifiers of
+// commit subjects, identifiers opening a segment of branch names.
 export function collectUsedIdentifiers(projectRoot, config) {
   const names = []
   const chantiersRoot = join(projectRoot, config.chantiersDir)
   if (existsSync(chantiersRoot)) {
     names.push(...readdirSync(chantiersRoot))
   }
-  const gitSources = [
-    ['log', '--all', '--format=%s', '-n', '5000'],
-    ['branch', '--all', '--format=%(refname:short)'],
-  ]
-  for (const gitArguments of gitSources) {
-    try {
-      const output = execFileSync('git', gitArguments, {
-        cwd: projectRoot,
-        encoding: 'utf8',
-        stdio: ['ignore', 'pipe', 'ignore'],
-      })
-      names.push(...output.split('\n').map((line) => line.toUpperCase()))
-    } catch {
-      // No git history yet: directory names are enough.
-    }
+  for (const subject of gitLines(projectRoot, ['log', '--all', '--format=%s', '-n', '5000'])) {
+    names.push(...commitSubjectIdentifiers(subject))
+  }
+  for (const branch of gitLines(projectRoot, ['branch', '--all', '--format=%(refname:short)'])) {
+    names.push(...branchNameIdentifiers(branch))
   }
   return names
 }
@@ -862,7 +881,7 @@ export function amendmentsDiffer(text, otherText) {
 
 // Why `atelier set-reviewed` is refused, or null. `context` = { chantier, uncommittedCode (code
 // files changed and not committed), specUncommitted, changedTests (frozen tests changed since
-// tests_commit) }.
+// tests_commit) }. The points of `chantier.revue` (working copy of revue.md) must all be treated.
 // `sliceBaseIsAncestor` is false when `slice_base` is no longer an ancestor of HEAD;
 // `sliceCodeFiles` are the code files committed since the start of the current slice, or null
 // when the review is not that of a slice of a chantier with several slices.
@@ -888,6 +907,10 @@ export function setReviewedRefusal({ chantier, uncommittedCode, specUncommitted,
   }
   if (sliceCodeFiles && !sliceCodeFiles.length) {
     return 'tranche vide : aucun code commité depuis le début de la tranche. Implémente-la (/atelier:build) avant de la faire valider.'
+  }
+  const pointProblems = reviewPointProblems(parseReviewPoints(chantier.revue))
+  if (pointProblems.length) {
+    return `revue.md a des points sans traitement ou mal formés :\n${pointProblems.map((problem) => `- ${problem}`).join('\n')}`
   }
   return null
 }
@@ -917,6 +940,300 @@ export function setReviewedUpdate(chantier, head) {
     values: { reviewed_commit: head, ...(firstOfCycle ? { slice: '1' } : {}) },
     message: `Revue enregistrée au commit ${head}. ${commitHint(slice === 'chantier' ? 'chantier' : '').trimEnd()}`,
   }
+}
+
+// ---------- Review points ----------
+
+const POINT_TABLES = ['Bloquant', 'À discuter']
+const POINT_COLUMNS = ['Point', 'Fichier', 'Traitement']
+const POINT_PATTERN = /^(RB|RD)(\d+)( \(repris\)| \(ex-(R[BD]\d+)\))?\. (.+)$/
+const EMPTY_POINT_PATTERN = /^aucun\.?$/i
+
+// Cells of a Markdown table row; `\|` is a literal `|`, not a column separator.
+function tableCells(line) {
+  return line.trim().replace(/^\|/, '').replace(/(?<!\\)\|$/, '')
+    .split(/(?<!\\)\|/)
+    .map((cell) => cell.replace(/\\\|/g, '|').trim())
+}
+
+// Analyses the point cell of a row: `RB2. Title`, `RB2 (repris). Title`, `RB4 (ex-RD3). Title`.
+// A cell of another form gives a null id (the row is then reported by the review checks).
+function parsePointCell(cell) {
+  const match = POINT_PATTERN.exec(cell)
+  if (!match) {
+    return { id: null, marker: null, title: null }
+  }
+  const marker = match[3] ? (match[4] ? `ex-${match[4]}` : 'repris') : null
+  return { id: `${match[1]}${match[2]}`, marker, title: match[5] }
+}
+
+const isDelimiterRow = (line) => line.trim().startsWith('|') && tableCells(line).every((cell) => /^:?-+:?$/.test(cell))
+
+// The lines of a Markdown text with code blocks and HTML comment blocks blanked out, so that line
+// numbers are kept and an example table in either is not read. As in CommonMark, a fence closes on
+// the same character, at least as long, and a comment block starts with `<!--` at the start of a
+// line and ends with the line holding `-->`: a `<!--` inside a cell does not hide the rows after it.
+function visibleLines(text) {
+  let fence = null
+  let comment = false
+  return String(text ?? '').normalize('NFC').split(/\r?\n/).map((line) => {
+    if (comment) {
+      comment = !line.includes('-->')
+      return ''
+    }
+    const marker = /^ {0,3}(`{3,}|~{3,})/.exec(line)?.[1]
+    if (fence) {
+      if (marker && marker[0] === fence[0] && marker.length >= fence.length && !line.trim().slice(marker.length).trim()) {
+        fence = null
+      }
+      return ''
+    }
+    if (marker) {
+      fence = marker
+      return ''
+    }
+    const open = /^ {0,3}<!--/.exec(line)
+    if (open) {
+      comment = !line.slice(open[0].length).includes('-->')
+      return ''
+    }
+    return line
+  })
+}
+
+// Reads the points of a revue.md: one section per `## ` heading, the point tables being those under
+// `### Bloquant` and `### À discuter`. As in CommonMark, a table header is decided by its position:
+// a row that opens a table (the line before is not a row), followed by a delimiter row; its cells
+// must also be column names only (Point and any of Fichier, Traitement), so that no point can be
+// taken for a header. Any other row is a point, malformed or not. A table without a
+// header is read with the template columns (Point, Fichier, Traitement). Every `|` row up to the
+// next heading is read, even after free text: a row read in excess is reported by the review
+// checks, a row skipped would be lost. `Aucun` rows are skipped.
+// Each section also lists what would make points vanish unseen: `nearTables`, the `###` titles
+// close to a point table title (`### Bloquants`), and `strays`, the rows outside a point table
+// whose first cell starts with a point id.
+// `legacy` is true for a revue.md written before FEAT-7 (`## Tour …` sections), which the review
+// checks leave alone.
+export function parseReviewPoints(text) {
+  const sections = []
+  let section = null
+  let table = null
+  let nearTable = false
+  let header = null
+  const lines = visibleLines(text)
+  lines.forEach((line, index) => {
+    const heading = /^ {0,3}(#{2,3})\s+(.*?)\s*$/.exec(line)
+    if (heading) {
+      header = null
+      table = null
+      nearTable = false
+      if (heading[1] === '##') {
+        section = { title: heading[2], rows: [], nearTables: [], strays: [] }
+        sections.push(section)
+      } else if (POINT_TABLES.includes(heading[2])) {
+        table = heading[2]
+      } else if (section && isNearPointTableTitle(heading[2])) {
+        nearTable = true
+        section.nearTables.push({ title: heading[2], line: index + 1 })
+      }
+      return
+    }
+    if (!section || !line.trim().startsWith('|') || isDelimiterRow(line)) {
+      return
+    }
+    const cells = tableCells(line)
+    if (!table) {
+      // Rows under a near-miss title are covered by the problem on the title.
+      if (!nearTable && /^(RB|RD)\d+/.test(cells[0] ?? '')) {
+        section.strays.push({ point: cells[0], line: index + 1 })
+      }
+      return
+    }
+    const opensTable = !(lines[index - 1] ?? '').trim().startsWith('|')
+    const isHeader = opensTable && cells.includes('Point') && cells.every((cell) => POINT_COLUMNS.includes(cell))
+    if (isHeader && isDelimiterRow(lines[index + 1] ?? '')) {
+      header = cells
+      return
+    }
+    const column = (name, fallback) => {
+      const position = header ? header.indexOf(name) : -1
+      return cells[position >= 0 ? position : fallback] ?? ''
+    }
+    const point = column('Point', 0)
+    // `Aucun` alone on its row means no point; with other cells filled, it is a malformed point.
+    if (EMPTY_POINT_PATTERN.test(point) && cells.every((cell) => cell === point || cell === '')) {
+      return
+    }
+    section.rows.push({
+      ...parsePointCell(point),
+      point,
+      file: column('Fichier', 1),
+      treatment: column('Traitement', 2),
+      // A `|` left unescaped in a cell shifts the columns: reported by the review checks.
+      cellCountMismatch: cells.length !== (header ?? POINT_COLUMNS).length,
+      // Opens a table and is followed by a delimiter row: a header the parser did not recognise.
+      headerLike: opensTable && isDelimiterRow(lines[index + 1] ?? ''),
+      table,
+      line: index + 1,
+    })
+  })
+  return { legacy: sections.some((candidate) => /^Tour\b/.test(candidate.title)), sections }
+}
+
+// A `###` title that reads like a point table title without being one: case, accents and `*`
+// ignored, it starts with « bloquant » or « a discuter » (`### Bloquants`, `### A discuter`).
+function isNearPointTableTitle(title) {
+  const plain = normalize(title.replace(/\*/g, ''))
+  return !POINT_TABLES.includes(title) && (plain.startsWith('bloquant') || plain.startsWith('a discuter'))
+}
+
+const TREATMENTS = ['corrigé', 'test ajouté', 'spec amendée', 'exception acceptée', 'écarté', 'reporté', 'requalifié', 'sans objet']
+
+// A treatment cell starts with one of the treatment keywords, case ignored.
+export function isTreatment(cell) {
+  const text = String(cell ?? '').normalize('NFC').trim().toLowerCase()
+  return TREATMENTS.some((keyword) => text.startsWith(keyword))
+}
+
+// « reporté (tranche 2) », and its loose spellings (« reporté en tranche 3 », « reporté (tranche 2, avec
+// CA-6) »): at close, a point taken for a postponement to another chantier would slip through.
+const isPostponedToSlice = (treatment) => /^reporté\p{L}*[^)]*?\btranche\s+\d+/iu.test(treatment.normalize('NFC').trim())
+
+// The id a « requalifié (RB4) » treatment points to; null for a « requalifié » without one,
+// undefined for another treatment.
+function requalifiedTarget(treatment) {
+  const text = treatment.normalize('NFC').trim()
+  // Same prefix rule as isTreatment: « Requalifiée (RB4) » is a treatment, so it is checked too.
+  if (!/^requalifié/iu.test(text)) {
+    return undefined
+  }
+  return /^requalifié\p{L}*\s*\(\s*(R[BD]\d+)\b/iu.exec(text)?.[1].toUpperCase() ?? null
+}
+
+// The problems of the points of a parsed revue.md (see parseReviewPoints), as messages: a point
+// whose last occurrence has no treatment, an id presented as new twice, a point in the wrong
+// table, a malformed row, a near-miss table title, a point row outside a point table, a
+// `(repris)` or `(ex-<ID>)` with nothing above to refer to, a `requalifié (<ID>)` that no
+// `<ID> (ex-…)` takes up further down. With `atClose`, a point whose last occurrence is
+// « reporté (tranche N) » is a problem too.
+// A legacy revue.md (`## Tour` sections) is not checked.
+export function reviewPointProblems(parsed, { atClose = false } = {}) {
+  if (parsed.legacy) {
+    return []
+  }
+  const problems = []
+  const lastOccurrence = new Map()
+  const newOccurrences = new Map()
+  // Every row with an id and its section: what `(repris)`, `(ex-…)` and `requalifié (…)` refer to.
+  // « Above » is an earlier section or the same one, « further down » the same section or a later
+  // one: within a section the Bloquant table comes first, so row order there means nothing.
+  const occurrences = parsed.sections.flatMap((section, sectionIndex) =>
+    section.rows.filter((row) => row.id).map((row) => ({ row, sectionIndex })))
+  const occursAbove = (id, sectionIndex, except) =>
+    occurrences.some((other) => other.row !== except && other.row.id === id && other.sectionIndex <= sectionIndex)
+  for (const [sectionIndex, section] of parsed.sections.entries()) {
+    const where = (line) => `section « ${section.title} », ligne ${line}`
+    // Twice in one section, whatever the marker: the last one would hide the other.
+    const inSection = new Map()
+    for (const { title, line } of section.nearTables) {
+      problems.push(`Titre « ### ${title} » (${where(line)}) : ni « Bloquant » ni « À discuter », ses points ne sont pas lus. Corriger le titre.`)
+    }
+    for (const { point, line } of section.strays) {
+      problems.push(`${point} (${where(line)}) : point hors d’un tableau « ### Bloquant » ou « ### À discuter », il n’est pas lu.`)
+    }
+    for (const row of section.rows) {
+      if (!row.id) {
+        const hint = row.headerLike ? ' ; si c’est l’en-tête du tableau, il n’est pas reconnu : colonnes attendues Point, Fichier, Traitement' : ''
+        problems.push(`« ${row.point} » (${where(row.line)}) : la cellule Point n’a pas la forme « RB1. Intitulé »${hint}.`)
+        continue
+      }
+      if (row.cellCountMismatch) {
+        problems.push(`${row.id} (${where(row.line)}) : nombre de cellules différent de l’en-tête ; un | dans une cellule s’écrit \\|.`)
+      }
+      const expectedTable = row.id.startsWith('RB') ? 'Bloquant' : 'À discuter'
+      if (row.table !== expectedTable) {
+        problems.push(`${row.id} (${where(row.line)}) : rangé dans « ${row.table} », il va dans « ${expectedTable} ».`)
+      }
+      if (row.marker === 'repris' && !occursAbove(row.id, sectionIndex, row)) {
+        problems.push(`${row.id} (repris) (${where(row.line)}) : aucune occurrence de ${row.id} plus haut ; un nouveau point s’écrit sans « (repris) ».`)
+      }
+      const formerId = row.marker?.startsWith('ex-') ? row.marker.slice(3) : null
+      if (formerId && !occursAbove(formerId, sectionIndex, row)) {
+        problems.push(`${row.id} (ex-${formerId}) (${where(row.line)}) : aucune occurrence de ${formerId} plus haut.`)
+      }
+      lastOccurrence.set(row.id, { ...row, section: section.title, sectionIndex })
+      inSection.set(row.id, [...(inSection.get(row.id) ?? []), row.line])
+      if (row.marker !== 'repris') {
+        newOccurrences.set(row.id, [...(newOccurrences.get(row.id) ?? []), { section: section.title, sectionIndex, line: row.line }])
+      }
+    }
+    for (const [id, lines] of inSection) {
+      if (lines.length > 1) {
+        problems.push(`${id} présent ${lines.length} fois dans la section « ${section.title} » (lignes ${lines.join(', ')}) : un point n’apparaît qu’une fois par revue.`)
+      }
+    }
+  }
+  for (const [id, places] of newOccurrences) {
+    if (new Set(places.map((place) => place.sectionIndex)).size > 1) {
+      const listed = places.map((place) => `section « ${place.section} », ligne ${place.line}`).join(' ; ')
+      problems.push(`${id} présenté comme nouveau dans plusieurs sections (${listed}) : un point repris s’écrit « ${id} (repris). … », un nouveau point prend le numéro suivant.`)
+    }
+  }
+  for (const [id, row] of lastOccurrence) {
+    const where = `section « ${row.section} », ligne ${row.line}`
+    const target = requalifiedTarget(row.treatment)
+    if (!isTreatment(row.treatment)) {
+      const found = row.treatment.trim() ? `traitement « ${row.treatment.trim()} » non reconnu` : 'pas de traitement'
+      problems.push(`${id}. ${row.title} (${where}) : ${found} ; la colonne Traitement commence par l’un de ces mots : ${TREATMENTS.join(', ')}.`)
+    } else if (target !== undefined) {
+      const takenUp = target && occurrences.some((later) =>
+        later.sectionIndex >= row.sectionIndex && later.row.id === target && later.row.marker === `ex-${id}`)
+      if (!takenUp) {
+        problems.push(target
+          ? `${id}. ${row.title} (${where}) : requalifié, mais aucun point « ${target} (ex-${id}). … » plus loin ; le point disparaîtrait.`
+          : `${id}. ${row.title} (${where}) : requalifié sans identifiant ; écrire « requalifié (<ID>) » et reprendre le point en « <ID> (ex-${id}). … ».`)
+      }
+    } else if (atClose && isPostponedToSlice(row.treatment)) {
+      problems.push(`${id}. ${row.title} (${where}) : reporté à une tranche et jamais repris ; le traiter avant de clore.`)
+    }
+  }
+  return problems
+}
+
+const REVIEW_ID_PREFIXES = ['RB', 'RD', 'SB', 'SD', 'OB', 'OD']
+
+// The next number of each review point prefix and the open review points of a chantier, from the
+// texts of its revue.md, spec.md and decisions.md (null when absent). RB/RD come from the table
+// rows of revue.md, `ex-` references included, so that a number is never reused; SB/SD/OB/OD,
+// which have no file of their own, from any mention in spec.md and decisions.md. A point is open
+// when its last occurrence has no recognised treatment; open points are in file order.
+export function nextReviewIds({ revue, spec, decisions }) {
+  const highest = Object.fromEntries(REVIEW_ID_PREFIXES.map((prefix) => [prefix, 0]))
+  const record = (id) => {
+    const [, prefix, number] = /^([A-Z]{2})(\d+)$/.exec(id)
+    highest[prefix] = Math.max(highest[prefix], Number(number))
+  }
+  // Every RB/RD on a table row counts, malformed rows, rows under a near-miss title and
+  // `requalifié (<ID>)` targets included: a gap costs nothing, a reused number breaks the trace.
+  for (const line of visibleLines(revue).filter((candidate) => candidate.trim().startsWith('|'))) {
+    for (const [id] of line.matchAll(/\b(?:RB|RD)\d+\b/g)) {
+      record(id)
+    }
+  }
+  const lastOccurrence = new Map()
+  for (const section of parseReviewPoints(revue).sections) {
+    for (const row of section.rows.filter((candidate) => candidate.id)) {
+      lastOccurrence.set(row.id, { ...row, section: section.title })
+    }
+  }
+  for (const [, id] of `${spec ?? ''}\n${decisions ?? ''}`.matchAll(/\b((?:SB|SD|OB|OD)\d+)\b/g)) {
+    record(id)
+  }
+  const open = [...lastOccurrence.values()]
+    .filter((row) => !isTreatment(row.treatment))
+    .sort((a, b) => a.line - b.line)
+    .map(({ id, title, section }) => ({ id, title, section }))
+  return { next: Object.fromEntries(REVIEW_ID_PREFIXES.map((prefix) => [prefix, highest[prefix] + 1])), open }
 }
 
 // ---------- Close ----------
@@ -962,12 +1279,21 @@ function sliceCloseProblems(chantier) {
 // null when the chantier has no relation and is not an EPIC) }. A SPIKE (throwaway code, never
 // merged) and an EPIC (no code) skip everything related to the review.
 // `uncommittedError` is the git error met while listing uncommitted files, if any.
-export function closeProblems({ chantier, reviewFacts, uncommittedCode, uncommittedError, checksFailure, index = null }) {
+// `revueUncommitted` is true when revue.md has uncommitted changes; the points of `chantier.revue`
+// (working copy) must all be treated, a point postponed to a slice included.
+export function closeProblems({ chantier, reviewFacts, uncommittedCode, uncommittedError, revueUncommitted = false, checksFailure, index = null }) {
   if (specStatus(chantier?.spec) !== 'signed') {
     return [`La spec de ${chantier?.id ?? 'ce chantier'} n’est pas signée (statut : ${specStatus(chantier?.spec)}).`]
   }
   const sliceProblems = sliceCloseProblems(chantier)
-  const problems = isReviewExempt(chantier) || sliceProblems.length ? sliceProblems : reviewProblems(reviewFacts)
+  const exempt = isReviewExempt(chantier)
+  const problems = exempt || sliceProblems.length ? sliceProblems : reviewProblems(reviewFacts)
+  if (!exempt) {
+    if (revueUncommitted) {
+      problems.push('revue.md a des modifications non commitées : commite-le.')
+    }
+    problems.push(...reviewPointProblems(parseReviewPoints(chantier.revue), { atClose: true }).map((problem) => `revue.md : ${problem}`))
+  }
   if (index) {
     problems.push(...relationCloseProblems(chantier.id, chantier.spec.data, index))
   }
@@ -1362,6 +1688,17 @@ export function decideWrite(context) {
 
 // ---------- Stop hook ----------
 
+// Whether the checks already passed on this working tree (`tree` from the gate's index, null
+// when it could not be computed). Shared by the Stop hook and the commands that run the checks.
+export function checksGreenOn(state, tree) {
+  return tree !== null && state?.lastGreen === tree
+}
+
+// The gate state once the checks passed on `tree`; unchanged when the tree is unknown.
+export function withGreen(state, tree) {
+  return tree === null ? state : { ...state, lastGreen: tree }
+}
+
 // Decides what happens when the agent wants to stop. Returns { block, message, state }: when
 // `block` is true the agent keeps working on `message`; otherwise `message`, if any, is for the user.
 // `state` ({ lastGreen, lastBlock, reportedUnsigned }) is persisted between calls.
@@ -1403,7 +1740,7 @@ export function decideStop(context) {
       state: { ...state, reportedUnsigned: tree },
     }
   }
-  if (config.checks.length === 0 || (tree !== null && state.lastGreen === tree)) {
+  if (config.checks.length === 0 || checksGreenOn(state, tree)) {
     return pass()
   }
   if (tree !== null && state.lastBlock === tree) {
@@ -1412,7 +1749,7 @@ export function decideStop(context) {
   }
   const failure = runChecks()
   if (!failure) {
-    return pass({ ...state, lastGreen: tree })
+    return pass(withGreen(state, tree))
   }
   return block(`atelier : le contrôle « ${failure.check.name} » échoue (${failure.check.command}). Continue à corriger l’implémentation jusqu’à ce que tout passe, sans modifier les tests.\n\n${failure.output}`)
 }

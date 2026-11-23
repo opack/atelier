@@ -1,3 +1,9 @@
+<script setup>
+import { useData } from 'vitepress'
+
+const { theme } = useData()
+</script>
+
 # Installer atelier
 
 ## Sur votre machine
@@ -9,6 +15,17 @@ claude plugin marketplace add opack/atelier
 ```bash
 claude plugin install atelier@atelier
 ```
+
+## Dans une session cloud
+
+Les sessions Claude Code cloud n’installent pas les plugins déclarés par le dépôt dans `.claude/settings.json` : cette déclaration passe par la confiance dans le dossier, qu’une session cloud ne demande jamais. Ajoutez les deux commandes au script d’installation de l’environnement cloud :
+
+```bash
+claude plugin marketplace add opack/atelier
+claude plugin install atelier@atelier
+```
+
+Chaque session part d’un conteneur neuf et installe ainsi la dernière version de la branche par défaut d’atelier.
 
 ## Dans un projet
 
@@ -24,11 +41,19 @@ Dans une session Claude Code ouverte sur le répertoire du projet (les commandes
 2. **Crée** `docs/chantiers/` et `docs/decisions/`.
 3. **Ajoute** `.atelier/` au `.gitignore` (fichier local du débrayage).
 4. **Ajoute** une section « Process » au `CLAUDE.md`.
-5. **Déclare le plugin** dans `.claude/settings.json` : toute personne qui ouvre le projet se voit proposer atelier.
+5. **Déclare le plugin** dans `.claude/settings.json` : toute personne qui ouvre le projet se voit proposer atelier (sauf en session cloud, voir plus haut).
 
 Si le projet a déjà des identifiants de chantier dans son historique, le compteur les continue.
 
 ## Mettre à jour
+
+Version actuelle d’atelier : **{{ theme.version }}**. Pour connaître la version installée chez vous, cherchez la ligne `Version:` d’atelier dans la sortie de :
+
+```bash
+claude plugin list
+```
+
+Si elle est plus ancienne :
 
 ```bash
 claude plugin marketplace update atelier && claude plugin update atelier@atelier
@@ -41,6 +66,14 @@ Puis redémarrez Claude Code.
 ```bash
 claude plugin marketplace add "opack/atelier#<branche>"
 ```
+
+Ou, depuis une copie locale du dépôt atelier, pour une seule session :
+
+```bash
+claude --plugin-dir <chemin>/atelier/plugins/atelier
+```
+
+Cette version remplace, pour la session, le plugin installé du même nom.
 
 ## Retour arrière
 
