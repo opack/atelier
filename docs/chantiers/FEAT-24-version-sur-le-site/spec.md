@@ -31,11 +31,11 @@ Questions si manquant : qu'est-ce qui est hors périmètre ? Quelle est la plus 
 ## 3. Points techniques identifiés
 <!-- Fichiers / couches concernés, contraintes, dépendances. Optionnel. -->
 - `site/.vitepress/config.mjs` : lire `../../plugins/atelier/.claude-plugin/plugin.json` (chemin résolu depuis le fichier de config), dans un `try/catch` qui relance une erreur nommant `plugin.json` si le fichier est illisible, si le JSON est invalide ou si `version` n'a pas la forme `X.Y.Z` (SD4).
-- Exposition (SD2) : `themeConfig.version`, utilisée par l'entrée de nav et, dans les pages, par `{{ $theme.version }}` dans le texte courant. L'interpolation ne fonctionne pas dans un bloc de code : la version n'y figure donc pas.
+- Exposition (SD2) : `themeConfig.version`, utilisée par l'entrée de nav et, dans les pages, par `{{ theme.version }}` après `const { theme } = useData()` dans un `<script setup>`, dans le texte courant. L'interpolation ne fonctionne pas dans un bloc de code : la version n'y figure donc pas.
 - Entrée de nav : `{ text: 'v<version>', link: '/projet/installation#mettre-a-jour', activeMatch: '^$' }`. `activeMatch` qui ne correspond à aucune page évite que l'entrée soit surlignée comme une rubrique sur la page d'installation (SD6).
 - `site/projet/installation.md` : mention de la version dans « Mettre à jour ».
 - `.github/workflows/site.yml` : **piège trouvé** : le workflow ne se déclenche que sur `site/**`, `plugins/atelier/templates/**` et lui-même. Une PR qui ne fait que monter la version ne redéploierait pas le site, qui afficherait alors l'ancienne version. Ajouter `plugins/atelier/.claude-plugin/plugin.json` aux `paths`.
-- Garde-fou dans le même workflow, sur le modèle du contrôle `@include` existant (SD1) : après le build, lire la version avec `node -p "require('../plugins/atelier/.claude-plugin/plugin.json').version"` (le `working-directory` est `site`), puis exiger `v<version>` dans `.vitepress/dist/index.html` et `<version>` dans `.vitepress/dist/projet/installation.html`, sinon échec.
+- Garde-fou dans le même workflow, sur le modèle du contrôle `@include` existant (SD1) : après le build, lire la version avec `node -p "require('../plugins/atelier/.claude-plugin/plugin.json').version"` (le `working-directory` est `site`), puis exiger le balisage rendu `>v<version></span>` dans `.vitepress/dist/index.html` et `<strong><version></strong>` dans `.vitepress/dist/projet/installation.html`, sinon échec. La version seule ne suffit pas : elle figure aussi dans le JSON de données du site injecté dans chaque page (RD1).
 - `CLAUDE.md` (section Structure, `site/`) : signaler que le site lit la version dans `plugin.json`.
 - Aucune dépendance ajoutée.
 
@@ -71,3 +71,4 @@ Questions si manquant : qui peut lire / écrire quoi, et où l'autorisation est-
 
 ## Amendements
 <!-- Après signature : une entrée datée par modification de la spec (date, quoi, pourquoi). -->
+- 2026-11-23 : §3, la page lit la version avec `useData()` (`{{ theme.version }}`) au lieu de `{{ $theme.version }}`, parce que VitePress n'expose pas `$theme` aux pages (voir decisions.md) ; RD2. Contrôle CI précisé : il cherche le balisage rendu, la version brute figurant aussi dans le JSON de données du site de chaque page ; RD1.
