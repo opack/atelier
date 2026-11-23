@@ -9,8 +9,9 @@ signed_by: Opack
 signed_at: 2026-11-21
 rel_depends_on: FEAT-7
 tests_commit: bdbeb40
-slice: 6
-slice_base: 76d577f4e45f29d54b32f26aae2a6e36e89398f5
+slice: chantier
+slice_base: 3d7f912d9ad9e7285fa1ccb7acdb396d33418c5f
+last_slice: 6
 ---
 
 # TEC-15 Identifiants stables des points de relecture

@@ -195,6 +195,7 @@ Traitement d'un point : corrigé (commit), test ajouté, spec amendée, exceptio
 | RD18. Dans `close`, « y figure aussi » est ambigu | `plugins/atelier/skills/close/SKILL.md:25` | corrigé (76d577f) |
 
 - Bilan de la revue : un point bloquant et trois à discuter, tous corrigés ; revue 2 à mener sur 76d577f.
+
 ## Revue : tranche 5 : 2026-11-23
 - Commit revu : 76d577f
 - Base : d168062
@@ -210,3 +211,36 @@ Traitement d'un point : corrigé (commit), test ajouté, spec amendée, exceptio
 | Aucun | | |
 
 - Bilan de la revue : aucun point ; RB3, RD16, RD17 et RD18 confirmés corrigés ; `corrigé (…), reporté de la tranche N` accepté par `isTreatment` et non pris pour un report à la clôture ; 254 tests verts, tests inchangés depuis aa41f9f. Remarque mineure non numérotée : à `review/SKILL.md:45`, « un point repris que le reviewer juge réglé » peut se confondre avec le marqueur `(repris)`.
+
+## Revue : tranche 6 : 2026-11-23
+- Commit revu : c7c49b3
+- Base : 76d577f
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD19. La ligne `set-reviewed` (et `close-check`) de la référence des commandes omet des refus réels (doublon, mauvais tableau, renvoi manquant) | `site/reference/commandes.md:39` | corrigé (3d7f912) : liste des problèmes et renvoi vers la page Revue |
+| RD20. `checkSpec` prend tout `…` d'une section obligatoire pour un texte à compléter (faux positif sur CA-17 et CA-18) | `plugins/atelier/lib/core.mjs:591` | reporté (chantier FIX à ouvrir) : heuristique antérieure à TEC-15, sans effet sur une spec signée |
+
+- Bilan de la revue : deux points à discuter, RD19 corrigé, RD20 reporté vers un FIX ; 256 tests verts, tests inchangés depuis bdbeb40, plugin validé, site construit. Revue 2 à mener sur 3d7f912.
+
+## Revue : tranche 6 : 2026-11-23
+- Commit revu : 3d7f912
+- Base : 76d577f
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+- Bilan de la revue : aucun point ; RD19 confirmé corrigé (liste des refus fidèle à `reviewPointProblems` et `closeProblems`, ancre valide) ; 256 tests verts, tests inchangés depuis bdbeb40, plugin validé, site construit.
