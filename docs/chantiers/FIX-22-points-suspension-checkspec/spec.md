@@ -2,7 +2,7 @@
 id: FIX-22
 type: FIX
 title: Faux positifs de checkSpec sur « … »
-status: signed
+status: done
 tdd: yes
 created_at: 2026-11-23
 source: revue tranche 6 de TEC-15, point RD20
@@ -11,6 +11,7 @@ signed_at: 2026-11-23
 tests_commit: 4ff0cdc
 slice: 1
 reviewed_commit: 7290fe9880181de3234b15eddf068f9da2152cf2
+done_at: 2026-11-23
 ---
 
 # FIX-22 Faux positifs de checkSpec sur « … »
