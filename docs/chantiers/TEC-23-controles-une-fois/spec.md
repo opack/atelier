@@ -2,12 +2,12 @@
 id: TEC-23
 type: TEC
 title: Lancer les contrôles une seule fois par état du code
-status: draft
+status: signed
 tdd: yes
 created_at: 2026-11-23
 source: diagnostic de lenteur des scripts atelier (fil « Accélérer les contrôles d'atelier », 2026-11-23)
-signed_by:
-signed_at:
+signed_by: Opack
+signed_at: 2026-11-23
 ---
 
 # TEC-23 Lancer les contrôles une seule fois par état du code
