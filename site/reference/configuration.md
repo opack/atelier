@@ -83,7 +83,7 @@ Local, non versionné (ajouté au `.gitignore` par `/atelier:init`), protégé c
 | Fichier | Rôle |
 |---|---|
 | `bypass.json` | Le débrayage en cours, avec sa branche et sa raison. |
-| `gate.json` | L’état du contrôle de fin de tour : dernier état vert, dernier blocage. |
+| `gate.json` | L’état du contrôle de fin de tour : dernier état vert, dernier blocage. Le dernier état vert est partagé avec `atelier checks`, `close-check` et `set-status done`, qui ne relancent pas les contrôles sur un code déjà vert. Le supprimer force simplement le prochain lancement. |
 | `gate-index` | L’index git temporaire qui sert à calculer l’état de l’arbre de travail. |
 
 ## En-tête de `spec.md`
