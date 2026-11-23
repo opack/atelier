@@ -22,7 +22,7 @@ Si on ne fait rien : l'écart entre le site et le plugin installé reste invisib
 <!-- Comportement attendu, du point de vue de l'utilisateur. Hors périmètre explicite.
 Questions si manquant : qu'est-ce qui est hors périmètre ? Quelle est la plus petite version utile ? -->
 - Le site affiche la version courante d'atelier dans la barre de navigation, sur toutes les pages (convention VitePress : une entrée `v0.4.0` à droite de la nav).
-- La page « Installer atelier », section « Mettre à jour », indique la version courante et la commande pour connaître la version installée (`claude plugin list`), pour que le lecteur compare.
+- La page « Installer atelier », section « Mettre à jour », indique la version courante (dans le texte, hors bloc de code) et la commande pour connaître la version installée : `claude plugin list`, qui affiche une ligne `Version: X.Y.Z` par plugin (vérifié le 2026-11-23, SD3). Le lecteur compare les deux.
 - La version est **lue au build** dans `plugin.json` : aucune recopie à la main, aucune seconde source.
 - Le site est reconstruit et redéployé quand la version change, même si rien d'autre dans `site/` ne bouge.
 
@@ -30,10 +30,12 @@ Questions si manquant : qu'est-ce qui est hors périmètre ? Quelle est la plus 
 
 ## 3. Points techniques identifiés
 <!-- Fichiers / couches concernés, contraintes, dépendances. Optionnel. -->
-- `site/.vitepress/config.mjs` : lire `../../plugins/atelier/.claude-plugin/plugin.json` (chemin relatif au fichier de config, `readFileSync` + `JSON.parse`), ajouter l'entrée de nav. Exposer aussi la version aux pages Markdown (par exemple via `themeConfig` lu avec `useData()`, ou une constante `vite.define`) pour la page d'installation.
+- `site/.vitepress/config.mjs` : lire `../../plugins/atelier/.claude-plugin/plugin.json` (chemin résolu depuis le fichier de config), dans un `try/catch` qui relance une erreur nommant `plugin.json` si le fichier est illisible, si le JSON est invalide ou si `version` n'a pas la forme `X.Y.Z` (SD4).
+- Exposition (SD2) : `themeConfig.version`, utilisée par l'entrée de nav et, dans les pages, par `{{ $theme.version }}` dans le texte courant. L'interpolation ne fonctionne pas dans un bloc de code : la version n'y figure donc pas.
+- Entrée de nav : `{ text: 'v<version>', link: '/projet/installation#mettre-a-jour', activeMatch: '^$' }`. `activeMatch` qui ne correspond à aucune page évite que l'entrée soit surlignée comme une rubrique sur la page d'installation (SD6).
 - `site/projet/installation.md` : mention de la version dans « Mettre à jour ».
 - `.github/workflows/site.yml` : **piège trouvé** : le workflow ne se déclenche que sur `site/**`, `plugins/atelier/templates/**` et lui-même. Une PR qui ne fait que monter la version ne redéploierait pas le site, qui afficherait alors l'ancienne version. Ajouter `plugins/atelier/.claude-plugin/plugin.json` aux `paths`.
-- Garde-fou dans le même workflow, sur le modèle du contrôle `@include` existant : après le build, vérifier que la version de `plugin.json` apparaît dans le HTML généré, sinon échec.
+- Garde-fou dans le même workflow, sur le modèle du contrôle `@include` existant (SD1) : après le build, lire la version avec `node -p "require('../plugins/atelier/.claude-plugin/plugin.json').version"` (le `working-directory` est `site`), puis exiger `v<version>` dans `.vitepress/dist/index.html` et `<version>` dans `.vitepress/dist/projet/installation.html`, sinon échec.
 - `CLAUDE.md` (section Structure, `site/`) : signaler que le site lit la version dans `plugin.json`.
 - Aucune dépendance ajoutée.
 
@@ -45,12 +47,14 @@ Questions si manquant : qu'est-ce qui est hors périmètre ? Quelle est la plus 
 <!-- Format : - [ ] CA-1 : Étant donné …, quand …, alors …
 Chacun testable automatiquement. Penser aux cas limites : vide, doublon, hors-ligne, utilisateur non autorisé, grand volume.
 Questions si manquant : chaque critère peut-il devenir un test ? Que se passe-t-il si la liste est vide, très grande, si l'utilisateur n'a pas le droit, si le réseau tombe ? -->
-- [ ] CA-1 : Étant donné `plugin.json` en version `X.Y.Z`, quand le site est construit, alors chaque page HTML générée contient `vX.Y.Z` dans la barre de navigation.
-- [ ] CA-2 : Étant donné `plugin.json` en version `X.Y.Z`, quand le site est construit, alors la page `projet/installation.html` contient `X.Y.Z` dans la section « Mettre à jour ».
-- [ ] CA-3 : Étant donné une version modifiée dans `plugin.json` sans autre changement, quand le site est reconstruit, alors il affiche la nouvelle version (aucune valeur codée en dur dans `site/`).
-- [ ] CA-4 : Étant donné un push sur `main` qui ne modifie que `plugins/atelier/.claude-plugin/plugin.json`, alors le workflow « Site » se déclenche (filtre `paths`).
-- [ ] CA-5 : Étant donné un build où la version de `plugin.json` est absente du HTML généré, alors le workflow « Site » échoue avant le déploiement.
-- [ ] CA-6 : Étant donné un `plugin.json` illisible ou sans champ `version`, quand le site est construit, alors le build échoue avec un message qui nomme le fichier (pas de site publié avec « vundefined »).
+Chantier sans TDD : chaque critère indique comment il est vérifié (SD5).
+
+- [ ] CA-1 : Étant donné `plugin.json` en version `X.Y.Z`, quand le site est construit, alors chaque page HTML générée contient `vX.Y.Z` dans la barre de navigation. *Vérif. : contrôle CI sur `index.html` (CA-5) + grep local sur tout `dist/`.*
+- [ ] CA-2 : Étant donné `plugin.json` en version `X.Y.Z`, quand le site est construit, alors la page `projet/installation.html` contient `X.Y.Z` dans la section « Mettre à jour ». *Vérif. : contrôle CI (CA-5).*
+- [ ] CA-3 : Étant donné une version modifiée dans `plugin.json` sans autre changement, quand le site est reconstruit, alors il affiche la nouvelle version (aucune valeur codée en dur dans `site/`). *Vérif. : build local avec `9.9.9`, puis grep de `0.4.0` dans `site/` hors `node_modules` et `dist` (aucun résultat attendu).*
+- [ ] CA-4 : Étant donné un push sur `main` qui ne modifie que `plugins/atelier/.claude-plugin/plugin.json`, alors le workflow « Site » se déclenche (filtre `paths`). *Vérif. : relecture du filtre, puis premier bump de version après fusion.*
+- [ ] CA-5 : Étant donné un build où `v<version>` manque dans `index.html` ou `<version>` dans `projet/installation.html`, alors le workflow « Site » échoue avant le déploiement. *Vérif. : exécution locale du contrôle contre un `dist/` construit avec une autre version.*
+- [ ] CA-6 : Étant donné un `plugin.json` illisible, au JSON invalide, sans champ `version` ou avec une version qui n'a pas la forme `X.Y.Z`, quand le site est construit, alors le build échoue avec un message qui nomme `plugin.json` (pas de site publié avec « vundefined »). *Vérif. : build local sur chacun des quatre cas.*
 
 ## 6. Non-fonctionnel
 <!-- Une ligne chacun, ou « N/A » + raison.
@@ -63,7 +67,7 @@ Questions si manquant : qui peut lire / écrire quoi, et où l'autorisation est-
 
 ## 7. Données de test
 <!-- Jeux de données, comptes, cas à reproduire. Optionnel. -->
-- Version actuelle : `0.4.0`. Pour CA-3 et CA-6 : build local avec un `plugin.json` modifié temporairement (version `9.9.9`, puis champ supprimé).
+- Version actuelle : `0.4.0`. Pour CA-3, CA-5 et CA-6 : build local avec un `plugin.json` modifié temporairement (version `9.9.9`, JSON tronqué, champ supprimé, version vide), restauré ensuite.
 
 ## Amendements
 <!-- Après signature : une entrée datée par modification de la spec (date, quoi, pourquoi). -->
