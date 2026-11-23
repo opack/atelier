@@ -1,0 +1,21 @@
+# Décisions : FIX-20 TDD décidé tranche par tranche
+
+## 2026-11-23 : le TDD se décide par tranche, dans le plan
+- Contexte : TEC-15, tranche 6 (site, README, version) impossible à figer ; contournement par un CA de complaisance (CA-19).
+- Écarté : A, `/atelier:plan` refuse une tranche TDD sans CA, parce que la tranche documentaire est légitime et récurrente et qu'une fusion dans une tranche de code mélange logique et prose ; B, gel « vide », parce que c'est un faux événement ; C, déduire le TDD de l'absence de CA, trop implicite.
+- Conséquence : chaque tranche déclare `TDD : oui|non` ; le `tdd` du chantier devient la valeur par défaut.
+
+## 2026-11-23 : la valeur de la tranche courante vit dans l'en-tête protégé de la spec (`slice_tdd`)
+- Contexte : relecture de la spec (B2) : `plan.md` est un chemin libre, un agent pourrait sortir de « tests d'abord » en l'éditant.
+- Écarté : lire le plan à chaque décision du hook, parce que contournable ; garder `plan.md` par le hook, parce que trop large.
+- Conséquence : `slice_tdd` n'est écrit que par `check-plan` (s'il est vide), `set-reviewed` et `set-tdd` (tracé).
+
+## 2026-11-23 : pas de contrôle « on ne fait qu'ajouter des tests » en tranche sans TDD
+- Contexte : relecture de la spec (B3).
+- Écarté : le contrôle des lignes de test retirées au `set-reviewed`, parce qu'il casserait les chantiers `tdd: no` (un REF modifie ses tests) et laisserait un test faux sans voie de sortie.
+- Conséquence : une tranche sans TDD se comporte comme un chantier `tdd: no` ; la revue juge.
+
+## 2026-11-23 : `check-plan` reste dans FIX-20, FIX-20 passe avant REF-16
+- Contexte : relecture (D8) et conflit prévisible sur `core.test.mjs`.
+- Écarté : sortir `check-plan` dans un chantier séparé, parce que le comportement de `plan` faisait partie de la demande ; passer REF-16 d'abord, parce que FIX-20 débloque TEC-15.
+- Conséquence : REF-16 se recale sur FIX-20.
