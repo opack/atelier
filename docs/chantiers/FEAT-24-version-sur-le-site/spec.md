@@ -3,7 +3,7 @@ id: FEAT-24
 type: FEAT
 title: Afficher la version d'atelier sur le site
 status: draft
-tdd:                 # yes | no : décision humaine, obligatoire avant signature
+tdd: no
 created_at: 2026-11-23
 signed_by:
 signed_at:
@@ -39,7 +39,7 @@ Questions si manquant : qu'est-ce qui est hors périmètre ? Quelle est la plus 
 
 ## 4. Questions ouvertes
 <!-- Questions à trancher avant ou pendant la conception. Les réponses vont dans decisions.md. Optionnel. -->
-- Q1 : cible du lien de l'entrée de nav (VitePress exige un lien ou un sous-menu). Proposition : la page « Installer atelier », section « Mettre à jour ». Alternative : l'historique des commits de `main` sur GitHub.
+- Q1 (tranchée le 2026-11-23) : l'entrée de nav pointe vers la section « Mettre à jour » de la page « Installer atelier » (`/projet/installation#mettre-a-jour`), plutôt que vers l'historique des commits de `main`.
 
 ## 5. Critères d'acceptation
 <!-- Format : - [ ] CA-1 : Étant donné …, quand …, alors …
