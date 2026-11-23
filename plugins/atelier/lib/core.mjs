@@ -1641,6 +1641,17 @@ export function decideWrite(context) {
 
 // ---------- Stop hook ----------
 
+// Whether the checks already passed on this working tree (`tree` from the gate's index, null
+// when it could not be computed). Shared by the Stop hook and the commands that run the checks.
+export function checksGreenOn(state, tree) {
+  return tree !== null && state?.lastGreen === tree
+}
+
+// The gate state once the checks passed on `tree`; unchanged when the tree is unknown.
+export function withGreen(state, tree) {
+  return tree === null ? state : { ...state, lastGreen: tree }
+}
+
 // Decides what happens when the agent wants to stop. Returns { block, message, state }: when
 // `block` is true the agent keeps working on `message`; otherwise `message`, if any, is for the user.
 // `state` ({ lastGreen, lastBlock, reportedUnsigned }) is persisted between calls.
@@ -1682,7 +1693,7 @@ export function decideStop(context) {
       state: { ...state, reportedUnsigned: tree },
     }
   }
-  if (config.checks.length === 0 || (tree !== null && state.lastGreen === tree)) {
+  if (config.checks.length === 0 || checksGreenOn(state, tree)) {
     return pass()
   }
   if (tree !== null && state.lastBlock === tree) {
@@ -1691,7 +1702,7 @@ export function decideStop(context) {
   }
   const failure = runChecks()
   if (!failure) {
-    return pass({ ...state, lastGreen: tree })
+    return pass(withGreen(state, tree))
   }
   return block(`atelier : le contrôle « ${failure.check.name} » échoue (${failure.check.command}). Continue à corriger l’implémentation jusqu’à ce que tout passe, sans modifier les tests.\n\n${failure.output}`)
 }
