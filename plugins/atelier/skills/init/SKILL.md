@@ -55,7 +55,7 @@ N'inclus que les contrôles qui existent et s'exécutent en moins de quelques mi
 
 - Si le projet a déjà des identifiants de chantier dans son historique (ex. `[FEA-26]`, `[BUG-421]`), lance `atelier next-id FEAT` et indique le prochain numéro : le compteur continue l'historique.
 - Index Notion : pas encore pris en charge par atelier. Dis-le si l'utilisateur le demande.
-- Signale que la déclaration de `.claude/settings.json` ne vaut pas pour les sessions Claude Code cloud : elles n'installent pas les plugins déclarés par le dépôt. Pour le cloud, ajoute au script d'installation de l'environnement cloud :
+- Signale que la déclaration de `.claude/settings.json` ne vaut pas pour les sessions Claude Code cloud : elles n'installent pas les plugins déclarés par le dépôt. Indique à l'utilisateur d'ajouter au script d'installation de son environnement cloud (ne le modifie pas toi-même) :
 
   ```bash
   claude plugin marketplace add opack/atelier
