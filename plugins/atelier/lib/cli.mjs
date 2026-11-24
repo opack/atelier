@@ -22,6 +22,7 @@ import {
 import { commandCheckProcess, commandTemplate } from './cli/docs.mjs'
 import { activeChantier, commandNextId, requireActiveChantier } from './cli/identifiers.mjs'
 import { chantierIndex, formatRelations, isEpic, needsIndex, relationsSummary } from './cli/relations.mjs'
+import { commandReviewIds } from './cli/review-points.mjs'
 import { codeFilesSince, sliceCodeFiles, slicePosition } from './cli/slices.mjs'
 import { commandCheckSpec, commandSign, updateSpec } from './cli/spec.mjs'
 import {
@@ -39,7 +40,6 @@ import {
   decideStop,
   decideWrite,
   isReviewExempt,
-  nextReviewIds,
   nextStep,
   reviewCodeFiles,
   reviewProblems,
@@ -349,25 +349,6 @@ function commandCloseCheck() {
     return
   }
   console.log('Clôture possible : revue à jour, travail commité, contrôles verts.')
-}
-
-function commandReviewIds(options) {
-  const projectRoot = findProjectRoot()
-  const config = requireConfig(projectRoot)
-  const chantier = requireActiveChantier(projectRoot, config)
-  const readText = (name) => {
-    const filePath = join(chantier.directory, name)
-    return existsSync(filePath) ? readFileSync(filePath, 'utf8') : null
-  }
-  const ids = nextReviewIds({ revue: chantier.revue, spec: readText('spec.md'), decisions: readText('decisions.md') })
-  if (options.includes('--json')) {
-    console.log(JSON.stringify(ids, null, 2))
-    return
-  }
-  const next = Object.entries(ids.next).map(([prefix, number]) => `${prefix}${number}`).join(', ')
-  const open = ids.open.map(({ id, title, section }) => `- ${id}. ${title} (section « ${section} »)`)
-  console.log(`Prochains identifiants : ${next}.`)
-  console.log(open.length ? `Points de revue ouverts :\n${open.join('\n')}` : 'Aucun point de revue ouvert.')
 }
 
 function commandBypass([mode, ...reasonWords]) {
