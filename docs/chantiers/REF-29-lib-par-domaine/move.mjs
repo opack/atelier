@@ -258,7 +258,7 @@ function relink(baseExports) {
         const path = `./${definedIn.get(name)}`
         reexports.set(path, [...(reexports.get(path) ?? []), name])
       }
-      if (reexports.size) lines.push('')
+      if (reexports.size && lines.length) lines.push('')
       for (const [from, names] of [...reexports].sort(([a], [b]) => a.localeCompare(b))) {
         lines.push(...importStatement('export', names.sort(), from))
       }
