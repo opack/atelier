@@ -45,7 +45,7 @@ Les étapes coûteuses et sans dialogue sont confiées à des sous-agents, dont 
 
 **Résolution.** Pour chaque sous-agent, le modèle et l'effort se résolvent séparément, du plus fort au plus faible :
 1. **l'argument de la commande** (`/atelier:build opus`, `/atelier:review medium`, `/atelier:build opus high`) ;
-2. **l'option de l'utilisateur**, réglée une fois avec `/plugin configure atelier` (`implementer_model`, `implementer_effort`, etc.). Elle vaut pour tous les projets de cet utilisateur ;
+2. **l'option de l'utilisateur**, réglée une fois avec `/plugin configure atelier` (`implementer_model`, `implementer_effort`, etc. ; dans le nom d'une option, les tirets du nom de l'agent deviennent `_` : `overfit_checker_model`). Elle vaut pour tous les projets de cet utilisateur ;
 3. **le défaut**, écrit dans le code et repris dans le manifeste, dans l'en-tête des agents et sur le site.
 
 Règles de la résolution :
@@ -109,7 +109,7 @@ Questions si manquant : chaque critère peut-il devenir un test ? Que se passe-t
 - [ ] CA-8 : Étant donné `Opus HIGH` en argument et `Sonnet` en option, quand on résout, alors les valeurs sont reconnues et rendues en minuscules.
 - [ ] CA-9 : Étant donné un reste pour `reviewer` ou `spec-critic` (`/atelier:review foo`), quand on résout, alors le reste est rendu avec un avertissement qui dit qu'il est ignoré. Pour `implementer`, le même reste ne donne aucun avertissement.
 - [ ] CA-10 : Étant donné le plugin livré, quand on compare, alors le manifeste déclare, pour chacun des quatre sous-agents, une option de modèle et une option d'effort, facultatives. Leurs `default`, l'en-tête `model` / `effort` de chaque agent et le tableau des défauts de `site/agent/modes.md` sont identiques aux défauts du code.
-- [ ] CA-11 : Étant donné les skills `build`, `review` et `sign`, quand on lit leur texte, alors chacun contient l'appel `atelier agent-settings <agent>` avec `'${user_config.<agent>_model}'`, `'${user_config.<agent>_effort}'` et `'$ARGUMENTS'` entre guillemets simples, ainsi que la consigne de passer `model` et `effort` à l'appel du sous-agent, d'annoncer modèle, effort, sources et avertissements, et de s'arrêter si la commande échoue. `build` contient un appel pour `implementer` avec `'$ARGUMENTS'`, et un pour `overfit-checker` sans.
+- [ ] CA-11 : Étant donné les skills `build`, `review` et `sign`, quand on lit leur texte, alors chacun contient l'appel `atelier agent-settings <agent>` avec `'${user_config.<option>_model}'`, `'${user_config.<option>_effort}'` (`<option>` : le nom de l'agent, tirets remplacés par `_`) et `'$ARGUMENTS'` entre guillemets simples, ainsi que la consigne de passer `model` et `effort` à l'appel du sous-agent, d'annoncer modèle, effort, sources et avertissements, et de s'arrêter si la commande échoue. `build` contient un appel pour `implementer` avec `'$ARGUMENTS'`, et un pour `overfit-checker` sans.
 - [ ] CA-12 : Étant donné le skill `build`, quand on lit son texte, alors il contient `atelier:implementer` pour chacun des chemins de la §2 (tranche en TDD, sans TDD, corrections `OB` / `OD`, corrections de la revue du chantier), la consigne de lancer `atelier checks` après chaque retour d'`implementer`, et ne contient plus de consigne où `build` écrit le code lui-même.
 - [ ] CA-13 : Étant donné l'agent `implementer`, quand on lit son texte, alors il interdit de modifier un test, de commiter, de lancer une commande `atelier` qui change l'état et d'écrire dans la spec ou dans `decisions.md`, et il impose le compte rendu « Arrêt : test à revoir ».
 - [ ] CA-14 : Étant donné le site et les skills, quand on les lit (SD9) :
@@ -139,3 +139,4 @@ Les essais du 23/11/2026 sont à rejouer avec un plugin jetable installé par `c
 
 ## Amendements
 <!-- Après signature : une entrée datée par modification de la spec (date, quoi, pourquoi). -->
+- 2026-11-24 : nom des options : les tirets du nom de l'agent deviennent `_` (`overfit_checker_model`, `spec_critic_effort`), car une clé `userConfig` n'accepte que lettres, chiffres et `_` (OD9).
