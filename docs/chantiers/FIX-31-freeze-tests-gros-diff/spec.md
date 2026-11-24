@@ -26,7 +26,7 @@ signed_at:
 <!-- Étapes, environnement, données, compte. Reproduit en local : oui / non (si non : comment prouvera-t-on la correction ?). -->
 Reproduit sur dépôt jetable (helpers de `test/helpers.mjs`) :
 1. Plantage : chantier en tranche 2 (`slice_base` posé), un commit de code de 2 Mo, un commit de test, `atelier freeze-tests` → sortie 1, `Error: spawnSync git ENOBUFS` dans `gitRaw`.
-2. Faux refus : `main` ajoute `test/main.test.mjs`, fusionnée dans la branche avant `slice_base` ; après `slice_base`, `main` modifie une ligne de ce fichier et est refusionnée ; un commit de test du chantier ; `atelier freeze-tests` → sortie 2, « Gel refusé : … - test/main.test.mjs ».
+2. Faux refus : `main` ajoute `test/main.test.mjs`, fusionnée dans la branche avant `slice_base` ; après `slice_base`, `main` modifie une ligne de ce fichier et est refusionnée ; un commit de test du chantier ; `atelier freeze-tests` → sortie 2, refus qui cite `test/main.test.mjs`.
 
 ## 3. Cause probable
 <!-- Hypothèse AVEC sa preuve (ligne de code, trace, breadcrumb). Confiance : forte / moyenne / faible. -->
