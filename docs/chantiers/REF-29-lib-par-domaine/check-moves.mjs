@@ -160,52 +160,77 @@ export function compareDeclarations(baseFiles, afterFiles) {
 // Names of lib/ declarations that a module uses without declaring or importing them. Written apart
 // from move.mjs on purpose: it does not trust the scan that wrote the imports. A name bound locally
 // with the same spelling as a lib/ declaration (parameter, destructured field) is listed in
-// LOCAL_HOMONYMS after a check by hand, and must then really be bound in that module.
+// LOCAL_HOMONYMS for the declaration that binds it, after a check by hand: it is exempted in that
+// declaration only, and must be bound in its signature or in a destructuring there.
 const LOCAL_HOMONYMS = {
-  'plugins/atelier/lib/common.mjs': ['gitVersion'],
-  'plugins/atelier/lib/core.mjs': ['codeFilesSince', 'isAncestor', 'runChecks', 'reviewFacts', 'sliceCodeFiles'],
-  'plugins/atelier/lib/cli.mjs': ['specProblems'],
+  codeLogArguments: ['gitVersion'],
+  reviewProblems: ['isAncestor', 'codeFilesSince'],
+  setReviewedRefusal: ['sliceCodeFiles'],
+  closeProblems: ['reviewFacts'],
+  decideStop: ['runChecks'],
+  formatStatus: ['specProblems'],
 }
 
-function blankLiterals(source) {
+// Code with comments, strings, regexes and template text replaced by a neutral ` 0 `, template
+// expressions kept and set apart by spaces, so that each identifier stands alone. Throws on a
+// literal or comment left open.
+export function blankLiterals(source) {
   let out = ''
-  const templates = [] // open template expressions: brace depth of each
-  let previous = ''
+  const templates = [] // brace depth of each open template expression
+  let previous = '' // last significant character emitted
+  const open = (kind, from) => {
+    throw new Error(`${kind} non fermé à partir de : ${source.slice(from, from + 40)}`)
+  }
+  const literal = () => {
+    out += ' 0 '
+    previous = '0'
+  }
   for (let index = 0; index < source.length; index++) {
     const char = source[index]
     if (templates.length && char === '}' && templates.at(-1) === 0) {
       templates.pop()
+      out += ' '
       index = skipTemplate(index + 1)
       continue
     }
     if (char === '/' && source[index + 1] === '/') {
-      index = source.indexOf('\n', index) - 1
-      if (index < 0) break
+      const end = source.indexOf('\n', index)
+      if (end === -1) break
+      index = end - 1
       continue
     }
     if (char === '/' && source[index + 1] === '*') {
-      index = source.indexOf('*/', index) + 1
+      const end = source.indexOf('*/', index + 2)
+      if (end === -1) open('commentaire', index)
+      index = end + 1
+      out += ' '
       continue
     }
     if (char === "'" || char === '"') {
-      for (index++; source[index] !== char; index++) if (source[index] === '\\') index++
-      out += '0'
-      previous = '0'
+      const start = index
+      for (index++; source[index] !== char; index++) {
+        if (index >= source.length || source[index] === '\n') open('chaîne', start)
+        if (source[index] === '\\') index++
+      }
+      literal()
       continue
     }
     if (char === '`') {
       index = skipTemplate(index + 1)
       continue
     }
-    if (char === '/' && /^$|[(,=:!&|?{};[]$/.test(previous)) {
+    // A slash opens a regex after an operator, an opening bracket, `=>`, or `return` / `typeof`.
+    if (char === '/' && (/^$|[(,=:!&|?{};[+\-*%<>~^]$/.test(previous) || /\b(return|typeof)\s*$/.test(out))) {
+      const start = index
       let inClass = false
       for (index++; source[index] !== '/' || inClass; index++) {
+        if (index >= source.length || source[index] === '\n') open('expression régulière', start)
         if (source[index] === '\\') index++
         else if (source[index] === '[') inClass = true
         else if (source[index] === ']') inClass = false
       }
-      out += '0'
-      previous = '0'
+      while (/[a-z]/.test(source[index + 1] ?? '')) index++
+      literal()
       continue
     }
     if (templates.length && char === '{') templates[templates.length - 1]++
@@ -213,24 +238,39 @@ function blankLiterals(source) {
     out += char
     if (char.trim()) previous = char
   }
+  if (templates.length) open('gabarit', source.length - 1)
   return out
 
-  // Returns the index of the last character of the template text, entering `${` expressions.
+  // Index of the last character of the template text from `start`: its closing backtick, or the `{`
+  // of a `${`, whose expression is then scanned as code.
   function skipTemplate(start) {
     for (let index = start; index < source.length; index++) {
       if (source[index] === '\\') index++
       else if (source[index] === '`') {
-        out += '0'
-        previous = '0'
+        literal()
         return index
       } else if (source[index] === '$' && source[index + 1] === '{') {
         templates.push(0)
+        out += ' 0 ( '
         previous = '('
         return index + 1
       }
     }
-    return source.length
+    open('gabarit', start - 1)
   }
+}
+
+// Whether `name` is used as a bare identifier in blanked `code`: not a property (`.name`, a spread
+// `...name` is a use), not an object key (`{ name:` or `, name:`; a ternary `a ? name : b` is a use).
+function usesName(code, name) {
+  const pattern = new RegExp(`(?<![\\w$])${name.replace('$', '\\$')}(?![\\w$])`, 'g')
+  for (const match of code.matchAll(pattern)) {
+    const before = code.slice(0, match.index)
+    if (/(?<!\.\.)\.\s*$/.test(before)) continue
+    const isKey = /^\s*:(?!:)/.test(code.slice(match.index + name.length)) && /[{,]\s*$/.test(before)
+    if (!isKey) return true
+  }
+  return false
 }
 
 export function missingImports(files) {
@@ -239,8 +279,9 @@ export function missingImports(files) {
   const found = []
   for (const module of modules) {
     const available = new Set(module.units.map((unit) => unit.name))
-    for (const statement of module.statements) {
-      const clause = statement.replace(/\s*from\s*['"][^'"]+['"]\s*$/, '').replace(/^(import|export)\s+/, '')
+    // Only imports bring a name into scope: a re-export (`export { x } from`) does not.
+    for (const statement of module.statements.filter((statement) => statement.startsWith('import'))) {
+      const clause = statement.replace(/\s*from\s*['"][^'"]+['"]\s*$/, '').replace(/^import\s+/, '')
       const defaultName = /^([A-Za-z_$][\w$]*)/.exec(clause)?.[1]
       if (defaultName) available.add(defaultName)
       for (const item of (/\{([^}]*)\}/.exec(clause)?.[1] ?? '').split(',')) {
@@ -248,17 +289,26 @@ export function missingImports(files) {
         if (local) available.add(local)
       }
     }
-    const code = blankLiterals(module.units.map((unit) => unit.text).join('\n')).replaceAll('...', ' ')
-    const homonyms = new Set(LOCAL_HOMONYMS[module.file] ?? [])
-    for (const name of libNames) {
-      if (available.has(name)) continue
-      const uses = new RegExp(`(?<![\\w$.])${name.replace('$', '\\$')}(?![\\w$])(?!\\s*:(?!:))`).test(code)
-      if (!uses) continue
-      if (homonyms.has(name)) continue
-      found.push(`${module.file} : utilise ${name} sans le déclarer ni l’importer`)
-    }
-    for (const name of homonyms) {
-      if (!new RegExp(`[{(,]\\s*${name}\\b`).test(code)) found.push(`${module.file} : homonyme local ${name} introuvable, à retirer de LOCAL_HOMONYMS`)
+    for (const unit of module.units) {
+      let code
+      try {
+        code = blankLiterals(unit.text)
+      } catch (error) {
+        found.push(`${module.file}, ${unit.name} : ${error.message}`)
+        continue
+      }
+      const homonyms = LOCAL_HOMONYMS[unit.name] ?? []
+      for (const name of homonyms) {
+        const signature = unit.text.split('\n').find((line) => !line.startsWith('//')) ?? ''
+        const destructured = new RegExp(`\\b(?:const|let)\\s*\\{[^}]*\\b${name}\\b[^}]*\\}\\s*=`).test(unit.text)
+        if (!new RegExp(`\\b${name}\\b`).test(signature) && !destructured) {
+          found.push(`${module.file}, ${unit.name} : homonyme local ${name} non lié ici, à retirer de LOCAL_HOMONYMS`)
+        }
+      }
+      for (const name of libNames) {
+        if (available.has(name) || homonyms.includes(name) || !usesName(code, name)) continue
+        found.push(`${module.file}, ${unit.name} : utilise ${name} sans le déclarer ni l’importer`)
+      }
     }
   }
   return found
@@ -390,6 +440,19 @@ function selfTest(baseFiles, afterFiles) {
     'ligne échangée entre deux déclarations': afterFiles[first].replace(lineOf(a), '\u0000').replace(lineOf(b), lineOf(a)).replace('\u0000', lineOf(b)),
     'ligne supprimée': afterFiles[first].replace(`${lineOf(a)}\n`, ''),
     'déclaration dupliquée': `${afterFiles[first]}\n${a.text.replace(/^(?:\/\/.*\n)*/, '')}\n`,
+  }
+  // Fabricated modules: each must be caught, and none may hang the scan (RD2, RD5).
+  const synthetic = {
+    'expression de gabarit après la première': 'export function f(t) {\n  return `${t} : ${A}`\n}\n',
+    'ternaire': 'export function f(t) {\n  return t ? A : []\n}\n',
+    'regex avec apostrophe après =>': "export const f = (x) => /'/.test(x) && A\n",
+    'chaîne non fermée': "export const f = () => 'oops\n",
+  }
+  for (const [label, text] of Object.entries(synthetic)) {
+    const result = missingImports({ 'x/a.mjs': 'export const A = 1\n', 'x/b.mjs': text })
+    const caught = result.length > 0
+    console.log(`    module fabriqué « ${label} » : ${caught ? 'signalé' : 'NON signalé'}`)
+    if (!caught) found.push(`module fabriqué non signalé : ${label}`)
   }
   // An import dropped from a module must be caught by missingImports.
   const importer = Object.keys(afterFiles).find((file) => /^import \{ ?\n?\s*\w+,/m.test(afterFiles[file]) && /from '\.\.?\//.test(afterFiles[file]))

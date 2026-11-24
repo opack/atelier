@@ -37,6 +37,7 @@ function measure(pluginDirectory) {
 }
 
 const baseDirectory = mkdtempSync(join(tmpdir(), 'ref29-plugin-'))
+// Exit code set, never process.exit() in the try: the finally must remove the extracted plugin (RD6).
 try {
   execFileSync('sh', ['-c', `git archive ${BASE_COMMIT} plugins/atelier | tar -x -C "${baseDirectory}"`], { cwd: root })
   const base = measure(join(baseDirectory, 'plugins/atelier'))
@@ -50,9 +51,10 @@ try {
   console.log(`  décision branche : ${current.decision}`)
   if (base.decision !== current.decision) {
     console.error('Décisions différentes : les deux mesures ne suivent pas le même chemin.')
-    process.exit(1)
+    process.exitCode = 1
+  } else {
+    process.exitCode = current.median - base.median > 20 ? 1 : 0
   }
-  process.exit(current.median - base.median > 20 ? 1 : 0)
 } finally {
   rmSync(baseDirectory, { recursive: true, force: true })
 }
