@@ -61,3 +61,7 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - OD8, à vérifier : si `/plugin configure` enregistre les `default` préremplis, l'annonce dira « (utilisateur) » et un futur changement de défaut n'atteindra pas cet utilisateur. Vérification à faire en local par Didier, avant la clôture ; si c'est confirmé, amender la spec pour retirer les `default`.
 - OD9 : la spec écrit `${user_config.<agent>_model}`, une clé invalide pour un nom à tiret. Un amendement est proposé à Didier avant les tests de la tranche 4.
 - OD10, comme OD5 : des tests faibles (copie locale des défauts, regex lâches de CA-13) sont signalés sans rouvrir les tests. Le contenu réel est correct.
+
+## 2026-11-24 : traitement du contrôle de surapprentissage, tranche 3 (OD11, OD12)
+- OD11, corrigé : une option répétée (`--args 'opus sonnet' --args ''`) écrasait la précédente et contournait le refus de CA-7. Une option répétée est maintenant refusée (code 1).
+- OD12, comme OD5 et OD10 : les tests de la commande sont un peu faibles (option utilisateur valide non transmise de bout en bout, refus de deux efforts non testé par la commande). Le module d'entrées / sorties est mince et la logique est couverte en tranche 1, donc on ne rouvre pas les tests.
