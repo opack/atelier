@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 // REF-29: moves whole declarations between modules of plugins/atelier/lib, then rewrites the import
 // header of every module so that each one imports what it uses from the module that defines it.
-//   node docs/chantiers/REF-29-lib-par-domaine/move.mjs <target> [--header "<comment>"] <name>...
+//   node docs/chantiers/REF-29-lib-par-domaine/move.mjs <target> [--header "<comment>"] --section "<title>" <name>...
 //   node docs/chantiers/REF-29-lib-par-domaine/move.mjs --relink
 // <target> is relative to lib/ (`common.mjs`, `cli/common.mjs`). A declaration moves with the comment
-// lines glued above it and its section comment; its text never changes (check-moves.mjs proves it).
+// lines glued above it; its text never changes (check-moves.mjs proves it). The moved declarations go
+// under a section titled after their content in the target (`--section`), not after their origin (RD1).
 // Imports are found by scanning the free identifiers of each declaration (outside comments, strings,
 // regexes and template text, minus locally bound names); IGNORED corrects a wrong guess by hand.
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
@@ -59,7 +60,8 @@ function locate(text) {
   return { lines, spans }
 }
 
-function move(target, names, header) {
+function move(target, names, header, section) {
+  if (!section) throw new Error('--section "<titre>" est obligatoire : la section d’origine ne décrit pas le module cible (RD1)')
   const wanted = new Set(names)
   const moved = []
   for (const module of modules().filter((module) => module !== target)) {
@@ -79,12 +81,8 @@ function move(target, names, header) {
   const order = new Map(names.map((name, index) => [name, index]))
   moved.sort((a, b) => order.get(a.name) - order.get(b.name))
   let text = existsSync(join(lib, target)) ? read(target).replace(/\n+$/, '') : `${header ?? `// ${target}`}\n`
-  let lastSection = locate(text).spans.at(-1)?.section ?? null
-  for (const unit of moved) {
-    if (unit.section && unit.section !== lastSection) text += `\n\n// ---------- ${unit.section} ----------`
-    lastSection = unit.section
-    text += `\n\n${unit.text}`
-  }
+  text += `\n\n// ---------- ${section} ----------`
+  for (const unit of moved) text += `\n\n${unit.text}`
   write(target, `${text}\n`)
 }
 
@@ -285,7 +283,9 @@ function rewriteHeader(text, statements, exported) {
   const rest = []
   for (; index < lines.length; index++) {
     if (/^import\b/.test(lines[index]) || /^export (\{|\*)/.test(lines[index])) {
-      while (!/\bfrom ['"][^'"]+['"]/.test(lines[index])) index++
+      const start = index
+      while (index < lines.length && !/\bfrom ['"][^'"]+['"]/.test(lines[index])) index++
+      if (index === lines.length) throw new Error(`instruction sans « from » : ${lines[start]}`)
       continue
     }
     const match = DECLARATION.exec(lines[index])
@@ -311,6 +311,8 @@ if (argumentList[0] !== '--relink') {
   let header = null
   const headerIndex = rest.indexOf('--header')
   if (headerIndex !== -1) header = rest.splice(headerIndex, 2)[1]
-  move(target, rest, header)
+  const sectionIndex = rest.indexOf('--section')
+  const section = sectionIndex === -1 ? null : rest.splice(sectionIndex, 2)[1]
+  move(target, rest, header, section)
 }
 relink(baseExports)

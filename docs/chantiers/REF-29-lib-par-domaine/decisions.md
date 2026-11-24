@@ -46,7 +46,7 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 
 ## 2026-11-24 : latence de la base, médiane de `hook-guard` à 34 ms
 - Contexte : tranche 1, `measure-hook.mjs` (20 lancements, édition de `lib/core.mjs`), trois séries dans le conteneur cloud : 34,3 / 34,2 / 33,2 ms.
-- Conséquence : seuil CA-7 à 54 ms de médiane. La mesure dépend de la machine : celle de la tranche 6 se refait sur la même machine que la base, en relançant aussi la base (`git stash` ou worktree de `f3ec902`) si ce n'est pas le cas.
+- Conséquence : la mesure dépend de la machine. Depuis RD3 (revue de la tranche 1), `measure-hook.mjs` mesure les deux plugins dans la même séance : la base extraite par `git archive f3ec902 plugins/atelier` et la branche, lancés sur ce dépôt (même chantier actif), avec la même décision du hook exigée ; il échoue au-delà de +20 ms. Le seuil absolu de 54 ms n'est plus la référence.
 
 ## 2026-11-24 : `check-moves.mjs` accepte une ligne de test sous sa forme de base ou sa forme cible
 - Contexte : les retouches tolérées des tests (préfixe `core.`, noms de `windows-launcher.test.mjs`) n'arrivent qu'en tranche 6 ; le script tourne à chaque tranche.

@@ -85,11 +85,16 @@ export function splitModule(text, file) {
       index++
       continue
     }
-    if (/^import\b/.test(line) || /^export (\{|\*)/.test(line)) {
+    // Re-exports are allowed in the façade only (spec §4); a statement must end with `from '…'`.
+    if (/^import\b/.test(line) || (/^export (\{|\*)/.test(line) && /(^|\/)core\.mjs$/.test(file))) {
       header = false
       flushComments()
       const start = index
-      while (!/\bfrom ['"][^'"]+['"]/.test(lines[index]) && !/^import ['"]/.test(lines[index])) index++
+      while (index < lines.length && !/\bfrom ['"][^'"]+['"]/.test(lines[index]) && !/^import ['"]/.test(lines[index])) index++
+      if (index === lines.length) {
+        strays.push(`${file}:${start + 1} : instruction sans « from » : ${line}`)
+        break
+      }
       statements.push(lines.slice(start, index + 1).join('\n'))
       index++
       continue
@@ -150,6 +155,115 @@ export function compareDeclarations(baseFiles, afterFiles) {
   return { declarations: found, comments, strays, placement, baseCount: baseUnits.length }
 }
 
+// ---------- imports (RD2)
+
+// Names of lib/ declarations that a module uses without declaring or importing them. Written apart
+// from move.mjs on purpose: it does not trust the scan that wrote the imports. A name bound locally
+// with the same spelling as a lib/ declaration (parameter, destructured field) is listed in
+// LOCAL_HOMONYMS after a check by hand, and must then really be bound in that module.
+const LOCAL_HOMONYMS = {
+  'plugins/atelier/lib/common.mjs': ['gitVersion'],
+  'plugins/atelier/lib/core.mjs': ['codeFilesSince', 'isAncestor', 'runChecks', 'reviewFacts', 'sliceCodeFiles'],
+  'plugins/atelier/lib/cli.mjs': ['specProblems'],
+}
+
+function blankLiterals(source) {
+  let out = ''
+  const templates = [] // open template expressions: brace depth of each
+  let previous = ''
+  for (let index = 0; index < source.length; index++) {
+    const char = source[index]
+    if (templates.length && char === '}' && templates.at(-1) === 0) {
+      templates.pop()
+      index = skipTemplate(index + 1)
+      continue
+    }
+    if (char === '/' && source[index + 1] === '/') {
+      index = source.indexOf('\n', index) - 1
+      if (index < 0) break
+      continue
+    }
+    if (char === '/' && source[index + 1] === '*') {
+      index = source.indexOf('*/', index) + 1
+      continue
+    }
+    if (char === "'" || char === '"') {
+      for (index++; source[index] !== char; index++) if (source[index] === '\\') index++
+      out += '0'
+      previous = '0'
+      continue
+    }
+    if (char === '`') {
+      index = skipTemplate(index + 1)
+      continue
+    }
+    if (char === '/' && /^$|[(,=:!&|?{};[]$/.test(previous)) {
+      let inClass = false
+      for (index++; source[index] !== '/' || inClass; index++) {
+        if (source[index] === '\\') index++
+        else if (source[index] === '[') inClass = true
+        else if (source[index] === ']') inClass = false
+      }
+      out += '0'
+      previous = '0'
+      continue
+    }
+    if (templates.length && char === '{') templates[templates.length - 1]++
+    if (templates.length && char === '}') templates[templates.length - 1]--
+    out += char
+    if (char.trim()) previous = char
+  }
+  return out
+
+  // Returns the index of the last character of the template text, entering `${` expressions.
+  function skipTemplate(start) {
+    for (let index = start; index < source.length; index++) {
+      if (source[index] === '\\') index++
+      else if (source[index] === '`') {
+        out += '0'
+        previous = '0'
+        return index
+      } else if (source[index] === '$' && source[index + 1] === '{') {
+        templates.push(0)
+        previous = '('
+        return index + 1
+      }
+    }
+    return source.length
+  }
+}
+
+export function missingImports(files) {
+  const modules = Object.entries(files).map(([file, text]) => ({ file, ...splitModule(text, file) }))
+  const libNames = new Set(modules.flatMap((module) => module.units.map((unit) => unit.name)))
+  const found = []
+  for (const module of modules) {
+    const available = new Set(module.units.map((unit) => unit.name))
+    for (const statement of module.statements) {
+      const clause = statement.replace(/\s*from\s*['"][^'"]+['"]\s*$/, '').replace(/^(import|export)\s+/, '')
+      const defaultName = /^([A-Za-z_$][\w$]*)/.exec(clause)?.[1]
+      if (defaultName) available.add(defaultName)
+      for (const item of (/\{([^}]*)\}/.exec(clause)?.[1] ?? '').split(',')) {
+        const local = item.trim().split(/\s+as\s+/).at(-1)
+        if (local) available.add(local)
+      }
+    }
+    const code = blankLiterals(module.units.map((unit) => unit.text).join('\n')).replaceAll('...', ' ')
+    const homonyms = new Set(LOCAL_HOMONYMS[module.file] ?? [])
+    for (const name of libNames) {
+      if (available.has(name)) continue
+      const uses = new RegExp(`(?<![\\w$.])${name.replace('$', '\\$')}(?![\\w$])(?!\\s*:(?!:))`).test(code)
+      if (!uses) continue
+      if (homonyms.has(name)) continue
+      found.push(`${module.file} : utilise ${name} sans le déclarer ni l’importer`)
+    }
+    for (const name of homonyms) {
+      if (!new RegExp(`[{(,]\\s*${name}\\b`).test(code)) found.push(`${module.file} : homonyme local ${name} introuvable, à retirer de LOCAL_HOMONYMS`)
+    }
+  }
+  return found
+}
+
 // ---------- plan table
 
 // Module of each declaration, as given by the tables of plan.md (`| \`module\` | \`name\` E, … |`).
@@ -187,8 +301,8 @@ function withoutLibImports(text) {
   for (let index = 0; index < lines.length; index++) {
     if (/^import\b/.test(lines[index])) {
       let end = index
-      while (!/\bfrom ['"][^'"]+['"]/.test(lines[end])) end++
-      if (/from ['"]\.\.\/lib\//.test(lines[end])) {
+      while (end < lines.length && !/\bfrom ['"][^'"]+['"]/.test(lines[end]) && !/^import ['"]/.test(lines[end])) end++
+      if (end < lines.length && /(from )?['"]\.\.\/lib\//.test(lines[end])) {
         index = end
         continue
       }
@@ -277,6 +391,15 @@ function selfTest(baseFiles, afterFiles) {
     'ligne supprimée': afterFiles[first].replace(`${lineOf(a)}\n`, ''),
     'déclaration dupliquée': `${afterFiles[first]}\n${a.text.replace(/^(?:\/\/.*\n)*/, '')}\n`,
   }
+  // An import dropped from a module must be caught by missingImports.
+  const importer = Object.keys(afterFiles).find((file) => /^import \{ ?\n?\s*\w+,/m.test(afterFiles[file]) && /from '\.\.?\//.test(afterFiles[file]))
+  const dropped = /^import \{\s*(\w+),[^}]*\} from '\.\.?\/[^']+'/m.exec(afterFiles[importer])
+  if (dropped) {
+    const text = afterFiles[importer].replace(dropped[0], dropped[0].replace(`${dropped[1]},`, ''))
+    const caught = missingImports({ ...afterFiles, [importer]: text }).length > 0
+    console.log(`    mutation « import retiré » (${dropped[1]} dans ${importer}) : ${caught ? 'détectée' : 'NON détectée'}`)
+    if (!caught) found.push('mutation non détectée : import retiré')
+  }
   for (const [label, text] of Object.entries(mutations)) {
     const result = compareDeclarations(baseFiles, { ...afterFiles, [first]: text })
     const caught = result.declarations.length > 0
@@ -302,6 +425,7 @@ async function main() {
   report('découpage des modules (aucune ligne hors catégorie en colonne 0)', declarations.strays)
   report('déclarations identiques, une seule fois (au `export ` et à `pluginRoot` près)', declarations.declarations)
   report('commentaires libres conservés', declarations.comments)
+  report('imports complets : tout nom de lib/ utilisé est déclaré ou importé (contrôle indépendant de move.mjs)', missingImports(afterFiles))
 
   const table = planTable()
   // A declaration still in core.mjs or cli.mjs is not moved yet; a moved one must be where the table says.
