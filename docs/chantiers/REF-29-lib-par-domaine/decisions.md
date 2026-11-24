@@ -34,3 +34,21 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Contexte : `hook-guard` chargera environ 28 modules au lieu de 2.
 - Écarté : des `import()` paresseux dès le départ, parce que ça change la forme de `cli.mjs` sans mesure qui le justifie.
 - Conséquence : mesure en tranche 1 (base) et en tranche 6 ; au-delà de +20 ms, amendement pour passer les commandes en `import()` paresseux.
+
+## 2026-11-24 : base `f3ec902` (main après FIX-28), 340 tests
+- Contexte : tranche 1, fusion de `main` dans la branche (`f192ef8`) après la PR #20 (FIX-28).
+- Conséquence : `check-moves.mjs` compare à `f3ec902` : `core.mjs` 1799 lignes, `cli.mjs` 1096 lignes, 340 tests verts.
+
+## 2026-11-24 : `codeFilesSince` et `defaultBranchRefsToExclude` (FIX-28) vont dans `cli/slices`, pas dans `cli/common`
+- Contexte : le plan prévoyait `codeFilesSince` dans `cli/common` ; il appelle `defaultBranchRefsToExclude`, qui lit `defaultBaseRef` et `defaultBranchName` de `cli/identifiers`.
+- Écarté : `cli/common`, parce que `cli/identifiers` importe `cli/common` (cycle). Écarté aussi : `cli/identifiers`, sans rapport avec le calcul du code d'une tranche.
+- Conséquence : `cli/review` importe `codeFilesSince` depuis `cli/slices`, sens déjà prévu par le graphe.
+
+## 2026-11-24 : latence de la base, médiane de `hook-guard` à 34 ms
+- Contexte : tranche 1, `measure-hook.mjs` (20 lancements, édition de `lib/core.mjs`), trois séries dans le conteneur cloud : 34,3 / 34,2 / 33,2 ms.
+- Conséquence : seuil CA-7 à 54 ms de médiane. La mesure dépend de la machine : celle de la tranche 6 se refait sur la même machine que la base, en relançant aussi la base (`git stash` ou worktree de `f3ec902`) si ce n'est pas le cas.
+
+## 2026-11-24 : `check-moves.mjs` accepte une ligne de test sous sa forme de base ou sa forme cible
+- Contexte : les retouches tolérées des tests (préfixe `core.`, noms de `windows-launcher.test.mjs`) n'arrivent qu'en tranche 6 ; le script tourne à chaque tranche.
+- Écarté : exiger la forme cible partout, parce que le script échouerait sur les tranches 1 à 5 sans régression.
+- Conséquence : CA-5 et le renommage de `windows-launcher` se vérifient en tranche 6 (lecture des imports, test d’architecture pour les noms), pas par ce contrôle.

@@ -24,14 +24,14 @@ Les noms sont ceux de la base. `E` signale un export de la base, qui reste réex
 
 | Module | Déclarations | Lignes (≈) |
 |---|---|---|
-| `common.mjs` | `CHANTIER_TYPES` E, `DEFAULT_CONFIG` E, `parseFrontMatter` E, `setFrontMatterValues` E, `normalize`, `globToRegExp`, `matchesAny` E, `toProjectRelativePath` E, `parsePorcelainPaths` E, `applyToolEdit` E, `shortRefName` E, `parseCatFileBatch` E, `parseTreeEntries` E, `specStatus` | 170 |
+| `common.mjs` | `CHANTIER_TYPES` E, `DEFAULT_CONFIG` E, `parseFrontMatter` E, `setFrontMatterValues` E, `normalize`, `globToRegExp`, `matchesAny` E, `toProjectRelativePath` E, `parsePorcelainPaths` E, `applyToolEdit` E, `shortRefName` E, `parseCatFileBatch` E, `parseTreeEntries` E, `specStatus`, `parseGitVersion` E, `supportsRemergeDiff`, `codeLogArguments` E | 185 |
 | `identifiers.mjs` | `ID_PATTERN`, `BRACKETED_ID_PATTERN`, `chantierIdFromText` E, `chantierIdFromCommitSubjects` E, `chantierIdFromDirectoryName` E, `highestChantierNumber` E, `commitSubjectIdentifiers` E, `branchNameIdentifiers` E, `nextChantierId` E | 70 |
 | `relations.mjs` | `RELATION_FIELDS` E, `RELATION_ID_PATTERN`, `CLOSED_STATUSES`, `relationValues`, `parseRelations` E, `hasRelations` E, `chantierTreesOf` E, `buildChantierIndex` E, `statusHere` E, `isClosedHere` E, `versions`, `typeOf`, `linksOf`, `childrenOf` E, `describeRelation` E, `findCycle`, `relationProblems` E, `openChildren` E, `openChildProblem`, `relationCloseProblems` E | 210 |
 | `spec.mjs` | `TDD_RECOMMENDATION` E, `REQUIRED_SECTIONS` E, `CRITERIA_SECTIONS`, `splitSections` E, `meaningfulContent` E, `UNFINISHED_TEXT`, `hideCode` E, `checkSpec` E, `AMENDMENTS_HEADING`, `SECTION_END`, `ENTRY_START`, `amendmentSectionRanges`, `parseAmendments` E, `appendAmendmentEntry` E, `amendmentsDiffer` E | 200 |
 | `docs.mjs` | `checkProcessProblems` E | 25 |
 | `slices.mjs` | `planSliceCount` E, `sliceState` E, `sliceLabel` | 50 |
 | `tdd.mjs` | `testDrivenPhase` E, `reopenTestsEntry` E, `refreezeTestsEntry` E, `isRefreeze` E, `reopenTestsRefusal` E, `removedTestLines` E, `freezeTestsRefusal` E, `freezeTestsValues` E, `setTddRefusal` E | 110 |
-| `review-points.mjs` | `POINT_TABLES` … `nextReviewIds` E (section « Review points » entière) | 295 |
+| `review-points.mjs` | `POINT_TABLES`, `POINT_COLUMNS`, `POINT_PATTERN`, `EMPTY_POINT_PATTERN`, `tableCells`, `parsePointCell`, `isDelimiterRow`, `visibleLines`, `parseReviewPoints` E, `isNearPointTableTitle`, `TREATMENTS`, `isTreatment` E, `isPostponedToSlice`, `requalifiedTarget`, `reviewPointProblems` E, `REVIEW_ID_PREFIXES`, `nextReviewIds` E | 295 |
 | `review.mjs` | `reviewCodeFiles` E, `reviewProblems` E, `reviewState` E, `setReviewedRefusal` E, `setReviewedUpdate` E | 100 |
 | `close.mjs` | `isReviewExempt` E, `sliceCloseProblems`, `closeProblems` E, `setStatusRefusal` E | 75 |
 | `next-step.mjs` | `nextStep` E, `codeCommittedMatters` E, `phaseStep` | 85 |
@@ -43,12 +43,12 @@ Les noms sont ceux de la base. `E` signale un export de la base, qui reste réex
 
 | Module | Déclarations | Lignes (≈) |
 |---|---|---|
-| `cli/common.mjs` | `findProjectRoot` E, `configPath` E, `loadConfig` E, `gitOutput`, `pluginRoot` (modifié, SB3), `requireConfig`, `readStandardInput`, `today`, `gitUserName`, `git`, `gitRaw`, `gitPaths`, `gitObjectExists`, `committedFileText`, `uncommittedFiles`, `isAncestorOfHead`, `chantierFilePath`, `samePath` | 170 |
-| `cli/identifiers.mjs` | `currentBranch` E, `findChantierDirectory` E, `readChantier` E, `BASE_REF_CANDIDATES`, `defaultBaseRef` E, `branchCommitSubjects` E, `defaultBranchName`, `chantierIdFromBranchCommits`, `activeChantier` E, `requireActiveChantier`, `gitLines`, `collectUsedIdentifiers` E, `commandNextId` | 120 |
+| `cli/common.mjs` | `findProjectRoot` E, `configPath` E, `loadConfig` E, `gitOutput`, `pluginRoot` (modifié, SB3), `requireConfig`, `readStandardInput`, `today`, `gitUserName`, `git`, `gitRaw`, `gitPaths`, `gitObjectExists`, `committedFileText`, `uncommittedFiles`, `isAncestor`, `isAncestorOfHead`, `cachedGitVersion`, `gitVersion`, `chantierFilePath`, `samePath` | 190 |
+| `cli/identifiers.mjs` | `currentBranch` E, `findChantierDirectory` E, `readChantier` E, `BASE_REF_CANDIDATES`, `defaultBaseRef` E, `branchCommitSubjects` E, `defaultBranchName` E, `chantierIdFromBranchCommits`, `activeChantier` E, `requireActiveChantier`, `gitLines`, `collectUsedIdentifiers` E, `commandNextId` | 120 |
 | `cli/relations.mjs` | `chantiersHere`, `catFileBatch`, `chantierIndex`, `isEpic`, `needsIndex`, `relationsSummary`, `formatRelation`, `formatRelations` | 90 |
 | `cli/spec.mjs` | `updateSpec`, `appendAmendment`, `specProblems`, `commandCheckSpec`, `commandSign` | 60 |
 | `cli/docs.mjs` | `commandCheckProcess`, `commandTemplate` | 30 |
-| `cli/slices.mjs` | `slicePosition`, `sliceCodeFiles` | 20 |
+| `cli/slices.mjs` | `slicePosition`, `codeFilesSince`, `defaultBranchRefsToExclude`, `sliceCodeFiles` | 45 |
 | `cli/tdd.mjs` | `uncommittedTestFiles`, `testFilesChangedSince`, `testFilesWithRemovedLines`, `commandFreezeTests`, `commandReopenTests`, `commandSetTdd`, `commandTestsChanged` | 130 |
 | `cli/review.mjs` | `reviewFacts`, `reviewSummary`, `commandSetReviewed` | 75 |
 | `cli/review-points.mjs` | `commandReviewIds` | 25 |
@@ -95,7 +95,7 @@ Les noms sont ceux de la base. `E` signale un export de la base, qui reste réex
   - `cli/write-guard`, puis `cli/stop-hook` ;
   - `cli/next-step` vient en dernier.
 
-**Ce qu'apporte FIX-28 à sa fusion** : sa lecture de version de git et ses arguments de `git log` (purs) vont dans `common.mjs`. `codeFilesSince` va dans `cli/common.mjs`, parce que `cli/review` et `cli/slices` l'appellent tous les deux. `defaultBranchName`, désormais exporté, reste dans `cli/identifiers`. La table est complétée à la tranche 1, une fois la base connue.
+**Déclarations apportées par FIX-28** (placées en tranche 1, base `f3ec902`) : `parseGitVersion`, `supportsRemergeDiff` et `codeLogArguments` (purs) → `common.mjs` ; `isAncestor`, `gitVersion` et `cachedGitVersion` → `cli/common.mjs` ; `codeFilesSince` et `defaultBranchRefsToExclude` → `cli/slices.mjs`, parce que `defaultBranchRefsToExclude` lit `defaultBaseRef` et `defaultBranchName` (`cli/identifiers`) : dans `cli/common`, il ferait un cycle ; `cli/review` importe déjà `cli/slices`. `defaultBranchName`, exporté par FIX-28, reste dans `cli/identifiers`.
 
 ## Tranches
 <!-- Une entrée numérotée de premier niveau par tranche, dans l'ordre : atelier y lit le nombre de tranches.
