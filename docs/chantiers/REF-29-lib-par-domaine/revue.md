@@ -23,3 +23,21 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD4. Lecture des `import` / `export` non bornée, réexports tolérés hors de la façade | `docs/chantiers/REF-29-lib-par-domaine/check-moves.mjs:88` | corrigé (260e69b) : boucles bornées, réexport hors de `core.mjs` classé hors catégorie |
 
 - Bilan de la revue : `check-moves.mjs --self-test` vert (201 déclarations, 38 déplacées, 340 tests, 3 mutations détectées) ; contre-vérification indépendante des imports et des sorties de `status`, `check-process`, `hook-session-start`, `template` contre la base.
+
+## Revue : tranche 1 : 2026-11-24
+- Commit revu : 4d97eae
+- Base : f3ec902
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD2 (repris). `missingImports` laisse passer des imports manquants (expressions de gabarit collées, ternaire, homonymes par module) | `docs/chantiers/REF-29-lib-par-domaine/check-moves.mjs:219` | corrigé (f14508d) : expressions de gabarit et littéraux isolés par des espaces, clé d'objet reconnue seulement après `{` ou `,`, homonymes rattachés à leur déclaration et vérifiés liés dans sa signature ou une déstructuration, réexports exclus des noms en portée ; modules fabriqués (gabarit, ternaire) signalés ; un import retiré de `CHANTIER_TYPES` dans `core.mjs` est vu dans `checkSpec` et `nextChantierId` |
+| RD5. `blankLiterals` peut boucler sans fin | `docs/chantiers/REF-29-lib-par-domaine/check-moves.mjs:187` | corrigé (f14508d) : boucles bornées, littéral ou commentaire non fermé signalé comme problème, regex reconnue après `=>`, opérateurs, `return`, `typeof` ; modules fabriqués « regex avec apostrophe » et « chaîne non fermée » signalés sans blocage |
+| RD6. `measure-hook.mjs` laisse son dossier temporaire | `docs/chantiers/REF-29-lib-par-domaine/measure-hook.mjs:51` | corrigé (f14508d) : `process.exitCode` au lieu de `process.exit()`, le `finally` supprime le plugin extrait (vérifié : aucun dossier `ref29-plugin-*` restant) |
+
+- Bilan de la revue : `check-moves.mjs --self-test` et `measure-hook.mjs` verts (écart +1,4 ms). `codeOnly` de `move.mjs` garde ses boucles non bornées : il ne sert qu'à écrire les imports, que `missingImports` contrôle désormais sans lui.
