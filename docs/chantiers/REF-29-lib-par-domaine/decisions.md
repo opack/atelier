@@ -71,3 +71,12 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Contexte : revue de la tranche 3 ; des commentaires de déclarations renvoient à « lib/core.mjs » (`cli/slices.mjs` pour `codeLogArguments`, `cli.mjs` pour `reviewProblems`, `closeProblems`, `decideStop`).
 - Écarté : les corriger ici, parce que la spec interdit de retoucher le texte d'une déclaration (`check-moves.mjs` le refuserait).
 - Conséquence : recensement par `grep -rn "lib/core.mjs" plugins/atelier/lib` dans « Dette et suites » du bilan, pour le chantier qui supprimera la façade.
+
+## 2026-11-24 : le test d'architecture interdit aussi d'importer la façade (RD14)
+- Contexte : revue de la tranche 6 ; CA-5 est tenu (aucun test n'importe `lib/core.mjs`), mais rien ne le gardait, et un module de `lib/` pouvait encore l'importer sans cycle (`cli.mjs`).
+- Décision : règle de plus dans `architecture.test.mjs`, hors de la lettre de CA-4 : aucun fichier de `test/` ni de `lib/` n'importe `lib/core.mjs`, avec son exemple fabriqué. Accord de Didier.
+- Conséquence : la façade ne sert plus qu'aux branches ouvertes avant REF-29, et sa suppression ne dépendra que d'elles.
+
+## 2026-11-24 : messages de commit sans scope en tranche 6 (RD15)
+- Contexte : quatre commits de la tranche 6 (10ecc98, 975aaa1, 102dddf, 10b3005) écrits `test:` ou `docs:` sans scope, contre la convention de `CLAUDE.md`.
+- Décision : exception acceptée par Didier ; l'historique est déjà poussé et la PR est fusionnée en squash. Les commits suivants portent un scope.
