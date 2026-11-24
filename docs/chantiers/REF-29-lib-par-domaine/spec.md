@@ -9,8 +9,8 @@ rel_depends_on: REF-16, FIX-28
 created_at: 2026-11-24
 signed_by: Opack
 signed_at: 2026-11-24
-slice: 5
-slice_base: d5d8584c6de3dd27f8fd93f7fca4ad011f09aa2b
+slice: 6
+slice_base: 1d62d2415e83ef0f360bd525398a0ae831f675e3
 tests_commit: 
 ---
 
