@@ -153,6 +153,32 @@ describe('code apporté par une fusion de la branche par défaut', () => {
       'aucune référence à exclure',
     )
   })
+
+  it('une branche fusionnée dans main puis reprise garde le code commité après la revue [FIX-28 CA-8]', () => {
+    const directory = reviewedFix()
+    commitFiles(directory, { 'src/after.mjs': 'export const after = 1\n' }, 'fix: after')
+    git(directory, 'switch', '-q', 'main')
+    git(directory, 'merge', '-q', '--no-ff', '--no-edit', 'fix/FIX-20-x')
+    git(directory, 'switch', '-q', 'fix/FIX-20-x')
+    commitFiles(directory, { 'docs/chantiers/FIX-20-x/notes.md': 'notes\n' }, 'docs: notes')
+    const summary = status(directory)
+    assert.equal(summary.chantier.reviewState, 'stale')
+    assert.match(summary.chantier.reviewProblems.join('\n'), /src\/after\.mjs/)
+  })
+
+  it('une retouche sans conflit dans le commit de fusion rend la revue obsolète, sans citer le reste de main [FIX-28 CA-9]', () => {
+    const directory = reviewedFix()
+    advanceMain(directory, 'fix/FIX-20-x', { 'src/main.mjs': 'export const main = 1\n' })
+    git(directory, 'merge', '-q', '--no-commit', '--no-ff', 'main')
+    writeFileSync(join(directory, 'src/fix.mjs'), 'export const fix = 2\n')
+    git(directory, 'add', '-A')
+    commit(directory, 'chore(merge): main')
+    const summary = status(directory)
+    assert.equal(summary.chantier.reviewState, 'stale')
+    const problems = summary.chantier.reviewProblems.join('\n')
+    assert.match(problems, /src\/fix\.mjs/)
+    assert.doesNotMatch(problems, /src\/main\.mjs/)
+  })
 })
 
 // Exit status of a git command expected to fail (a conflicting merge).
