@@ -2,13 +2,13 @@
 id: FIX-31
 type: FIX
 title: freeze-tests plante sur un gros diff et compte les tests venus de main
-status: draft
-tdd:                 # yes | no : décision humaine, obligatoire avant signature
+status: signed
+tdd: yes
 created_at: 2026-11-24
 source: FIX-20, gel de la tranche 2 (decisions.md du 2026-11-24)
 rel_origin: FIX-20
-signed_by:
-signed_at:
+signed_by: Opack
+signed_at: 2026-11-24
 ---
 
 # FIX-31 freeze-tests plante sur un gros diff et compte les tests venus de main
