@@ -331,15 +331,23 @@ function planTable() {
 // ---------- tests
 
 const WINDOWS_LAUNCHER = `${TESTS}/windows-launcher.test.mjs`
+const SPEC_ELLIPSIS = `${TESTS}/spec-ellipsis.test.mjs`
 
 // Base test line as it must read after REF-29: `core.<export>` loses its prefix (SB2); in
-// windows-launcher.test.mjs, names follow the REF-16 rules (SB4).
+// windows-launcher.test.mjs, names follow the REF-16 rules (SB4); in spec-ellipsis.test.mjs, one
+// name no longer quotes criteria (amendment of 2026-11-24, exception 3).
 function expectedTestLine(line, file, coreExports) {
   let expected = line.replace(/\bcore\.([A-Za-z0-9_$]+)/g, (whole, name) => (coreExports.has(name) ? name : whole))
   if (file === WINDOWS_LAUNCHER) {
     expected = expected
       .replace(/describe\('FIX-25 : /, "describe('")
       .replace(/it\('CA-(\d+) : (.*)', /, (whole, criterion, label) => `it('${label} [FIX-25 CA-${criterion}]', `)
+  }
+  if (file === SPEC_ELLIPSIS) {
+    expected = expected.replace(
+      "it('les critères CA-17 et CA-18 de TEC-15, en code en ligne, ne sont pas signalés [FIX-22 CA-1]', ",
+      "it('les critères de TEC-15 en code en ligne ne sont pas signalés [FIX-22 CA-1]', ",
+    )
   }
   return expected
 }
