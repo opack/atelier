@@ -3,7 +3,8 @@ import { readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { resolveAgentSettings } from '../lib/agent-settings.mjs'
-import { parseFrontMatter } from '../lib/core.mjs'
+import { parseFrontMatter } from '../lib/common.mjs'
+import { atelier, atelierRun, makeRepository } from './helpers.mjs'
 
 // Result shape: { model, effort, sources: { model, effort }, rest, warnings, refusal }
 // sources are 'argument' | 'utilisateur' | 'défaut'; refusal is null unless the resolution fails.
@@ -186,5 +187,30 @@ describe('agent settings: defaults declared in the plugin files', () => {
       assert.match(forbidden, subject)
     }
     assert.ok(body.includes('Arrêt : test à revoir'))
+  })
+})
+
+describe('agent settings: atelier agent-settings command', () => {
+  it('rend en JSON le modèle, l’effort, leurs sources et le reste, option non réglée comprise [FEAT-27 CA-5]', () => {
+    const directory = makeRepository('main')
+    const output = atelier(directory, 'agent-settings', 'implementer', '--user-model', '${user_config.implementer_model}', '--user-effort', '', '--args', '2 opus')
+    const result = JSON.parse(output)
+    assert.equal(result.model, 'opus')
+    assert.equal(result.effort, 'medium')
+    assert.deepEqual(result.sources, { model: 'argument', effort: 'défaut' })
+    assert.equal(result.rest, '2')
+    assert.deepEqual(result.warnings, [])
+  })
+
+  it('sort avec un code non nul et nomme les deux valeurs en cas de refus ; tolère une valeur répétée [FEAT-27 CA-7]', () => {
+    const directory = makeRepository('main')
+    const refused = atelierRun(directory, 'agent-settings', 'reviewer', '--args', 'opus sonnet')
+    assert.notEqual(refused.status, 0)
+    assert.match(refused.output, /opus/)
+    assert.match(refused.output, /sonnet/)
+
+    const repeated = JSON.parse(atelier(directory, 'agent-settings', 'reviewer', '--args', 'opus opus'))
+    assert.equal(repeated.model, 'opus')
+    assert.equal(repeated.effort, 'high')
   })
 })
