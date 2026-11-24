@@ -98,9 +98,10 @@ Question si manquant : quel bénéfice concret, et pour quand ? -->
 - **Exports internes** : une fonction privée de `core.mjs` ou de `cli.mjs` qu'un autre module doit appeler devient un export de son module de domaine, mais pas de la façade.
 - **Tests** :
   - **imports** (SB2) : chaque fichier importe par noms (`import { … } from`) le ou les modules dont il se sert, ceux de son domaine en priorité ; un `import * as core` devient un import nommé, et ses appels `core.x` deviennent `x` ;
-  - **ce qui ne change pas** : les noms et les corps de tests, à deux exceptions près ;
+  - **ce qui ne change pas** : les noms et les corps de tests, à trois exceptions près ;
   - **exception 1, préfixe `core.`** : la seule retouche tolérée dans un corps est le retrait de ce préfixe ;
   - **exception 2, `windows-launcher.test.mjs`** (SB4) : il est renommé selon les règles de REF-16. Son `describe` perd l'identifiant `FIX-25`, et `'CA-n : <libellé>'` devient `'<libellé> [FIX-25 CA-n]'`.
+  - **exception 3, `spec-ellipsis.test.mjs`** (amendement du 2026-11-24) : le test « les critères CA-17 et CA-18 de TEC-15, en code en ligne, ne sont pas signalés [FIX-22 CA-1] » devient « les critères de TEC-15 en code en ligne ne sont pas signalés [FIX-22 CA-1] ».
 - **Test d'architecture** (`test/architecture.test.mjs`, EPIC-17 CA-7). Il échoue :
   - si un fichier `.mjs` de `lib/` (sous-dossiers compris) ou de `test/` dépasse 400 lignes ;
   - si un titre de `describe` contient un identifiant de chantier ;
@@ -136,7 +137,7 @@ Le comportement est inchangé, donc pas de TDD : le cadre d'EPIC-17 le fixe pour
 - **Nombre** : `npm test` rapporte le nombre de tests de la base plus ceux d'`architecture.test.mjs`, tous verts, sans suite en échec.
 - **Tests** (SD4) :
   - la liste des fichiers de `test/` est celle de la base plus `architecture.test.mjs`, exactement ;
-  - chaque fichier est identique à sa version de la base, à trois différences près : ses instructions `import … from '../lib/…'`, le retrait du préfixe `core.` dans ses corps, et les noms de `windows-launcher.test.mjs` renommés selon la règle du §3.
+  - chaque fichier est identique à sa version de la base, à quatre différences près : ses instructions `import … from '../lib/…'`, le retrait du préfixe `core.` dans ses corps, les noms de `windows-launcher.test.mjs` renommés selon la règle du §3, et le nom du test de `spec-ellipsis.test.mjs` renommé selon l'exception 3 du §3.
 - **Code, déclaration par déclaration** (SD2) :
   - chaque déclaration de niveau 0 de `core.mjs` et de `cli.mjs` dans la base (`function`, `const`, `let`, `class`, de sa ligne en colonne 0 jusqu'à la ligne qui la referme en colonne 0) se retrouve exactement une fois dans `lib/` après le rangement, avec un texte identique ;
   - deux différences sont tolérées : le mot-clé `export ` ajouté ou retiré en tête, et la ligne `pluginRoot` (SB3) ;
@@ -190,3 +191,4 @@ Chaque étape laisse la suite verte et peut être fusionnée seule. Aucun autre 
 
 ## Amendements
 <!-- Après signature : une entrée datée par modification de la spec. -->
+- 2026-11-24 : troisième exception tolérée aux noms de tests figés, le test de `spec-ellipsis.test.mjs` « les critères CA-17 et CA-18 de TEC-15, en code en ligne, ne sont pas signalés [FIX-22 CA-1] » est renommé « les critères de TEC-15 en code en ligne ne sont pas signalés [FIX-22 CA-1] », car il cite des critères hors de l'étiquette finale et ferait échouer la règle de CA-4 sur ce dépôt (choix de Didier en tranche 6).
