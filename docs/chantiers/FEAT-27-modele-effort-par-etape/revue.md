@@ -20,3 +20,19 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD1. Mise à jour de `CLAUDE.md` promise par la spec, prévue dans aucune tranche | `CLAUDE.md:8`, `CLAUDE.md:19` | reporté (tranche 5) : ajoutée au plan ; à la tranche 5, après REF-29, `CLAUDE.md` décrit les modules de domaine de `lib/`, sauf si REF-29 l'a déjà fait |
 
 - Bilan de la revue : tranche saine (324 tests verts, tests figés intacts, aucun test anticipé). Un seul point, reporté à la tranche 5.
+
+## Revue : tranche 2 : 2026-11-24
+- Commit revu : 4399f9c
+- Base : e633a09 (fin de la tranche 1)
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD2. Apostrophes droites dans la nouvelle section de `modes.md` | `site/agent/modes.md:19-38` | reporté (tranche 5) : la tranche de documentation repasse sur le site ; apostrophes typographiques à ce moment-là |
+
+- Bilan de la revue : tranche saine (328 tests verts, tests figés intacts, amendement OD9 appliqué partout). RD1 reste reporté à la tranche 5.

@@ -21,7 +21,7 @@
 2. Défauts concordants et agent `implementer` : options du manifeste, en-têtes des quatre agents, contrat d'`implementer`, tableau des défauts de `modes.md` — CA couverts : CA-10, CA-13
 3. Commande `atelier agent-settings` (après la fusion de REF-29) : JSON de sortie, code non nul et message en cas de refus, restes de bout en bout — CA couverts : CA-5, CA-7
 4. Skills `sign`, `review` et `build` (après la fusion de REF-29 et de TEC-15) : appel de la commande entre guillemets simples, annonce, arrêt en cas d'échec, tout le code de `build` par `implementer`, `atelier checks` après chaque retour — CA couverts : CA-11, CA-12
-5. Documentation et version : `commandes.md`, `configuration.md`, `limites.md`, `argument-hint`, `CLAUDE.md` (modules de domaine de `lib/`, sauf si REF-29 l'a fait ; RD1), version 0.5.0 — CA couverts : CA-14
+5. Documentation et version : `commandes.md`, `configuration.md`, `limites.md`, `argument-hint`, `CLAUDE.md` (modules de domaine de `lib/`, sauf si REF-29 l'a fait ; RD1), apostrophes typographiques de `modes.md` (RD2), version 0.5.0 — CA couverts : CA-14
 
 ## Risques et points d'attention
 - REF-29 doit être fusionné avant la tranche 3, et TEC-15 avant la tranche 4 (`review/SKILL.md`, `reviewer.md`). Si ce n'est pas le cas quand on y arrive, on s'arrête et on le signale, sans contourner.
