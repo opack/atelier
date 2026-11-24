@@ -92,8 +92,8 @@ Les noms sont ceux de la base. `E` signale un export de la base, qui reste réex
   - `cli/identifiers` vient en premier ;
   - `cli/relations` et `cli/spec` dépendent de lui ; `cli/docs` n'importe que `cli/common` ;
   - `cli/tdd` vient après `cli/spec` et `cli/identifiers` (RD9) ;
-  - `cli/slices`, puis `cli/review` ;
-  - `cli/checks`, puis `cli/close` ;
+  - `cli/slices`, puis `cli/review` ; `cli/review-points` n'importe que `cli/common` et `cli/identifiers` ;
+  - `cli/checks`, puis `cli/close`, qui importe aussi `cli/review`, `cli/relations` et `cli/spec` ;
   - `cli/write-guard`, puis `cli/stop-hook` ;
   - `cli/next-step` vient en dernier.
 
