@@ -56,6 +56,15 @@ Sur une branche dont le nom ne porte pas d’identifiant, le chantier actif vien
 - **Identifiant présent par hasard dans un nom de branche imposé** (`users/bob/fix-12-crash`, `claude/spike-2-…`) : le nom est lu comme portant `FIX-12` ou `SPIKE-2`, et il l’emporte sur les commits. `/atelier:new` crée alors une branche `<type>/<ID>-<slug>` au lieu de proposer de rester sur la branche imposée.
 - **Branche créée depuis une branche de chantier non fusionnée** : sans commit propre, elle hérite du chantier de sa branche parente.
 
+### Les arguments sous PowerShell et cmd
+
+Sous Windows, PowerShell et cmd lancent `atelier` par son lanceur `bin/atelier.cmd`, qui transmet les arguments à Node par l’intermédiaire de cmd. Comme pour tout lanceur `.cmd` (ceux de npm compris), cmd réinterprète au passage :
+
+- `&`, `|`, `<`, `>` et `^` hors guillemets ;
+- les variables `%NOM%`.
+
+Une raison libre (`atelier bypass on`, `atelier set-tdd no`, `atelier reopen-tests`) qui contient ces caractères peut donc être tronquée. Écrivez-la sans eux, ou lancez la commande depuis Git Bash. Dans cmd, écrire le nom de la commande entre guillemets (`"atelier" status`) peut aussi faire chercher le script au mauvais endroit : écrivez `atelier status`.
+
 ### La qualité de l’implémentation
 
 En TDD, une implémentation codée en dur passe les tests :
