@@ -9,6 +9,8 @@ source: FIX-20, gel de la tranche 2 (decisions.md du 2026-11-24)
 rel_origin: FIX-20
 signed_by: Opack
 signed_at: 2026-11-24
+tests_commit: 1d78ce5
+slice: 1
 ---
 
 # FIX-31 freeze-tests plante sur un gros diff et compte les tests venus de main
