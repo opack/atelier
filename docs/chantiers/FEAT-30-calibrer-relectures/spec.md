@@ -2,11 +2,11 @@
 id: FEAT-30
 type: FEAT
 title: Calibrer la rigueur des relectures
-status: draft
+status: signed
 tdd: no
 created_at: 2026-11-24
-signed_by:
-signed_at:
+signed_by: Opack
+signed_at: 2026-11-24
 ---
 
 # FEAT-30 Calibrer la rigueur des relectures
