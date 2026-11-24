@@ -182,6 +182,31 @@ export function defaultBaseRef(projectRoot) {
   ) ?? null
 }
 
+// { major, minor } from the output of `git --version` (« git version 2.39.3 (Apple Git-146) »,
+// « git version 2.45.1.windows.1 »), null when it cannot be read.
+export function parseGitVersion(text) {
+  const match = /^git version (\d+)\.(\d+)(?:\.|\s|$)/.exec(String(text ?? '').trim())
+  return match ? { major: Number(match[1]), minor: Number(match[2]) } : null
+}
+
+// `--diff-merges=remerge` appeared in git 2.36.
+function supportsRemergeDiff(version) {
+  return Boolean(version) && (version.major > 2 || (version.major === 2 && version.minor >= 36))
+}
+
+// Arguments of the `git log` listing the files changed by the chantier since `from`: its own
+// commits, and of a merge commit only its resolution (what differs from the automatic merge), the
+// commits of the default branch (`excludedRefs`) left out. Falls back to the caller's former
+// command (`--diff-merges=<fallbackDiffMerges>` when given) on a git older than 2.36, an unknown
+// git version, or without any ref to exclude.
+export function codeLogArguments({ from, gitVersion, excludedRefs = [], fallbackDiffMerges = null }) {
+  const common = ['log', '--name-only', '-z', '--no-renames']
+  if (supportsRemergeDiff(gitVersion) && excludedRefs.length) {
+    return [...common, '--diff-merges=remerge', '--format=', `${from}..HEAD`, ...excludedRefs.map((ref) => `^${ref}`)]
+  }
+  return [...common, ...(fallbackDiffMerges ? [`--diff-merges=${fallbackDiffMerges}`] : []), '--format=', `${from}..HEAD`]
+}
+
 export function branchCommitSubjects(projectRoot, base) {
   const output = gitOutput(projectRoot, ['log', '-n', '200', '--format=%s', `${base}..HEAD`])
   return output ? output.split('\n') : []
@@ -189,7 +214,7 @@ export function branchCommitSubjects(projectRoot, base) {
 
 // Short name of the default branch behind a base ref: origin/HEAD → origin/main → main.
 // null when origin/HEAD cannot be resolved: the default branch is then unknown.
-function defaultBranchName(projectRoot, base) {
+export function defaultBranchName(projectRoot, base) {
   const resolved = base === 'refs/remotes/origin/HEAD'
     ? gitOutput(projectRoot, ['rev-parse', '--abbrev-ref', base])
     : base
