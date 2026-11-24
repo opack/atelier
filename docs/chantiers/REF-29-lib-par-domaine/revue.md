@@ -129,3 +129,20 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD17. CA-5 cité par aucun test | `plugins/atelier/test/architecture.test.mjs:147` | corrigé (ece4537) |
 
 - Bilan de la revue : `check-moves.mjs --self-test` vert (199 déclarations déplacées sur 201, 350 tests = 340 de la base + 10 d'architecture) ; latence de `hook-guard` entre +2,7 et +8,9 ms selon les mesures (seuil 20 ms) ; amendement du 2026-11-24 (exception 3, renommage d'un test de `spec-ellipsis`).
+
+## Revue : chantier : 2026-11-24
+- Commit revu : 7b0d332
+- Base : f3ec902
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD18. La façade n'a plus d'usager possible depuis RD14 | `docs/chantiers/REF-29-lib-par-domaine/decisions.md:13` | reporté (bilan, « Dette et suites » : suppression de la façade après les rebases de FIX-20 et FEAT-27 ; procédure de rebase dans `decisions.md`) |
+| RD19. Comptes de modules périmés dans le plan | `docs/chantiers/REF-29-lib-par-domaine/plan.md:14` | corrigé (73b2329) |
+
+- Bilan de la revue : `check-moves.mjs --self-test` vert (199 déclarations déplacées sur 201, 83 exports de la façade identiques, 350 tests) ; latence de `hook-guard` +6,0 ms (base 32,5 ms, branche 38,5 ms, même décision) ; `status` et `hook-session-start` identiques octet pour octet au plugin de la base ; README, site, skills, agents et templates non concernés.
