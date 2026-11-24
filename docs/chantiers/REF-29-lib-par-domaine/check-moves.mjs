@@ -390,7 +390,10 @@ function compareTests(coreExports) {
 function runTests() {
   const files = readdirSync(join(root, TESTS)).filter((name) => name.endsWith('.test.mjs')).map((name) => `${TESTS}/${name}`)
   const run = (list) => {
-    const result = spawnSync(process.execPath, ['--test', '--test-reporter=tap', ...list], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
+    // The tests create throwaway git repositories: a GIT_DIR inherited from the caller would point
+    // their commits and branches at this repository (incident of the slice 4 review).
+    const env = Object.fromEntries(Object.entries(process.env).filter(([name]) => !/^GIT_(DIR|WORK_TREE|INDEX_FILE|COMMON_DIR)$/.test(name)))
+    const result = spawnSync(process.execPath, ['--test', '--test-reporter=tap', ...list], { cwd: root, env, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
     const summary = (key) => Number(new RegExp(`^# ${key} (\\d+)$`, 'm').exec(result.stdout)?.[1] ?? NaN)
     return { total: summary('tests'), failed: summary('fail'), notOk: (result.stdout.match(/^\s*not ok /gm) ?? []).length, status: result.status }
   }

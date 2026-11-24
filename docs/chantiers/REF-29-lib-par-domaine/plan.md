@@ -83,7 +83,7 @@ Les noms sont ceux de la base. `E` signale un export de la base, qui reste réex
   - `tdd` importe `common`, `spec` et `slices` ;
   - `review-points` importe `common` ;
   - `review` importe `common`, `review-points`, `tdd` et `slices` ;
-  - `close` importe `relations`, `review`, `review-points`, `slices` et `tdd` ;
+  - `close` importe `common`, `relations`, `review`, `review-points`, `slices` et `tdd` ;
   - `next-step` importe `close`, `slices` et `tdd` ;
   - `write-guard` importe `common`, `spec` et `tdd` ;
   - `checks` n'importe rien ;
