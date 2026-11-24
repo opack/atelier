@@ -2,7 +2,9 @@ import assert from 'node:assert/strict'
 import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, it } from 'node:test'
-import { DEFAULT_CONFIG, amendmentsDiffer, reviewCodeFiles, reviewProblems, reviewState, setReviewedRefusal } from '../lib/core.mjs'
+import { reviewCodeFiles, reviewProblems, reviewState, setReviewedRefusal } from '../lib/review.mjs'
+import { DEFAULT_CONFIG } from '../lib/common.mjs'
+import { amendmentsDiffer } from '../lib/spec.mjs'
 import { signedChantier, draftChantier, implementingChantier, signedTec, git, atelier, atelierRun, specData, planOf, threeSlices, makeSlicedRepository, commitFiles, headOf, commitSpec, setHeader, specFileText, atelierOk, atSliceTwo, implementedSlice } from './helpers.mjs'
 
 describe('review state', () => {

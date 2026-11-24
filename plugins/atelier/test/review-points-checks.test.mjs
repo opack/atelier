@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import * as core from '../lib/core.mjs'
+import { isTreatment, parseReviewPoints, reviewPointProblems } from '../lib/review-points.mjs'
 import { revueOf } from './helpers.mjs'
 
 // The problems found by the review checks in a revue.md text.
-const pointProblems = (text, options = {}) => core.reviewPointProblems(core.parseReviewPoints(text), options)
+const pointProblems = (text, options = {}) => reviewPointProblems(parseReviewPoints(text), options)
 
 const citing = (problems, pattern) => problems.filter((problem) => pattern.test(problem))
 
@@ -28,10 +28,10 @@ describe('checking the review points', () => {
     for (const cell of ['corrigé (abc1234)', 'Corrigé (abc1234)', 'test ajouté (abc1234)', 'Spec amendée (2026-11-21)',
       'exception acceptée par Opack : coût', 'écarté : hors périmètre', 'Écarté : doublon', 'reporté (FIX-12)',
       'reporté (tranche 3)', 'requalifié (RB4)', 'sans objet : code supprimé', 'SANS OBJET']) {
-      assert.equal(core.isTreatment(cell), true, cell)
+      assert.equal(isTreatment(cell), true, cell)
     }
     for (const cell of ['', '   ', 'À corriger au build', 'TODO', 'à voir', 'correction à faire']) {
-      assert.equal(core.isTreatment(cell), false, cell)
+      assert.equal(isTreatment(cell), false, cell)
     }
   })
 

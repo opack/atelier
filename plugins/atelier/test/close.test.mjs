@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { DEFAULT_CONFIG, closeProblems, nextStep, reviewCodeFiles } from '../lib/core.mjs'
-import * as core from '../lib/core.mjs'
+import { closeProblems } from '../lib/close.mjs'
+import { DEFAULT_CONFIG } from '../lib/common.mjs'
+import { nextStep } from '../lib/next-step.mjs'
+import { reviewCodeFiles } from '../lib/review.mjs'
+import { sliceState } from '../lib/slices.mjs'
 import { signedChantier, draftChantier, signedTec, git, commit, atelier, makeChantiersRepository, atelierRun, specData, assertLine, epicPlan, planOf, threeSlices, slicedChantier, makeSlicedRepository, commitFiles, headOf, setHeader, atelierOk, implementedSlice } from './helpers.mjs'
 
 describe('close decision', () => {
@@ -191,7 +194,7 @@ describe('close of a sliced chantier', () => {
 
   it('un SPIKE en TDD suit le cycle par tranche et sa clôture exige la revue du chantier [FEAT-7 CA-25]', () => {
     const spike = slicedChantier({ slice: '2', slice_base: 'a'.repeat(40) }, { type: 'SPIKE' })
-    assert.equal(core.sliceState(spike).model, 'sliced')
+    assert.equal(sliceState(spike).model, 'sliced')
     assert.match(nextStep(spike), /^Tranche 2\/3 : .*\/atelier:write-tests/)
     const directory = makeSlicedRepository({ id: 'SPIKE-20', tdd: 'yes', header: { slice: 'chantier', last_slice: '3', tests_commit: 'abc1234' } })
     const { status, output } = atelierRun(directory, 'close-check')
@@ -211,7 +214,7 @@ describe('close of a sliced chantier', () => {
 
   it('un SPIKE sans TDD reste hors tranches : pas de slice, pas de message de tranche, clôture sans revue [FEAT-7 CA-25]', () => {
     const spike = slicedChantier({}, { type: 'SPIKE', tdd: 'no' })
-    assert.equal(core.sliceState(spike).model, 'none')
+    assert.equal(sliceState(spike).model, 'none')
     assert.doesNotMatch(nextStep(spike), /tranche/i)
     const directory = makeSlicedRepository({ id: 'SPIKE-20', tdd: 'no' })
     commitFiles(directory, { 'src/a.mjs': 'code\n' }, 'feat: a')

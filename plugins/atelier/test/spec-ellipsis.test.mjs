@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { checkSpec } from '../lib/core.mjs'
+import { checkSpec } from '../lib/spec.mjs'
 
 const templatesDirectory = fileURLToPath(new URL('../templates/', import.meta.url))
 

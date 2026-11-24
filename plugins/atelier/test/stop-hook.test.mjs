@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { DEFAULT_CONFIG, decideStop } from '../lib/core.mjs'
+import { decideStop } from '../lib/stop-hook.mjs'
+import { DEFAULT_CONFIG } from '../lib/common.mjs'
 import { signedChantier, draftChantier, implementingChantier, signedTec, git } from './helpers.mjs'
 
 describe('stop hook', () => {

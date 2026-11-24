@@ -3,8 +3,9 @@ import { execFileSync } from 'node:child_process'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, it } from 'node:test'
-import { DEFAULT_CONFIG, activeChantier, chantierIdFromText, highestChantierNumber, nextChantierId } from '../lib/core.mjs'
-import * as core from '../lib/core.mjs'
+import { activeChantier } from '../lib/cli/identifiers.mjs'
+import { branchNameIdentifiers, chantierIdFromCommitSubjects, chantierIdFromText, commitSubjectIdentifiers, highestChantierNumber, nextChantierId } from '../lib/identifiers.mjs'
+import { DEFAULT_CONFIG } from '../lib/common.mjs'
 import { atelierBin, temporaryDirectory, git, commit, makeRepository, atelier, makeChantiersRepository } from './helpers.mjs'
 
 describe('chantier identifiers', () => {
@@ -29,17 +30,17 @@ describe('chantier identifiers', () => {
 describe('chantier id from commit subjects', () => {
   it('rend l’identifiant du commit le plus récent qui en porte un [TEC-6 CA-1]', () => {
     assert.equal(
-      core.chantierIdFromCommitSubjects(['wip', 'docs(chantiers): [TEC-5] spec draft', 'docs(chantiers): [TEC-4] spec draft']),
+      chantierIdFromCommitSubjects(['wip', 'docs(chantiers): [TEC-5] spec draft', 'docs(chantiers): [TEC-4] spec draft']),
       'TEC-5',
     )
   })
 
   it('crochets obligatoires, casse ignorée, type inconnu ignoré, liste vide [TEC-6 CA-2]', () => {
-    assert.equal(core.chantierIdFromCommitSubjects(['merge after FEAT-4']), null)
-    assert.equal(core.chantierIdFromCommitSubjects(['fix(x): [feat-12] typo']), 'FEAT-12')
-    assert.equal(core.chantierIdFromCommitSubjects(['chore: [JIRA-3] bump']), null)
-    assert.equal(core.chantierIdFromCommitSubjects(['chore: [JIRA-3] bump', 'docs: [SPIKE-2] notes']), 'SPIKE-2')
-    assert.equal(core.chantierIdFromCommitSubjects([]), null)
+    assert.equal(chantierIdFromCommitSubjects(['merge after FEAT-4']), null)
+    assert.equal(chantierIdFromCommitSubjects(['fix(x): [feat-12] typo']), 'FEAT-12')
+    assert.equal(chantierIdFromCommitSubjects(['chore: [JIRA-3] bump']), null)
+    assert.equal(chantierIdFromCommitSubjects(['chore: [JIRA-3] bump', 'docs: [SPIKE-2] notes']), 'SPIKE-2')
+    assert.equal(chantierIdFromCommitSubjects([]), null)
   })
 })
 
@@ -250,7 +251,7 @@ describe('EPIC identifiers', () => {
   it('next-id EPIC suit le compteur unique ; epic/EPIC-7-x et [EPIC-7] désignent EPIC-7 [FEAT-4 CA-6]', () => {
     assert.equal(nextChantierId('EPIC', ['FEAT-12-x', '[BUG-421] FIX']), 'EPIC-422')
     assert.equal(chantierIdFromText('epic/EPIC-7-x'), 'EPIC-7')
-    assert.equal(core.chantierIdFromCommitSubjects(['docs(chantiers): [EPIC-7] plan']), 'EPIC-7')
+    assert.equal(chantierIdFromCommitSubjects(['docs(chantiers): [EPIC-7] plan']), 'EPIC-7')
     const directory = makeChantiersRepository({ branches: { 'epic/EPIC-7-x': [{ id: 'EPIC-7' }] }, checkout: 'epic/EPIC-7-x' })
     assert.equal(atelier(directory, 'next-id', 'EPIC').trim(), 'EPIC-8')
     assert.equal(JSON.parse(atelier(directory, 'status', '--json')).chantier.id, 'EPIC-7')
@@ -276,9 +277,9 @@ describe('Next identifier: where the counter reads identifiers', () => {
     ]
     const directory = makeCounterRepository({ folders: ['FEAT-7-x'], subjects })
     assert.equal(atelier(directory, 'next-id', 'EPIC').trim(), 'EPIC-8')
-    assert.deepEqual(core.commitSubjectIdentifiers(subjects[0]), ['FEAT-7'])
-    assert.deepEqual(core.commitSubjectIdentifiers(subjects[1]), [])
-    assert.deepEqual(core.commitSubjectIdentifiers(subjects[2]), [])
+    assert.deepEqual(commitSubjectIdentifiers(subjects[0]), ['FEAT-7'])
+    assert.deepEqual(commitSubjectIdentifiers(subjects[1]), [])
+    assert.deepEqual(commitSubjectIdentifiers(subjects[2]), [])
   })
 
   it('bracketed identifiers keep the counter going, legacy prefixes included [FIX-18 CA-2]', () => {
@@ -301,14 +302,14 @@ describe('Next identifier: where the counter reads identifiers', () => {
     const botBranches = ['renovate/node-20.x', 'dependabot/npm_and_yarn/vite-5.4.12']
     const directory = makeCounterRepository({ folders: ['FEAT-7-x'], branches: botBranches })
     assert.equal(atelier(directory, 'next-id', 'FEAT').trim(), 'FEAT-8')
-    botBranches.forEach((branch) => assert.deepEqual(core.branchNameIdentifiers(branch), [], branch))
-    assert.deepEqual(core.branchNameIdentifiers('origin/fix/BUG-421-x'), ['BUG-421'])
+    botBranches.forEach((branch) => assert.deepEqual(branchNameIdentifiers(branch), [], branch))
+    assert.deepEqual(branchNameIdentifiers('origin/fix/BUG-421-x'), ['BUG-421'])
   })
 
   it('identifiers are read whatever their case, without a closing bracket, at the end of a branch name [FIX-18 CA-1, CA-2, CA-4]', () => {
-    assert.deepEqual(core.commitSubjectIdentifiers('test(plugin): [feat-7] add'), ['FEAT-7'])
-    assert.deepEqual(core.commitSubjectIdentifiers('test(plugin): [TEC-437 CA-3] cover'), ['TEC-437'])
-    assert.deepEqual(core.branchNameIdentifiers('fix/fix-18-x'), ['FIX-18'])
-    assert.deepEqual(core.branchNameIdentifiers('feature/JIRA-123'), ['JIRA-123'])
+    assert.deepEqual(commitSubjectIdentifiers('test(plugin): [feat-7] add'), ['FEAT-7'])
+    assert.deepEqual(commitSubjectIdentifiers('test(plugin): [TEC-437 CA-3] cover'), ['TEC-437'])
+    assert.deepEqual(branchNameIdentifiers('fix/fix-18-x'), ['FIX-18'])
+    assert.deepEqual(branchNameIdentifiers('feature/JIRA-123'), ['JIRA-123'])
   })
 })

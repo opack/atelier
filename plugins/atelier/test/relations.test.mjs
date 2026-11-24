@@ -1,18 +1,18 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import * as core from '../lib/core.mjs'
+import { parseRelations } from '../lib/relations.mjs'
 import { temporaryDirectory, git, atelier, makeChantiersRepository, epicPlan } from './helpers.mjs'
 
 describe('relations read from the spec header', () => {
   it('lit les relations en listes normalisées (espaces, casse, doublons), vides si absentes [FEAT-4 CA-1]', () => {
-    const relations = core.parseRelations({
+    const relations = parseRelations({
       rel_parent: 'epic-5',
       rel_depends_on: 'FEAT-12,  tec-15',
       rel_origin: 'SPIKE-3, spike-3',
       rel_replaces: '',
     })
     assert.deepEqual(relations, { parent: ['EPIC-5'], dependsOn: ['FEAT-12', 'TEC-15'], origin: ['SPIKE-3'], replaces: [] })
-    assert.deepEqual(core.parseRelations({ id: 'FEAT-1' }), { parent: [], dependsOn: [], origin: [], replaces: [] })
+    assert.deepEqual(parseRelations({ id: 'FEAT-1' }), { parent: [], dependsOn: [], origin: [], replaces: [] })
   })
 })
 

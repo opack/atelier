@@ -1,21 +1,21 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import * as core from '../lib/core.mjs'
+import { planSliceCount, sliceState } from '../lib/slices.mjs'
 import { planOf, threeSlices, slicedChantier, makeSlicedRepository, atelierOk } from './helpers.mjs'
 
 describe('plan and current slice', () => {
   it('compte les entrées numérotées de premier niveau de « Tranches » (sous-listes, commentaires et autres sections ignorés) [FEAT-7 CA-1]', () => {
-    assert.equal(core.planSliceCount(threeSlices), 3)
-    assert.equal(core.planSliceCount(threeSlices.replace(/\n/g, '\r\n')), 3, 'plan en CRLF')
+    assert.equal(planSliceCount(threeSlices), 3)
+    assert.equal(planSliceCount(threeSlices.replace(/\n/g, '\r\n')), 3, 'plan en CRLF')
   })
 
   it('le nombre de tranches est le plus grand numéro [FEAT-7 CA-1]', () => {
-    assert.equal(core.planSliceCount(planOf([1, 2, 4])), 4)
+    assert.equal(planSliceCount(planOf([1, 2, 4])), 4)
   })
 
   it('sans plan, sans section « Tranches » ou avec une seule entrée, une tranche unique [FEAT-7 CA-2]', () => {
     for (const plan of [null, '# Plan\n\n## Approche\nTexte.\n', planOf([1])]) {
-      assert.equal(core.sliceState(slicedChantier({}, { plan })).model, 'single', String(plan))
+      assert.equal(sliceState(slicedChantier({}, { plan })).model, 'single', String(plan))
     }
   })
 
@@ -31,14 +31,14 @@ describe('plan and current slice', () => {
   })
 
   it('sans champ slice ni trace de l’ancien modèle, la tranche en cours est la 1 [FEAT-7 CA-3]', () => {
-    assert.deepEqual(core.sliceState(slicedChantier()), { model: 'sliced', slice: 1, sliceCount: 3 })
+    assert.deepEqual(sliceState(slicedChantier()), { model: 'sliced', slice: 1, sliceCount: 3 })
     const summary = JSON.parse(atelierOk(makeSlicedRepository(), 'status', '--json'))
     assert.equal(summary.chantier.slice, 1)
     assert.equal(summary.chantier.sliceCount, 3)
   })
 
   it('avec slice: 2, la tranche en cours est la 2 [FEAT-7 CA-3]', () => {
-    assert.deepEqual(core.sliceState(slicedChantier({ slice: '2' })), { model: 'sliced', slice: 2, sliceCount: 3 })
+    assert.deepEqual(sliceState(slicedChantier({ slice: '2' })), { model: 'sliced', slice: 2, sliceCount: 3 })
     const summary = JSON.parse(atelierOk(makeSlicedRepository({ header: { slice: 2 } }), 'status', '--json'))
     assert.equal(summary.chantier.slice, 2)
     assert.equal(summary.chantier.sliceCount, 3)
@@ -52,7 +52,7 @@ describe('plan and current slice', () => {
       withAmendment('2026-11-01 : tests rouverts (gel quitté : abc1234) : oubli'),
       withAmendment('2026-11-02 : tests regelés : def5678'),
     ]
-    legacy.forEach((chantier, index) => assert.equal(core.sliceState(chantier).model, 'legacy', `cas ${index}`))
+    legacy.forEach((chantier, index) => assert.equal(sliceState(chantier).model, 'legacy', `cas ${index}`))
     const summary = JSON.parse(atelierOk(makeSlicedRepository({ header: { tests_commit: 'abc1234' } }), 'status', '--json'))
     assert.equal(summary.chantier.slice, null)
     assert.equal(summary.chantier.sliceCount, null)
