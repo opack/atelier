@@ -2,14 +2,14 @@
 id: FIX-28
 type: FIX
 title: Le code fusionné depuis main compte comme code du chantier
-status: draft
+status: signed
 tdd: yes
 created_at: 2026-11-23
 source: bilan FIX-26 §6 (OD1), constaté sur REF-16 et FIX-26
 rel_origin: FIX-26
 rel_depends_on: FIX-26
-signed_by:
-signed_at:
+signed_by: Opack
+signed_at: 2026-11-24
 ---
 
 # FIX-28 Le code fusionné depuis main compte comme code du chantier
