@@ -2,13 +2,13 @@
 id: REF-29
 type: REF
 title: lib/ rangé par domaine
-status: draft
+status: signed
 tdd: no
 rel_parent: EPIC-17
 rel_depends_on: REF-16, FIX-28
 created_at: 2026-11-24
-signed_by:
-signed_at:
+signed_by: Opack
+signed_at: 2026-11-24
 ---
 
 # REF-29 lib/ rangé par domaine
