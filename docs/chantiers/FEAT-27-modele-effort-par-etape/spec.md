@@ -2,11 +2,11 @@
 id: FEAT-27
 type: FEAT
 title: Modèle et effort réglés par étape
-status: draft
+status: signed
 tdd: yes
 created_at: 2026-11-23
-signed_by:
-signed_at:
+signed_by: Opack
+signed_at: 2026-11-24
 rel_depends_on: TEC-15
 ---
 
