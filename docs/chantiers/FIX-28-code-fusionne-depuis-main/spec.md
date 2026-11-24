@@ -10,6 +10,8 @@ rel_origin: FIX-26
 rel_depends_on: FIX-26
 signed_by: Opack
 signed_at: 2026-11-24
+tests_commit: 99f4737
+slice: 1
 ---
 
 # FIX-28 Le code fusionné depuis main compte comme code du chantier
