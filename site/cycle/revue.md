@@ -85,7 +85,7 @@ La commande refuse sans spec signée, avec du code ou une spec non commités, en
 
 La [clôture](./cloture) vérifie que le code clôturé est **celui qui a été relu**. La revue devient obsolète, et il faut la refaire, après :
 
-- un commit de code depuis le commit revu, **tests compris**, y compris apporté par une fusion de la branche par défaut ;
+- un commit de code depuis le commit revu, **tests compris** ; une fusion de la branche par défaut ne compte que par sa résolution, c’est-à-dire ce qui diffère de la fusion automatique sur un fichier de code (conflit résolu, retouche), pas par le code qu’elle apporte de la branche par défaut ([git 2.36 ou plus](../reference/limites#la-version-de-git)) ;
 - une modification de `.claude/` : on ne doit pas pouvoir affaiblir les contrôles ou les hooks après la revue ;
 - un amendement de la spec : le code a été relu contre une autre version ;
 - un rebase, qui fait disparaître le commit revu de l’historique.
