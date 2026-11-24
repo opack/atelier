@@ -62,3 +62,7 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Contexte : chaque déplacement change les imports de plusieurs modules ; à la main, un import manquant n'échoue qu'à l'appel.
 - Écarté : écrire les imports à la main, parce qu'une omission passe `node --check` et ne casse qu'au premier appel (cas vu à l'essai : `...relationProblems` non détecté avant correction du script).
 - Conséquence : `move.mjs` régénère tous les en-têtes après chaque déplacement ; sur la base, il redonne exactement les imports d'origine (vérifié avant le premier déplacement). Tant que `currentBranch` et les autres lectures git de `core.mjs` n'ont pas rejoint `cli/identifiers` (tranche 2), `core.mjs` importe `gitOutput` de `cli/common.mjs` : transitoire, la règle « pas de module pur qui importe `lib/cli/` » ne vaut qu'à la fin (test d'architecture, tranche 6).
+
+## 2026-11-24 : `cli/slices` importe `reviewCodeFiles` depuis `core.mjs` le temps de la tranche 3
+- Contexte : tranche 3, `sliceCodeFiles` (cli/slices) appelle `reviewCodeFiles`, qui ne rejoint `review.mjs` qu'en tranche 4.
+- Conséquence : import transitoire d'un module de domaine vers `core.mjs`, sans cycle (`core.mjs` n'importe que `cli/common` et `cli/identifiers`) ; `move.mjs` le redirige vers `review.mjs` en tranche 4. Le test d'architecture de la tranche 6 pourra interdire tout import de `core.mjs` dans `lib/`.
