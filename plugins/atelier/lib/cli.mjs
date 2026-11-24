@@ -17,13 +17,13 @@ import {
   isAncestor,
   isAncestorOfHead,
   loadConfig,
-  pluginRoot,
   readStandardInput,
   requireConfig,
   samePath,
   today,
   uncommittedFiles,
 } from './cli/common.mjs'
+import { commandCheckProcess, commandTemplate } from './cli/docs.mjs'
 import {
   activeChantier,
   commandNextId,
@@ -35,7 +35,6 @@ import { chantierIndex, formatRelations, isEpic, needsIndex, relationsSummary } 
 import { appendAmendment, commandCheckSpec, commandSign, updateSpec } from './cli/spec.mjs'
 import { applyToolEdit, codeLogArguments, matchesAny, parseFrontMatter, toProjectRelativePath } from './common.mjs'
 import {
-  checkProcessProblems,
   checksGreenOn,
   closeProblems,
   codeCommittedMatters,
@@ -210,32 +209,6 @@ function formatStatus(summary) {
   }
   lines.push(`Prochaine étape : ${summary.nextStep}`)
   return lines.join('\n')
-}
-
-// Lines of the « Process (atelier) » section missing from the project's CLAUDE.md.
-function commandCheckProcess() {
-  const projectRoot = findProjectRoot()
-  const claudePath = join(projectRoot, 'CLAUDE.md')
-  const missing = checkProcessProblems(
-    readFileSync(join(pluginRoot, 'templates', 'process.md'), 'utf8'),
-    existsSync(claudePath) ? readFileSync(claudePath, 'utf8') : null,
-    loadConfig(projectRoot)?.chantiersDir,
-  )
-  if (missing.length === 0) {
-    console.log('Section « Process (atelier) » du CLAUDE.md à jour.')
-    return
-  }
-  console.log(`Lignes de la section « Process (atelier) » absentes du CLAUDE.md :\n${missing.join('\n')}`)
-  process.exitCode = 2
-}
-
-function commandTemplate([name]) {
-  const path = join(pluginRoot, 'templates', `${name}.md`)
-  if (!existsSync(path)) {
-    console.error(`Template inconnu : ${name}`)
-    process.exit(1)
-  }
-  process.stdout.write(readFileSync(path, 'utf8'))
 }
 
 function commandSetStatus([status]) {
