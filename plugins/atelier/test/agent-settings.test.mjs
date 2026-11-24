@@ -214,3 +214,58 @@ describe('agent settings: atelier agent-settings command', () => {
     assert.equal(repeated.effort, 'high')
   })
 })
+
+describe('agent settings: skills that launch the subagents', () => {
+  const skill = (name) => readFileSync(fileURLToPath(new URL(`../skills/${name}/SKILL.md`, import.meta.url)), 'utf8')
+  const call = (agent, withArguments) => {
+    const option = agent.replaceAll('-', '_')
+    const base = `atelier agent-settings ${agent} --user-model '\${user_config.${option}_model}' --user-effort '\${user_config.${option}_effort}'`
+    return withArguments ? `${base} --args '$ARGUMENTS'` : base
+  }
+  const instructions = [
+    'Passe `model` et `effort` à l’appel du sous-agent',
+    'Annonce le modèle, l’effort, leur source et les avertissements',
+    'Si la commande échoue, affiche son message et arrête-toi',
+  ]
+
+  it('sign, review et build résolvent leurs sous-agents par la commande, valeurs entre guillemets simples, et en suivent le résultat [FEAT-27 CA-11]', () => {
+    for (const [name, agents] of [['sign', [['spec-critic', true]]], ['review', [['reviewer', true]]], ['build', [['implementer', true], ['overfit-checker', false]]]]) {
+      const text = skill(name)
+      for (const [agent, withArguments] of agents) {
+        assert.ok(text.includes(call(agent, withArguments)), `${name} : appel attendu « ${call(agent, withArguments)} »`)
+      }
+      for (const instruction of instructions) {
+        assert.ok(text.includes(instruction), `${name} : consigne attendue « ${instruction} »`)
+      }
+    }
+  })
+
+  it('dans build, overfit-checker est résolu sans l’argument de la commande [FEAT-27 CA-11]', () => {
+    const line = skill('build').split(/\r?\n/).find((candidate) => candidate.includes('atelier agent-settings overfit-checker'))
+    assert.ok(line, 'appel pour overfit-checker absent')
+    assert.doesNotMatch(line, /--args/)
+  })
+
+  it('build confie tout le code à implementer et lance atelier checks après chaque retour [FEAT-27 CA-12]', () => {
+    const text = skill('build')
+    const sections = text.split(/^## /m)
+    for (const heading of [/^1\. /, /^2\. /, /^Sans TDD/]) {
+      const section = sections.find((candidate) => heading.test(candidate))
+      assert.ok(section, `section ${heading} absente`)
+      assert.ok(section.includes('`atelier:implementer`'), `section ${heading} sans atelier:implementer`)
+    }
+    const chantierReview = text.split(/\r?\n\r?\n/).find((paragraph) => paragraph.includes('`slice: "chantier"`'))
+    assert.ok(chantierReview && chantierReview.includes('`atelier:implementer`'), 'corrections de la revue du chantier sans atelier:implementer')
+    assert.ok(text.includes('Après chaque retour d’`implementer`, lance `atelier checks`'))
+    for (const ownCode of ['Écris le code', 'Implémente la tranche']) {
+      assert.ok(!text.includes(ownCode), `consigne où build code lui-même : « ${ownCode} »`)
+    }
+  })
+
+  it('la commande refuse une option répétée, qui contournerait le refus de deux valeurs [FEAT-27 CA-7]', () => {
+    const directory = makeRepository('main')
+    const repeated = atelierRun(directory, 'agent-settings', 'reviewer', '--args', 'opus sonnet', '--args', '')
+    assert.equal(repeated.status, 1, repeated.output)
+    assert.match(repeated.output, /--args/)
+  })
+})
