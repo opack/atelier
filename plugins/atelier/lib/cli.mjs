@@ -4,12 +4,41 @@
 import { execFileSync, spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import {
+  chantierFilePath,
+  committedFileText,
+  configPath,
+  findProjectRoot,
+  git,
+  gitObjectExists,
+  gitPaths,
+  gitRaw,
+  gitUserName,
+  gitVersion,
+  isAncestor,
+  isAncestorOfHead,
+  loadConfig,
+  pluginRoot,
+  readStandardInput,
+  requireConfig,
+  samePath,
+  today,
+  uncommittedFiles,
+} from './cli/common.mjs'
+import {
+  applyToolEdit,
+  codeLogArguments,
+  matchesAny,
+  parseCatFileBatch,
+  parseFrontMatter,
+  setFrontMatterValues,
+  shortRefName,
+  toProjectRelativePath,
+} from './common.mjs'
 import {
   activeChantier,
   amendmentsDiffer,
   appendAmendmentEntry,
-  applyToolEdit,
   buildChantierIndex,
   chantierIdFromDirectoryName,
   chantierTreesOf,
@@ -17,56 +46,42 @@ import {
   checkSpec,
   checksGreenOn,
   childrenOf,
-  describeRelation,
   closeProblems,
   codeCommittedMatters,
   collectUsedIdentifiers,
-  configPath,
   currentBranch,
   decideStop,
-  codeLogArguments,
+  decideWrite,
   defaultBaseRef,
   defaultBranchName,
-  decideWrite,
-  findProjectRoot,
-  hasRelations,
+  describeRelation,
   freezeTestsRefusal,
   freezeTestsValues,
+  hasRelations,
   isRefreeze,
-  removedTestLines,
   isReviewExempt,
-  loadConfig,
   nextChantierId,
   nextReviewIds,
-  matchesAny,
   nextStep,
   openChildren,
-  testDrivenPhase,
-  sliceState,
   parseAmendments,
-  parseFrontMatter,
-  parseGitVersion,
-  parseCatFileBatch,
-  parsePorcelainPaths,
   parseRelations,
   refreezeTestsEntry,
   relationProblems,
+  removedTestLines,
   reopenTestsEntry,
   reopenTestsRefusal,
   reviewCodeFiles,
   reviewProblems,
   reviewState,
-  setFrontMatterValues,
   setReviewedRefusal,
   setReviewedUpdate,
   setStatusRefusal,
   setTddRefusal,
-  shortRefName,
-  toProjectRelativePath,
+  sliceState,
+  testDrivenPhase,
   withGreen,
 } from './core.mjs'
-
-const pluginRoot = join(dirname(fileURLToPath(import.meta.url)), '..')
 
 const commands = {
   'next-id': commandNextId,
@@ -102,15 +117,6 @@ export function main(argumentList) {
 
 // ---------- Helpers ----------
 
-function requireConfig(projectRoot) {
-  const config = loadConfig(projectRoot)
-  if (!config) {
-    console.error('atelier n’est pas installé dans ce projet (pas de .claude/atelier.json). Lance /atelier:init.')
-    process.exit(1)
-  }
-  return config
-}
-
 function requireActiveChantier(projectRoot, config) {
   const { chantier } = activeChantier(projectRoot, config)
   if (!chantier?.directory || !chantier.spec) {
@@ -118,26 +124,6 @@ function requireActiveChantier(projectRoot, config) {
     process.exit(1)
   }
   return chantier
-}
-
-function readStandardInput() {
-  try {
-    return JSON.parse(readFileSync(0, 'utf8') || '{}')
-  } catch {
-    return {}
-  }
-}
-
-function today() {
-  return new Date().toISOString().slice(0, 10)
-}
-
-function gitUserName(projectRoot) {
-  try {
-    return execFileSync('git', ['config', 'user.name'], { cwd: projectRoot, encoding: 'utf8' }).trim()
-  } catch {
-    return 'inconnu'
-  }
 }
 
 function bypassPath(projectRoot) {
@@ -463,47 +449,6 @@ function needsIndex(chantier) {
   return isEpic(chantier) || hasRelations(chantier?.spec?.data)
 }
 
-function git(projectRoot, gitArguments) {
-  return gitRaw(projectRoot, gitArguments).trim()
-}
-
-// Untrimmed output: `git status --porcelain` lines start with a significant space.
-function gitRaw(projectRoot, gitArguments) {
-  return execFileSync('git', gitArguments, { cwd: projectRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
-}
-
-// File list printed by a git command run with -z (NUL-separated, never quoted).
-function gitPaths(projectRoot, gitArguments) {
-  return gitRaw(projectRoot, gitArguments).split('\0').filter(Boolean)
-}
-
-// Whether a git object or ref exists: false when git says it does not, an error for anything else.
-function gitObjectExists(projectRoot, name) {
-  const result = spawnSync('git', ['rev-parse', '--verify', '--quiet', name], { cwd: projectRoot, encoding: 'utf8' })
-  if (result.status === 0) {
-    return true
-  }
-  if (result.status === 1 && !result.stderr?.trim()) {
-    return false
-  }
-  throw new Error(result.error?.message || result.stderr?.trim() || `git rev-parse ${name}`)
-}
-
-// Text of a file as committed in `commit` (HEAD by default), or null when it is absent from that
-// commit (or there is no commit yet). The path is resolved without case first, as the file
-// system may ignore it.
-function committedFileText(projectRoot, relativePath, commit = 'HEAD') {
-  if (!gitObjectExists(projectRoot, `${commit}^{commit}`)) {
-    return null
-  }
-  const candidates = gitPaths(projectRoot, ['ls-files', '-z', `--with-tree=${commit}`, '--', `:(icase,literal)${relativePath}`])
-  const path = candidates.find((candidate) => candidate === relativePath) ?? candidates[0]
-  if (!path || !gitObjectExists(projectRoot, `${commit}:${path}`)) {
-    return null
-  }
-  return gitRaw(projectRoot, ['show', `${commit}:${path}`])
-}
-
 // What git says about the review recorded in the spec (see reviewProblems in lib/core.mjs).
 // Any git error makes the review stale rather than failing.
 function reviewFacts(projectRoot, config, chantier) {
@@ -537,11 +482,6 @@ function reviewFacts(projectRoot, config, chantier) {
   }
 }
 
-// Files changed in the working tree (uncommitted, including untracked).
-function uncommittedFiles(projectRoot) {
-  return parsePorcelainPaths(gitRaw(projectRoot, ['status', '--porcelain', '-z', '--untracked-files=all']))
-}
-
 function uncommittedTestFiles(projectRoot, config) {
   return uncommittedFiles(projectRoot).filter((file) => matchesAny(file, config.testPaths, config.ignoreCase))
 }
@@ -551,14 +491,6 @@ function testFilesChangedSince(projectRoot, config, commit) {
   const committed = gitPaths(projectRoot, ['diff', '--name-only', '-z', commit, '--'])
     .filter((file) => matchesAny(file, config.testPaths, config.ignoreCase))
   return [...new Set([...committed, ...uncommittedTestFiles(projectRoot, config)])]
-}
-
-// Whether `commit` exists and is an ancestor of HEAD; an error for anything git cannot answer.
-function isAncestorOfHead(projectRoot, commit) {
-  if (!gitObjectExists(projectRoot, `${commit}^{commit}`)) {
-    return false
-  }
-  return isAncestor(projectRoot, commit, 'HEAD')
 }
 
 // Test files present at `base` whose lines were changed or removed in HEAD (whitespace and line
@@ -658,15 +590,6 @@ function commandSetTdd([value, ...reasonWords]) {
     : 'Chantier sans TDD : pas de phase tests d’abord imposée.')
 }
 
-// Project-relative path of a file of the chantier directory, as git lists it.
-function chantierFilePath(projectRoot, chantier, name) {
-  return toProjectRelativePath(projectRoot, join(chantier.directory, name))
-}
-
-function samePath(config, file, other) {
-  return config.ignoreCase ? file.toLowerCase() === other.toLowerCase() : file === other
-}
-
 // Records the reviewed commit (full hash of HEAD) once every point of revue.md is treated.
 function commandSetReviewed() {
   const projectRoot = findProjectRoot()
@@ -727,15 +650,6 @@ function codeFilesSince(projectRoot, from, fallbackDiffMerges) {
   }))
 }
 
-let cachedGitVersion
-function gitVersion() {
-  if (cachedGitVersion === undefined) {
-    const result = spawnSync('git', ['--version'], { encoding: 'utf8' })
-    cachedGitVersion = result.status === 0 ? parseGitVersion(result.stdout) : null
-  }
-  return cachedGitVersion
-}
-
 // Existing refs of the default branch (remote-tracking and local) that hold none of the chantier's
 // commits since `from`. A ref holding one (current branch being the default branch, chantier branch
 // merged into it after `from`) would hide them. The first-parent chain from HEAD is the branch's own
@@ -748,14 +662,6 @@ function defaultBranchRefsToExclude(projectRoot, from) {
   const name = defaultBranchName(projectRoot, base)
   const candidates = [...new Set([base, ...(name ? [`refs/heads/${name}`] : [])])]
   return candidates.filter((ref) => gitObjectExists(projectRoot, `${ref}^{commit}`) && !isAncestor(projectRoot, oldest, ref))
-}
-
-function isAncestor(projectRoot, commit, of) {
-  const ancestry = spawnSync('git', ['merge-base', '--is-ancestor', commit, of], { cwd: projectRoot, encoding: 'utf8' })
-  if (ancestry.status === 0 || ancestry.status === 1) {
-    return ancestry.status === 0
-  }
-  throw new Error(ancestry.error?.message || ancestry.stderr?.trim() || 'git merge-base')
 }
 
 // Code files committed since the start of the current slice: `slice_base`, or for the first
