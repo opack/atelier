@@ -76,6 +76,7 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Contexte : revue de la tranche 6 ; CA-5 est tenu (aucun test n'importe `lib/core.mjs`), mais rien ne le gardait, et un module de `lib/` pouvait encore l'importer sans cycle (`cli.mjs`).
 - Décision : règle de plus dans `architecture.test.mjs`, hors de la lettre de CA-4 : aucun fichier de `test/` ni de `lib/` n'importe `lib/core.mjs`, avec son exemple fabriqué. Accord de Didier.
 - Conséquence : la façade ne sert plus qu'aux branches ouvertes avant REF-29, et sa suppression ne dépendra que d'elles.
+- Suite (RD17) : la règle tient la première moitié de CA-5 (aucun test n'importe `lib/core.mjs`), ses deux tests portent `[REF-29 CA-5]`. La seconde moitié (imports par noms des modules de domaine) reste vérifiée par lecture et par `check-moves.mjs`.
 
 ## 2026-11-24 : messages de commit sans scope en tranche 6 (RD15)
 - Contexte : quatre commits de la tranche 6 (10ecc98, 975aaa1, 102dddf, 10b3005) écrits `test:` ou `docs:` sans scope, contre la convention de `CLAUDE.md`.

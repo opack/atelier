@@ -9,9 +9,10 @@ rel_depends_on: REF-16, FIX-28
 created_at: 2026-11-24
 signed_by: Opack
 signed_at: 2026-11-24
-slice: 6
-slice_base: 1d62d2415e83ef0f360bd525398a0ae831f675e3
+slice: chantier
+slice_base: ece45379b595fb184afe0ce87eca880531b3768d
 tests_commit: 
+last_slice: 6
 ---
 
 # REF-29 lib/ rangé par domaine

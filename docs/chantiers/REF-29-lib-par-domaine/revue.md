@@ -109,7 +109,7 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 - Bilan de la revue : CA-1 et CA-2 tenus en entier (`cli.mjs` = `commands` + `main`, 46 lignes ; `core.mjs` = réexports seuls, 83 noms identiques à la base, même code) ; `check-moves.mjs --self-test` vert à chacun des 5 commits (199 déclarations déplacées sur 201, 340 tests) ; graphe sans cycle, plus aucun module n'importe `core.mjs` ; `move.mjs --relink` idempotent ; latence +6,5 ms ; scénario d'environ 50 étapes (`status`, `hook-session-start`, `hook-guard` autorisé et refusé, `hook-gate`, `bypass`) identique à la base dans un dépôt jetable.
 
 ## Revue : tranche 6 : 2026-11-24
-- Commit revu : 
+- Commit revu : ece4537
 - Base : 0f6b9d6
 
 ### Bloquant
@@ -125,5 +125,7 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD13. `architecture.test.mjs` exempté de la règle des 400 lignes | `plugins/atelier/test/architecture.test.mjs:128` | corrigé (348889b) |
 | RD14. Rien n'empêche un test ou un module de `lib/` d'importer de nouveau `core.mjs` | `plugins/atelier/test/architecture.test.mjs:130` | corrigé (348889b) |
 | RD15. Messages de commit sans scope | commits 10ecc98, 975aaa1, 102dddf, 10b3005 | exception acceptée : historique déjà poussé, PR fusionnée en squash, scope repris aux commits suivants |
+| RD16. En-tête du test d'architecture périmé après RD13 | `plugins/atelier/test/architecture.test.mjs:9` | corrigé (ece4537) |
+| RD17. CA-5 cité par aucun test | `plugins/atelier/test/architecture.test.mjs:147` | corrigé (ece4537) |
 
-- Bilan de la revue : `check-moves.mjs --self-test` vert (199 déclarations déplacées sur 201, 349 tests = 340 de la base + 9 d'architecture) ; latence de `hook-guard` entre +2,7 et +8,9 ms selon les mesures (seuil 20 ms) ; amendement du 2026-11-24 (exception 3, renommage d'un test de `spec-ellipsis`).
+- Bilan de la revue : `check-moves.mjs --self-test` vert (199 déclarations déplacées sur 201, 350 tests = 340 de la base + 10 d'architecture) ; latence de `hook-guard` entre +2,7 et +8,9 ms selon les mesures (seuil 20 ms) ; amendement du 2026-11-24 (exception 3, renommage d'un test de `spec-ellipsis`).
