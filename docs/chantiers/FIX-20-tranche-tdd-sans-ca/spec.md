@@ -8,7 +8,7 @@ created_at: 2026-11-23
 source: TEC-15, tranche 6 (site, README, montée de version)
 signed_by: Opack
 signed_at: 2026-11-23
-tests_commit: 
+tests_commit: a48e750
 slice: 2
 slice_base: 4dc1b7173ac60a5b9ae38b8cb4ab732fbc50df17
 ---
@@ -111,3 +111,4 @@ Les CA de la spec sont les identifiants `CA-n` en tête d'un élément de liste 
 ## Amendements
 <!-- Après signature : une entrée datée par modification de la spec. -->
 - 2026-11-24 : tests rouverts (gel quitté : 4dc1b7173ac60a5b9ae38b8cb4ab732fbc50df17) : REF-29 : plan.test.mjs importe lib/slices.mjs au lieu de la façade core.mjs, describe sans identifiant de chantier (règles d'architecture)
+- 2026-11-24 : tests regelés : a48e750

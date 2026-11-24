@@ -34,3 +34,8 @@
 - Fait : fusion de `main` ; `planSlices`, `sliceAttributes` et `planSliceCount` rejoués dans `lib/slices.mjs`, façade `core.mjs` reprise telle quelle de `main` (aucun réexport ajouté) ; `test/plan.test.mjs` importe depuis `lib/slices.mjs`, `describe` renommé sans identifiant de chantier (règle REF-16). Les assertions des tests de la tranche 1 sont inchangées.
 - Écarté : déplacer ces tests dans `slices.test.mjs`, parce que le plan (RD2) nomme `plan.test.mjs` et que la règle d'architecture l'accepte.
 - Conséquence : les tranches 2 à 6 visent les modules de domaine (`tdd.mjs`, `review.mjs`, `slices.mjs`, `next-step.mjs`…), pas `core.mjs` ; la liste des fichiers de `plan.md` est à recaler à la tranche 2.
+
+## 2026-11-24 : gel de la tranche 2 avec une copie du plugin au tampon agrandi
+- Contexte : `atelier freeze-tests` plante (`ENOBUFS`) : `testFilesWithRemovedLines` (`lib/cli/tdd.mjs`) lance un `git diff` complet depuis `slice_base`, non limité aux `testPaths` ; après la fusion de `main` (REF-29), il dépasse le tampon par défaut d'`execFileSync` (1 Mo).
+- Retenu (choix de Didier) : `freeze-tests` lancé depuis une copie du plugin hors du dépôt, identique sauf `maxBuffer` dans `gitRaw` ; spec écrite par la commande (`tests_commit: a48e750`, entrée de regel). Bug porté par un FIX séparé.
+- Écarté : intégrer le bug à FIX-28, parce qu'il a sa propre cause (taille du diff) ; corriger d'abord, parce que FIX-20 resterait bloqué pour un résultat identique.
