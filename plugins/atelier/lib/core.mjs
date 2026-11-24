@@ -1027,25 +1027,47 @@ function phaseStep(chantier, review = 'none') {
 
 // ---------- Slices ----------
 
-// Number of slices of a plan: the highest number among the first-level numbered entries of its
-// « Tranches » section (HTML comments and indented sub-lists ignored); 0 without such entries.
-export function planSliceCount(planText) {
+// Slices of a plan: the first-level numbered entries of its « Tranches » section (HTML comments
+// and indented sub-lists ignored), in order. Each slice gives its number, the CA listed in its
+// « CA couverts » segment (any suffix after an identifier ignored) and its declared TDD:
+// 'yes' | 'no', or null when the entry does not declare one.
+export function planSlices(planText) {
   const lines = (planText ?? '').replace(/\r\n/g, '\n').replace(/<!--[\s\S]*?-->/g, '').split('\n')
   const start = lines.findIndex((line) => /^##\s+Tranches\s*$/.test(line))
   if (start < 0) {
-    return 0
+    return []
   }
-  let count = 0
+  const slices = []
   for (const line of lines.slice(start + 1)) {
     if (/^#{1,2}\s/.test(line)) {
       break
     }
-    const match = /^(\d+)\.\s/.exec(line)
+    const match = /^(\d+)\.\s(.*)$/.exec(line)
     if (match) {
-      count = Math.max(count, Number(match[1]))
+      slices.push({ number: Number(match[1]), ...sliceAttributes(match[2]) })
     }
   }
-  return count
+  return slices
+}
+
+// Criteria and TDD of one slice entry, read from its « — » (or « – ») separated segments:
+// identifiers normalised to upper case, any text after « oui » / « non » ignored.
+function sliceAttributes(text) {
+  const segments = text.split(/\s+[—–]\s+/)
+  const coverage = segments.find((segment) => /^CA\s+couverts\s*:/i.test(segment.trim()))
+  const criteria = [
+    ...new Set((coverage?.match(/\bCA-\d+\b/gi) ?? []).map((id) => id.toUpperCase())),
+  ]
+  const tddSegment = segments
+    .map((segment) => /^TDD\s*:\s*(oui|non)\b/i.exec(segment.trim()))
+    .find(Boolean)
+  const tdd = tddSegment ? (tddSegment[1].toLowerCase() === 'oui' ? 'yes' : 'no') : null
+  return { criteria, tdd }
+}
+
+// Number of slices of a plan: the highest slice number read by planSlices; 0 without slices.
+export function planSliceCount(planText) {
+  return planSlices(planText).reduce((count, slice) => Math.max(count, slice.number), 0)
 }
 
 // Where the chantier stands in its slices. `model`:

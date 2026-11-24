@@ -19,3 +19,12 @@
 - Contexte : relecture (D8) et conflit prévisible sur `core.test.mjs`.
 - Écarté : sortir `check-plan` dans un chantier séparé, parce que le comportement de `plan` faisait partie de la demande ; passer REF-16 d'abord, parce que FIX-20 débloque TEC-15.
 - Conséquence : REF-16 se recale sur FIX-20.
+
+## 2026-11-24 : lecture tolérante des tranches du plan (tranche 1, OD1, OD2)
+- Contexte : vérification de surapprentissage de la tranche 1.
+- Retenu : séparateur « — » ou « – » entouré d'espaces ; texte libre après « oui » / « non » (`TDD : oui (logique pure)`) ; identifiants CA lus sans casse et normalisés (`ca-1` → `CA-1`).
+- Écarté : le tiret simple comme séparateur, parce qu'il apparaît dans les titres de tranche.
+
+## 2026-11-24 : numéros de tranche en double (OD3) reportés à la tranche 4
+- Contexte : `planSlices` renvoie deux tranches de même numéro si le plan les écrit ; `planSliceCount` garde le plus grand numéro, comme avant.
+- Conséquence : `planProblems` (tranche 4) signalera le doublon ; d'ici là, les lectures par numéro prennent la première entrée.
