@@ -39,7 +39,7 @@ export function loadConfig(projectRoot) {
   return { ...DEFAULT_CONFIG, ignoreCase, ...userConfig }
 }
 
-// ---------- Chantier identification ----------
+// ---------- Git output and plugin root ----------
 
 export function gitOutput(projectRoot, gitArguments) {
   try {
@@ -86,7 +86,7 @@ export function gitUserName(projectRoot) {
   }
 }
 
-// ---------- Commands ----------
+// ---------- Git and working tree ----------
 
 export function git(projectRoot, gitArguments) {
   return gitRaw(projectRoot, gitArguments).trim()

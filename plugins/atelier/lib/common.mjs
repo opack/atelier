@@ -3,6 +3,8 @@
 
 import nodePath, { basename } from 'node:path'
 
+// ---------- Configuration defaults ----------
+
 export const CHANTIER_TYPES = ['FEAT', 'FIX', 'REF', 'TEC', 'SPIKE', 'EPIC']
 
 export const DEFAULT_CONFIG = {
@@ -54,7 +56,7 @@ export function setFrontMatterValues(text, values) {
   return `---\n${lines.join('\n')}\n---${text.slice(match[0].length)}`
 }
 
-// ---------- Spec completeness ----------
+// ---------- Text ----------
 
 export function normalize(text) {
   return text
@@ -64,7 +66,7 @@ export function normalize(text) {
     .trim()
 }
 
-// ---------- Path rules for the guard hook ----------
+// ---------- Paths and tool edits ----------
 
 function globToRegExp(pattern) {
   const escaped = pattern
@@ -143,7 +145,7 @@ export function applyToolEdit(currentText, toolName, toolInput) {
   return text
 }
 
-// ---------- Relations between chantiers ----------
+// ---------- Git output ----------
 
 // Short name of a ref: refs/heads/x → x, refs/remotes/origin/x → origin/x.
 export function shortRefName(ref) {
@@ -191,11 +193,11 @@ export function parseTreeEntries(content, idLength = 20) {
   return entries
 }
 
-// ---------- Path rules for the guard hook ----------
+// ---------- Spec status ----------
 
 export const specStatus = (spec) => spec?.data?.status || 'draft'
 
-// ---------- Chantier identification ----------
+// ---------- Git version and log arguments ----------
 
 // { major, minor } from the output of `git --version` (« git version 2.39.3 (Apple Git-146) »,
 // « git version 2.45.1.windows.1 »), null when it cannot be read.
