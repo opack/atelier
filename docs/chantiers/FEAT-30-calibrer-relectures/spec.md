@@ -3,7 +3,7 @@ id: FEAT-30
 type: FEAT
 title: Calibrer la rigueur des relectures
 status: draft
-tdd:                 # yes | no : décision humaine, obligatoire avant signature
+tdd: no
 created_at: 2026-11-24
 signed_by:
 signed_at:
