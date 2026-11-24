@@ -108,7 +108,7 @@ Une tranche garde son numéro ; on ne retire du plan que des tranches à venir.
 2. Identifiants et relations : `identifiers`, `relations` et leurs modules `cli/`, un commit par domaine — CA couverts : CA-1, CA-3
 3. Spec, documentation, tranches et TDD : `spec`, `docs`, `slices`, `tdd` et leurs modules `cli/`, un commit par domaine — CA couverts : CA-1, CA-3
 4. Revue, points de revue et clôture : `review-points`, `review`, `close`, `checks` et leurs modules `cli/`, un commit par domaine — CA couverts : CA-1, CA-3
-5. Prochaine étape, garde et hook Stop : `next-step`, `write-guard`, `stop-hook` et leurs modules `cli/` ; `core.mjs` réduit à la façade, `cli.mjs` à `main` — CA couverts : CA-1, CA-2, CA-3
+5. Prochaine étape, garde et hook Stop : `next-step`, `write-guard`, `stop-hook` et leurs modules `cli/` ; `core.mjs` réduit à la façade, en-tête réécrit (RD7), `cli.mjs` à `main` — CA couverts : CA-1, CA-2, CA-3
 6. Tests et règles : imports nommés des tests, renommage de `windows-launcher.test.mjs`, `architecture.test.mjs`, mesure de latence, `CLAUDE.md` — CA couverts : CA-3, CA-4, CA-5, CA-6, CA-7
 
 CA-1 n'est tenu en entier qu'à la fin de la tranche 5, et CA-2 aussi. CA-3 est vérifié à chaque tranche contre la même base.

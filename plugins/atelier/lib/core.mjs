@@ -76,16 +76,6 @@ const CRITERIA_SECTIONS = {
   FIX: 'Critère de non-régression',
 }
 
-// ---------- Project and configuration ----------
-
-// ---------- Front matter ----------
-
-// ---------- Chantier identification ----------
-
-// ---------- Relations between chantiers ----------
-
-// ---------- Next identifier ----------
-
 // ---------- Spec completeness ----------
 
 export function splitSections(body) {

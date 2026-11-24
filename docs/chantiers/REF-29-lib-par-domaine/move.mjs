@@ -263,7 +263,7 @@ function relink(baseExports) {
         lines.push(...importStatement('export', names.sort(), from))
       }
     }
-    write(module, rewriteHeader(read(module), lines, (name) => baseExports.has(name) || usedElsewhere.has(name) || (module === ENTRY && name === 'main')))
+    write(module, dropEmptySections(rewriteHeader(read(module), lines, (name) => baseExports.has(name) || usedElsewhere.has(name) || (module === ENTRY && name === 'main'))))
   }
 }
 
@@ -271,6 +271,25 @@ function importStatement(keyword, names, from) {
   const single = `${keyword} { ${names.join(', ')} } from '${from}'`
   if (single.length <= 120) return [single]
   return [`${keyword} {`, ...names.map((name) => `  ${name},`), `} from '${from}'`]
+}
+
+// Removes the section titles left without content: a title followed, after blank lines, by another
+// title or by the end of the module (RD7).
+function dropEmptySections(text) {
+  const lines = text.split('\n')
+  const kept = []
+  for (let index = 0; index < lines.length; index++) {
+    if (SECTION.test(lines[index])) {
+      let next = index + 1
+      while (next < lines.length && lines[next].trim() === '') next++
+      if (next === lines.length || SECTION.test(lines[next])) {
+        index = next - 1
+        continue
+      }
+    }
+    kept.push(lines[index])
+  }
+  return kept.join('\n').replace(/\n*$/, '\n')
 }
 
 // Replaces the import / re-export statements of the module by `statements` (after its header
