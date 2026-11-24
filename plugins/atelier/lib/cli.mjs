@@ -13,7 +13,6 @@ import {
   gitObjectExists,
   gitPaths,
   gitRaw,
-  gitUserName,
   gitVersion,
   isAncestor,
   isAncestorOfHead,
@@ -33,19 +32,10 @@ import {
   requireActiveChantier,
 } from './cli/identifiers.mjs'
 import { chantierIndex, formatRelations, isEpic, needsIndex, relationsSummary } from './cli/relations.mjs'
+import { appendAmendment, commandCheckSpec, commandSign, updateSpec } from './cli/spec.mjs'
+import { applyToolEdit, codeLogArguments, matchesAny, parseFrontMatter, toProjectRelativePath } from './common.mjs'
 import {
-  applyToolEdit,
-  codeLogArguments,
-  matchesAny,
-  parseFrontMatter,
-  setFrontMatterValues,
-  toProjectRelativePath,
-} from './common.mjs'
-import {
-  amendmentsDiffer,
-  appendAmendmentEntry,
   checkProcessProblems,
-  checkSpec,
   checksGreenOn,
   closeProblems,
   codeCommittedMatters,
@@ -57,7 +47,6 @@ import {
   isReviewExempt,
   nextReviewIds,
   nextStep,
-  parseAmendments,
   refreezeTestsEntry,
   removedTestLines,
   reopenTestsEntry,
@@ -73,7 +62,8 @@ import {
   testDrivenPhase,
   withGreen,
 } from './core.mjs'
-import { hasRelations, openChildren, relationProblems } from './relations.mjs'
+import { openChildren } from './relations.mjs'
+import { amendmentsDiffer, checkSpec, parseAmendments } from './spec.mjs'
 
 const commands = {
   'next-id': commandNextId,
@@ -120,13 +110,6 @@ function readBypass(projectRoot, branch) {
   }
   const bypass = JSON.parse(readFileSync(path, 'utf8'))
   return bypass.branch === branch ? bypass : null
-}
-
-function updateSpec(projectRoot, config, values) {
-  const chantier = requireActiveChantier(projectRoot, config)
-  const specPath = join(chantier.directory, 'spec.md')
-  writeFileSync(specPath, setFrontMatterValues(readFileSync(specPath, 'utf8'), values))
-  return { chantier, specPath }
 }
 
 // ---------- Commands ----------
@@ -229,31 +212,6 @@ function formatStatus(summary) {
   return lines.join('\n')
 }
 
-// Spec problems, relations included when atelier is installed: { problems, notes }.
-function specProblems(projectRoot, config, text) {
-  const problems = checkSpec(text)
-  const { data } = parseFrontMatter(text)
-  if (!hasRelations(data)) {
-    return { problems, notes: [] }
-  }
-  if (!config) {
-    return { problems, notes: ['Relations (rel_*) non vérifiées : atelier n’est pas installé dans ce projet (pas de .claude/atelier.json).'] }
-  }
-  return { problems: [...problems, ...relationProblems(data, chantierIndex(projectRoot, config))], notes: [] }
-}
-
-function commandCheckSpec([path]) {
-  const projectRoot = findProjectRoot()
-  const { problems, notes } = specProblems(projectRoot, loadConfig(projectRoot), readFileSync(path, 'utf8'))
-  notes.forEach((note) => console.log(note))
-  if (problems.length === 0) {
-    console.log('Spec complète.')
-    return
-  }
-  console.log(problems.map((problem) => `- ${problem}`).join('\n'))
-  process.exitCode = 2
-}
-
 // Lines of the « Process (atelier) » section missing from the project's CLAUDE.md.
 function commandCheckProcess() {
   const projectRoot = findProjectRoot()
@@ -278,28 +236,6 @@ function commandTemplate([name]) {
     process.exit(1)
   }
   process.stdout.write(readFileSync(path, 'utf8'))
-}
-
-function commandSign() {
-  const projectRoot = findProjectRoot()
-  const config = requireConfig(projectRoot)
-  const chantier = requireActiveChantier(projectRoot, config)
-  const status = chantier.spec.data.status || 'draft'
-  if (status !== 'draft') {
-    console.error(`Signature refusée : la spec de ${chantier.id} est déjà « ${status} ». Seule une spec en brouillon se signe.`)
-    process.exit(2)
-  }
-  const { problems } = specProblems(projectRoot, config, readFileSync(join(chantier.directory, 'spec.md'), 'utf8'))
-  if (problems.length) {
-    console.error(`Spec incomplète, signature refusée :\n${problems.map((problem) => `- ${problem}`).join('\n')}`)
-    process.exit(2)
-  }
-  const { specPath } = updateSpec(projectRoot, config, {
-    status: 'signed',
-    signed_by: gitUserName(projectRoot),
-    signed_at: today(),
-  })
-  console.log(toProjectRelativePath(projectRoot, specPath))
 }
 
 function commandSetStatus([status]) {
@@ -391,10 +327,6 @@ function testFilesWithRemovedLines(projectRoot, config, base) {
     .filter((entry) => entry.startsWith('-\t-\t'))
     .map((entry) => entry.slice(4))
   return [...new Set([...fromDiff, ...deleted, ...binary])].filter((file) => matchesAny(file, config.testPaths, config.ignoreCase))
-}
-
-function appendAmendment(specPath, entry) {
-  writeFileSync(specPath, appendAmendmentEntry(readFileSync(specPath, 'utf8'), entry))
 }
 
 // Step 3 of the TDD workflow: the tests must be committed before implementation starts.
