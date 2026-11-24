@@ -268,7 +268,7 @@ const serialize = (value) => JSON.stringify(value, (key, item) => (item instance
 // The declaration check must fail on each fabricated mutation of the current lib/.
 function selfTest(baseFiles, afterFiles) {
   const found = []
-  const first = Object.keys(afterFiles).find((file) => splitModule(afterFiles[file], file).units.filter((unit) => unit.text.split('\n').length > 6).length >= 2)
+  const first = Object.keys(afterFiles).sort((a, b) => BASE_LIB_FILES.includes(a) - BASE_LIB_FILES.includes(b)).find((file) => splitModule(afterFiles[file], file).units.filter((unit) => unit.text.split('\n').length > 6).length >= 2)
   const units = splitModule(afterFiles[first], first).units.filter((unit) => unit.text.split('\n').length > 6)
   const [a, b] = units
   const lineOf = (unit) => unit.text.split('\n')[3]
@@ -288,40 +288,46 @@ function selfTest(baseFiles, afterFiles) {
 
 // ---------- main
 
-const baseFiles = Object.fromEntries(BASE_LIB_FILES.map((path) => [path, baseText(path)]))
-const afterFiles = currentLibFiles()
-console.log(`Base ${BASE_COMMIT} : ${BASE_LIB_FILES.join(', ')} ; après : ${Object.keys(afterFiles).length} module(s) dans ${LIB}`)
+// Imported by move.mjs for splitModule: runs only when launched directly.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await main()
 
-const declarations = compareDeclarations(baseFiles, afterFiles)
-console.log(`  ${declarations.baseCount} déclarations dans la base`)
-report('découpage des modules (aucune ligne hors catégorie en colonne 0)', declarations.strays)
-report('déclarations identiques, une seule fois (au `export ` et à `pluginRoot` près)', declarations.declarations)
-report('commentaires libres conservés', declarations.comments)
+async function main() {
 
-const table = planTable()
-// A declaration still in core.mjs or cli.mjs is not moved yet; a moved one must be where the table says.
-const misplaced = Object.entries(declarations.placement)
-  .filter(([name, file]) => !BASE_LIB_FILES.includes(file) && table[name] !== file)
-  .map(([name, file]) => `${name} : dans ${file}, la table du plan dit ${table[name] ?? '(absente)'}`)
-const unplanned = Object.keys(declarations.placement).filter((name) => !table[name] && !['commands', 'main'].includes(name))
-report('déclarations déplacées dans le module que donne la table du plan', misplaced)
-report('déclarations présentes dans la table du plan', unplanned)
-const remaining = Object.values(declarations.placement).filter((file) => BASE_LIB_FILES.includes(file)).length
-console.log(`  ${declarations.baseCount - remaining} déclaration(s) déplacée(s), ${remaining} encore dans core.mjs ou cli.mjs`)
+  const baseFiles = Object.fromEntries(BASE_LIB_FILES.map((path) => [path, baseText(path)]))
+  const afterFiles = currentLibFiles()
+  console.log(`Base ${BASE_COMMIT} : ${BASE_LIB_FILES.join(', ')} ; après : ${Object.keys(afterFiles).length} module(s) dans ${LIB}`)
 
-const exportsCheck = await compareExports()
-report('exports de core.mjs (noms, typeof, code ou valeur)', exportsCheck.found)
-report('fichiers de tests (liste, lignes hors imports de ../lib/)', compareTests(exportsCheck.names))
+  const declarations = compareDeclarations(baseFiles, afterFiles)
+  console.log(`  ${declarations.baseCount} déclarations dans la base`)
+  report('découpage des modules (aucune ligne hors catégorie en colonne 0)', declarations.strays)
+  report('déclarations identiques, une seule fois (au `export ` et à `pluginRoot` près)', declarations.declarations)
+  report('commentaires libres conservés', declarations.comments)
 
-if (args.has('--self-test')) {
-  console.log('Auto-contrôle :')
-  report('mutations fabriquées détectées', selfTest(baseFiles, afterFiles))
+  const table = planTable()
+  // A declaration still in core.mjs or cli.mjs is not moved yet; a moved one must be where the table says.
+  const misplaced = Object.entries(declarations.placement)
+    .filter(([name, file]) => !BASE_LIB_FILES.includes(file) && table[name] !== file)
+    .map(([name, file]) => `${name} : dans ${file}, la table du plan dit ${table[name] ?? '(absente)'}`)
+  const unplanned = Object.keys(declarations.placement).filter((name) => !table[name] && !['commands', 'main'].includes(name))
+  report('déclarations déplacées dans le module que donne la table du plan', misplaced)
+  report('déclarations présentes dans la table du plan', unplanned)
+  const remaining = Object.values(declarations.placement).filter((file) => BASE_LIB_FILES.includes(file)).length
+  console.log(`  ${declarations.baseCount - remaining} déclaration(s) déplacée(s), ${remaining} encore dans core.mjs ou cli.mjs`)
+
+  const exportsCheck = await compareExports()
+  report('exports de core.mjs (noms, typeof, code ou valeur)', exportsCheck.found)
+  report('fichiers de tests (liste, lignes hors imports de ../lib/)', compareTests(exportsCheck.names))
+
+  if (args.has('--self-test')) {
+    console.log('Auto-contrôle :')
+    report('mutations fabriquées détectées', selfTest(baseFiles, afterFiles))
+  }
+
+  if (!args.has('--no-tests')) {
+    const tests = runTests()
+    report(`suite verte, nombre de tests (${tests.total})`, tests.found)
+  }
+
+  console.log(problems.length ? `\nÉCHEC : ${problems.length} problème(s).` : '\nOK : rangement conforme à la spec §4.')
+  process.exit(problems.length ? 1 : 0)
 }
-
-if (!args.has('--no-tests')) {
-  const tests = runTests()
-  report(`suite verte, nombre de tests (${tests.total})`, tests.found)
-}
-
-console.log(problems.length ? `\nÉCHEC : ${problems.length} problème(s).` : '\nOK : rangement conforme à la spec §4.')
-process.exit(problems.length ? 1 : 0)

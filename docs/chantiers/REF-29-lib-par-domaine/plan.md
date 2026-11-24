@@ -9,6 +9,7 @@ On déplace des déclarations entières, de bas en haut du graphe d'import : d'a
 <!-- - chemin : rôle du changement -->
 
 - `docs/chantiers/REF-29-lib-par-domaine/check-moves.mjs` : le contrôle du §4 (nombre de tests, fichiers de tests, déclarations, lignes hors déclarations, exports de la façade), lancé avec le hash de la base.
+- `docs/chantiers/REF-29-lib-par-domaine/move.mjs` et `base-exports.txt` : déplace des déclarations entières entre modules et régénère les en-têtes d'import de tous les modules (imports directs depuis le module qui définit, `export ` posé sur ce qu'un autre module utilise, réexports de la façade depuis la liste des exports de la base).
 - `docs/chantiers/REF-29-lib-par-domaine/measure-hook.mjs` : 20 lancements de `atelier hook-guard`, donne la médiane (CA-7).
 - `plugins/atelier/lib/<domaine>.mjs` (14 modules purs) et `plugins/atelier/lib/cli/<domaine>.mjs` (13 modules d’entrées / sorties) : nouveaux.
 - `plugins/atelier/lib/core.mjs` : réduit à la façade. `plugins/atelier/lib/cli.mjs` : réduit à `commands` et `main`.
@@ -103,11 +104,11 @@ Chaque tranche : livrable seule, relisible en moins de 15 minutes ; tests, build
 Une tranche garde son numéro ; on ne retire du plan que des tranches à venir.
 1. <tranche> — CA couverts : CA-1, CA-2 -->
 
-1. Base et outillage : fusion de `main` après FIX-28 et base notée dans `decisions.md` ; table complétée des déclarations de FIX-28 ; `check-moves.mjs` vert sur la base sans aucun déplacement ; `measure-hook.mjs` et médiane de la base notée — CA couverts : CA-3
-2. Socle : `common.mjs` et `cli/common.mjs`, réexportés par `core.mjs` et importés par `cli.mjs` ; `pluginRoot` déplacé ; suite et `check-moves.mjs` verts — CA couverts : CA-1, CA-3
-3. Identifiants, relations, spec et documentation : `identifiers`, `relations`, `spec`, `docs` et leurs modules `cli/`, un commit par domaine — CA couverts : CA-1, CA-3
-4. Tranches, TDD, revue et points de revue : `slices`, `tdd`, `review-points`, `review` et leurs modules `cli/`, un commit par domaine — CA couverts : CA-1, CA-3
-5. Clôture, prochaine étape, garde et contrôles : `close`, `next-step`, `write-guard`, `checks`, `stop-hook` et leurs modules `cli/` ; `core.mjs` réduit à la façade, `cli.mjs` à `main` — CA couverts : CA-1, CA-2, CA-3
+1. Base, outillage et socle : fusion de `main` après FIX-28 et base notée dans `decisions.md` ; table complétée des déclarations de FIX-28 ; `check-moves.mjs` vert sur la base et sur trois mutations fabriquées ; `measure-hook.mjs` et médiane de la base notée ; `move.mjs` (déplacement de déclarations et régénération des imports) ; socle `common.mjs` et `cli/common.mjs`, réexporté par `core.mjs` et importé par `cli.mjs`, `pluginRoot` déplacé — CA couverts : CA-1, CA-3
+2. Identifiants et relations : `identifiers`, `relations` et leurs modules `cli/`, un commit par domaine — CA couverts : CA-1, CA-3
+3. Spec, documentation, tranches et TDD : `spec`, `docs`, `slices`, `tdd` et leurs modules `cli/`, un commit par domaine — CA couverts : CA-1, CA-3
+4. Revue, points de revue et clôture : `review-points`, `review`, `close`, `checks` et leurs modules `cli/`, un commit par domaine — CA couverts : CA-1, CA-3
+5. Prochaine étape, garde et hook Stop : `next-step`, `write-guard`, `stop-hook` et leurs modules `cli/` ; `core.mjs` réduit à la façade, `cli.mjs` à `main` — CA couverts : CA-1, CA-2, CA-3
 6. Tests et règles : imports nommés des tests, renommage de `windows-launcher.test.mjs`, `architecture.test.mjs`, mesure de latence, `CLAUDE.md` — CA couverts : CA-3, CA-4, CA-5, CA-6, CA-7
 
 CA-1 n'est tenu en entier qu'à la fin de la tranche 5, et CA-2 aussi. CA-3 est vérifié à chaque tranche contre la même base.

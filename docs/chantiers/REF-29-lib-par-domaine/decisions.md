@@ -52,3 +52,13 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Contexte : les retouches tolérées des tests (préfixe `core.`, noms de `windows-launcher.test.mjs`) n'arrivent qu'en tranche 6 ; le script tourne à chaque tranche.
 - Écarté : exiger la forme cible partout, parce que le script échouerait sur les tranches 1 à 5 sans régression.
 - Conséquence : CA-5 et le renommage de `windows-launcher` se vérifient en tranche 6 (lecture des imports, test d’architecture pour les noms), pas par ce contrôle.
+
+## 2026-11-24 : le socle passe en tranche 1, les domaines remontent d'un cran
+- Contexte : `atelier set-reviewed` refuse une tranche sans code commité (« tranche vide ») ; la tranche 1 du plan ne touchait que `docs/`.
+- Écarté : forcer la validation ou mettre l'outillage hors process, parce que le refus est la règle du plugin ; fusionner les tranches 1 et 2 en retirant la 2, parce qu'une tranche garde son numéro.
+- Conséquence : six tranches toujours. Tranche 1 = outillage + socle ; tranche 2 = `identifiers`, `relations` ; 3 = `spec`, `docs`, `slices`, `tdd` ; 4 = `review-points`, `review`, `close`, `checks` ; 5 = `next-step`, `write-guard`, `stop-hook`, façade ; 6 inchangée.
+
+## 2026-11-24 : imports régénérés par script, et `core.mjs` importe `cli/common` le temps du rangement
+- Contexte : chaque déplacement change les imports de plusieurs modules ; à la main, un import manquant n'échoue qu'à l'appel.
+- Écarté : écrire les imports à la main, parce qu'une omission passe `node --check` et ne casse qu'au premier appel (cas vu à l'essai : `...relationProblems` non détecté avant correction du script).
+- Conséquence : `move.mjs` régénère tous les en-têtes après chaque déplacement ; sur la base, il redonne exactement les imports d'origine (vérifié avant le premier déplacement). Tant que `currentBranch` et les autres lectures git de `core.mjs` n'ont pas rejoint `cli/identifiers` (tranche 2), `core.mjs` importe `gitOutput` de `cli/common.mjs` : transitoire, la règle « pas de module pur qui importe `lib/cli/` » ne vaut qu'à la fin (test d'architecture, tranche 6).
