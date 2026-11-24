@@ -1,7 +1,7 @@
 // Code committed by the chantier and by its slice in progress, read from git.
 
 import { codeLogArguments, matchesAny } from '../common.mjs'
-import { reviewCodeFiles } from '../core.mjs'
+import { reviewCodeFiles } from '../review.mjs'
 import { sliceState } from '../slices.mjs'
 import { git, gitObjectExists, gitPaths, gitVersion, isAncestor } from './common.mjs'
 import { defaultBaseRef, defaultBranchName } from './identifiers.mjs'
