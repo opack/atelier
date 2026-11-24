@@ -1,0 +1,136 @@
+// status command and session start hook: where the active chantier stands and its next step.
+
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { readBypass } from '../cli.mjs'
+import { toProjectRelativePath } from '../common.mjs'
+import { codeCommittedMatters, nextStep } from '../next-step.mjs'
+import { checkSpec } from '../spec.mjs'
+import { testDrivenPhase } from '../tdd.mjs'
+import { findProjectRoot, isAncestorOfHead, loadConfig } from './common.mjs'
+import { activeChantier } from './identifiers.mjs'
+import { formatRelations, relationsSummary } from './relations.mjs'
+import { reviewSummary } from './review.mjs'
+import { sliceCodeFiles, slicePosition } from './slices.mjs'
+
+// ---------- Status and session start ----------
+
+export function commandStatus(options) {
+  const projectRoot = findProjectRoot()
+  const config = loadConfig(projectRoot)
+  if (!config) {
+    console.log(JSON.stringify({ installed: false }))
+    return
+  }
+  const { branch, chantier, source } = activeChantier(projectRoot, config)
+  const bypass = readBypass(projectRoot, branch)
+  const review = reviewSummary(projectRoot, config, chantier)
+  const relations = relationsSummary(projectRoot, config, chantier)
+  const codeCommitted = codeCommittedFact(projectRoot, config, chantier, review.reviewState)
+  const summary = {
+    installed: true,
+    branch,
+    chantierSource: source,
+    chantier: chantier
+      ? {
+          id: chantier.id,
+          directory: chantier.directory ? toProjectRelativePath(projectRoot, chantier.directory) : null,
+          title: chantier.spec?.data.title ?? null,
+          type: chantier.spec?.data.type ?? null,
+          status: chantier.spec?.data.status ?? null,
+          testDrivenPhase: chantier.spec ? testDrivenPhase(chantier) : null,
+          testsCommit: chantier.spec?.data.tests_commit || null,
+          ...slicePosition(chantier),
+          ...review,
+          codeCommitted,
+          relations,
+          files: chantier.files,
+          specProblems: chantier.spec ? checkSpec(readFileSync(join(chantier.directory, 'spec.md'), 'utf8')) : [],
+        }
+      : null,
+    bypass,
+    nextStep: nextStep(chantier, review.reviewState, relations?.children, codeCommitted),
+  }
+  if (options.includes('--json')) {
+    console.log(JSON.stringify(summary, null, 2))
+    return
+  }
+  console.log(formatStatus(summary))
+}
+
+function formatStatus(summary) {
+  const lines = [`Branche : ${summary.branch ?? '(aucune)'}`]
+  if (summary.chantier) {
+    const { id, title, type, status, files, specProblems } = summary.chantier
+    const deduced = summary.chantierSource === 'commits' ? ' (déduit des commits)' : ''
+    lines.push(`Chantier : ${id}${deduced}${title ? ` — ${title}` : ''} (${type ?? '?'}, ${status ?? 'pas de spec'})`)
+    lines.push(`Documents : ${files.length ? files.join(', ') : 'aucun'}`)
+    if (summary.chantier.relations) {
+      lines.push(...formatRelations(summary.chantier.relations))
+    }
+    const phaseLabels = {
+      'writing-tests': 'tests d’abord — aucune implémentation tant que les tests ne sont pas commités',
+      implementing: 'implémentation — tests figés, ne pas les modifier',
+    }
+    const { slice, sliceCount } = summary.chantier
+    if (typeof slice === 'number' && slice > sliceCount) {
+      lines.push(`Tranche ${slice} absente du plan : la revue de la tranche mène à la revue du chantier.`)
+    }
+    if (status === 'signed' && phaseLabels[summary.chantier.testDrivenPhase]) {
+      lines.push(`Phase TDD : ${phaseLabels[summary.chantier.testDrivenPhase]}`)
+    }
+    const { reviewedCommit, reviewState: state, reviewProblems: problems = [] } = summary.chantier
+    if (reviewedCommit) {
+      lines.push(state === 'current'
+        ? `Revue : commit ${reviewedCommit.slice(0, 7)}, à jour (aucun code commité depuis)`
+        : `Revue : commit ${reviewedCommit.slice(0, 7)}, obsolète\n${problems.map((problem) => `  - ${problem}`).join('\n')}`)
+    }
+    if (status !== 'signed' && status !== 'done' && specProblems.length) {
+      lines.push(`À compléter dans la spec : ${specProblems.length} point(s)`)
+    }
+  }
+  if (summary.bypass) {
+    lines.push(`⚠️ Débrayage actif depuis ${summary.bypass.at} : ${summary.bypass.reason}. Spec et bilan à écrire après coup.`)
+  }
+  lines.push(`Prochaine étape : ${summary.nextStep}`)
+  return lines.join('\n')
+}
+
+// Whether code was committed in the current slice, for the next step (see nextStep): since the
+// freeze of its tests in TDD (test files excluded), otherwise since `slice_base` or the merge base
+// with the default branch. null when it cannot change the next step, or cannot be computed (no
+// base, git error, start of the slice no longer an ancestor of HEAD).
+function codeCommittedFact(projectRoot, config, chantier, review) {
+  if (!codeCommittedMatters(chantier, review)) return null
+  try {
+    const testDriven = chantier.spec.data.tdd === 'yes'
+    const start = (testDriven ? chantier.spec.data.tests_commit : chantier.spec.data.slice_base) || null
+    if (start && !isAncestorOfHead(projectRoot, start)) return null
+    const files = sliceCodeFiles(projectRoot, config, start, testDriven)
+    return files === null ? null : files.length > 0
+  } catch {
+    return null
+  }
+}
+
+export function hookSessionStart() {
+  const projectRoot = findProjectRoot()
+  const config = loadConfig(projectRoot)
+  if (!config) {
+    return
+  }
+  const { branch, chantier, source } = activeChantier(projectRoot, config)
+  const review = reviewSummary(projectRoot, config, chantier)
+  const relations = relationsSummary(projectRoot, config, chantier)
+  const summary = {
+    branch,
+    chantierSource: source,
+    chantier: chantier ? { id: chantier.id, title: chantier.spec?.data.title, type: chantier.spec?.data.type, status: chantier.spec?.data.status, files: chantier.files, ...(chantier.spec ? slicePosition(chantier) : {}), ...review, relations } : null,
+    bypass: readBypass(projectRoot, branch),
+    nextStep: nextStep(chantier, review.reviewState, relations?.children, codeCommittedFact(projectRoot, config, chantier, review.reviewState)),
+  }
+  const statusText = summary.chantier
+    ? formatStatus({ ...summary, chantier: { ...summary.chantier, specProblems: [] } })
+    : formatStatus(summary)
+  console.log(`Projet géré avec atelier (process IA : chantiers, spec signée avant le code, tests d'abord, bilan).\n${statusText}`)
+}
