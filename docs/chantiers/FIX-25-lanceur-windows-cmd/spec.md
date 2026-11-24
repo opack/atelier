@@ -10,6 +10,7 @@ signed_by: Opack
 signed_at: 2026-11-23
 tests_commit: 391f2cb
 slice: 1
+reviewed_commit: a04c332c99bd7e4eaea0afa1a432ea652b47388d
 ---
 
 # FIX-25 Lancer atelier depuis PowerShell et cmd sous Windows
