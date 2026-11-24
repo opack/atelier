@@ -41,3 +41,10 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Contexte : le schéma du manifeste accepte `options` sur une option de type `string`, et `claude plugin validate` l'accepte.
 - Écarté : un champ libre, parce qu'il laisse passer des fautes de frappe.
 - Conséquence : choix fermé dans `/plugin configure`. Le code ignore quand même une valeur hors liste (CA-6).
+
+## 2026-11-24 : traitement du contrôle de surapprentissage, tranche 1 (OD1 à OD5)
+- OD1, corrigé : un nom de sous-agent hérité d'`Object.prototype` (`toString`) passait la garde. La recherche du défaut se fait désormais avec `Object.hasOwn`, et un sous-agent inconnu est refusé.
+- OD2, accepté : le reste est recollé avec une seule espace. Sans effet sur une tranche de SPIKE, seul reste utile.
+- OD3, reporté (tranche 4) : `/atelier:build inherit` ou `/atelier:build claude-opus-5-5` prend le mot pour une tranche, sans avertissement, comme le veut CA-5. La garde se fera dans `build`, qui refuse une tranche absente du plan.
+- OD4, accepté : une option invalide est signalée même quand l'argument l'emporte. Elle reste à corriger, donc l'avertissement est utile.
+- OD5, signalé à Didier : tests faibles (refus sans `model: null` vérifié, combinaison d'options invalides, sous-agent inconnu non testé). Les renforcer demande de rouvrir les tests.
