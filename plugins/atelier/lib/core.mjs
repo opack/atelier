@@ -1,6 +1,6 @@
-// Core logic of atelier: project configuration, chantier state, spec checks.
-// Pure functions where possible so they can be tested without git or a filesystem.
-
+// Façade kept for the branches opened before REF-29: it re-exports, unchanged, the names that
+// core.mjs exported. No logic here: new code goes in the module of its domain (lib/<domain>.mjs,
+// lib/cli/<domain>.mjs). A branch opened before REF-29 may add a re-export line, never logic.
 
 export { checksGreenOn, withGreen } from './checks.mjs'
 export { configPath, findProjectRoot, loadConfig } from './cli/common.mjs'
