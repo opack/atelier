@@ -219,3 +219,56 @@ describe('freezing the tests of a slice', () => {
     }
   })
 })
+
+describe('gel après un gros diff ou une fusion de la branche par défaut', () => {
+  // FEAT-20 on feat/FEAT-20-x, in slice 2: `test/main.test.mjs` comes from the default branch,
+  // merged before slice_base; `test/one.test.mjs` is a test of slice 1.
+  function sliceTwoWithMainTest() {
+    const directory = makeSlicedRepository()
+    git(directory, 'switch', '-q', 'main')
+    commitFiles(directory, { 'test/main.test.mjs': 'ligne a\nligne b\n' }, 'test: main')
+    git(directory, 'switch', '-q', 'feat/FEAT-20-x')
+    git(directory, 'merge', '-q', '--no-edit', 'main')
+    commitFiles(directory, { 'test/one.test.mjs': 'ligne a\nligne b\n' }, 'test: one')
+    commitFiles(directory, { 'src/one.mjs': 'export const one = 1\n' }, 'feat: one')
+    setHeader(directory, 'FEAT-20', { slice: '2', slice_base: headOf(directory) })
+    return directory
+  }
+
+  // The default branch changes a line of `test/main.test.mjs`, then is merged without conflict.
+  function mergeMainChangingItsTest(directory) {
+    git(directory, 'switch', '-q', 'main')
+    commitFiles(directory, { 'test/main.test.mjs': 'ligne a\nligne B\n' }, 'test: main changed')
+    git(directory, 'switch', '-q', 'feat/FEAT-20-x')
+    git(directory, 'merge', '-q', '--no-edit', 'main')
+  }
+
+  it('fige les tests quand le diff depuis slice_base dépasse 1 Mo hors fichiers de test [FIX-31 CA-1]', () => {
+    const { directory } = atSliceTwo()
+    commitFiles(directory, { 'src/big.mjs': `// ${'x'.repeat(100)}\n`.repeat(20000) }, 'feat: big')
+    commitFiles(directory, { 'test/two.test.mjs': 'test\n' }, 'test: two')
+    const { status, output } = atelierRun(directory, 'freeze-tests')
+    assert.equal(status, 0, output)
+    assert.ok(specData(directory, 'FEAT-20').tests_commit)
+  })
+
+  it('ne refuse pas le gel pour un test modifié par la branche par défaut et apporté par une fusion [FIX-31 CA-2]', () => {
+    const directory = sliceTwoWithMainTest()
+    mergeMainChangingItsTest(directory)
+    commitFiles(directory, { 'test/two.test.mjs': 'test\n' }, 'test: two')
+    const { status, output } = atelierRun(directory, 'freeze-tests')
+    assert.equal(status, 0, output)
+    assert.ok(specData(directory, 'FEAT-20').tests_commit)
+  })
+
+  it('refuse le gel en ne citant que le test d’une tranche précédente modifié par le chantier, malgré une fusion [FIX-31 CA-3]', () => {
+    const directory = sliceTwoWithMainTest()
+    mergeMainChangingItsTest(directory)
+    commitFiles(directory, { 'test/one.test.mjs': 'ligne a\nligne B\n', 'test/two.test.mjs': 'test\n' }, 'test: two')
+    const { status, output } = atelierRun(directory, 'freeze-tests')
+    assert.equal(status, 2, output)
+    assert.match(output, /- test\/one\.test\.mjs/)
+    assert.doesNotMatch(output, /main\.test\.mjs/)
+    assert.equal(specData(directory, 'FEAT-20').tests_commit ?? '', '')
+  })
+})
