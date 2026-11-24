@@ -77,7 +77,7 @@ Les noms sont ceux de la base. `E` signale un export de la base, qui reste réex
 
 - **Modules purs** :
   - `common` n'importe rien ;
-  - `identifiers` et `spec` importent `common` ;
+  - `identifiers`, `spec` et `docs` importent `common` ;
   - `relations` importe `common` et `identifiers` ;
   - `slices` importe `spec` ;
   - `tdd` importe `common`, `spec` et `slices` ;
@@ -90,7 +90,8 @@ Les noms sont ceux de la base. `E` signale un export de la base, qui reste réex
   - `stop-hook` importe `common`, `checks` et `tdd`.
 - **Modules d'entrées / sorties** : chacun importe des modules purs et `cli/common`, et ses dépendances suivent le même sens :
   - `cli/identifiers` vient en premier ;
-  - `cli/relations` et `cli/spec` dépendent de lui ;
+  - `cli/relations` et `cli/spec` dépendent de lui ; `cli/docs` n'importe que `cli/common` ;
+  - `cli/tdd` vient après `cli/spec` et `cli/identifiers` (RD9) ;
   - `cli/slices`, puis `cli/review` ;
   - `cli/checks`, puis `cli/close` ;
   - `cli/write-guard`, puis `cli/stop-hook` ;

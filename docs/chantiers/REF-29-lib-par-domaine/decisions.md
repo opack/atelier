@@ -66,3 +66,8 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 ## 2026-11-24 : `cli/slices` importe `reviewCodeFiles` depuis `core.mjs` le temps de la tranche 3
 - Contexte : tranche 3, `sliceCodeFiles` (cli/slices) appelle `reviewCodeFiles`, qui ne rejoint `review.mjs` qu'en tranche 4.
 - Conséquence : import transitoire d'un module de domaine vers `core.mjs`, sans cycle (`core.mjs` n'importe que `cli/common` et `cli/identifiers`) ; `move.mjs` le redirige vers `review.mjs` en tranche 4. Le test d'architecture de la tranche 6 pourra interdire tout import de `core.mjs` dans `lib/`.
+
+## 2026-11-24 : renvois à `lib/core.mjs` dans les commentaires déplacés, reportés au bilan (RD8)
+- Contexte : revue de la tranche 3 ; des commentaires de déclarations renvoient à « lib/core.mjs » (`cli/slices.mjs` pour `codeLogArguments`, `cli.mjs` pour `reviewProblems`, `closeProblems`, `decideStop`).
+- Écarté : les corriger ici, parce que la spec interdit de retoucher le texte d'une déclaration (`check-moves.mjs` le refuserait).
+- Conséquence : recensement par `grep -rn "lib/core.mjs" plugins/atelier/lib` dans « Dette et suites » du bilan, pour le chantier qui supprimera la façade.
