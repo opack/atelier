@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import * as core from '../lib/core.mjs'
+import { planSlices, planSliceCount } from '../lib/slices.mjs'
 
 // Plan of CA-1: one slice per way of writing it (TDD declared, tolerant spelling, undeclared),
 // plus an HTML comment, indented sub-lists and a later numbered section that must be ignored.
@@ -31,22 +31,22 @@ const expected = [
   { number: 3, criteria: ['CA-3'], tdd: null },
 ]
 
-describe('FIX-20 reading the slices of the plan', () => {
+describe('reading the slices of the plan', () => {
   it('lit le numéro, les CA et le TDD de chaque tranche [FIX-20 CA-1]', () => {
-    assert.deepEqual(core.planSlices(plan), expected)
+    assert.deepEqual(planSlices(plan), expected)
   })
 
   it('lit de même un plan en CRLF [FIX-20 CA-1]', () => {
-    assert.deepEqual(core.planSlices(plan.replace(/\n/g, '\r\n')), expected)
+    assert.deepEqual(planSlices(plan.replace(/\n/g, '\r\n')), expected)
   })
 
   it('sans plan ou sans section « Tranches », aucune tranche [FIX-20 CA-1]', () => {
     for (const text of [null, '', '# Plan\n\n## Approche\n1. pas une tranche — TDD : oui\n']) {
-      assert.deepEqual(core.planSlices(text), [], String(text))
+      assert.deepEqual(planSlices(text), [], String(text))
     }
   })
 
   it('planSliceCount compte les tranches lues par planSlices [FIX-20 CA-1]', () => {
-    assert.equal(core.planSliceCount(plan), 3)
+    assert.equal(planSliceCount(plan), 3)
   })
 })

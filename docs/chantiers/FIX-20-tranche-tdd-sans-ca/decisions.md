@@ -28,3 +28,9 @@
 ## 2026-11-24 : numéros de tranche en double (OD3) reportés à la tranche 4
 - Contexte : `planSlices` renvoie deux tranches de même numéro si le plan les écrit ; `planSliceCount` garde le plus grand numéro, comme avant.
 - Conséquence : `planProblems` (tranche 4) signalera le doublon ; d'ici là, les lectures par numéro prennent la première entrée.
+
+## 2026-11-24 : rebase sur REF-29 (lib/ rangé par domaine)
+- Contexte : REF-29 fusionné (PR #21) ; procédure RD18 de `docs/chantiers/REF-29-lib-par-domaine/decisions.md`.
+- Fait : fusion de `main` ; `planSlices`, `sliceAttributes` et `planSliceCount` rejoués dans `lib/slices.mjs`, façade `core.mjs` reprise telle quelle de `main` (aucun réexport ajouté) ; `test/plan.test.mjs` importe depuis `lib/slices.mjs`, `describe` renommé sans identifiant de chantier (règle REF-16). Les assertions des tests de la tranche 1 sont inchangées.
+- Écarté : déplacer ces tests dans `slices.test.mjs`, parce que le plan (RD2) nomme `plan.test.mjs` et que la règle d'architecture l'accepte.
+- Conséquence : les tranches 2 à 6 visent les modules de domaine (`tdd.mjs`, `review.mjs`, `slices.mjs`, `next-step.mjs`…), pas `core.mjs` ; la liste des fichiers de `plan.md` est à recaler à la tranche 2.
