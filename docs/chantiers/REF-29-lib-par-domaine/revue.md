@@ -57,3 +57,20 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD7. Titres de section vides empilés dans `core.mjs` | `plugins/atelier/lib/core.mjs:79` | corrigé (d9f84dc) : `move.mjs` retire tout titre de section resté sans contenu, titres orphelins de `core.mjs` retirés ; réécriture de l'en-tête de `core.mjs` inscrite à la tranche 5 du plan |
 
 - Bilan de la revue : `check-moves.mjs --self-test` vert (88 déclarations déplacées sur 201, 340 tests, suite verte à chaque commit), latence +3,3 ms, sorties de `status`, `next-id`, `check-process`, `review-ids`, `close-check`, `hook-session-start` et `check-spec` (5 specs réelles, une spec fabriquée à 5 erreurs de relations) identiques à la base.
+
+## Revue : tranche 3 : 2026-11-24
+- Commit revu : ca14109
+- Base : d9f84dc
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD8. Commentaires déplacés qui renvoient à `lib/core.mjs` | `plugins/atelier/lib/cli/slices.mjs:17` | reporté (« Dette et suites » du bilan) : la spec interdit de retoucher le texte d'une déclaration ; recensement à faire au bilan pour le chantier qui supprimera la façade (decisions.md, 1ea3fce) |
+| RD9. Graphe d'import du plan incomplet pour les domaines de la tranche | `docs/chantiers/REF-29-lib-par-domaine/plan.md` | corrigé (1ea3fce) : `docs` importe `common`, `cli/docs` n'importe que `cli/common`, `cli/tdd` vient après `cli/spec` et `cli/identifiers` |
+
+- Bilan de la revue : `check-moves.mjs --self-test` vert à chaque commit (134 déclarations déplacées sur 201, 340 tests), latence +2,2 ms ; sorties de `status`, `check-process`, `template`, `tests-changed`, `check-spec` (26 fichiers) identiques à la base ; scénario de 28 étapes (`sign`, `set-tdd`, `freeze-tests`, `reopen-tests`) identique à la base dans deux dépôts jetables.
