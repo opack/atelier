@@ -1315,7 +1315,9 @@ export function closeProblems({ chantier, reviewFacts, uncommittedCode, uncommit
 
 // `review` is the state of the review ('none', 'current' or 'stale'), computed by the command.
 // `children` are the direct children of an EPIC, as { id, closed } (see describeRelation).
-export function nextStep(chantier, review = 'none', children = []) {
+// `codeCommitted` is true when code was committed since the start of the current slice (since
+// the freeze of its tests in TDD), false when not, null when unknown (see codeCommittedMatters).
+export function nextStep(chantier, review = 'none', children = [], codeCommitted = null) {
   if (!chantier) {
     return 'Aucun chantier actif sur cette branche. Ouvrir un chantier : /atelier:new'
   }
@@ -1351,17 +1353,30 @@ export function nextStep(chantier, review = 'none', children = []) {
     return 'Tous les enfants sont clos : clôturer l’EPIC (bilan prévu / réalisé) : /atelier:close'
   }
   const { model, slice, sliceCount } = sliceState(chantier)
+  const implemented = review === 'none' && codeCommitted === true
   if (model === 'sliced' && slice !== 'chantier') {
-    return `${sliceLabel(slice, sliceCount)} : ${phaseStep(chantier)}`
+    return `${sliceLabel(slice, sliceCount)} : ${phaseStep(chantier, 'none', implemented)}`
   }
   if (model === 'sliced' && review === 'none' && testDrivenPhase(chantier) !== 'writing-tests') {
     return 'Revue du chantier : faire relire l’ensemble : /atelier:review'
   }
-  return phaseStep(chantier, review)
+  return phaseStep(chantier, review, implemented)
+}
+
+// Whether the code committed in the current slice can change the next step, so whether the
+// command has to compute it: a signed chantier (not an EPIC), tests frozen if in TDD, a slice in
+// progress (not the review of the whole chantier) and no review recorded.
+export function codeCommittedMatters(chantier, review) {
+  const data = chantier?.spec?.data
+  if (!data || data.status !== 'signed' || (data.type ?? '').toUpperCase() === 'EPIC') {
+    return false
+  }
+  return review === 'none' && testDrivenPhase(chantier) !== 'writing-tests' && sliceState(chantier).slice !== 'chantier'
 }
 
 // Next step of the current phase (tests, build, review, close), for a slice or the chantier.
-function phaseStep(chantier, review = 'none') {
+// `implemented`: code was committed in the slice and no review covers it.
+function phaseStep(chantier, review = 'none', implemented = false) {
   const phase = testDrivenPhase(chantier)
   if (phase === 'writing-tests') {
     return 'Tests d’abord : écrire les tests, vérifier qu’ils échouent, les commiter (aucune implémentation) : /atelier:write-tests'
@@ -1369,14 +1384,18 @@ function phaseStep(chantier, review = 'none') {
   const build = phase === 'implementing'
     ? 'Implémenter jusqu’à ce que tous les tests passent, sans modifier les tests, puis commiter : /atelier:build'
     : 'Implémenter (sans TDD pour ce chantier), puis commiter : /atelier:build'
+  const resume = '(ou reprendre /atelier:build si elle n’est pas finie)'
   if (isReviewExempt(chantier)) {
-    return `${build} ; ensuite clôturer : /atelier:close`
+    return implemented ? `Implémentation commitée : clôturer : /atelier:close ${resume}` : `${build} ; ensuite clôturer : /atelier:close`
   }
   if (review === 'current') {
     return 'Revue à jour : clôturer (bilan, verdict) : /atelier:close'
   }
   if (review === 'stale') {
     return 'Le code ou la spec a changé depuis la revue : refaire relire : /atelier:review'
+  }
+  if (implemented) {
+    return `Implémentation commitée : faire relire : /atelier:review ${resume}`
   }
   return `${build} ; ensuite faire relire : /atelier:review`
 }
