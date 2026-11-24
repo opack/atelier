@@ -3,7 +3,7 @@ id: FIX-28
 type: FIX
 title: Le code fusionné depuis main compte comme code du chantier
 status: draft
-tdd:                 # yes | no : décision humaine, obligatoire avant signature
+tdd: yes
 created_at: 2026-11-23
 source: bilan FIX-26 §6 (OD1), constaté sur REF-16 et FIX-26
 rel_origin: FIX-26
@@ -54,7 +54,8 @@ Correction de la cause : un seul calcul, partagé, des fichiers de code apporté
 **Repli sur le calcul actuel, sans erreur** (commande inchangée pour chaque appelant) quand :
 - la version de git est inférieure à 2.36 ou illisible (`git --version`) ;
 - aucune référence de la branche par défaut n'est connue ;
-- la branche courante est elle-même la branche par défaut (l'exclure viderait la liste).
+
+**Références exclues, par les commits et non par les noms** (SB1) : une référence n'est exclue que si HEAD n'en est pas un ancêtre (`git merge-base --is-ancestor HEAD <réf>` vaut 1). Cela couvre la branche courante qui est la branche par défaut, une HEAD détachée, et une branche de chantier déjà fusionnée dans `main` (PR fusionnée puis travail repris) : sans cette règle, `<début>..HEAD ^main` serait vide et du code commité après la revue passerait inaperçu. Si aucune référence ne reste à exclure, c'est le repli.
 
 **Répartition** :
 - `lib/core.mjs` : fonctions pures testées, lecture de la version de git (`2.36.0`, `2.39.3 (Apple Git-146)`, `2.45.1.windows.1`) et construction des arguments de `git log` à partir de la version, du début, des références à exclure et du calcul de repli.
@@ -67,6 +68,8 @@ Correction de la cause : un seul calcul, partagé, des fichiers de code apporté
 
 **Site** : `site/cycle/revue.md` (« Une revue qui devient obsolète » : la fusion de `main` ne compte que par sa résolution), `site/reference/limites.md` (git 2.36 pour ce calcul, repli en dessous ; le paragraphe « Référence distante périmée » à revoir), `site/reference/commandes.md` si la ligne `set-reviewed` le demande.
 
+**Limites (SD3)** : `site/reference/limites.md` remplace « git 2.31 pour `first-parent` » par : git 2.36 ou plus pour ignorer le code apporté par la branche par défaut ; en dessous, une fusion de `main` compte comme avant (revue à refaire). Seule la branche par défaut est exclue : le code apporté par une autre branche d'intégration (`develop`, `upstream/main` d'un fork) compte toujours.
+
 Pas de données à réparer : les `reviewed_commit` existants restent valides, le calcul est refait à chaque appel.
 
 ## 5. Critère de non-régression
@@ -75,15 +78,15 @@ Pas de données à réparer : les `reviewed_commit` existants restent valides, l
 - [ ] CA-2 : Étant donné la même situation, mais une fusion avec un conflit sur un fichier de code résolu à la main, quand on lance `atelier status --json`, alors la revue est obsolète et seuls les fichiers de la résolution sont cités, pas les autres fichiers apportés par la branche par défaut.
 - [ ] CA-3 : Étant donné un chantier en tranches, tranche 2 en cours, dont le seul commit depuis `slice_base` est une fusion sans conflit de la branche par défaut apportant du code, quand on lance `atelier set-reviewed`, alors la commande refuse pour « tranche vide » ; avec en plus un commit de code du chantier, elle n'oppose pas ce refus.
 - [ ] CA-4 : Étant donné un chantier TDD aux tests figés, dont le seul commit depuis `tests_commit` est une fusion sans conflit de la branche par défaut apportant du code, quand on lance `atelier status`, alors la prochaine étape est « Implémenter », pas la revue (dépend de FIX-26).
-- [ ] CA-5 : Étant donné une branche qui a fusionné un `main` local en avance sur `origin/main` (commits de code non poussés), quand on calcule le code du chantier (revue, tranche), alors les commits de ce `main` local ne comptent pas.
+- [ ] CA-5 : Étant donné une branche qui a fusionné un `main` local en avance sur `origin/main` (commits de code non poussés), puis une revue enregistrée avant cette fusion, quand on lance `atelier status --json` et `atelier set-reviewed` (tranche en cours), alors les commits de ce `main` local ne comptent ni pour la revue (`reviewState` à jour) ni pour la tranche (« tranche vide » si rien d'autre).
 - [ ] CA-6 : Étant donné une version de git inférieure à 2.36, ou une sortie de `git --version` illisible, quand on construit la commande, alors c'est la commande actuelle de chaque appelant (repli) ; à partir de 2.36 (formats `2.36.0`, `2.39.3 (Apple Git-146)`, `2.45.1.windows.1`), c'est le nouveau calcul.
-- [ ] CA-7 : Étant donné un dépôt sans référence de la branche par défaut (ni `origin`, ni `main`, ni `master`), ou une branche courante qui est la branche par défaut, quand on calcule le code du chantier, alors le calcul actuel s'applique, sans erreur.
+- [ ] CA-7 : Étant donné un dépôt sans référence de la branche par défaut (ni `origin`, ni `main`, ni `master`), ou une HEAD ancêtre de toutes les références de la branche par défaut (branche courante = branche par défaut, ou branche de chantier déjà fusionnée dans `main`), quand un commit de code suit la revue et qu'on lance `atelier status --json`, alors la revue est obsolète (calcul actuel), sans erreur.
 
 ## 6. Notes complémentaires
 <!-- Hors périmètre, contournement temporaire, communication utilisateur, autres endroits où ce schéma existe. Optionnel. -->
-- **Retour sur un choix de TEC-3** : une fusion de `main` après la revue imposait une nouvelle revue. Argument pour l'ancien choix : le code du chantier côtoie du code de `main` qu'il n'a jamais vu. Réponse : ce code a été relu dans son propre chantier, et l'interaction est couverte par les contrôles, relancés sur le nouvel état du code à la clôture (`close-check`). Une fusion avec conflit, elle, reste une revue à refaire. Décision à confirmer par Didier à la signature.
+- **Retour sur un choix de TEC-3** : une fusion de `main` après la revue imposait une nouvelle revue. Argument pour l'ancien choix : le code du chantier côtoie du code de `main` qu'il n'a jamais vu. Réponse : ce code a été relu dans son propre chantier, et l'interaction est couverte par les contrôles, relancés sur le nouvel état du code à la clôture (`close-check`). Reste une revue à refaire toute fusion dont la résolution diffère de la fusion automatique sur un fichier de code (conflit résolu, y compris en gardant le côté `main`, ou retouche sans conflit) ; un conflit sur un fichier hors code ne compte pas (SD1). Décision validée par Didier le 2026-11-24, tracée dans `decisions.md` de FIX-28, avec un renvoi ajouté à l'entrée de TEC-3.
 - Une résolution de conflit qui reprend tel quel le côté `main` apparaît quand même (la fusion automatique contenait des marqueurs) : accepté, c'est une décision du chantier.
-- Hors périmètre : la première tranche sans `slice_base` (base de fusion avec la branche par défaut), déjà correcte quand `main` est fusionnée à jour ; `branchCommitSubjects` (identifiant du chantier par ses commits), qui n'inspecte que les sujets.
+- Première tranche sans `slice_base` (SD2) : la base reste la base de fusion avec la branche par défaut, et la liste passe par le nouveau calcul (exclusion de `main` local, résolutions de fusion). Hors périmètre : `branchCommitSubjects` (identifiant du chantier par ses commits), qui n'inspecte que les sujets.
 - Dépend de FIX-26 (PR #18) pour CA-4 : à fusionner avant l'implémentation de ce FIX ; fusionner alors `main` dans cette branche.
 
 ## Amendements
