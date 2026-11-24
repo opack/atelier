@@ -43,7 +43,7 @@ Une spec signée ne repasse jamais en brouillon : sinon, il suffirait de la repa
 
 ### La version de git
 
-La détection du code du chantier (revue obsolète, tranche vide, prochaine étape) ignore le code que la branche par défaut apporte par une fusion : seule compte la résolution de la fusion. Ce calcul utilise `git log --diff-merges=remerge`, qui demande git 2.36 ou plus récent. Avec un git plus ancien, ou sans référence connue de la branche par défaut, atelier revient au calcul précédent (git 2.31 ou plus récent) : une fusion de la branche par défaut compte alors comme du code du chantier, et rend la revue obsolète.
+La détection du code du chantier (revue obsolète, tranche vide, prochaine étape) ignore le code que la branche par défaut apporte par une fusion : seule compte la résolution de la fusion. Ce calcul utilise `git log --diff-merges=remerge`, qui demande git 2.36 ou plus récent. Avec un git plus ancien, sans référence connue de la branche par défaut, ou quand la branche par défaut contient déjà des commits du chantier depuis le début (branche courante = branche par défaut, branche déjà fusionnée dans `main`, fusion de `main` en avance rapide), atelier revient au calcul précédent (git 2.31 ou plus récent) : une fusion de la branche par défaut compte alors comme du code du chantier, et rend la revue obsolète.
 
 Seule la branche par défaut (`origin/main` et `main`, par exemple) est ignorée : le code apporté par une autre branche d’intégration (`develop`, `upstream/main` d’un fork) compte comme du code du chantier.
 
