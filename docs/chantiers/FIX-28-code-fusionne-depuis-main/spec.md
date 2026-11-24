@@ -10,7 +10,7 @@ rel_origin: FIX-26
 rel_depends_on: FIX-26
 signed_by: Opack
 signed_at: 2026-11-24
-tests_commit: 99f4737
+tests_commit: 
 slice: 1
 ---
 
@@ -96,3 +96,4 @@ Pas de données à réparer : les `reviewed_commit` existants restent valides, l
 ## Amendements
 <!-- Après signature : une entrée datée par modification de la spec. -->
 - 2026-11-24 : exclusion décidée sur le plus ancien commit du chantier depuis le début, et non sur HEAD ; ajout de CA-8 (branche fusionnée dans main puis reprise) et CA-9 (retouche sans conflit dans un commit de fusion), suite à OD2 et OD3 de la vérification de surapprentissage.
+- 2026-11-24 : tests rouverts (gel quitté : 99f4737) : OD2 et OD3 : ajout de CA-8 et CA-9
