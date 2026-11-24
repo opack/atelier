@@ -91,3 +91,19 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 
 - Bilan de la revue : `check-moves.mjs --self-test` vert à chaque commit (178 déclarations déplacées sur 201, 340 tests), latence +6,2 ms ; plus aucun module de domaine n'importe `core.mjs` ; sorties de `review-ids`, `close-check`, `checks`, `status`, `hook-session-start`, `hook-gate` identiques à la base, scénario de 20 commandes (`set-reviewed`, `set-status`, refus compris) identique dans un dépôt jetable.
 - Incident pendant la revue : le reviewer a lancé `check-moves.mjs` avec `GIT_DIR` pointé sur ce dépôt ; les tests, qui créent des dépôts jetables, ont déplacé `HEAD`, `main` et la branche du chantier en local et créé 19 branches. Rien n'a été poussé, l'arbre de travail était intact. Réparé : refs remises à 37af9c0 et 94423a3, index reconstruit, branches parasites et cache `.atelier/gate*` supprimés, suite verte. `check-moves.mjs` lance désormais les tests sans `GIT_DIR` hérité (2707371).
+
+## Revue : tranche 5 : 2026-11-24
+- Commit revu : aba045c
+- Base : d5d8584
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+- Bilan de la revue : CA-1 et CA-2 tenus en entier (`cli.mjs` = `commands` + `main`, 46 lignes ; `core.mjs` = réexports seuls, 83 noms identiques à la base, même code) ; `check-moves.mjs --self-test` vert à chacun des 5 commits (199 déclarations déplacées sur 201, 340 tests) ; graphe sans cycle, plus aucun module n'importe `core.mjs` ; `move.mjs --relink` idempotent ; latence +6,5 ms ; scénario d'environ 50 étapes (`status`, `hook-session-start`, `hook-guard` autorisé et refusé, `hook-gate`, `bypass`) identique à la base dans un dépôt jetable.
