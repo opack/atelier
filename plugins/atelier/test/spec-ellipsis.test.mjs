@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { checkSpec } from '../lib/core.mjs'
+import { checkSpec } from '../lib/spec.mjs'
 
 const templatesDirectory = fileURLToPath(new URL('../templates/', import.meta.url))
 
@@ -66,7 +66,7 @@ describe('« … » dans checkSpec', () => {
     }
   })
 
-  it('les critères CA-17 et CA-18 de TEC-15, en code en ligne, ne sont pas signalés [FIX-22 CA-1]', () => {
+  it('les critères de TEC-15 en code en ligne ne sont pas signalés [FIX-22 CA-1]', () => {
     const problems = checkSpec(spec('TEC', {
       'Vérification': [
         "- CA-17 : Étant donné un titre `### Bloquants` suivi d'un tableau de points, quand on contrôle, alors le titre est signalé ; étant donné une ligne `| RB1. … |` sous un autre titre `###` d'une section (`### Contrôles`), alors la ligne est signalée.",

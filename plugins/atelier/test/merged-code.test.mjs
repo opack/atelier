@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, it } from 'node:test'
-import { codeLogArguments, parseGitVersion } from '../lib/core.mjs'
+import { codeLogArguments, parseGitVersion } from '../lib/common.mjs'
 import { atelierOk, atelierRun, commit, commitFiles, git, headOf, makeSlicedRepository, setHeader } from './helpers.mjs'
 
 const status = (directory) => JSON.parse(atelierOk(directory, 'status', '--json'))
