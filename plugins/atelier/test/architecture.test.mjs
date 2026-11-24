@@ -6,8 +6,8 @@ import { fileURLToPath } from 'node:url'
 import { CHANTIER_TYPES } from '../lib/common.mjs'
 
 // Structural rules of lib/ and test/ (EPIC-17). The checks are plain functions of source texts, so
-// that each rule can be shown failing on a fabricated example. This file does not check itself:
-// its examples would trip its own rules.
+// that each rule can be shown failing on a fabricated example. This file is left out of the name
+// check only: its fabricated examples would trip it.
 
 const pluginDirectory = join(dirname(fileURLToPath(import.meta.url)), '..')
 const MAX_LINES = 400
@@ -144,6 +144,9 @@ describe('architecture de lib/ et de test/', () => {
     assert.deepEqual(namedTestFiles.flatMap(({ path, text }) => nameProblems(text).map((problem) => `${path} : ${problem}`)), [])
     assert.deepEqual(facadeProblems(readFileSync(join(pluginDirectory, 'lib/core.mjs'), 'utf8')), [])
     assert.deepEqual(importProblems(new Map(libFiles.map(({ path, text }) => [path.replace(/^lib\//, ''), text]))), [])
+  })
+
+  it('aucun test ni module de lib/ n’importe la façade [REF-29 CA-5]', () => {
     assert.deepEqual(coreImportProblems([...libFiles, ...testFiles]), [])
   })
 
@@ -196,7 +199,7 @@ describe('architecture de lib/ et de test/', () => {
     assert.deepEqual(problems, ['le module pur spec.mjs importe cli/common.mjs', 'le module pur docs.mjs importe cli/docs.mjs'])
   })
 
-  it('un test ou un module de lib/ qui importe la façade est signalé', () => {
+  it('un test ou un module de lib/ qui importe la façade est signalé [REF-29 CA-5]', () => {
     const problems = coreImportProblems([
       { path: 'test/spec.test.mjs', text: "import { checkSpec } from '../lib/core.mjs'\n" },
       { path: 'lib/cli.mjs', text: "import {\n  main,\n} from './core.mjs'\n" },
