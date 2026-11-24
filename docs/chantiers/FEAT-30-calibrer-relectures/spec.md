@@ -34,23 +34,33 @@ Questions si manquant : qu'est-ce qui est hors périmètre ? Quelle est la plus 
 - le **coût de la non-correction** : le scénario concret dans l'usage réel du projet, ce qui arrive alors, et si l'échec est **silencieux** (rien ne le signale : revue validée à tort, donnée perdue ou fausse) ou **bruyant** (erreur claire, visible tout de suite) ;
 - un **verdict** : corriger ou ne pas corriger, avec sa raison en une phrase.
 
+Quand le point est une question plutôt qu'une correction (ambiguïté d'une spec, par exemple), le relecteur donne la réponse qu'il retiendrait par défaut, le coût de cette réponse, et le risque de laisser l'ambiguïté (SD6).
+
 L'usage réel (qui utilise le projet, comment, dans quel environnement) se tire des documents existants du projet (`CLAUDE.md`, `README`) : aucun nouveau fichier ni réglage. Quand ces documents ne le disent pas, le relecteur le signale une fois dans son rapport et juge sur ce qu'il voit du code.
 
-**Règle de proportion**. Quand la correction pèse nettement plus lourd que le problème qu'elle traite, le relecteur le dit et propose, à côté de la correction complète, l'option la moins chère : documenter la limite, un message d'erreur clair, ou une idée de chantier séparé. Un point bloquant se corrige quel que soit son coût.
+**Règle de proportion**. Quand la correction pèse nettement plus lourd que le problème qu'elle traite, le relecteur le dit et propose, à côté de la correction complète, l'option la moins chère : documenter la limite, un message d'erreur clair, ou une idée de chantier séparé. Pour un point bloquant, le relecteur propose toujours la correction complète, sans option moins chère ; l'utilisateur garde les traitements existants (SD3).
 
-**Relances**. Le premier passage d'un relecteur couvre tout son périmètre. Lors d'une relance après correction (nouvelle revue dans `/atelier:review`, nouveau passage de `spec-critic` ou d'`overfit-checker` dans la même session), le relecteur :
+**Relances** (SD4). Le premier passage d'un relecteur couvre tout son périmètre. Une **relance** est un nouveau passage sur la même portée après des corrections :
+- `/atelier:review` : une nouvelle revue de la même tranche (ou du chantier) après correction de points de la revue précédente. La revue de la tranche suivante et la revue du chantier sont des premiers passages. Le reviewer reçoit le commit de la revue précédente (consigné dans `revue.md`) : ce qui n'a pas changé depuis ce commit est « inchangé ».
+- `/atelier:sign` et `/atelier:build` : un nouveau passage de `spec-critic` ou d'`overfit-checker` dans la même session, après des retouches. L'agent principal lui transmet les points précédents et les sections ou fichiers modifiés. Un passage dans une nouvelle session est un premier passage.
+
+Lors d'une relance, le relecteur :
 - vérifie les corrections annoncées et signale leurs régressions ;
 - peut signaler, quelle que soit sa gravité, un point **causé par une correction**, même sur du code ou du texte déjà relu (un appelant devenu faux, une vérification devenue inutile, un commentaire qui ment désormais), en nommant la correction qui le cause ;
-- ne retient un point sur du code ou du texte inchangé, que le passage précédent pouvait déjà voir, que s'il est bloquant ; sinon il le mentionne en une ligne, à part, comme idée, sans traitement exigé.
+- ne retient un point sur du code ou du texte inchangé, que le passage précédent pouvait déjà voir, que s'il est bloquant ; sinon il le mentionne en une ligne, à part, comme **idée**, sans traitement exigé.
 
-**Présentation par l'agent principal** (`/atelier:sign`, `/atelier:build`, `/atelier:review`). Chaque point est présenté par son identifiant suivi d'un résumé du problème en quelques mots, puis la correction proposée, son coût, le coût de la non-correction, le verdict du relecteur et l'avis de l'agent : `SD1, les utilisateurs pourraient ne pas voir le bouton : je propose…, ça coûte…, sinon…, avis : …`. Corriger n'est plus le choix implicite : l'utilisateur tranche avec les deux coûts sous les yeux.
+Une idée ne porte aucun identifiant et n'entre pas dans les tableaux `### Bloquant` / `### À discuter` de `revue.md` : `set-reviewed` ne la voit donc pas. Elle peut figurer en texte libre sous la section de la revue. Si l'utilisateur veut la traiter, elle devient un point nouveau, avec son numéro (SB1).
+
+**Présentation par l'agent principal** (`/atelier:sign`, `/atelier:build`, `/atelier:review`). Chaque point est présenté par son identifiant suivi d'un résumé du problème en quelques mots, puis la correction proposée, son coût, le coût de la non-correction, le verdict du relecteur et l'avis de l'agent : `SD1, les utilisateurs pourraient ne pas voir le bouton : je propose…, ça coûte…, sinon…, avis : …`. Pour un point bloquant, la présentation se limite à l'identifiant, au résumé et à la correction. Corriger n'est plus le choix implicite : l'utilisateur tranche avec les deux coûts sous les yeux.
+
+**Traitement consigné** (SD2). Dans `/atelier:review`, chaque issue d'un point à discuter correspond à un traitement existant : ne pas corriger (verdict suivi) → `exception acceptée`, avec le verdict pour motif ; chantier séparé → `reporté` ; limite documentée → `corrigé` avec le commit de la documentation. `écarté` reste réservé au point non fondé.
 
 **Hors périmètre** :
 - les traitements de `revue.md` (`exception acceptée`, `écarté`…) et leur contrôle par `set-reviewed` : inchangés ;
 - les grilles de recherche des relecteurs et les cas limites suggérés par les templates de spec : inchangés ;
 - un réglage par projet des domaines de relecture ;
 - un quota de points par passage ;
-- les points bloquants (`SB`, `OB`, `RB`) : leur forme ne change pas, hormis le résumé à la présentation ;
+- les points bloquants (`SB`, `OB`, `RB`) : ni coûts ni verdict ; seule leur présentation gagne le résumé ;
 - tout code de `lib/` ou de `bin/` : le chantier ne touche que des consignes (agents, skills) et le site.
 
 ## 3. Points techniques identifiés
@@ -58,8 +68,8 @@ L'usage réel (qui utilise le projet, comment, dans quel environnement) se tire 
 
 - Agents : `plugins/atelier/agents/spec-critic.md`, `overfit-checker.md`, `reviewer.md` (forme de réponse, règle de proportion, règle de relance).
 - Skills : `sign/SKILL.md` (présentation des `SB`/`SD`, relance de `spec-critic`), `build/SKILL.md` (présentation des `OB`/`OD`, relance d'`overfit-checker`), `review/SKILL.md` (présentation des `RB`/`RD`, consignes passées au reviewer lors d'une nouvelle revue : la liste des corrections faites depuis la revue précédente).
-- Site : `site/cycle/signature.md`, `site/cycle/implementation.md`, `site/cycle/revue.md` (« Toute évolution du plugin met le site à jour dans la même PR »).
-- `plugins/atelier/test/docs.test.mjs` vérifie déjà la présence de marqueurs dans les agents et skills : c'est là que vont d'éventuels tests de présence des consignes.
+- Site : `site/cycle/signature.md`, `site/cycle/implementation.md`, `site/cycle/revue.md` (« Toute évolution du plugin met le site à jour dans la même PR »), et `README.md`, qui décrit les points de relecture (SD7).
+- `plugins/atelier/test/docs.test.mjs` vérifie déjà la présence de marqueurs dans les agents et skills : les tests de présence de CA-8 y vont (SD5). Il interdit aussi « tour(s) de revue », « tour N » et « à chaque tour » dans `reviewer.md`, `review/SKILL.md`, le site et le README : parler de « relance » et de « revue », jamais de « tour ».
 - Aucun conflit avec REF-29 : rien dans `lib/`.
 
 ## 4. Questions ouvertes
@@ -70,14 +80,14 @@ L'usage réel (qui utilise le projet, comment, dans quel environnement) se tire 
 Chacun testable automatiquement. Penser aux cas limites : vide, doublon, hors-ligne, utilisateur non autorisé, grand volume.
 Questions si manquant : chaque critère peut-il devenir un test ? Que se passe-t-il si la liste est vide, très grande, si l'utilisateur n'a pas le droit, si le réseau tombe ? -->
 
-- [ ] CA-1 : Étant donné les consignes de `spec-critic`, `overfit-checker` et `reviewer`, quand on les lit, alors chacune demande, pour chaque point à discuter, la correction proposée, son coût (lignes de code et de tests, nouveaux concepts à maintenir), le coût de la non-correction (scénario dans l'usage réel du projet, échec silencieux ou bruyant) et un verdict corriger / ne pas corriger motivé.
+- [ ] CA-1 : Étant donné les consignes de `spec-critic`, `overfit-checker` et `reviewer`, quand on les lit, alors chacune demande, pour chaque point à discuter, la correction proposée, son coût (lignes de code et de tests, nouveaux concepts à maintenir), le coût de la non-correction (scénario dans l'usage réel du projet, échec silencieux ou bruyant) et un verdict corriger / ne pas corriger motivé ; pour un point qui est une question, la réponse par défaut et le risque de laisser l'ambiguïté.
 - [ ] CA-2 : Étant donné ces trois consignes, quand on les lit, alors chacune dit de tirer l'usage réel du projet de `CLAUDE.md` et du `README`, et de signaler une fois leur silence sur ce point.
-- [ ] CA-3 : Étant donné ces trois consignes, quand on les lit, alors chacune énonce la règle de proportion : une correction nettement plus lourde que le problème s'accompagne de l'option la moins chère (documenter la limite, message d'erreur clair, chantier séparé), et un point bloquant se corrige quel que soit son coût.
-- [ ] CA-4 : Étant donné ces trois consignes, quand on les lit, alors chacune distingue le premier passage (tout le périmètre) d'une relance (corrections et leurs régressions ; point causé par une correction recevable quelle que soit sa gravité, avec la correction qui le cause ; point sur du code ou du texte inchangé retenu seulement s'il est bloquant, sinon mentionné à part comme idée sans traitement exigé).
-- [ ] CA-5 : Étant donné `/atelier:review`, quand il lance une nouvelle revue après des corrections, alors ses consignes lui font passer au reviewer qu'il s'agit d'une relance et la liste des corrections faites depuis la revue précédente ; de même `/atelier:sign` pour une relance de `spec-critic` et `/atelier:build` pour une relance d'`overfit-checker`.
-- [ ] CA-6 : Étant donné `/atelier:sign`, `/atelier:build` et `/atelier:review`, quand ils présentent les points d'un relecteur, alors leurs consignes imposent, pour chaque point, l'identifiant suivi d'un résumé du problème en quelques mots, puis la correction, les deux coûts, le verdict du relecteur et l'avis de l'agent.
-- [ ] CA-7 : Étant donné le site, quand on lit les pages Signature, Implémentation et Revue, alors elles décrivent le bilan des points à discuter, la règle de proportion et la règle de relance.
-- [ ] CA-8 : Étant donné le dépôt, quand `npm test` tourne, alors tous les tests passent, dont ceux de `docs.test.mjs`.
+- [ ] CA-3 : Étant donné ces trois consignes, quand on les lit, alors chacune énonce la règle de proportion : une correction nettement plus lourde que le problème s'accompagne de l'option la moins chère (documenter la limite, message d'erreur clair, chantier séparé), et un point bloquant reçoit toujours la correction complète, sans option moins chère.
+- [ ] CA-4 : Étant donné ces trois consignes, quand on les lit, alors chacune distingue le premier passage (tout le périmètre) d'une relance (corrections et leurs régressions ; point causé par une correction recevable quelle que soit sa gravité, avec la correction qui le cause ; point sur du code ou du texte inchangé retenu seulement s'il est bloquant, sinon mentionné à part comme idée, sans identifiant ni place dans les tableaux de `revue.md`).
+- [ ] CA-5 : Étant donné `/atelier:review`, quand il lance une nouvelle revue de la même portée après des corrections, alors ses consignes définissent la relance (la revue de la tranche suivante et celle du chantier sont des premiers passages) et lui font passer au reviewer le commit de la revue précédente et la liste des corrections faites depuis ; de même `/atelier:sign` et `/atelier:build` pour une relance de `spec-critic` ou d'`overfit-checker` dans la même session (points précédents, sections ou fichiers modifiés), un passage dans une nouvelle session étant un premier passage. `/atelier:review` dit aussi qu'une idée de relance n'entre pas dans `revue.md` comme point, et associe chaque issue d'un point à discuter à son traitement (ne pas corriger → `exception acceptée`, chantier séparé → `reporté`, limite documentée → `corrigé`).
+- [ ] CA-6 : Étant donné `/atelier:sign`, `/atelier:build` et `/atelier:review`, quand ils présentent les points d'un relecteur, alors leurs consignes imposent, pour chaque point à discuter, l'identifiant suivi d'un résumé du problème en quelques mots, puis la correction, les deux coûts, le verdict du relecteur et l'avis de l'agent ; pour chaque point bloquant, l'identifiant, le résumé et la correction.
+- [ ] CA-7 : Étant donné le site et le `README`, quand on lit les pages Signature, Implémentation et Revue et le passage du `README` sur les points de relecture, alors ils décrivent le bilan des points à discuter, la règle de proportion et la règle de relance.
+- [ ] CA-8 : Étant donné le dépôt, quand `npm test` tourne, alors tous les tests passent, dont, dans `docs.test.mjs`, un test de présence étiqueté `[FEAT-30 CA-x]` pour chacun des critères CA-1 à CA-7, qui vérifie dans les fichiers concernés des marqueurs de la règle (par exemple « coût de la correction », « silencieux », « relance », « idée »).
 
 ## 6. Non-fonctionnel
 <!-- Une ligne chacun, ou « N/A » + raison.
