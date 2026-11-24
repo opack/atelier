@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { DEFAULT_CONFIG, applyToolEdit, decideStop, parseFrontMatter, setStatusRefusal } from '../lib/core.mjs'
+import { setStatusRefusal } from '../lib/close.mjs'
+import { DEFAULT_CONFIG, applyToolEdit, parseFrontMatter } from '../lib/common.mjs'
+import { decideStop } from '../lib/stop-hook.mjs'
 import { signedChantier, draftChantier, signedTec, decide, git, slicedChantier } from './helpers.mjs'
 
 describe('write guard', () => {

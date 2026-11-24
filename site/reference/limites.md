@@ -43,7 +43,11 @@ Une spec signée ne repasse jamais en brouillon : sinon, il suffirait de la repa
 
 ### La version de git
 
-La détection des commits de code depuis la revue utilise `git log --diff-merges=first-parent`, qui demande git 2.31 ou plus récent.
+La détection du code du chantier (revue obsolète, tranche vide, prochaine étape) ignore le code que la branche par défaut apporte par une fusion : seule compte la résolution de la fusion. Ce calcul utilise `git log --diff-merges=remerge`, qui demande git 2.36 ou plus récent. Avec un git plus ancien, sans référence connue de la branche par défaut, ou quand la branche par défaut contient déjà des commits du chantier depuis le début (branche courante = branche par défaut, branche déjà fusionnée dans `main`, fusion de `main` en avance rapide), atelier revient au calcul précédent (git 2.31 ou plus récent) : une fusion de la branche par défaut compte alors comme du code du chantier, et rend la revue obsolète.
+
+Ce calcul suppose que la PR du chantier n’est pas fusionnée avant la clôture (voir [Clôture](../cycle/cloture)). Si elle l’est, puis que la branche reçoit par un `git pull` du code commité après la revue depuis un autre poste, ce code peut échapper au contrôle de la revue obsolète.
+
+Seule la branche par défaut (`origin/main` et `main`, par exemple) est ignorée : le code apporté par une autre branche d’intégration (`develop`, `upstream/main` d’un fork) compte comme du code du chantier.
 
 ### Le chantier déduit des commits
 
@@ -55,6 +59,15 @@ Sur une branche dont le nom ne porte pas d’identifiant, le chantier actif vien
 - **Plusieurs chantiers sur une même branche imposée** : le plus récent gagne, et une seule PR mêle deux chantiers. Ouvrez plutôt une session (donc une branche) par chantier.
 - **Identifiant présent par hasard dans un nom de branche imposé** (`users/bob/fix-12-crash`, `claude/spike-2-…`) : le nom est lu comme portant `FIX-12` ou `SPIKE-2`, et il l’emporte sur les commits. `/atelier:new` crée alors une branche `<type>/<ID>-<slug>` au lieu de proposer de rester sur la branche imposée.
 - **Branche créée depuis une branche de chantier non fusionnée** : sans commit propre, elle hérite du chantier de sa branche parente.
+
+### Les arguments sous PowerShell et cmd
+
+Sous Windows, PowerShell et cmd lancent `atelier` par son lanceur `bin/atelier.cmd`, qui transmet les arguments à Node par l’intermédiaire de cmd. Comme pour tout lanceur `.cmd` (ceux de npm compris), cmd réinterprète au passage :
+
+- `&`, `|`, `<`, `>` et `^` hors guillemets ;
+- les variables `%NOM%`.
+
+Une raison libre (`atelier bypass on`, `atelier set-tdd no`, `atelier reopen-tests`) qui contient ces caractères peut donc être tronquée. Écrivez-la sans eux, ou lancez la commande depuis Git Bash. Dans cmd, écrire le nom de la commande entre guillemets (`"atelier" status`) peut aussi faire chercher le script au mauvais endroit : écrivez `atelier status`.
 
 ### La qualité de l’implémentation
 

@@ -5,7 +5,9 @@ import { tmpdir } from 'node:os'
 import path, { join } from 'node:path'
 import { after } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { DEFAULT_CONFIG, chantierIdFromText, decideWrite, parseFrontMatter, setFrontMatterValues } from '../lib/core.mjs'
+import { DEFAULT_CONFIG, parseFrontMatter, setFrontMatterValues } from '../lib/common.mjs'
+import { chantierIdFromText } from '../lib/identifiers.mjs'
+import { decideWrite } from '../lib/write-guard.mjs'
 
 const templatesDirectory = fileURLToPath(new URL('../templates/', import.meta.url))
 

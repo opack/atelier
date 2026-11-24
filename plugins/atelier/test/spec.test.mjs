@@ -2,7 +2,9 @@ import assert from 'node:assert/strict'
 import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, it } from 'node:test'
-import { appendAmendmentEntry, checkSpec, parseAmendments, parseFrontMatter, refreezeTestsEntry, reopenTestsEntry } from '../lib/core.mjs'
+import { appendAmendmentEntry, checkSpec, parseAmendments } from '../lib/spec.mjs'
+import { parseFrontMatter } from '../lib/common.mjs'
+import { refreezeTestsEntry, reopenTestsEntry } from '../lib/tdd.mjs'
 import { template, temporaryDirectory, makeRepository, atelier, completeBodies, specText, writeChantier, makeChantiersRepository, atelierRun, specData, assertLine } from './helpers.mjs'
 
 describe('spec completeness', () => {

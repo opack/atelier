@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import path from 'node:path'
 import { describe, it } from 'node:test'
-import { applyToolEdit, matchesAny, parseFrontMatter, parsePorcelainPaths, setFrontMatterValues, toProjectRelativePath } from '../lib/core.mjs'
+import { applyToolEdit, matchesAny, parseFrontMatter, parsePorcelainPaths, setFrontMatterValues, toProjectRelativePath } from '../lib/common.mjs'
 
 describe('front matter', () => {
   it('parses values and ignores trailing comments', () => {
