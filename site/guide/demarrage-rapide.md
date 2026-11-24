@@ -5,6 +5,7 @@ En dix minutes : installer le plugin, préparer un projet, mener un premier chan
 ## Prérequis
 
 - [Claude Code](https://code.claude.com) installé.
+- [Node.js](https://nodejs.org) 20 ou plus récent : la commande `atelier` du plugin en a besoin.
 - Un projet sous git, avec idéalement des commandes de **types**, **lint** et **tests** qui fonctionnent.
 
 ::: warning Des tests qui testent vraiment
