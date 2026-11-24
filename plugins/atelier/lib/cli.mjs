@@ -4,9 +4,9 @@
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
-import { commandChecks, gateStatePath, readGateState, runChecks, runChecksOnce, workingTreeId } from './cli/checks.mjs'
+import { commandChecks, gateStatePath, readGateState, runChecks, workingTreeId } from './cli/checks.mjs'
+import { commandCloseCheck, commandSetStatus } from './cli/close.mjs'
 import {
-  chantierFilePath,
   committedFileText,
   configPath,
   findProjectRoot,
@@ -14,17 +14,15 @@ import {
   loadConfig,
   readStandardInput,
   requireConfig,
-  samePath,
-  today,
   uncommittedFiles,
 } from './cli/common.mjs'
 import { commandCheckProcess, commandTemplate } from './cli/docs.mjs'
-import { activeChantier, commandNextId, requireActiveChantier } from './cli/identifiers.mjs'
-import { chantierIndex, formatRelations, isEpic, needsIndex, relationsSummary } from './cli/relations.mjs'
+import { activeChantier, commandNextId } from './cli/identifiers.mjs'
+import { formatRelations, relationsSummary } from './cli/relations.mjs'
 import { commandReviewIds } from './cli/review-points.mjs'
-import { commandSetReviewed, reviewFacts, reviewSummary } from './cli/review.mjs'
+import { commandSetReviewed, reviewSummary } from './cli/review.mjs'
 import { sliceCodeFiles, slicePosition } from './cli/slices.mjs'
-import { commandCheckSpec, commandSign, updateSpec } from './cli/spec.mjs'
+import { commandCheckSpec, commandSign } from './cli/spec.mjs'
 import {
   commandFreezeTests,
   commandReopenTests,
@@ -33,17 +31,7 @@ import {
   testFilesChangedSince,
 } from './cli/tdd.mjs'
 import { applyToolEdit, matchesAny, parseFrontMatter, toProjectRelativePath } from './common.mjs'
-import {
-  closeProblems,
-  codeCommittedMatters,
-  decideStop,
-  decideWrite,
-  isReviewExempt,
-  nextStep,
-  setStatusRefusal,
-} from './core.mjs'
-import { openChildren } from './relations.mjs'
-import { reviewCodeFiles } from './review.mjs'
+import { codeCommittedMatters, decideStop, decideWrite, nextStep } from './core.mjs'
 import { checkSpec } from './spec.mjs'
 import { testDrivenPhase } from './tdd.mjs'
 
@@ -177,39 +165,6 @@ function formatStatus(summary) {
   return lines.join('\n')
 }
 
-function commandSetStatus([status]) {
-  // `signed` only through `atelier sign`, which checks the spec and records who signed.
-  const allowedStatuses = ['draft', 'done', 'abandoned']
-  if (!allowedStatuses.includes(status)) {
-    console.error(`Statut attendu : ${allowedStatuses.join(', ')} (pour signer : atelier sign)`)
-    process.exit(1)
-  }
-  const projectRoot = findProjectRoot()
-  const config = requireConfig(projectRoot)
-  const chantier = requireActiveChantier(projectRoot, config)
-  const refusal = setStatusRefusal(chantier, status)
-  if (refusal) {
-    console.error(`Statut refusé : ${refusal}`)
-    process.exit(2)
-  }
-  if (status === 'done') {
-    const problems = closeCheckProblems(projectRoot, config, chantier)
-    if (problems.length) {
-      console.error(formatCloseProblems(chantier, problems))
-      process.exit(2)
-    }
-  }
-  // Abandoning an EPIC does not cascade: its open children are only listed.
-  const open = status === 'abandoned' && isEpic(chantier) ? openChildren(chantierIndex(projectRoot, config), chantier.id) : []
-  const values = status === 'done' ? { status, done_at: today() } : { status }
-  const { specPath } = updateSpec(projectRoot, config, values)
-  console.log(toProjectRelativePath(projectRoot, specPath))
-  if (open.length) {
-    const lines = open.map((child) => `- ${child.id} (${child.status ?? `sur ${child.branches.join(', ')}`})`)
-    console.log(`Enfants encore ouverts de ${chantier.id}, à clore ou abandonner un par un :\n${lines.join('\n')}`)
-  }
-}
-
 // Whether code was committed in the current slice, for the next step (see nextStep): since the
 // freeze of its tests in TDD (test files excluded), otherwise since `slice_base` or the merge base
 // with the default branch. null when it cannot change the next step, or cannot be computed (no
@@ -225,48 +180,6 @@ function codeCommittedFact(projectRoot, config, chantier, review) {
   } catch {
     return null
   }
-}
-
-// Deterministic checks before closing (see closeProblems in lib/core.mjs). Runs the project checks.
-function closeCheckProblems(projectRoot, config, chantier) {
-  let uncommittedCode = []
-  let uncommittedError = null
-  let revueUncommitted = false
-  const revuePath = chantierFilePath(projectRoot, chantier, 'revue.md')
-  try {
-    const uncommitted = uncommittedFiles(projectRoot)
-    uncommittedCode = reviewCodeFiles(uncommitted, config)
-    revueUncommitted = uncommitted.some((file) => samePath(config, file, revuePath))
-  } catch (error) {
-    uncommittedError = error.message
-  }
-  return closeProblems({
-    chantier,
-    reviewFacts: reviewFacts(projectRoot, config, chantier),
-    uncommittedCode,
-    uncommittedError,
-    revueUncommitted,
-    checksFailure: runChecksOnce(projectRoot, config).failure,
-    index: needsIndex(chantier) ? chantierIndex(projectRoot, config) : null,
-  })
-}
-
-function formatCloseProblems(chantier, problems) {
-  const after = isReviewExempt(chantier) ? 'Corrige, puis relance la clôture : /atelier:close' : 'Corrige, puis refais relire : /atelier:review'
-  return `Clôture refusée :\n${problems.map((problem) => `- ${problem}`).join('\n')}\n${after}`
-}
-
-function commandCloseCheck() {
-  const projectRoot = findProjectRoot()
-  const config = requireConfig(projectRoot)
-  const chantier = requireActiveChantier(projectRoot, config)
-  const problems = closeCheckProblems(projectRoot, config, chantier)
-  if (problems.length) {
-    console.error(formatCloseProblems(chantier, problems))
-    process.exitCode = 2
-    return
-  }
-  console.log('Clôture possible : revue à jour, travail commité, contrôles verts.')
 }
 
 function commandBypass([mode, ...reasonWords]) {
