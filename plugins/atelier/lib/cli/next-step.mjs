@@ -2,7 +2,6 @@
 
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { readBypass } from '../cli.mjs'
 import { toProjectRelativePath } from '../common.mjs'
 import { codeCommittedMatters, nextStep } from '../next-step.mjs'
 import { checkSpec } from '../spec.mjs'
@@ -12,6 +11,7 @@ import { activeChantier } from './identifiers.mjs'
 import { formatRelations, relationsSummary } from './relations.mjs'
 import { reviewSummary } from './review.mjs'
 import { sliceCodeFiles, slicePosition } from './slices.mjs'
+import { readBypass } from './write-guard.mjs'
 
 // ---------- Status and session start ----------
 
