@@ -9,7 +9,7 @@
 <figure class="cycle-diagram">
 <svg viewBox="0 0 460 660" role="img" aria-labelledby="cycle-title cycle-desc">
   <title id="cycle-title">Le cycle d’un chantier atelier</title>
-  <desc id="cycle-desc">new, puis sign, puis plan (FEAT, REF, gros chantiers). Puis, pour chaque tranche du plan : write-tests (si TDD), build, et review de la tranche, en boucle avec build jusqu’à zéro point bloquant ; la validation de la revue fait passer à la tranche suivante. Après la dernière tranche : review du chantier, puis close. amend modifie la spec signée et ramène à write-tests ou à build.</desc>
+  <desc id="cycle-desc">new, puis sign, puis plan (FEAT, REF, gros chantiers). Puis, pour chaque tranche du plan : write-tests (si TDD), build, et review de la tranche, en boucle avec build jusqu’à ce que chaque point ait un traitement ; la validation de la revue fait passer à la tranche suivante. Après la dernière tranche : review du chantier, puis close. amend modifie la spec signée et ramène à write-tests ou à build.</desc>
   <defs>
     <marker id="cycle-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M 0 0 L 10 5 L 0 10 z" class="cycle-arrow-head" />
@@ -41,7 +41,7 @@
   <path d="M150 460 V510" class="cycle-link" />
   <text x="158" y="490" class="cycle-label" text-anchor="start">dernière tranche validée</text>
   <path d="M150 560 V600" class="cycle-link" />
-  <text x="158" y="584" class="cycle-label" text-anchor="start">zéro point bloquant</text>
+  <text x="158" y="584" class="cycle-label" text-anchor="start">chaque point traité</text>
   <!-- amend -->
   <g class="cycle-step cycle-amend"><rect x="300" y="268" width="148" height="50" rx="8" /><text x="374" y="290">/atelier:amend</text><text x="374" y="308" class="cycle-note">spec signée à corriger</text></g>
   <path d="M374 268 V263 H240" class="cycle-link cycle-amend-link" />

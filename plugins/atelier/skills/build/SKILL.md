@@ -29,9 +29,9 @@ Puis :
 
 ## 2. Vérifier l'absence de surapprentissage
 
-Quand tout est vert, lance le sous-agent `atelier:overfit-checker` avec le chemin de la spec, la liste des fichiers de test et des fichiers d'implémentation de la tranche. Il vérifie, sans rien modifier, que l'implémentation résout le problème général et ne se contente pas de satisfaire les tests.
+Quand tout est vert, `atelier review-ids --json` donne le premier numéro libre des points de surapprentissage (`next.OB`, `next.OD`). Lance le sous-agent `atelier:overfit-checker` avec le chemin de la spec, la liste des fichiers de test et des fichiers d'implémentation de la tranche, et ces deux numéros. Il vérifie, sans rien modifier, que l'implémentation résout le problème général et ne se contente pas de satisfaire les tests.
 
-Présente ses points. Corrige ceux qui sont fondés, toujours sans toucher aux tests, puis relance tests et contrôles. Si un point révèle un test trop faible, ne le renforce pas toi-même : signale-le à l'utilisateur.
+Présente ses points, chacun avec son identifiant (`OB1`, `OD1`…). Si tu relances le sous-agent dans la même session, continue la numérotation à la suite de ce que tu as déjà présenté. Corrige ceux qui sont fondés, toujours sans toucher aux tests, puis relance tests et contrôles. Si un point révèle un test trop faible, ne le renforce pas toi-même : signale-le à l'utilisateur. Un point reporté, accepté ou écarté pour une raison qui compte se note dans `decisions.md`, avec son identifiant.
 
 ## 3. Faire valider, puis commiter
 
@@ -39,7 +39,7 @@ Présente un résumé de la tranche : fichiers modifiés, tests passés, points 
 
 Seulement après son accord :
 1. Vérifie `atelier tests-changed` : aucun test ne doit avoir changé depuis leur commit.
-2. Commite la tranche : `<prefix>(<scope>): [<ID>] <description>` (un commit par tranche).
+2. Commite la tranche : `<prefix>(<scope>): [<ID>] <description>` (un commit par tranche). Un commit qui corrige un point de revue le cite après l'identifiant du chantier : `fix(<scope>): [<ID>] RB2 <description>`.
 3. Suite : `/atelier:review`, la revue de la tranche (ou du chantier si tu corrigeais ses points). C'est la validation de cette revue qui fait passer à la tranche suivante. Pour un `SPIKE` sans TDD : la tranche suivante du plan (`/atelier:build <tranche>`), puis `/atelier:close` (revue facultative).
 
 ## Sans TDD (`tdd: no`)

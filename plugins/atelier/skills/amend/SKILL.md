@@ -19,7 +19,7 @@ Une spec signée est un engagement. L'amender, c'est corriger une erreur ou fair
 
 ## 1. Modifier la spec
 
-1. **D'abord**, ajoute une entrée à la fin de la section `## Amendements` (crée la section en fin de spec si elle manque) : une ligne `- AAAA-MM-JJ : <quoi>, <pourquoi>`, à la date du jour. Les lignes de suite éventuelles sont indentées. Ne modifie ni ne supprime les entrées existantes.
+1. **D'abord**, ajoute une entrée à la fin de la section `## Amendements` (crée la section en fin de spec si elle manque) : une ligne `- AAAA-MM-JJ : <quoi>, <pourquoi>`, à la date du jour. Si l'amendement répond à un point de relecture, cite son identifiant dans le pourquoi (`RB2` ou `RD3` de la revue, `SD1` de la relecture de spec, `OD4` de la vérification de surapprentissage) ; s'il traite un point de `revue.md`, ce point y reçoit le traitement `spec amendée`. Les lignes de suite éventuelles sont indentées. Ne modifie ni ne supprime les entrées existantes.
 2. **Puis** modifie la spec par **éditions ciblées**, jamais en la réécrivant. Le hook d'atelier refuse toute modification du corps sans nouvelle entrée, toute réécriture complète, et tout changement de `id`, `type`, `tdd` ou des champs écrits par la commande. `tdd` ne change que par `atelier set-tdd`, à l'étape 0, jamais au milieu des éditions.
 
 **Relations** : ajouter ou retirer un champ `rel_*` (rattacher le chantier à un EPIC après coup, retirer une dépendance abandonnée) est un amendement comme un autre. Un chantier déjà clos ne se rattache pas : c'est l'EPIC qui le cite dans son contexte comme travail antérieur. Après une modification des relations, lance `atelier check-spec <spec>` : identifiant inconnu, parent qui n'est pas un EPIC ouvert ou cycle sont à corriger avant l'accord.

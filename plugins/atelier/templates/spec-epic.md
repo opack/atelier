@@ -24,7 +24,7 @@ Questions si manquant : qui l'utilise, pour faire quoi ? À quoi reconnaît-on q
 
 ## 3. Critères d'acceptation globaux
 <!-- Ce que l'ensemble doit permettre, vérifiable une fois les chantiers enfants livrés.
-Format : - CA-1 : Étant donné…, quand…, alors… -->
+Format : - CA-1 : Étant donné …, quand …, alors … -->
 
 ## 4. Cadre
 <!-- Le cadre commun aux chantiers enfants : choix fonctionnels (vocabulaire, parcours, règles métier) et techniques

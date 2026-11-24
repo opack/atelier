@@ -47,6 +47,10 @@ Le code généré se relit **comme n’importe quel code**, avec quelques piège
 - [ ] Contraste suffisant ; information jamais portée par la seule couleur
 - [ ] Textes localisés
 
+## Nommer les points
+
+Chaque remarque d’un sous-agent porte un identifiant stable : `RB1` / `RD1` pour la revue de code, `SB1` / `SD1` pour la relecture de spec, `OB1` / `OD1` pour le surapprentissage. Citez-le plutôt que de paraphraser (« RB2 », pas « le truc du push ») : dans la conversation, les commits, la spec et le bilan, il désigne toujours le même point (pour `SB`/`SD`/`OB`/`OD`, tant qu’il est cité dans la spec ou `decisions.md` : sinon, son numéro peut être redonné à une session suivante). Voir [Revue](../cycle/revue#_3-traiter-chaque-point).
+
 ## Les pièges spécifiques au code généré
 
 - **API inventées** : une méthode qui « devrait » exister mais n’existe pas.
