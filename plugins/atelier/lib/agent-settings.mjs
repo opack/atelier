@@ -24,7 +24,7 @@ function isUnset(value) {
 }
 
 function optionName(agent, kind) {
-  return `${agent}_${kind}`
+  return `${agent.replaceAll('-', '_')}_${kind}`
 }
 
 function userValue(agent, kind, value, allowed, warnings) {

@@ -48,3 +48,16 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - OD3, reporté (tranche 4) : `/atelier:build inherit` ou `/atelier:build claude-opus-5-5` prend le mot pour une tranche, sans avertissement, comme le veut CA-5. La garde se fera dans `build`, qui refuse une tranche absente du plan.
 - OD4, accepté : une option invalide est signalée même quand l'argument l'emporte. Elle reste à corriger, donc l'avertissement est utile.
 - OD5, signalé à Didier : tests faibles (refus sans `model: null` vérifié, combinaison d'options invalides, sous-agent inconnu non testé). Les renforcer demande de rouvrir les tests.
+
+## 2026-11-24 : noms des options avec `_` à la place de `-`
+- Contexte : une clé `userConfig` n'accepte que des lettres, des chiffres et `_`. La spec écrit `${user_config.<agent>_model}`.
+- Écarté : renommer les agents `overfit-checker` et `spec-critic`, parce que leur nom est déjà cité partout (skills, site, revues passées).
+- Conséquence : `overfit_checker_model`, `spec_critic_effort`, etc. Les avertissements de la résolution citent ce nom d'option.
+
+## 2026-11-24 : traitement du contrôle de surapprentissage, tranche 2 (OB1, OD6 à OD10)
+- OB1, corrigé : la description des options d'`overfit-checker` disait que l'argument de la commande l'emportait, ce qui est faux (SB2).
+- OD6, corrigé : `modes.md` précise que, dans `build`, l'argument ne règle qu'`implementer`.
+- OD7, corrigé : élision dans les titres des options (« d'implementer »).
+- OD8, à vérifier : si `/plugin configure` enregistre les `default` préremplis, l'annonce dira « (utilisateur) » et un futur changement de défaut n'atteindra pas cet utilisateur. Vérification à faire en local par Didier, avant la clôture ; si c'est confirmé, amender la spec pour retirer les `default`.
+- OD9 : la spec écrit `${user_config.<agent>_model}`, une clé invalide pour un nom à tiret. Un amendement est proposé à Didier avant les tests de la tranche 4.
+- OD10, comme OD5 : des tests faibles (copie locale des défauts, regex lâches de CA-13) sont signalés sans rouvrir les tests. Le contenu réel est correct.
