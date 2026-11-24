@@ -14,13 +14,14 @@
 - `plugins/atelier/agents/implementer.md` : nouveau. `spec-critic.md`, `overfit-checker.md`, `reviewer.md` : `effort` dans l'en-tête.
 - `plugins/atelier/skills/sign`, `review`, `build` : corps et `argument-hint`.
 - `site/agent/modes.md`, `site/reference/commandes.md`, `configuration.md`, `limites.md`.
+- `CLAUDE.md` : description de `lib/` (tranche 5, RD1).
 
 ## Tranches
 1. Résolution pure dans `lib/agent-settings.mjs` : défauts, liste fermée, ordre de résolution, restes, avertissements, refus de deux valeurs différentes (au niveau de la fonction) — CA couverts : CA-1, CA-2, CA-3, CA-4, CA-5, CA-6, CA-7, CA-8, CA-9
 2. Défauts concordants et agent `implementer` : options du manifeste, en-têtes des quatre agents, contrat d'`implementer`, tableau des défauts de `modes.md` — CA couverts : CA-10, CA-13
 3. Commande `atelier agent-settings` (après la fusion de REF-29) : JSON de sortie, code non nul et message en cas de refus, restes de bout en bout — CA couverts : CA-5, CA-7
 4. Skills `sign`, `review` et `build` (après la fusion de REF-29 et de TEC-15) : appel de la commande entre guillemets simples, annonce, arrêt en cas d'échec, tout le code de `build` par `implementer`, `atelier checks` après chaque retour — CA couverts : CA-11, CA-12
-5. Documentation et version : `commandes.md`, `configuration.md`, `limites.md`, `argument-hint`, version 0.5.0 — CA couverts : CA-14
+5. Documentation et version : `commandes.md`, `configuration.md`, `limites.md`, `argument-hint`, `CLAUDE.md` (modules de domaine de `lib/`, sauf si REF-29 l'a fait ; RD1), version 0.5.0 — CA couverts : CA-14
 
 ## Risques et points d'attention
 - REF-29 doit être fusionné avant la tranche 3, et TEC-15 avant la tranche 4 (`review/SKILL.md`, `reviewer.md`). Si ce n'est pas le cas quand on y arrive, on s'arrête et on le signale, sans contourner.
