@@ -1,6 +1,7 @@
 // Core logic of atelier: project configuration, chantier state, spec checks.
 // Pure functions where possible so they can be tested without git or a filesystem.
 
+import { checksGreenOn, withGreen } from './checks.mjs'
 import { matchesAny, specStatus } from './common.mjs'
 import { relationCloseProblems } from './relations.mjs'
 import { parseReviewPoints, reviewPointProblems } from './review-points.mjs'
@@ -9,6 +10,7 @@ import { sliceLabel, sliceState } from './slices.mjs'
 import { parseAmendments } from './spec.mjs'
 import { testDrivenPhase } from './tdd.mjs'
 
+export { checksGreenOn, withGreen } from './checks.mjs'
 export { configPath, findProjectRoot, loadConfig } from './cli/common.mjs'
 export {
   activeChantier,
@@ -398,17 +400,6 @@ export function decideWrite(context) {
 }
 
 // ---------- Stop hook ----------
-
-// Whether the checks already passed on this working tree (`tree` from the gate's index, null
-// when it could not be computed). Shared by the Stop hook and the commands that run the checks.
-export function checksGreenOn(state, tree) {
-  return tree !== null && state?.lastGreen === tree
-}
-
-// The gate state once the checks passed on `tree`; unchanged when the tree is unknown.
-export function withGreen(state, tree) {
-  return tree === null ? state : { ...state, lastGreen: tree }
-}
 
 // Decides what happens when the agent wants to stop. Returns { block, message, state }: when
 // `block` is true the agent keeps working on `message`; otherwise `message`, if any, is for the user.
