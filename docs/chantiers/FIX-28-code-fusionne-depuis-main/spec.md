@@ -2,7 +2,7 @@
 id: FIX-28
 type: FIX
 title: Le code fusionné depuis main compte comme code du chantier
-status: signed
+status: done
 tdd: yes
 created_at: 2026-11-23
 source: bilan FIX-26 §6 (OD1), constaté sur REF-16 et FIX-26
@@ -13,6 +13,7 @@ signed_at: 2026-11-24
 tests_commit: 016d13e
 slice: 1
 reviewed_commit: 9075ff47f98a81e35c56cedaa4aa1b0755a11170
+done_at: 2026-11-24
 ---
 
 # FIX-28 Le code fusionné depuis main compte comme code du chantier
