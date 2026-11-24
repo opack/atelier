@@ -2,7 +2,7 @@
 id: FIX-25
 type: FIX
 title: Lancer atelier depuis PowerShell et cmd sous Windows
-status: signed
+status: done
 tdd: yes
 created_at: 2026-11-23
 source: constaté par Didier sous Windows (PowerShell), plugin 0.4.0
@@ -11,6 +11,7 @@ signed_at: 2026-11-23
 tests_commit: 391f2cb
 slice: 1
 reviewed_commit: a04c332c99bd7e4eaea0afa1a432ea652b47388d
+done_at: 2026-11-24
 ---
 
 # FIX-25 Lancer atelier depuis PowerShell et cmd sous Windows
