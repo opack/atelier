@@ -23,3 +23,8 @@
 ## 2026-11-24 : « Référence distante périmée » de limites.md reste tel quel (OD4)
 - Contexte : la spec demandait de revoir ce paragraphe.
 - Décision : il porte sur l'identification du chantier par ses commits (`branchCommitSubjects`), hors périmètre ; il reste juste.
+
+## 2026-11-24 : limite assumée, code du chantier arrivé par un second parent (RD2)
+- Contexte : revue. Du code commité après la revue depuis un autre poste, PR fusionnée dans main, puis `git pull` en fusion en local : ce code arrive par le second parent, la chaîne des premiers parents ne le voit pas, main est exclue et le code disparaît de la liste (close-check muet).
+- Décision (Didier) : documenter la limite. Le cas exige une PR fusionnée avant la clôture, ce que le process interdit déjà.
+- Écarté : garde-fou sur les sujets `[<ID>]` des commits que main contient (nouveau cycle tests et revue pour un cas déjà interdit par le process).
