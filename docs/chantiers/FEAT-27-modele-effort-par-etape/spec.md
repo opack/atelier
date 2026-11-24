@@ -140,3 +140,4 @@ Les essais du 23/11/2026 sont à rejouer avec un plugin jetable installé par `c
 ## Amendements
 <!-- Après signature : une entrée datée par modification de la spec (date, quoi, pourquoi). -->
 - 2026-11-24 : nom des options : les tirets du nom de l'agent deviennent `_` (`overfit_checker_model`, `spec_critic_effort`), car une clé `userConfig` n'accepte que lettres, chiffres et `_` (OD9).
+- 2026-11-24 : tests rouverts (gel quitté : a3eae7d6f7f0025e25e90a72d0f711c2899751f0) : REF-29 : import de parseFrontMatter depuis lib/common.mjs (RD18 de REF-29)
