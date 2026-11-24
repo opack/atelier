@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { nextStep } from '../lib/core.mjs'
+import { nextStep } from '../lib/next-step.mjs'
 import { signedChantier, draftChantier, implementingChantier, signedTec, atelier, makeChantiersRepository, assertLine, epicPlan, slicedChantier, makeSlicedRepository, atelierOk, atSliceTwo, planOf, commitFiles, setHeader, headOf, git } from './helpers.mjs'
 
 describe('next step', () => {

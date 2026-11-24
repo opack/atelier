@@ -26,8 +26,8 @@ function eolAttribute(relativePath) {
   return output.trim().split(': ').at(-1)
 }
 
-describe('FIX-25 : lanceur Windows de la CLI', () => {
-  it('CA-1 : bin/atelier.cmd lance node sur bin/atelier en transmettant les arguments', () => {
+describe('lanceur Windows de la CLI', () => {
+  it('bin/atelier.cmd lance node sur bin/atelier en transmettant les arguments [FIX-25 CA-1]', () => {
     assert.ok(existsSync(launcherPath), 'plugins/atelier/bin/atelier.cmd absent')
     // Line endings depend on the checkout (LF for its author, CRLF once extracted by git).
     const lines = readFileSync(launcherPath, 'utf8')
@@ -39,11 +39,11 @@ describe('FIX-25 : lanceur Windows de la CLI', () => {
     assert.match(lines[0], /^@node\s+"%~dp0atelier"\s+%\*$/)
   })
 
-  it('CA-2 : bin/atelier.cmd est extrait en CRLF', () => {
+  it('bin/atelier.cmd est extrait en CRLF [FIX-25 CA-2]', () => {
     assert.equal(eolAttribute('plugins/atelier/bin/atelier.cmd'), 'crlf')
   })
 
-  it('CA-3 : bin/atelier reste en LF (shebang intact sous Windows avec autocrlf)', () => {
+  it('bin/atelier reste en LF (shebang intact sous Windows avec autocrlf) [FIX-25 CA-3]', () => {
     assert.equal(eolAttribute('plugins/atelier/bin/atelier'), 'lf')
   })
 })

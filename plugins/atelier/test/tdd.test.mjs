@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { isRefreeze, parseAmendments, parseFrontMatter, refreezeTestsEntry, reopenTestsEntry, reopenTestsRefusal, testDrivenPhase } from '../lib/core.mjs'
-import * as core from '../lib/core.mjs'
+import { isRefreeze, refreezeTestsEntry, removedTestLines, reopenTestsEntry, reopenTestsRefusal, testDrivenPhase } from '../lib/tdd.mjs'
+import { parseFrontMatter } from '../lib/common.mjs'
+import { parseAmendments } from '../lib/spec.mjs'
 import { signedChantier, implementingChantier, signedTec, decide, git, commit, atelier, atelierRun, specData, slicedChantier, makeSlicedRepository, commitFiles, headOf, commitSpec, setHeader, specFileText, atelierOk, atSliceTwo, implementedSlice } from './helpers.mjs'
 
 describe('test-driven phases', () => {
@@ -142,8 +143,8 @@ describe('freezing the tests of a slice', () => {
       '+--- pas un en-tête',
       '',
     ].join('\n')
-    assert.deepEqual(core.removedTestLines(diff).sort(), ['test/gone.test.mjs', 'test/one.test.mjs'])
-    assert.deepEqual(core.removedTestLines(''), [])
+    assert.deepEqual(removedTestLines(diff).sort(), ['test/gone.test.mjs', 'test/one.test.mjs'])
+    assert.deepEqual(removedTestLines(''), [])
   })
 
   it('en tranche 2, la réouverture trace le gel quitté (slice_base) ; le gel suivant accepte les modifications et trace le regel [FEAT-7 CA-8]', () => {
