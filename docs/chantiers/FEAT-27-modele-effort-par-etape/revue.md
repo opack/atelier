@@ -36,3 +36,20 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD2. Apostrophes droites dans la nouvelle section de `modes.md` | `site/agent/modes.md:19-38` | reporté (tranche 5) : la tranche de documentation repasse sur le site ; apostrophes typographiques à ce moment-là |
 
 - Bilan de la revue : tranche saine (328 tests verts, tests figés intacts, amendement OD9 appliqué partout). RD1 reste reporté à la tranche 5.
+
+## Revue : tranche 3 : 2026-11-24
+- Commit revu : 29b04b8
+- Base : a3eae7d (fin de la tranche 2) ; la fusion de `main` 82ac375 (REF-29, FIX-28, FIX-25) est hors chantier
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD3. Refus d'une option répétée (OD11) sans test | `plugins/atelier/lib/cli/agent-settings.mjs:20` | reporté (tranche 4) : test ajouté avec ceux de la tranche 4, sans rouvrir le gel |
+| RD4. Commit de fusion de `main` sans `[FEAT-27]` | commit 82ac375 | écarté : réécrire une fusion déjà poussée coûte plus que le gain ; les prochaines fusions seront nommées `chore(merge): [FEAT-27] …` |
+
+- Bilan de la revue : tranche saine (366 tests verts, gel respecté, réouverture limitée à l'import exigé par REF-29). RD1 et RD2 restent reportés à la tranche 5.
