@@ -41,3 +41,19 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD6. `measure-hook.mjs` laisse son dossier temporaire | `docs/chantiers/REF-29-lib-par-domaine/measure-hook.mjs:51` | corrigé (f14508d) : `process.exitCode` au lieu de `process.exit()`, le `finally` supprime le plugin extrait (vérifié : aucun dossier `ref29-plugin-*` restant) |
 
 - Bilan de la revue : `check-moves.mjs --self-test` et `measure-hook.mjs` verts (écart +1,4 ms). `codeOnly` de `move.mjs` garde ses boucles non bornées : il ne sert qu'à écrire les imports, que `missingImports` contrôle désormais sans lui.
+
+## Revue : tranche 2 : 2026-11-24
+- Commit revu : c01a7f5
+- Base : 91cedc6
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD7. Titres de section vides empilés dans `core.mjs` | `plugins/atelier/lib/core.mjs:79` | corrigé (d9f84dc) : `move.mjs` retire tout titre de section resté sans contenu, titres orphelins de `core.mjs` retirés ; réécriture de l'en-tête de `core.mjs` inscrite à la tranche 5 du plan |
+
+- Bilan de la revue : `check-moves.mjs --self-test` vert (88 déclarations déplacées sur 201, 340 tests, suite verte à chaque commit), latence +3,3 ms, sorties de `status`, `next-id`, `check-process`, `review-ids`, `close-check`, `hook-session-start` et `check-spec` (5 specs réelles, une spec fabriquée à 5 erreurs de relations) identiques à la base.
