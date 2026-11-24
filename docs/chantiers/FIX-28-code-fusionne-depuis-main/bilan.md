@@ -59,6 +59,6 @@ Une revue, chantier à tranche unique (base `94423a3`, commit revu `016d13e` pui
 
 Exceptions acceptées : RD2.
 
-- Verdict :
-- Validé par :
-- Date :
+- Verdict : accepté
+- Validé par : Didier
+- Date : 2026-11-24
