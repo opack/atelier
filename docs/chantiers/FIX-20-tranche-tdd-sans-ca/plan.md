@@ -6,7 +6,7 @@ Une seule fonction pure décide du TDD effectif : `effectiveTdd(chantier)` = `sl
 ## Fichiers et couches touchés
 - `plugins/atelier/lib/core.mjs` : `planSlices`, `planSliceCount`, `effectiveTdd`, `testDrivenPhase`, `COMMAND_SPEC_FIELDS`, `setReviewedUpdate`, `setTddRefusal` et entrée d'amendement, `reopenTestsRefusal`, messages de `freeze-tests`, `planProblems`, `nextStep` / `phaseStep`.
 - `plugins/atelier/lib/cli.mjs` : commande `check-plan`, `set-tdd` sur la tranche courante, `freeze-tests`, `sliceCodeFiles`, `status` (`sliceTdd`).
-- `plugins/atelier/test/core.test.mjs` : tests des CA.
+- `plugins/atelier/test/` : un fichier de test par domaine (`plan.test.mjs` pour la lecture du plan dès la tranche 1), selon la convention de `CLAUDE.md`.
 - `plugins/atelier/skills/` : `plan`, `new`, `write-tests`, `build`.
 - `plugins/atelier/templates/plan.md` : format de tranche.
 - `site/cycle/conception.md`, `site/cycle/tests.md`, `site/cycle/implementation.md`, `site/reference/commandes.md` ; version du plugin.
