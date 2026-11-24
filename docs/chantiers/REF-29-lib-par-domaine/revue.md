@@ -74,3 +74,20 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD9. Graphe d'import du plan incomplet pour les domaines de la tranche | `docs/chantiers/REF-29-lib-par-domaine/plan.md` | corrigé (1ea3fce) : `docs` importe `common`, `cli/docs` n'importe que `cli/common`, `cli/tdd` vient après `cli/spec` et `cli/identifiers` |
 
 - Bilan de la revue : `check-moves.mjs --self-test` vert à chaque commit (134 déclarations déplacées sur 201, 340 tests), latence +2,2 ms ; sorties de `status`, `check-process`, `template`, `tests-changed`, `check-spec` (26 fichiers) identiques à la base ; scénario de 28 étapes (`sign`, `set-tdd`, `freeze-tests`, `reopen-tests`) identique à la base dans deux dépôts jetables.
+
+## Revue : tranche 4 : 2026-11-24
+- Commit revu : 37af9c0
+- Base : 1ea3fce
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD10. Graphe d'import du plan : `close` importe aussi `common` | `docs/chantiers/REF-29-lib-par-domaine/plan.md:86` | corrigé (2707371) |
+
+- Bilan de la revue : `check-moves.mjs --self-test` vert à chaque commit (178 déclarations déplacées sur 201, 340 tests), latence +6,2 ms ; plus aucun module de domaine n'importe `core.mjs` ; sorties de `review-ids`, `close-check`, `checks`, `status`, `hook-session-start`, `hook-gate` identiques à la base, scénario de 20 commandes (`set-reviewed`, `set-status`, refus compris) identique dans un dépôt jetable.
+- Incident pendant la revue : le reviewer a lancé `check-moves.mjs` avec `GIT_DIR` pointé sur ce dépôt ; les tests, qui créent des dépôts jetables, ont déplacé `HEAD`, `main` et la branche du chantier en local et créé 19 branches. Rien n'a été poussé, l'arbre de travail était intact. Réparé : refs remises à 37af9c0 et 94423a3, index reconstruit, branches parasites et cache `.atelier/gate*` supprimés, suite verte. `check-moves.mjs` lance désormais les tests sans `GIT_DIR` hérité (2707371).
