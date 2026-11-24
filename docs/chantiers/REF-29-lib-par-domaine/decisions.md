@@ -81,3 +81,9 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 ## 2026-11-24 : messages de commit sans scope en tranche 6 (RD15)
 - Contexte : quatre commits de la tranche 6 (10ecc98, 975aaa1, 102dddf, 10b3005) écrits `test:` ou `docs:` sans scope, contre la convention de `CLAUDE.md`.
 - Décision : exception acceptée par Didier ; l'historique est déjà poussé et la PR est fusionnée en squash. Les commits suivants portent un scope.
+
+## 2026-11-24 : rebase des branches ouvertes avant REF-29, la façade ne leur sert plus (RD18)
+- Contexte : revue du chantier ; depuis RD14, aucun test ni module de `lib/` ne peut importer `core.mjs`, et la règle de CA-4 refuse un `describe` nommé d'après un chantier. Constat sur les branches au 2026-11-24 : FIX-20 modifie `planSliceCount` dans `core.mjs` et ses tests figés (`test/plan.test.mjs`) font `import * as core` avec un `describe('FIX-20 …')` ; FEAT-27 a des tests figés dont `agent-settings.test.mjs` importe `parseFrontMatter` depuis `core.mjs` ; FEAT-21 n'a que sa spec.
+- Écarté : assouplir RD14 pour laisser les tests importer la façade, parce que la façade survivrait indéfiniment pour éviter une réouverture de tests qui ne coûte qu'une ligne d'import.
+- Procédure de rebase (FIX-20, FEAT-27) : fusionner `main` ; rouvrir les tests (`/atelier:write-tests`, raison : REF-29) ; imports nommés depuis le module de domaine (`lib/slices.mjs` pour FIX-20, `lib/common.mjs` pour `parseFrontMatter`), retrait du préfixe `core.`, `describe` renommé selon REF-16 ; rejouer les modifications de `core.mjs` dans le module de domaine que donne la table du plan (`planSliceCount` et ses aides dans `lib/slices.mjs`) ; aucun réexport ajouté à la façade.
+- Conséquence : la règle SB6 n'a plus d'usager ; la façade pourra être supprimée par un petit chantier dès les rebases de FIX-20 et FEAT-27 (bilan, « Dette et suites »).

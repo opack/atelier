@@ -11,7 +11,7 @@ On déplace des déclarations entières, de bas en haut du graphe d'import : d'a
 - `docs/chantiers/REF-29-lib-par-domaine/check-moves.mjs` : le contrôle du §4 (nombre de tests, fichiers de tests, déclarations, lignes hors déclarations, exports de la façade), lancé avec le hash de la base.
 - `docs/chantiers/REF-29-lib-par-domaine/move.mjs` et `base-exports.txt` : déplace des déclarations entières entre modules et régénère les en-têtes d'import de tous les modules (imports directs depuis le module qui définit, `export ` posé sur ce qu'un autre module utilise, réexports de la façade depuis la liste des exports de la base).
 - `docs/chantiers/REF-29-lib-par-domaine/measure-hook.mjs` : 20 lancements de `atelier hook-guard`, donne la médiane (CA-7).
-- `plugins/atelier/lib/<domaine>.mjs` (14 modules purs) et `plugins/atelier/lib/cli/<domaine>.mjs` (13 modules d’entrées / sorties) : nouveaux.
+- `plugins/atelier/lib/<domaine>.mjs` (14 modules purs) et `plugins/atelier/lib/cli/<domaine>.mjs` (14 modules d’entrées / sorties, `cli/common` compris) : nouveaux.
 - `plugins/atelier/lib/core.mjs` : réduit à la façade. `plugins/atelier/lib/cli.mjs` : réduit à `commands` et `main`.
 - `plugins/atelier/test/*.mjs` : imports nommés, retrait du préfixe `core.`, renommage de `windows-launcher.test.mjs`.
 - `plugins/atelier/test/architecture.test.mjs` : nouveau.
@@ -121,4 +121,4 @@ CA-1 n'est tenu en entier qu'à la fin de la tranche 5, et CA-2 aussi. CA-3 est 
 - **Un import manquant n'échoue qu'à l'appel**, pas au chargement, parce que l'ESM ne vérifie pas les noms utilisés dans les corps. Parade : la suite complète à chaque commit, et un `node --check` ne suffit pas. Le test d'architecture peut ajouter, en tranche 6, un contrôle des identifiants libres par module si la revue le juge utile, sans le promettre ici.
 - **Faux positifs du graphe** : `gate` et `git` apparaissent dans des chaînes. Parade : le graphe ci-dessus a été relu à la main, et les règles d'import du test d'architecture lisent les instructions `import`, pas les corps.
 - **Branches ouvertes** : FIX-20 (en pause), FEAT-21 et FEAT-27 rebasent après la fusion. Parade : la table ci-dessus leur dit où va chaque fonction, et la règle de la façade (SB6) leur permet d'ajouter un réexport.
-- **Latence** : 28 modules chargés par `hook-guard` via la table de `cli.mjs`. Si le seuil de 20 ms est dépassé en tranche 6, les commandes de `cli.mjs` passent en `import()` paresseux. C'est un amendement, car cela change la forme de `cli.mjs`.
+- **Latence** : 29 modules chargés par `hook-guard` (tous sauf la façade) via la table de `cli.mjs`. Si le seuil de 20 ms est dépassé en tranche 6, les commandes de `cli.mjs` passent en `import()` paresseux. C'est un amendement, car cela change la forme de `cli.mjs`.
