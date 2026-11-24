@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
+import { fileURLToPath } from 'node:url'
 import { resolveAgentSettings } from '../lib/agent-settings.mjs'
+import { parseFrontMatter } from '../lib/core.mjs'
 
 // Result shape: { model, effort, sources: { model, effort }, rest, warnings, refusal }
 // sources are 'argument' | 'utilisateur' | 'défaut'; refusal is null unless the resolution fails.
@@ -131,5 +134,57 @@ describe('agent settings: command argument', () => {
       assert.match(result.warnings[0], /ignor/i)
     }
     assert.deepEqual(resolve('implementer', { args: 'foo' }).warnings, [])
+  })
+})
+
+describe('agent settings: defaults declared in the plugin files', () => {
+  const pluginFile = (relativePath) => readFileSync(fileURLToPath(new URL(`../${relativePath}`, import.meta.url)), 'utf8')
+  const repositoryFile = (relativePath) => readFileSync(fileURLToPath(new URL(`../../../${relativePath}`, import.meta.url)), 'utf8')
+  // userConfig keys only allow letters, digits and underscores.
+  const optionKey = (agent, kind) => `${agent.replaceAll('-', '_')}_${kind}`
+
+  it('le manifeste déclare, par sous-agent, une option de modèle et une d’effort, facultatives, au défaut du code et à liste fermée [FEAT-27 CA-10]', () => {
+    const userConfig = JSON.parse(pluginFile('.claude-plugin/plugin.json')).userConfig ?? {}
+    for (const [agent, expected] of Object.entries(DEFAULTS)) {
+      for (const [kind, allowed] of [['model', ['sonnet', 'opus', 'haiku', 'fable']], ['effort', ['low', 'medium', 'high', 'xhigh', 'max']]]) {
+        const option = userConfig[optionKey(agent, kind)]
+        assert.ok(option, `option ${optionKey(agent, kind)} absente`)
+        assert.equal(option.type, 'string', optionKey(agent, kind))
+        assert.notEqual(option.required, true, optionKey(agent, kind))
+        assert.equal(option.default, expected[kind], optionKey(agent, kind))
+        assert.deepEqual([...option.options].sort(), [...allowed].sort(), optionKey(agent, kind))
+      }
+    }
+  })
+
+  it('l’en-tête model / effort de chaque agent est égal au défaut du code [FEAT-27 CA-10]', () => {
+    for (const [agent, expected] of Object.entries(DEFAULTS)) {
+      const { data } = parseFrontMatter(pluginFile(`agents/${agent}.md`))
+      assert.equal(data.name, agent)
+      assert.equal(data.model, expected.model, agent)
+      assert.equal(data.effort, expected.effort, agent)
+    }
+  })
+
+  it('le tableau des défauts de modes.md donne, pour chaque sous-agent, le modèle et l’effort du code [FEAT-27 CA-10]', () => {
+    const rows = repositoryFile('site/agent/modes.md').split(/\r?\n/).filter((line) => line.trim().startsWith('|'))
+    for (const [agent, expected] of Object.entries(DEFAULTS)) {
+      const row = rows.find((line) => line.includes(`\`${agent}\``))
+      assert.ok(row, `pas de ligne pour ${agent} dans modes.md`)
+      assert.ok(row.includes(`\`${expected.model}\``) && row.includes(`\`${expected.effort}\``), row)
+    }
+  })
+
+  it('l’agent implementer peut éditer, a une section « Interdit » complète et rend « Arrêt : test à revoir » [FEAT-27 CA-13]', () => {
+    const { data, body } = parseFrontMatter(pluginFile('agents/implementer.md'))
+    for (const tool of ['Read', 'Edit', 'Write', 'Bash']) {
+      assert.match(String(data.tools), new RegExp(`\\b${tool}\\b`), tool)
+    }
+    const forbidden = body.split(/^## /m).find((section) => /^Interdit/.test(section))
+    assert.ok(forbidden, 'section « ## Interdit » absente')
+    for (const subject of [/test/i, /commit/i, /`atelier/, /spec/i, /decisions\.md/]) {
+      assert.match(forbidden, subject)
+    }
+    assert.ok(body.includes('Arrêt : test à revoir'))
   })
 })
