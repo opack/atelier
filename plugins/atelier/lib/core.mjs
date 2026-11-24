@@ -1,10 +1,6 @@
 // Core logic of atelier: project configuration, chantier state, spec checks.
 // Pure functions where possible so they can be tested without git or a filesystem.
 
-import { execFileSync } from 'node:child_process'
-import { existsSync, readFileSync, readdirSync } from 'node:fs'
-import { join } from 'node:path'
-import { gitOutput } from './cli/common.mjs'
 import {
   CHANTIER_TYPES,
   DEFAULT_CONFIG,
@@ -14,8 +10,19 @@ import {
   parseTreeEntries,
   specStatus,
 } from './common.mjs'
+import { chantierIdFromDirectoryName } from './identifiers.mjs'
 
 export { configPath, findProjectRoot, loadConfig } from './cli/common.mjs'
+export {
+  activeChantier,
+  branchCommitSubjects,
+  collectUsedIdentifiers,
+  currentBranch,
+  defaultBaseRef,
+  defaultBranchName,
+  findChantierDirectory,
+  readChantier,
+} from './cli/identifiers.mjs'
 export {
   CHANTIER_TYPES,
   DEFAULT_CONFIG,
@@ -31,14 +38,20 @@ export {
   shortRefName,
   toProjectRelativePath,
 } from './common.mjs'
+export {
+  branchNameIdentifiers,
+  chantierIdFromCommitSubjects,
+  chantierIdFromDirectoryName,
+  chantierIdFromText,
+  commitSubjectIdentifiers,
+  highestChantierNumber,
+  nextChantierId,
+} from './identifiers.mjs'
 
 // Recommended answer to "should this chantier follow TDD?", per type. Only a suggestion:
 // the human always decides, in the `tdd` field of the spec header. An EPIC implements nothing:
 // it is always `tdd: no`, without asking.
 export const TDD_RECOMMENDATION = { FEAT: 'yes', FIX: 'yes', REF: 'yes', TEC: 'no', SPIKE: 'no', EPIC: 'no' }
-
-const ID_PATTERN = new RegExp(`\\b(${CHANTIER_TYPES.join('|')})-(\\d+)\\b`, 'i')
-const BRACKETED_ID_PATTERN = new RegExp(`\\[(${CHANTIER_TYPES.join('|')})-(\\d+)\\]`, 'i')
 
 // Sections required before signature, per chantier type.
 // A section matches when its heading (without its number) starts with the given title.
@@ -62,100 +75,6 @@ const CRITERIA_SECTIONS = {
 // ---------- Front matter ----------
 
 // ---------- Chantier identification ----------
-
-export function chantierIdFromText(text) {
-  const match = text?.match(ID_PATTERN)
-  return match ? `${match[1].toUpperCase()}-${match[2]}` : null
-}
-
-export function currentBranch(projectRoot) {
-  return gitOutput(projectRoot, ['rev-parse', '--abbrev-ref', 'HEAD'])
-}
-
-export function findChantierDirectory(projectRoot, config, chantierId) {
-  const chantiersRoot = join(projectRoot, config.chantiersDir)
-  if (!existsSync(chantiersRoot)) {
-    return null
-  }
-  const match = readdirSync(chantiersRoot).find(
-    (name) => name === chantierId || name.startsWith(`${chantierId}-`),
-  )
-  return match ? join(chantiersRoot, match) : null
-}
-
-export function readChantier(projectRoot, config, chantierId) {
-  const directory = findChantierDirectory(projectRoot, config, chantierId)
-  if (!directory) {
-    return { id: chantierId, directory: null, spec: null, files: [] }
-  }
-  const specPath = join(directory, 'spec.md')
-  const spec = existsSync(specPath) ? parseFrontMatter(readFileSync(specPath, 'utf8')) : null
-  const planPath = join(directory, 'plan.md')
-  const plan = existsSync(planPath) ? readFileSync(planPath, 'utf8') : null
-  const revuePath = join(directory, 'revue.md')
-  const revue = existsSync(revuePath) ? readFileSync(revuePath, 'utf8') : null
-  return { id: chantierId, directory, spec, files: readdirSync(directory), plan, revue }
-}
-
-// Subjects are ordered from newest to oldest; only a bracketed identifier counts.
-export function chantierIdFromCommitSubjects(subjects) {
-  for (const subject of subjects) {
-    const match = subject.match(BRACKETED_ID_PATTERN)
-    if (match) {
-      return `${match[1].toUpperCase()}-${match[2]}`
-    }
-  }
-  return null
-}
-
-// refs/remotes/origin/HEAD is missing from cloud clones, hence the fallbacks.
-const BASE_REF_CANDIDATES = ['refs/remotes/origin/HEAD', 'origin/main', 'origin/master', 'main', 'master']
-
-export function defaultBaseRef(projectRoot) {
-  return BASE_REF_CANDIDATES.find(
-    (ref) => gitOutput(projectRoot, ['rev-parse', '--verify', '--quiet', `${ref}^{commit}`]) !== null,
-  ) ?? null
-}
-
-export function branchCommitSubjects(projectRoot, base) {
-  const output = gitOutput(projectRoot, ['log', '-n', '200', '--format=%s', `${base}..HEAD`])
-  return output ? output.split('\n') : []
-}
-
-// Short name of the default branch behind a base ref: origin/HEAD → origin/main → main.
-// null when origin/HEAD cannot be resolved: the default branch is then unknown.
-export function defaultBranchName(projectRoot, base) {
-  const resolved = base === 'refs/remotes/origin/HEAD'
-    ? gitOutput(projectRoot, ['rev-parse', '--abbrev-ref', base])
-    : base
-  return resolved ? resolved.replace(/^origin\//, '') : null
-}
-
-function chantierIdFromBranchCommits(projectRoot, branch) {
-  if (!branch || branch === 'HEAD') {
-    return null
-  }
-  const base = defaultBaseRef(projectRoot)
-  const defaultBranch = base && defaultBranchName(projectRoot, base)
-  if (!defaultBranch || branch === defaultBranch) {
-    return null
-  }
-  return chantierIdFromCommitSubjects(branchCommitSubjects(projectRoot, base))
-}
-
-// The branch name wins; otherwise, off the default branch, the branch's own commits tell.
-export function activeChantier(projectRoot, config) {
-  const branch = currentBranch(projectRoot)
-  const branchId = chantierIdFromText(branch)
-  if (branchId) {
-    return { branch, chantier: readChantier(projectRoot, config, branchId), source: 'branch' }
-  }
-  const commitsId = chantierIdFromBranchCommits(projectRoot, branch)
-  if (commitsId) {
-    return { branch, chantier: readChantier(projectRoot, config, commitsId), source: 'commits' }
-  }
-  return { branch, chantier: null, source: null }
-}
 
 // ---------- Relations between chantiers ----------
 
@@ -181,12 +100,6 @@ export function parseRelations(data) {
 
 export function hasRelations(data) {
   return Object.values(RELATION_FIELDS).some((field) => relationValues(data?.[field]).length)
-}
-
-// Chantier identifier at the start of a chantier directory name (`FEAT-12-budget` → FEAT-12).
-export function chantierIdFromDirectoryName(name) {
-  const match = name.match(new RegExp(`^(${CHANTIER_TYPES.join('|')})-(\\d+)(?:-|$)`, 'i'))
-  return match ? `${match[1].toUpperCase()}-${match[2]}` : null
 }
 
 // Chantier directories of a raw chantiers tree: [{ id, tree }], `tree` being the directory's id.
@@ -363,68 +276,6 @@ export function relationCloseProblems(id, data, index) {
 }
 
 // ---------- Next identifier ----------
-
-// The counter is shared by all types: the next number follows the highest one ever used,
-// whatever its prefix (including legacy prefixes such as FEA or BUG found in commit messages).
-export function highestChantierNumber(names) {
-  let highest = 0
-  for (const name of names) {
-    for (const match of name.matchAll(/\b[A-Z]{2,6}-(\d+)\b/g)) {
-      highest = Math.max(highest, Number(match[1]))
-    }
-  }
-  return highest
-}
-
-// Identifiers a commit subject carries: only bracketed ones (`[FEAT-7]`, `[TEC-15 CA-3]`), so that
-// prose tokens such as CA-13, UTF-8 or ISO-8601 never move the counter.
-export function commitSubjectIdentifiers(subject) {
-  return [...subject.matchAll(/\[([A-Z]{2,6})-(\d+)\b/gi)].map((match) => `${match[1].toUpperCase()}-${match[2]}`)
-}
-
-// Identifiers a branch name carries: only one opening a segment and followed by `-` or the end
-// (`fix/BUG-421-x`, `feature/JIRA-123`), so that bot branches such as `renovate/node-20.x` don't count.
-export function branchNameIdentifiers(name) {
-  return [...name.matchAll(/(?:^|\/)([A-Z]{2,6})-(\d+)(?=-|$)/gi)].map((match) => `${match[1].toUpperCase()}-${match[2]}`)
-}
-
-function gitLines(projectRoot, gitArguments) {
-  try {
-    return execFileSync('git', gitArguments, {
-      cwd: projectRoot,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).split('\n').filter(Boolean)
-  } catch {
-    // No git history yet: directory names are enough.
-    return []
-  }
-}
-
-// Each source has its own extraction rule: chantier folders as they are, bracketed identifiers of
-// commit subjects, identifiers opening a segment of branch names.
-export function collectUsedIdentifiers(projectRoot, config) {
-  const names = []
-  const chantiersRoot = join(projectRoot, config.chantiersDir)
-  if (existsSync(chantiersRoot)) {
-    names.push(...readdirSync(chantiersRoot))
-  }
-  for (const subject of gitLines(projectRoot, ['log', '--all', '--format=%s', '-n', '5000'])) {
-    names.push(...commitSubjectIdentifiers(subject))
-  }
-  for (const branch of gitLines(projectRoot, ['branch', '--all', '--format=%(refname:short)'])) {
-    names.push(...branchNameIdentifiers(branch))
-  }
-  return names
-}
-
-export function nextChantierId(type, usedNames) {
-  const normalizedType = type.toUpperCase()
-  if (!CHANTIER_TYPES.includes(normalizedType)) {
-    throw new Error(`Type inconnu : ${type}. Types possibles : ${CHANTIER_TYPES.join(', ')}`)
-  }
-  return `${normalizedType}-${highestChantierNumber(usedNames) + 1}`
-}
 
 // ---------- Spec completeness ----------
 

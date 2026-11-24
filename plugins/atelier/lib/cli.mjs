@@ -26,6 +26,14 @@ import {
   uncommittedFiles,
 } from './cli/common.mjs'
 import {
+  activeChantier,
+  commandNextId,
+  currentBranch,
+  defaultBaseRef,
+  defaultBranchName,
+  requireActiveChantier,
+} from './cli/identifiers.mjs'
+import {
   applyToolEdit,
   codeLogArguments,
   matchesAny,
@@ -36,11 +44,9 @@ import {
   toProjectRelativePath,
 } from './common.mjs'
 import {
-  activeChantier,
   amendmentsDiffer,
   appendAmendmentEntry,
   buildChantierIndex,
-  chantierIdFromDirectoryName,
   chantierTreesOf,
   checkProcessProblems,
   checkSpec,
@@ -48,19 +54,14 @@ import {
   childrenOf,
   closeProblems,
   codeCommittedMatters,
-  collectUsedIdentifiers,
-  currentBranch,
   decideStop,
   decideWrite,
-  defaultBaseRef,
-  defaultBranchName,
   describeRelation,
   freezeTestsRefusal,
   freezeTestsValues,
   hasRelations,
   isRefreeze,
   isReviewExempt,
-  nextChantierId,
   nextReviewIds,
   nextStep,
   openChildren,
@@ -82,6 +83,7 @@ import {
   testDrivenPhase,
   withGreen,
 } from './core.mjs'
+import { chantierIdFromDirectoryName } from './identifiers.mjs'
 
 const commands = {
   'next-id': commandNextId,
@@ -117,15 +119,6 @@ export function main(argumentList) {
 
 // ---------- Helpers ----------
 
-function requireActiveChantier(projectRoot, config) {
-  const { chantier } = activeChantier(projectRoot, config)
-  if (!chantier?.directory || !chantier.spec) {
-    console.error('Aucun chantier actif avec une spec sur cette branche.')
-    process.exit(1)
-  }
-  return chantier
-}
-
 function bypassPath(projectRoot) {
   return join(projectRoot, '.atelier', 'bypass.json')
 }
@@ -147,12 +140,6 @@ function updateSpec(projectRoot, config, values) {
 }
 
 // ---------- Commands ----------
-
-function commandNextId([type]) {
-  const projectRoot = findProjectRoot()
-  const config = requireConfig(projectRoot)
-  console.log(nextChantierId(type ?? '', collectUsedIdentifiers(projectRoot, config)))
-}
 
 function commandStatus(options) {
   const projectRoot = findProjectRoot()
