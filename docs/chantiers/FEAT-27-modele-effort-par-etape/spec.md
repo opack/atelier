@@ -8,9 +8,9 @@ created_at: 2026-11-23
 signed_by: Opack
 signed_at: 2026-11-24
 rel_depends_on: TEC-15
-tests_commit: 1431167
-slice: 4
-slice_base: 8edcea1df13c4a11cda8e0a6d478f6dfc21523bc
+tests_commit: 
+slice: 5
+slice_base: 53c0149eeb6354403cc16ca0c6acea3eb522cc7a
 ---
 
 # FEAT-27 Modèle et effort réglés par étape
