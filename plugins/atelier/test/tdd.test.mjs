@@ -315,6 +315,15 @@ describe('tests modifiés depuis le gel, après une fusion de la branche par dé
     assert.doesNotMatch(output, /main\.test\.mjs/)
   })
 
+  it('signale un test figé auquel un commit du chantier ajoute une ligne, malgré la fusion [FIX-32 CA-2]', () => {
+    const directory = frozenFix()
+    mergeMainChangingItsTest(directory)
+    commitFiles(directory, { 'test/fix.test.mjs': 'ligne a\nligne b\nligne c\n' }, 'fix: extend a frozen test')
+    const { status, output } = atelierRun(directory, 'tests-changed')
+    assert.equal(status, 2, output)
+    assert.match(output, /- test\/fix\.test\.mjs/)
+  })
+
   it('set-reviewed ne refuse pas la revue pour un test venu de la branche par défaut [FIX-32 CA-3]', () => {
     const directory = frozenFix()
     commitFiles(directory, { 'src/fix.mjs': 'export const fix = 1\n' }, 'fix: fix')
