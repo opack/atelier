@@ -7,7 +7,7 @@ import { parseFrontMatter } from '../lib/common.mjs'
 import { atelier, atelierRun, makeRepository } from './helpers.mjs'
 
 // Result shape: { model, effort, sources: { model, effort }, rest, warnings, refusal }
-// sources are 'argument' | 'utilisateur' | 'défaut'; refusal is null unless the resolution fails.
+// sources are 'argument' | 'utilisateur' | 'recommandé'; refusal is null unless the resolution fails.
 
 const DEFAULTS = {
   implementer: { model: 'sonnet', effort: 'medium' },
@@ -21,12 +21,12 @@ function resolve(agent, options = {}) {
 }
 
 describe('agent settings: defaults and user options', () => {
-  it('sans option ni argument, chaque sous-agent reçoit son défaut, source « défaut » [FEAT-27 CA-1]', () => {
+  it('sans option ni argument, chaque sous-agent reçoit son défaut, source « recommandé » [FEAT-27 CA-1]', () => {
     for (const [agent, expected] of Object.entries(DEFAULTS)) {
       const result = resolve(agent)
       assert.equal(result.model, expected.model, agent)
       assert.equal(result.effort, expected.effort, agent)
-      assert.deepEqual(result.sources, { model: 'défaut', effort: 'défaut' }, agent)
+      assert.deepEqual(result.sources, { model: 'recommandé', effort: 'recommandé' }, agent)
       assert.deepEqual(result.warnings, [], agent)
       assert.equal(result.refusal, null, agent)
     }
@@ -36,7 +36,7 @@ describe('agent settings: defaults and user options', () => {
     const result = resolve('reviewer', { userModel: 'sonnet' })
     assert.equal(result.model, 'sonnet')
     assert.equal(result.effort, 'high')
-    assert.deepEqual(result.sources, { model: 'utilisateur', effort: 'défaut' })
+    assert.deepEqual(result.sources, { model: 'utilisateur', effort: 'recommandé' })
     assert.deepEqual(result.warnings, [])
   })
 
@@ -45,17 +45,17 @@ describe('agent settings: defaults and user options', () => {
       const result = resolve('reviewer', { userModel, userEffort: userModel === undefined ? undefined : userModel.replace('model', 'effort') })
       assert.equal(result.model, 'opus', String(userModel))
       assert.equal(result.effort, 'high', String(userModel))
-      assert.deepEqual(result.sources, { model: 'défaut', effort: 'défaut' }, String(userModel))
+      assert.deepEqual(result.sources, { model: 'recommandé', effort: 'recommandé' }, String(userModel))
       assert.deepEqual(result.warnings, [], String(userModel))
     }
   })
 
-  it('une option « défaut (…) » compte comme non réglée, quelle que soit la valeur entre parenthèses, même périmée [FEAT-27 CA-3]', () => {
-    for (const [userModel, userEffort] of [['défaut (opus)', 'défaut (high)'], ['Défaut (haiku)', 'DÉFAUT (low)']]) {
+  it('une option « recommandé (…) » compte comme non réglée, quelle que soit la valeur entre parenthèses, même périmée [FEAT-27 CA-3]', () => {
+    for (const [userModel, userEffort] of [['recommandé (opus)', 'recommandé (high)'], ['Recommandé (haiku)', 'RECOMMANDÉ (low)']]) {
       const result = resolve('reviewer', { userModel, userEffort })
       assert.equal(result.model, 'opus', userModel)
       assert.equal(result.effort, 'high', userEffort)
-      assert.deepEqual(result.sources, { model: 'défaut', effort: 'défaut' }, userModel)
+      assert.deepEqual(result.sources, { model: 'recommandé', effort: 'recommandé' }, userModel)
       assert.deepEqual(result.warnings, [], userModel)
     }
   })
@@ -64,14 +64,14 @@ describe('agent settings: defaults and user options', () => {
     for (const userModel of ['gpt', 'inherit', 'claude-opus-5-5']) {
       const result = resolve('reviewer', { userModel })
       assert.equal(result.model, 'opus', userModel)
-      assert.equal(result.sources.model, 'défaut', userModel)
+      assert.equal(result.sources.model, 'recommandé', userModel)
       assert.equal(result.warnings.length, 1, userModel)
       assert.ok(result.warnings[0].includes(userModel), result.warnings[0])
       assert.ok(result.warnings[0].includes('reviewer_model'), result.warnings[0])
     }
     const effort = resolve('implementer', { userEffort: 'ultra' })
     assert.equal(effort.effort, 'medium')
-    assert.equal(effort.sources.effort, 'défaut')
+    assert.equal(effort.sources.effort, 'recommandé')
     assert.equal(effort.warnings.length, 1)
     assert.ok(effort.warnings[0].includes('ultra') && effort.warnings[0].includes('implementer_effort'), effort.warnings[0])
   })
@@ -109,7 +109,7 @@ describe('agent settings: command argument', () => {
       assert.equal(result.rest, args)
       assert.equal(result.model, 'sonnet', args)
       assert.equal(result.effort, 'medium', args)
-      assert.deepEqual(result.sources, { model: 'défaut', effort: 'défaut' }, args)
+      assert.deepEqual(result.sources, { model: 'recommandé', effort: 'recommandé' }, args)
       assert.deepEqual(result.warnings, [], args)
     }
 
@@ -154,7 +154,7 @@ describe('agent settings: defaults declared in the plugin files', () => {
   // userConfig keys only allow letters, digits and underscores.
   const optionKey = (agent, kind) => `${agent.replaceAll('-', '_')}_${kind}`
 
-  it('le manifeste déclare, par sous-agent, une option de modèle et une d’effort, facultatives, « défaut (<défaut du code>) » par défaut et en tête d’une liste fermée [FEAT-27 CA-10]', () => {
+  it('le manifeste déclare, par sous-agent, une option de modèle et une d’effort, facultatives, « recommandé (<défaut du code>) » par défaut et en tête d’une liste fermée [FEAT-27 CA-10]', () => {
     const userConfig = JSON.parse(pluginFile('.claude-plugin/plugin.json')).userConfig ?? {}
     for (const [agent, expected] of Object.entries(DEFAULTS)) {
       for (const [kind, allowed] of [['model', ['sonnet', 'opus', 'haiku', 'fable']], ['effort', ['low', 'medium', 'high', 'xhigh', 'max']]]) {
@@ -162,7 +162,7 @@ describe('agent settings: defaults declared in the plugin files', () => {
         assert.ok(option, `option ${optionKey(agent, kind)} absente`)
         assert.equal(option.type, 'string', optionKey(agent, kind))
         assert.notEqual(option.required, true, optionKey(agent, kind))
-        assert.equal(option.default, `défaut (${expected[kind]})`, optionKey(agent, kind))
+        assert.equal(option.default, `recommandé (${expected[kind]})`, optionKey(agent, kind))
         assert.equal(option.options[0], option.default, `${optionKey(agent, kind)} : « ${option.default} » en tête de liste`)
         assert.deepEqual(option.options.slice(1).sort(), [...allowed].sort(), optionKey(agent, kind))
       }
@@ -208,7 +208,7 @@ describe('agent settings: atelier agent-settings command', () => {
     const result = JSON.parse(output)
     assert.equal(result.model, 'opus')
     assert.equal(result.effort, 'medium')
-    assert.deepEqual(result.sources, { model: 'argument', effort: 'défaut' })
+    assert.deepEqual(result.sources, { model: 'argument', effort: 'recommandé' })
     assert.equal(result.rest, '2')
     assert.deepEqual(result.warnings, [])
   })
@@ -291,7 +291,7 @@ describe('agent settings: documentation', () => {
     const text = site('agent/modes.md')
     assert.ok(text.includes('/plugin configure atelier'), 'option utilisateur non expliquée')
     assert.match(text, /argument de la commande/)
-    assert.match(text, /défaut/)
+    assert.match(text, /Valeurs recommandées/)
     assert.ok(text.includes('opusplan'), 'opusplan absent')
   })
 
@@ -300,6 +300,7 @@ describe('agent settings: documentation', () => {
     for (const option of options) {
       assert.ok(text.includes(`\`${option}\``), `option ${option} absente de configuration.md`)
     }
+    assert.match(text, /\]\(\.\.\/agent\/modes[^)]*\)/, 'pas de renvoi vers les valeurs recommandées de modes.md')
   })
 
   it('commandes.md donne le modèle et l’effort en argument de build, review et sign, et décrit implementer [FEAT-27 CA-14]', () => {
