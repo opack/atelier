@@ -174,7 +174,7 @@ describe('calibrated review points', () => {
 
   for (const file of reviewers) {
     it(`${file} demande le bilan de chaque point : deux coûts, silencieux ou bruyant, verdict, question [FEAT-30 CA-1]`, () => {
-      assert.deepEqual(missing(pluginText(file), [/bloquant ou à discuter/, /coût de la correction/i, /coût de la non-correction/i, /silencieux/, /bruyant/, /verdict/i, /point qui est une question/]), [])
+      assert.deepEqual(missing(pluginText(file), [/bloquant ou à discuter/, /coût de la correction/i, /coût de la non-correction/i, /silencieux/, /bruyant/, /verdict/i, /toujours à corriger/, /point qui est une question/]), [])
     })
 
     it(`${file} tire l'usage réel de CLAUDE.md et du README [FEAT-30 CA-2]`, () => {
@@ -186,13 +186,13 @@ describe('calibrated review points', () => {
     })
 
     it(`${file} distingue premier passage et relance, avec les idées sans identifiant [FEAT-30 CA-4]`, () => {
-      assert.deepEqual(missing(pluginText(file), [/premier passage/, /relance/, /causé par une correction/, /\*\*Idées\*\*/, /sans identifiant/]), [])
+      assert.deepEqual(missing(pluginText(file), [/premier passage/, /relance/, /causé par une correction/, /n'est retenu que s'il est bloquant/, /\*\*Idées\*\*/, /sans identifiant/]), [])
     })
   }
 
   it('review définit la relance, transmet le commit précédent, garde les idées hors de revue.md et associe chaque issue à un traitement [FEAT-30 CA-5]', () => {
     assert.deepEqual(missing(pluginText('skills/review/SKILL.md'), [
-      /\*\*relance\*\*/, /sont des premiers passages/, /commit de la revue précédente/,
+      /\*\*relance\*\*/, /sont des premiers passages/, /commit de la revue précédente/, /liste des corrections faites depuis/,
       /idée[^\n]*n'entre jamais dans ces tableaux/i,
       /ne pas corriger[^\n]*`exception acceptée`/, /chantier séparé → `reporté`/, /limite documentée → `corrigé`/,
     ]), [])

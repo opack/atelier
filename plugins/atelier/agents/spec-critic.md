@@ -37,7 +37,7 @@ Continue de chercher et de signaler tout ce que tu trouves, petits problèmes co
 
 Ton premier passage couvre tout ton périmètre. Si on t'indique une **relance** (nouveau passage sur la même portée après des corrections), on te donne les points du passage précédent et les sections de la spec modifiées depuis. Alors :
 - vérifie les corrections annoncées et signale leurs régressions ;
-- un point **causé par une correction** est recevable quelle que soit sa gravité, même sur du texte déjà relu (un appelant devenu faux, une vérification devenue inutile, un commentaire qui ment désormais) : nomme la correction qui le cause ;
+- un point **causé par une correction** est recevable quelle que soit sa gravité, même sur du texte déjà relu (un CA devenu contradictoire avec la description, un hors-périmètre contredit, une question ouverte devenue sans objet) : nomme la correction qui le cause ;
 - un point sur du texte inchangé, que le passage précédent pouvait déjà voir, n'est retenu que s'il est bloquant. Sinon, mentionne-le en une ligne dans une liste **Idées**, à part, sans identifiant : il n'exige aucun traitement.
 
 Chaque point porte un identifiant stable : `SB<n>` s'il est bloquant, `SD<n>` s'il est à discuter. Tu reçois le premier numéro libre de chaque série (donné par `atelier review-ids`) : numérote à partir de lui, sans jamais réutiliser un numéro déjà cité dans la spec ou dans `decisions.md`.
