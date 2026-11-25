@@ -5,6 +5,7 @@ title: EPIC en branche d'intégration
 status: signed
 tdd: yes
 created_at: 2026-11-23
+rel_depends_on: REF-29
 signed_by: Opack
 signed_at: 2026-11-23
 ---
@@ -15,7 +16,7 @@ signed_at: 2026-11-23
 <!-- Pourquoi maintenant ? Qui est concerné ? Quel problème (pas la solution) ?
 Questions si manquant : quel problème utilisateur, observé où ? Que se passe-t-il si on ne fait rien ? -->
 
-Modèle actuel (celui d'EPIC-17) : la branche de l'EPIC est courte. Sa spec et son plan sont fusionnés dans la branche par défaut (`plan` §5), puis chaque enfant part de la branche par défaut, est revu contre elle (`git merge-base HEAD <branche par défaut>`, `review` §2 et `sliceCodeFiles` dans `lib/cli.mjs`) et y est fusionné seul. L'EPIC se clôt ensuite sur une branche `epic/<ID>-<slug>` recréée pour l'occasion, sans revue (`isReviewExempt`).
+Modèle actuel (celui d'EPIC-17) : la branche de l'EPIC est courte. Sa spec et son plan sont fusionnés dans la branche par défaut (`plan` §5), puis chaque enfant part de la branche par défaut, est revu contre elle (`git merge-base HEAD <branche par défaut>`, `review` §2 et `sliceCodeFiles` dans `lib/cli/slices.mjs`) et y est fusionné seul. L'EPIC se clôt ensuite sur une branche `epic/<ID>-<slug>` recréée pour l'occasion, sans revue (`isReviewExempt`).
 
 Problème : certains EPIC ont des lots qui n'ont de sens qu'ensemble. Fusionner un enfant seul livre aux utilisateurs du plugin un état intermédiaire incohérent, voire cassé. Sans rien faire, on a le choix entre ce risque et un chantier unique trop gros pour être découpé, revu et testé par tranches.
 
@@ -36,7 +37,7 @@ Un EPIC peut déclarer dans l'en-tête de sa spec `integration_branch: yes`. Sa 
 
 **Engagement de l'option** : `integration_branch` ne change plus après la signature de l'EPIC (même règle que `tdd`, `id` et `type`). Elle impose des fusions par commit de fusion : un dépôt réglé pour n'accepter que le squash ne peut pas l'utiliser.
 
-**Pourquoi merge et jamais rebase** : les enfants clos portent dans leur spec un `reviewed_commit`, et les enfants ouverts un `reviewed_commit`, un `slice_base` ou un `tests_commit`. Un rebase réécrit ces commits : les revues des enfants clos ne prouvent plus rien et celles des enfants ouverts deviennent introuvables. Un merge garde tous les hashes. Après une fusion de la branche d'intégration dans un enfant déjà revu, sa revue est périmée comme aujourd'hui après une fusion de la branche par défaut (fichiers de code dans `--diff-merges=first-parent`), et la nouvelle revue ne montre que le diff propre de l'enfant puisque sa base a avancé.
+**Pourquoi merge et jamais rebase** : les enfants clos portent dans leur spec un `reviewed_commit`, et les enfants ouverts un `reviewed_commit`, un `slice_base` ou un `tests_commit`. Un rebase réécrit ces commits : les revues des enfants clos ne prouvent plus rien et celles des enfants ouverts deviennent introuvables. Un merge garde tous les hashes. Une fusion de la branche d'intégration dans un enfant déjà revu se traite comme aujourd'hui une fusion de la branche par défaut : seules ses résolutions de conflits sur du code périment la revue, le code des enfants frères qu'elle apporte ne compte pas (CA-15). Une nouvelle revue ne montre que le diff propre de l'enfant, puisque sa base a avancé.
 
 **Pourquoi une revue d'ensemble obligatoire** : chaque enfant a été revu seul, contre une base qui bougeait. Personne n'a relu l'assemblage, ni les résolutions de conflits faites en fusionnant la branche par défaut dans la branche d'intégration. La revue d'ensemble porte sur la cohérence entre lots, l'atteinte des CA globaux et ces résolutions ; elle ne refait pas la revue ligne à ligne de chaque enfant.
 
@@ -52,16 +53,16 @@ Hors périmètre :
 ## 3. Points techniques identifiés
 <!-- Fichiers / couches concernés, contraintes, dépendances. Optionnel. -->
 
-- **Un seul calcul de la base** : une fonction pure dans `lib/core.mjs` (index des chantiers, identifiant) → `{ branch, epic }` ou la branche par défaut. `atelier status --json` l'expose toujours (`baseBranch`, et l'EPIC qui l'impose, ou `null`) ; `atelier base --parent <ID>` la calcule pour un chantier pas encore créé dont on connaît le parent (`new`) ; `sliceCodeFiles` l'utilise côté CLI. `reviewFacts` ne change pas : il raisonne sur `reviewed_commit..HEAD`, sans base. Lecture de la spec d'un ancêtre : même règle que l'index des chantiers aujourd'hui ; un parent introuvable ou un cycle `rel_parent` (déjà signalés par `check-spec`) donnent la branche par défaut et un avertissement. Le nom de la branche d'intégration se déduit du dossier de l'EPIC (`epic/<ID>-<slug>`), sans configuration.
+- **Un seul calcul de la base** : une fonction pure dans un module de domaine de `lib/` (index des chantiers, identifiant) → `{ branch, epic }` ou la branche par défaut. `atelier status --json` l'expose toujours (`baseBranch`, et l'EPIC qui l'impose, ou `null`) ; `atelier base --parent <ID>` la calcule pour un chantier pas encore créé dont on connaît le parent (`new`) ; `sliceCodeFiles` l'utilise côté CLI. `reviewFacts` ne change pas : il raisonne sur `reviewed_commit..HEAD`, sans base. Lecture de la spec d'un ancêtre : même règle que l'index des chantiers aujourd'hui ; un parent introuvable ou un cycle `rel_parent` (déjà signalés par `check-spec`) donnent la branche par défaut et un avertissement. Le nom de la branche d'intégration se déduit du dossier de l'EPIC (`epic/<ID>-<slug>`), sans configuration.
 - **Référence git de la base** : entre la branche locale `epic/<ID>-<slug>` et sa branche de suivi distante, la plus avancée quand l'une contient l'autre ; divergentes → erreur (« synchronise la branche d'intégration ») ; aucune des deux → erreur (« récupère ou pousse la branche d'intégration »). Jamais de repli silencieux sur la branche par défaut, qui gonflerait la revue de tout le travail des autres enfants.
 - **EPIC à branche d'intégration et revue** : aujourd'hui `isReviewExempt` exempte tout EPIC et `sliceState` le classe sans modèle de revue. Avec l'option, l'EPIC suit le modèle « tranche unique » pour sa clôture : `reviewed_commit` exigé, à jour, ancêtre de `HEAD` (`setReviewedUpdate` y écrit aussi `slice: 1`, sans conséquence). `nextStep` (qui répond pour un EPIC avant `phaseStep`) et `formatCloseProblems` (qui choisit son message par `isReviewExempt`) en tiennent compte. L'agent `reviewer` reçoit une portée « revue d'ensemble de l'EPIC » : cohérence entre lots, CA globaux, résolutions de conflits des fusions de la branche par défaut.
 - **Intégrité des revues des enfants** : `close-check` d'un EPIC à branche d'intégration vérifie que le `reviewed_commit` de chaque enfant `done` (hors enfants exemptés de revue) est ancêtre de `HEAD`. Un rebase de la branche d'intégration ou une fusion d'enfant par squash casse cette propriété : c'est ce qui la rend détectable de façon déterministe.
 - **Détection du chantier par les commits** (`chantierIdFromBranchCommits`) : elle prend le commit `[<ID>]` le plus récent de `<branche par défaut>..HEAD`. Sur une branche imposée (`claude/<session>`) d'un enfant, la fusion de la branche d'intégration y fait entrer les commits de l'EPIC et des enfants frères, qui peuvent passer devant ceux de l'enfant. La détection lit donc avec `--first-parent` : seuls les commits de la branche elle-même comptent, sans convention de message de fusion (CA-13). Le commit du brouillon fait juste après la fusion de la branche d'intégration (§2) donne l'identifiant de l'enfant dès l'ouverture.
 - **Règle « chaque commit porte `[<ID>]` »** (consigne de `review` et `close`, aucun code ne la vérifie) : comptée avec `--first-parent` depuis la base, pour l'EPIC comme pour l'enfant, sinon les commits des enfants fusionnés ou des frères seraient signalés. Les fusions de la branche par défaut dans la branche d'intégration s'écrivent `[<EPIC-ID>] merge <branche par défaut>`.
 - **Garde d'écriture** : sur la branche d'un EPIC, les écritures de code restent refusées. Une résolution de conflits lors de la fusion de la branche par défaut passe par le débrayage (`atelier bypass`) ; la revue d'ensemble la couvre. Une correction demandée par la revue d'ensemble passe par un enfant correctif (§2).
-- **Gel de l'option** : `integration_branch` rejoint `FROZEN_AFTER_SIGNATURE_FIELDS` (`lib/core.mjs:1179`), contrôlé par le hook d'édition de spec.
+- **Gel de l'option** : `integration_branch` rejoint `FROZEN_AFTER_SIGNATURE_FIELDS` (`lib/write-guard.mjs`), contrôlé par le hook d'édition de spec.
 - **Skills et agents à modifier** : `new` (parent demandé avant la branche, point de départ, branche imposée), `plan` (§5 : avec l'option, pousser la branche de l'EPIC au lieu de la fusionner dans la branche par défaut), `review` (base, portée « revue d'ensemble », commits comptés en `--first-parent`), `close` (cible de PR, fusion sans squash et mise en garde sur les dépôts réglés en squash seul, revue d'ensemble de l'EPIC, enfant correctif, fusion de la branche par défaut), agent `reviewer` (portée « revue d'ensemble de l'EPIC »), template `spec-epic.md` (champ commenté). Site : pages du cycle de vie et de l'EPIC, dans la même PR.
-- **Conflit avec EPIC-17** : son lot 2 (`lib/` rangé par domaine) demande qu'aucun autre chantier ne touche `lib/` pendant qu'il tourne, et ce chantier touche `core.mjs` et `cli.mjs`. Ordre à fixer (§4).
+- **Ordre vis-à-vis d'EPIC-17** : après son lot 2, REF-29 (`lib/` rangé par domaine), fusionné le 2026-11-24 (`rel_depends_on: REF-29`, §4). Aucune logique nouvelle dans `lib/core.mjs`.
 
 ## 4. Questions ouvertes
 <!-- Questions à trancher avant ou pendant la conception. Les réponses vont dans decisions.md. Optionnel. -->
@@ -71,7 +72,7 @@ Tranchées par Didier le 2026-11-23 (recommandations retenues) :
 - Q1. Revue d'ensemble de l'EPIC obligatoire avec l'option : **oui** (§2, CA-8).
 - Q2. Rebase interdit dans la branche d'intégration et fusion des enfants sans squash, vérifiés par `close-check` de l'EPIC : **oui**, refus sans autre échappatoire que rétablir l'historique (reflog, branche distante) (CA-9).
 - Q3. Changer l'option après l'ouverture du premier enfant : **hors périmètre**. Relecture critique (même jour, validée par Didier) : refusé dès la signature par le hook d'édition de spec plutôt que par `check-spec`, qui ne connaît ni les enfants ni la version signée (CA-3).
-- Q4. Ordre vis-à-vis d'EPIC-17 : **après son lot 2** (`lib/` rangé par domaine). `rel_depends_on` sera ajouté par `/atelier:amend` quand ce lot aura un identifiant ; pas d'implémentation avant.
+- Q4. Ordre vis-à-vis d'EPIC-17 : **après son lot 2** (`lib/` rangé par domaine). `rel_depends_on` sera ajouté par `/atelier:amend` quand ce lot aura un identifiant ; pas d'implémentation avant. Ce lot est REF-29, livré le 2026-11-24 : dépendance ajoutée le 2026-11-25.
 
 ## 5. Critères d'acceptation
 <!-- Format : - [ ] CA-1 : Étant donné …, quand …, alors …
@@ -92,6 +93,7 @@ Questions si manquant : chaque critère peut-il devenir un test ? Que se passe-t
 - [ ] CA-12 : Étant donné le dépôt, quand on lit les skills `new`, `plan`, `review`, `close`, l'agent `reviewer`, le template `spec-epic.md` et le site, alors chacun décrit le comportement avec l'option (parent demandé avant la branche, point de départ, base de revue, cible et mode de fusion, revue d'ensemble et enfant correctif, fusion de la branche par défaut sans rebase) ; un test vérifie la présence de `baseBranch` dans `review` et `close`, de `atelier base --parent` dans `new`, et de la portée « revue d'ensemble » dans l'agent `reviewer`.
 - [ ] CA-13 : Étant donné une branche sans identifiant dans son nom, partie de la branche d'intégration, dont le dernier commit propre porte `[FEAT-n]` et dans laquelle on a ensuite fusionné la branche d'intégration contenant des commits `[EPIC-m]` et `[FIX-k]` plus récents, quand le chantier actif est détecté par les commits, alors c'est `FEAT-n`.
 - [ ] CA-14 : Étant donné un EPIC à `integration_branch: yes` signé dont des enfants sont ouverts, quand on demande l'étape suivante, alors elle reste « ouvrir ou terminer les enfants » ; quand tous ses enfants sont clos et qu'aucune revue à jour n'existe, alors elle est la revue d'ensemble (`/atelier:review`) ; revue à jour, alors la clôture (`/atelier:close`).
+- [ ] CA-15 : Étant donné un enfant d'un EPIC à `integration_branch: yes` dont la revue est enregistrée, quand on fusionne dans sa branche la branche d'intégration où un enfant frère a livré du code, alors sans conflit la revue reste à jour ; avec une résolution de conflit sur du code, elle est périmée et ses problèmes ne citent que les fichiers résolus, pas ceux de l'enfant frère.
 
 ## 6. Non-fonctionnel
 <!-- Une ligne chacun, ou « N/A » + raison.
@@ -109,3 +111,5 @@ Dépôts git temporaires construits par les tests : branche par défaut, `epic/E
 
 ## Amendements
 <!-- Après signature : une entrée datée par modification de la spec (date, quoi, pourquoi). -->
+- 2026-11-25 : dépendance à REF-29 et recalage sur le code d'après REF-29 et FIX-28, parce que le lot 2 d'EPIC-17 est livré et que la spec citait des emplacements disparus.
+  Ajout de `rel_depends_on: REF-29` (Q4) ; chemins de §1 et §3 recalés sur `lib/` rangé par domaine ; §2 « Pourquoi merge » et nouveau CA-15 : depuis FIX-28, une fusion de la branche par défaut sans résolution de conflit sur du code ne périme pas la revue, et la fusion de la branche d'intégration dans un enfant suit la même règle (sinon chaque synchronisation forcerait une nouvelle revue listant le code des enfants frères).
