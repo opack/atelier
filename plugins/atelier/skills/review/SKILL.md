@@ -30,7 +30,7 @@ Avant de lancer le sous-agent, `atelier review-ids --json` donne les prochains n
 
 Lance le sous-agent `atelier:reviewer` en lui donnant : le chemin de la spec, du plan, de `decisions.md` et de `revue.md` s'ils existent (les revues précédentes disent ce qui a déjà été tranché), la base, la portée (« revue de la tranche N (CA couverts : … selon `plan.md`) », « revue du chantier » ou « chantier à tranche unique »), les prochains numéros `RB` et `RD`, et la liste des points à reprendre. Le reviewer ne calcule pas les numéros lui-même.
 
-Une **relance** est une nouvelle revue de la même portée (même tranche, ou le chantier) après correction de points de la revue précédente ; la revue de la tranche suivante et la revue du chantier sont des premiers passages. Pour une relance, dis-le au reviewer et donne-lui en plus le commit de la revue précédente (consigné dans `revue.md`) et la liste des corrections faites depuis.
+Les revues d'une même portée (même tranche, ou le chantier) sont numérotées : revue 1, revue 2… Une **relance** est une revue 2 ou suivante, faite après correction de points de la revue précédente ; la revue de la tranche suivante et la revue du chantier sont des premiers passages. Pour une relance, dis-le au reviewer et donne-lui en plus le commit de la revue précédente (consigné dans `revue.md`) et la liste des corrections faites depuis.
 
 Présente ses points classés **bloquant** (`RB`) / **à discuter** (`RD`), avec `fichier:ligne`. Présente chaque point par son identifiant suivi d'un résumé du problème en quelques mots, puis la correction proposée, ses deux coûts (correction, non-correction), le verdict du relecteur et ton avis : `RD1, la liste vide plante l'affichage : je propose…, ça coûte…, sinon…, avis : …`. Corriger n'est pas le choix par défaut : l'utilisateur tranche avec les deux coûts sous les yeux. Ses **idées** de relance, sans identifiant, se citent en une ligne : elles n'exigent aucun traitement.
 
@@ -54,7 +54,7 @@ Avant de relancer, consigne cette revue dans `revue.md` (étape 4) : `atelier re
 
 ## 4. Consigner
 
-Dans le dossier du chantier, `revue.md` (créé depuis `atelier template revue` s'il n'existe pas ; remplace `{{ID}}`, `{{TITLE}}`, `{{DATE}}`) : une section `## ` par revue, avec sa portée (« tranche N » ou « chantier »), la date, le commit revu (`git rev-parse --short HEAD`), la base, les points et leur traitement. Une relance se reconnaît à sa portée, suivie de `(relance)` (`## Revue : tranche 1 (relance) : <date>`), et à une ligne `- Relance depuis : <commit de la revue précédente> (corrections : <commits>)` sous la base.
+Dans le dossier du chantier, `revue.md` (créé depuis `atelier template revue` s'il n'existe pas ; remplace `{{ID}}`, `{{TITLE}}`, `{{DATE}}`) : une section `## ` par revue, avec sa portée (« tranche N » ou « chantier »), la date, le commit revu (`git rev-parse --short HEAD`), la base, les points et leur traitement. Le titre de section porte le numéro de la revue dans sa portée : `## Revue 1 : tranche 1 : <date>`, puis `## Revue 2 : tranche 1 : <date>` pour la relance, qui ajoute sous la base une ligne `- Corrections depuis la revue 1 : <commits>`.
 
 Les points vont dans les tableaux `### Bloquant` (`RB`) et `### À discuter` (`RD`), titres exacts. La cellule « Point » a la forme `<ID>[ (repris)| (ex-<ID>)]. <intitulé>` :
 - point nouveau : `RB2. Push non vérifié` ;

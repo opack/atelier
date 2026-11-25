@@ -5,7 +5,7 @@ Portée : « tranche N » (diff de la tranche), « chantier » (revue transversa
 Points : RB1, RB2… (bloquants) et RD1, RD2… (à discuter), numérotés en continu sur tout le chantier ; prochains numéros par `atelier review-ids`. Cellule « Point » : `RB2. Intitulé` ; un point encore ouvert repris dans une revue suivante : `RB2 (repris). Intitulé` ; un point qui change de gravité : `RB4 (ex-RD3). Intitulé`. Aucun point : `Aucun`.
 Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé (commit), test ajouté, spec amendée, exception acceptée (par qui, pourquoi), écarté (pourquoi), reporté (chantier, « Dette et suites » du bilan, ou `reporté (tranche N)`), requalifié (`requalifié (RB4)`), sans objet. Une cellule vide ou sans mot-clé laisse le point ouvert : `atelier set-reviewed` et `atelier close-check` refusent alors. -->
 
-## Revue : tranche 1 : 2026-11-25
+## Revue 1 : tranche 1 : 2026-11-25
 - Commit revu : 4bfd335
 - Base : a16af62
 
@@ -22,10 +22,10 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 
 - Bilan de la revue : deux points à discuter, corrigés à l'accord de Didier (une ligne de texte, trois regex).
 
-## Revue : tranche 1 (relance) : 2026-11-25
+## Revue 2 : tranche 1 : 2026-11-25
 - Commit revu : 742c0ee
 - Base : a16af62
-- Relance depuis : 4bfd335 (corrections : d417792)
+- Corrections depuis la revue 1 : d417792
 
 ### Bloquant
 | Point | Fichier | Traitement |
@@ -39,7 +39,7 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 
 - Bilan de la revue : RD1 et RD2 vérifiés corrigés, sans régression ; aucune idée.
 
-## Revue : tranche 2 : 2026-11-25
+## Revue 1 : tranche 2 : 2026-11-25
 - Commit revu : caa736b
 - Base : efbe964
 
@@ -56,10 +56,10 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 
 - Bilan de la revue : deux points à discuter triviaux, corrigés à l'accord de Didier.
 
-## Revue : tranche 2 (relance) : 2026-11-25
+## Revue 2 : tranche 2 : 2026-11-25
 - Commit revu : 23d04c1
 - Base : efbe964
-- Relance depuis : caa736b (corrections : 81bfe38)
+- Corrections depuis la revue 1 : 81bfe38
 
 ### Bloquant
 | Point | Fichier | Traitement |
@@ -73,7 +73,7 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 
 - Bilan de la revue : RD3 et RD4 vérifiés corrigés, sans régression ; aucune idée.
 
-## Revue : chantier : 2026-11-25
+## Revue 1 : chantier : 2026-11-25
 - Commit revu : 62c601f
 - Base : 67ca088
 
@@ -90,10 +90,10 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 
 - Bilan de la revue : deux points à discuter, corrigés.
 
-## Revue : chantier (relance) : 2026-11-25
+## Revue 2 : chantier : 2026-11-25
 - Commit revu : fc9ea6e
 - Base : 67ca088
-- Relance depuis : 62c601f (corrections : 8909015)
+- Corrections depuis la revue 1 : 8909015
 
 ### Bloquant
 | Point | Fichier | Traitement |

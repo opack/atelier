@@ -87,7 +87,7 @@ Après des corrections, on relance une **revue**. On continue jusqu’à ce que 
 
 ### Relance
 
-Une **relance** est une nouvelle revue de la même portée (même tranche, ou le chantier) après correction de points de la revue précédente. La revue de la tranche suivante et la revue du chantier sont des premiers passages, qui couvrent tout leur périmètre.
+Les revues d’une même portée (même tranche, ou le chantier) sont numérotées : revue 1, revue 2… Une **relance** est une revue 2 ou suivante, faite après correction de points de la revue précédente. La revue de la tranche suivante et la revue du chantier sont des premiers passages, qui couvrent tout leur périmètre.
 
 Sans règle, un relecteur relancé tire de nouvelles remarques à chaque passage, y compris sur du code qu’il avait déjà lu : les revues s’enchaînent sans converger. En relance, `/atelier:review` donne au reviewer le commit de la revue précédente et la liste des corrections faites depuis ; le reviewer :
 
@@ -97,7 +97,7 @@ Sans règle, un relecteur relancé tire de nouvelles remarques à chaque passage
 
 ## 4. Consigner, valider, passer à la suite
 
-Chaque revue est consignée dans `revue.md`, dans le dossier du chantier : une section `## ` par revue, avec sa portée (tranche N ou chantier, suivie de `(relance)` pour une [relance](#relance)), la date, le commit revu (et, pour une relance, la ligne `Relance depuis :` qui cite le commit de la revue précédente et les corrections), puis les tableaux `### Bloquant` et `### À discuter`, une ligne par point (`RB2. Intitulé`, ou `Aucun`) avec son traitement. Le relecteur lit les revues précédentes pour ne pas revenir sur ce qui est tranché.
+Chaque revue est consignée dans `revue.md`, dans le dossier du chantier : une section `## ` par revue, avec son numéro dans sa portée et cette portée (`## Revue 2 : tranche 1 : <date>`), la date, le commit revu (et, pour une [relance](#relance), la ligne `Corrections depuis la revue 1 :` qui cite les commits de correction), puis les tableaux `### Bloquant` et `### À discuter`, une ligne par point (`RB2. Intitulé`, ou `Aucun`) avec son traitement. Le relecteur lit les revues précédentes pour ne pas revenir sur ce qui est tranché.
 
 Quand chaque point a un traitement, l’agent vous présente le résultat et vous demande **explicitement** de valider. Sans votre accord, rien n’est écrit : la tranche reste en cours. Après votre « oui », `atelier set-reviewed` :
 
