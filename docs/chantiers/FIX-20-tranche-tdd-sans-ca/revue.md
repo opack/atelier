@@ -55,3 +55,21 @@ Traitement d'un point : corrigé (commit), test ajouté, spec amendée, exceptio
 | RD7. Règle « `slice_tdd` sinon `tdd` » réécrite dans `review.mjs` et `next-step.mjs` | plugins/atelier/lib/review.mjs:101 | corrigé (6d2d1b2) |
 
 - Bilan de la revue : aucun bloquant ; RD3 et RD4 (tranche 2) réglés ; tranche 3 validée par Didier le 2026-11-25.
+
+## Revue : tranche 4 : 2026-11-25
+- Commit revu : 2235812
+- Base : 6d2d1b2 (slice_base)
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD8. `check-plan <chemin>` écrit `slice_tdd` d'après un fichier qui n'est pas le `plan.md` du chantier | plugins/atelier/lib/cli/slices.mjs:68 | reporté (tranche 5) : contournement tordu, mais la correction tient en une condition (écrire `slice_tdd` seulement pour le `plan.md` du chantier) ; test avec ceux d'OD13 ; accord de Didier |
+| RD9. Garde-fous de `checkPlanValues` en double (réouverture recopiée de `sliceState`) ou hors logique pure (EPIC), garde `legacy` sans effet | plugins/atelier/lib/slices.mjs:110 | reporté (tranche 5) : utilitaire partagé, refus EPIC dans `checkPlanValues`, garde réduite au modèle `none` ; test avec OB3 ; accord de Didier |
+
+- Bilan de la revue : aucun bloquant ; RD1 et RD6 (reportés), OD3, OD6 et OD8 réglés et testés ; tranche 4 validée par Didier le 2026-11-25.
+- Hors chantier : la spec de FEAT-4 contient un commentaire HTML jamais refermé qui avale CA-6 à CA-8 (idée restante de FIX-22).
