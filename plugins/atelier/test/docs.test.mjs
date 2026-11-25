@@ -216,7 +216,7 @@ describe('calibrated review points in the documentation', () => {
   const pages = {
     'site/cycle/revue.md': [/### Bilan de chaque point/, /coût de la non-correction/, /silencieux/, /option la moins chère/, /### Relance/, /que s’il est bloquant/, /idées/],
     'site/cycle/signature.md': [/revue#bilan-de-chaque-point/, /revue#relance/],
-    'site/cycle/implementation.md': [/revue#bilan-de-chaque-point/, /revue#relance/],
+    'site/cycle/implementation.md': [/option la moins chère/, /revue#bilan-de-chaque-point/, /revue#relance/],
     'README.md': [/coût de la non-correction/, /option la moins chère/, /relance/],
   }
 
