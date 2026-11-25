@@ -47,7 +47,8 @@ Format : - CA-1 : Étant donné…, quand…, alors… -->
 - CA-6 : Étant donné un nouveau clone ou un nouveau worktree d'un dépôt pour lequel un compagnon est enregistré, sans aucune configuration locale, quand on y ouvre Claude, alors atelier trouve le compagnon et, si un seul chantier ouvert déclare la branche courante, le rend actif ; sinon il dit pourquoi aucun chantier n'est actif. atelier n'est jamais silencieux sur un dépôt pour lequel un compagnon est enregistré.
 - CA-7 : Étant donné un projet dont la langue est l'anglais et un utilisateur dont la langue est le français, quand on mène un chantier complet, alors les fichiers d'atelier (spec, plan, revue, décisions, bilan), les commits et les PR sont en anglais, tandis que les messages des hooks et de la CLI, les questions des skills et la présentation des revues sont en français et citent les titres de sections tels qu'ils figurent dans les fichiers (en anglais).
 - CA-8 : Étant donné un utilisateur qui n'a réglé aucune langue personnelle, quand atelier lui parle, alors il utilise la langue du projet.
-- CA-9 : Étant donné le site, quand on lance `npm run build` dans `site/`, alors il réussit et explique le chantier actif (pointeur, `atelier use`, repli) le travail sur un dépôt sans atelier (dépôt compagnon, registre, où lancer Claude) et les deux réglages de langue.
+- CA-9 : Étant donné une pseudo-langue de projet au vocabulaire factice (par exemple « [Amendements~] »), quand les tests de lecture des documents (spec, plan, revue, amendements) tournent avec ce vocabulaire, alors ils passent ; un terme resté en dur dans le code ou une tolérance propre au français (par exemple `requalifié\p{L}*` pour l'accord) les fait échouer. Ce critère est porté par le premier enfant « langues » (choix du vocabulaire par langue).
+- CA-10 : Étant donné le site, quand on lance `npm run build` dans `site/`, alors il réussit et explique le chantier actif (pointeur, `atelier use`, repli), le travail sur un dépôt sans atelier (dépôt compagnon, registre, où lancer Claude) et les deux réglages de langue.
 
 ## 4. Cadre
 <!-- Le cadre commun aux chantiers enfants : choix fonctionnels (vocabulaire, parcours, règles métier) et techniques
@@ -83,7 +84,7 @@ Règles associées :
 - Les titres de sections que le code lit (`check-spec`, revue, clôture…) viennent d'un **dictionnaire par langue du projet**. Les messages destinés à l'utilisateur viennent d'un **catalogue par langue de l'utilisateur**, et citent les titres du dictionnaire du projet : un utilisateur francophone sur un projet anglais lit « section `Acceptance criteria` : aucun critère numéroté ».
 - Les skills et les agents sont écrits dans une langue pivot, l'anglais, et produisent les documents dans la langue du projet et les échanges dans celle de l'utilisateur.
 - Langues livrées : français et anglais. Le site reste en français.
-- Prérequis : le vocabulaire lu par le code est centralisé en un seul endroit, par un REF rattaché à l'EPIC-17, avant le premier enfant « langues ».
+- Prérequis : le vocabulaire lu par le code est centralisé en un seul endroit par REF-34 (lot 5 de l'EPIC-17), avant le premier enfant « langues ». REF-34 ne rend pas ce vocabulaire injectable : c'est le premier enfant « langues » qui le fait, et qui le prouve par la pseudo-langue (CA-9).
 
 **Contraintes communes.** Node ≥ 20, aucune dépendance ; logique pure dans `lib/<domaine>.mjs`, entrées / sorties dans `lib/cli/<domaine>.mjs` (rangement de REF-29) ; toute évolution de hook a son test ; code et commentaires en anglais.
 
