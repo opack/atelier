@@ -17,17 +17,18 @@ rel_parent: EPIC-17
 ## 1. Périmètre
 <!-- Modules, fichiers, couches concernés. Hors périmètre explicite. -->
 
-Les termes français que le code de `plugins/atelier/lib/` lit ou écrit dans les documents d'un chantier, c'est-à-dire la grammaire des documents :
+Les termes français que le code de `plugins/atelier/lib/` lit ou écrit dans les documents d'un chantier, c'est-à-dire la grammaire des documents (SB1) :
 
-- titres de section exigés par type de spec et sections de critères (`REQUIRED_SECTIONS`, `CRITERIA_SECTIONS` dans `lib/spec.mjs`) ;
-- titre de la section « Amendements » (`AMENDMENTS_HEADING` et l'ajout d'une section dans `lib/spec.mjs`) ;
-- titre de la section « Tranches » du plan (`lib/slices.mjs`) ;
-- titres des tableaux de revue « Bloquant » et « À discuter », colonnes « Point », « Fichier », « Traitement » et mots-clés de traitement (« corrigé », « écarté »…) dans `lib/review-points.mjs` ;
-- les messages qui citent l'un de ces termes (`lib/write-guard.mjs`, `lib/review-points.mjs`, et tout autre module de `lib/` ou `lib/cli/` qui en cite un) : le terme y est tiré du vocabulaire au lieu d'être écrit en dur, le texte du message ne change pas.
+- spec : titres de section exigés par type et sections de critères (`REQUIRED_SECTIONS`, `CRITERIA_SECTIONS` dans `lib/spec.mjs`) ; titre de la section « Amendements » (lecture et création) ;
+- amendements écrits et relus par le code : « tests rouverts » et « tests regelés » (`lib/tdd.mjs`, relus aussi par `lib/slices.mjs`) ;
+- plan : titre de la section « Tranches » (`lib/slices.mjs`) ;
+- revue (`lib/review-points.mjs`) : titres des tableaux « Bloquant » et « À discuter », et leurs formes normalisées en minuscules ; anciennes sections « Tour » ; colonnes « Point », « Fichier », « Traitement » ; mots-clés de traitement (« corrigé », « écarté »…) ; marqueurs de point « (repris) » et « (ex-RBn) » ; ligne vide « Aucun » ; formes « reporté (tranche N) » et « requalifié (RBn) » ;
+- les deux-points, précédés d’une espace en français et pas en anglais (SD2) : dans les lignes « Libellé : » que `meaningfulContent` tient pour vides et dans le début d'une entrée d'amendement (`ENTRY_START`, entrées écrites par `lib/tdd.mjs` et `lib/spec.mjs`). Il entre dans le vocabulaire sous la clé `colon`, valeur ` :` en français. Le format de date AAAA-MM-JJ, lui, n'est pas une question de langue (il se trie) et reste fixe ;
+- les citations de ces termes dans les messages (`lib/write-guard.mjs`, `lib/review-points.mjs`, et tout autre module de `lib/` ou `lib/cli/`) : un terme **cité** comme élément du document (« la section « ## Amendements » », la liste des mots-clés de traitement) est tiré du vocabulaire. Le texte du message ne change pas.
 
 Hors périmètre :
 - aucune traduction, aucun choix de langue, aucun réglage : le vocabulaire reste le seul français (EPIC-14) ;
-- le texte des messages eux-mêmes (catalogue de messages : EPIC-14) ;
+- le texte des messages eux-mêmes, et tout mot employé dans une phrase plutôt que cité comme élément du document (« reporté à une tranche », « requalifiée ») : une phrase se traduit entière, jamais mot à mot, par le catalogue de messages d'EPIC-14 (SD4) ;
 - skills, agents, templates, site, et les chaînes attendues par les tests existants, qui restent en français ;
 - le front matter, déjà neutre (`status`, `tdd`, `rel_*`…).
 
@@ -40,8 +41,8 @@ EPIC-14 (atelier sur n'importe quel dépôt) doit permettre des documents dans u
 ## 3. État actuel → état cible
 <!-- Ce qui existe, ce qu'on veut obtenir. -->
 
-- **Actuel** : les termes sont dispersés (`lib/spec.mjs:15-28`, `:128`, `:191` ; `lib/slices.mjs:12` ; `lib/review-points.mjs:8-10`, `:154` ; messages de `lib/write-guard.mjs:64`, `:74`, et de `lib/review-points.mjs`).
-- **Cible** : un module pur `lib/vocabulary.mjs`, sans import, expose le vocabulaire français sous des clés canoniques en anglais (ex. `sections.REF.scope`, `amendments`, `slices`, `review.tables.blocking`, `review.columns.treatment`, `review.treatments.fixed`). Les autres modules le lisent au lieu d'écrire les termes. Les exports existants (`REQUIRED_SECTIONS`, etc.) restent disponibles et donnent les mêmes valeurs. Domaine du module et de son test : `vocabulary`.
+- **Actuel** : les termes sont dispersés dans `lib/spec.mjs`, `lib/tdd.mjs`, `lib/slices.mjs`, `lib/review-points.mjs` (tableaux, expressions régulières) et cités en dur dans les messages de `lib/write-guard.mjs` et `lib/review-points.mjs`.
+- **Cible** : un module pur `lib/vocabulary.mjs`, sans import, exporte `VOCABULARY`, le vocabulaire français sous des clés canoniques en anglais : `sections.<TYPE>` (une clé par section exigée), `criteria.<TYPE>`, `amendments`, `amendmentEntries.reopened`, `amendmentEntries.refrozen`, `slices`, `colon`, `review.tables.blocking`, `review.tables.discuss`, `review.legacyRound`, `review.columns.point`, `review.columns.file`, `review.columns.treatment`, `review.treatments.<clé>` (huit clés), `review.markers.resumed`, `review.markers.formerly`, `review.empty`. Les autres modules le lisent au lieu d'écrire les termes. Les exports existants (`REQUIRED_SECTIONS`, etc.) restent disponibles et donnent les mêmes valeurs. Domaine du module et de son test : `vocabulary`.
 
 ## 4. Preuve de non-régression
 <!-- Tests existants qui couvrent la zone ; tests de caractérisation à ajouter AVANT de toucher au code ; vérifications manuelles restantes.
@@ -49,7 +50,7 @@ Question si manquant : les tests actuels détecteraient-ils une régression ici 
 
 - Les tests existants couvrent tous ces termes avec des documents réels en français : `spec.test.mjs` (sections exigées, critères, amendements), `slices.test.mjs` (« Tranches »), `review-points-*.test.mjs` (tableaux, colonnes, mots-clés, messages), `write-guard.test.mjs` (messages sur « Amendements »). Ils ne sont pas modifiés.
 - Comparaison par script, sur le modèle de `docs/chantiers/REF-29-lib-par-domaine/check-moves.mjs` : même nombre de tests rapporté par `node --test`, tous verts, mêmes noms et mêmes corps avant et après.
-- Un test d'architecture ajouté (CA-2) empêche le retour d'un terme écrit en dur.
+- Un test d'architecture ajouté (CA-2) empêche le retour d'un terme écrit en dur à une position de grammaire.
 
 ## 5. Stratégie
 <!-- Étapes petites et réversibles, chacune fusionnable seule.
@@ -64,16 +65,16 @@ Une seule PR ; chaque étape laisse la suite verte. Placement dans EPIC-17 : apr
 <!-- Ce qui peut casser, impact données, performance, migration. Optionnel. -->
 
 - Conflits avec les branches ouvertes qui touchent `spec.mjs` ou `review-points.mjs` (lot 3 d'EPIC-17, FIX-20, FEAT-27) : d'où le placement après elles.
-- Un terme courant (« Description », « Point », « Question ») peut apparaître légitimement dans un message : le test d'architecture ne vise que les termes propres à la grammaire (CA-2).
+- Un terme courant (« Description », « Point », « Question ») ou un mot-clé employé dans une phrase peut apparaître légitimement dans un message : le test d'architecture ne vise que les positions de grammaire (CA-2), pas la prose.
 
 ## 7. Critère de fin
 <!-- Quand s'arrête-t-on ? Qu'est-ce qui est volontairement laissé en l'état ? -->
 
 - CA-1 : Étant donné la branche du chantier, quand on compare `node --test` avant et après le chantier, alors le nombre de tests, leurs noms et leurs corps sont identiques hormis les tests ajoutés par ce chantier, et tous passent.
-- CA-2 : Étant donné le dépôt, quand `npm test` tourne, alors un test d'architecture échoue si un fichier de `lib/` ou de `lib/cli/` autre que `lib/vocabulary.mjs` contient, dans un littéral de chaîne ou une expression régulière, l'un des termes du vocabulaire, hormis les mots courants qu'il exclut nommément (« Description », « Point », « Fichier », « Question », « Budget », « Cadre », « Quoi », « Pourquoi ») ; et si `lib/vocabulary.mjs` importe un module.
-- CA-3 : Étant donné `lib/vocabulary.mjs`, quand un test le lit, alors il contient sous des clés canoniques en anglais chaque titre de `REQUIRED_SECTIONS` et `CRITERIA_SECTIONS` de chaque type, « Amendements », « Tranches », « Bloquant », « À discuter », les trois colonnes de revue et les huit mots-clés de traitement, et `REQUIRED_SECTIONS` exporté par `lib/spec.mjs` garde ses valeurs actuelles.
+- CA-2 : Étant donné le dépôt, quand `npm test` tourne, alors un test d'architecture (SB2) lit chaque fichier de `lib/` et `lib/cli/` autre que `lib/vocabulary.mjs`, commentaires retirés, et échoue s'il trouve, pour l'un des termes de `VOCABULARY` (liste calculée depuis le module, pas figée dans le test), à l'une de ces positions de grammaire : un littéral de chaîne ou de gabarit dont le contenu entier est le terme ; une expression régulière qui contient le terme ; le terme cité entre « » dans une chaîne, seul ou précédé de `## ` ou `### `. La comparaison respecte la casse. Les mots courants exclus nommément (« Description », « Point », « Fichier », « Question », « Budget », « Cadre », « Quoi », « Pourquoi ») ne sont exclus que comme terme entier : « Pourquoi maintenant » reste visé. Le test échoue aussi si `lib/vocabulary.mjs` importe un module. Des exemples fabriqués montrent la règle en échec pour chaque position (chaîne, gabarit, expression régulière, citation entre « ») et pour l'import, et montrent qu'un mot-clé dans une phrase (« reporté à une tranche ») n'est pas signalé.
+- CA-3 : Étant donné `lib/vocabulary.mjs`, quand un test le lit, alors `VOCABULARY` porte exactement les clés listées au §3 avec les valeurs françaises d'aujourd'hui (SD3), et `REQUIRED_SECTIONS`, ainsi que les listes de tableaux, de colonnes et de mots-clés de traitement lues par `lib/review-points.mjs`, gardent leurs valeurs actuelles.
 
-Laissé en l'état : les textes des messages, les skills, agents, templates, le site, et tout choix de langue (EPIC-14).
+Laissé en l'état : les textes des messages et les mots employés dans leurs phrases, les skills, agents, templates, le site, le format de date AAAA-MM-JJ, et tout choix de langue (EPIC-14).
 
 ## Amendements
 <!-- Après signature : une entrée datée par modification de la spec. -->
