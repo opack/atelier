@@ -9,9 +9,10 @@ source: TEC-15, tranche 6 (site, README, montée de version)
 signed_by: Opack
 signed_at: 2026-11-23
 tests_commit: 
-slice: 6
-slice_base: b15ce46be72f3997f1aee4e0ac69b674819c015b
-slice_tdd: no
+slice: chantier
+slice_base: e0e601939dc8b57d53e2f5e28eb074bb4559ddeb
+slice_tdd: 
+last_slice: 6
 ---
 
 

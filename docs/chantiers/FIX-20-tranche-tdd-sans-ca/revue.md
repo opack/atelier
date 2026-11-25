@@ -89,3 +89,22 @@ Traitement d'un point : corrigé (commit), test ajouté, spec amendée, exceptio
 | Aucun | | |
 
 - Bilan de la revue : aucun point ; RD8, RD9 (tranche 4), OB3, OD11, OD12 et OD13 réglés et testés ; OD14 et OD16 reportés en tranche 6 (decisions.md) ; tranche 5 validée par Didier le 2026-11-25.
+
+## Revue : tranche 6 : 2026-11-25
+- Commit revu : 847f299
+- Base : b15ce46 (slice_base ; fusion de main 952d32f exclue de la relecture)
+- Corrections depuis la première relecture : e0e6019
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD10. `slice_tdd` absent des listes de champs réservés à la commande (règle 4 de la garde, README) | site/reference/configuration.md:19 | corrigé (e0e6019) |
+| RD11. Condition des « tests d'abord » décrite au niveau du chantier (`tdd: yes`) et non de la tranche | site/cycle/tests.md:5 | corrigé (e0e6019) : aussi règle 8 de configuration.md, vue-ensemble.md et skill `review` |
+| RD12. Import en double depuis `helpers.mjs` | plugins/atelier/test/tdd-slice-status.test.mjs:4 | écarté : la correction modifierait une ligne d'un test figé de la tranche 5, pour un bruit sans effet ; accord de Didier |
+
+- Bilan de la revue : aucun bloquant ; OD14 et OD16 réglés et testés ; relance propre après e0e6019 ; tranche 6 validée par Didier le 2026-11-25.
