@@ -39,3 +39,9 @@
 - Contexte : `atelier freeze-tests` plante (`ENOBUFS`) : `testFilesWithRemovedLines` (`lib/cli/tdd.mjs`) lance un `git diff` complet depuis `slice_base`, non limité aux `testPaths` ; après la fusion de `main` (REF-29), il dépasse le tampon par défaut d'`execFileSync` (1 Mo).
 - Retenu (choix de Didier) : `freeze-tests` lancé depuis une copie du plugin hors du dépôt, identique sauf `maxBuffer` dans `gitRaw` ; spec écrite par la commande (`tests_commit: a48e750`, entrée de regel). Bug porté par un FIX séparé.
 - Écarté : intégrer le bug à FIX-28, parce qu'il a sa propre cause (taille du diff) ; corriger d'abord, parce que FIX-20 resterait bloqué pour un résultat identique.
+
+## 2026-11-24 : tranche 2, points de surapprentissage
+- OB1 (corrigé) : `tests_commit` ne vaut `implementing` que si le chantier ou la tranche est en TDD ; un chantier passé en `tdd: no` après le gel (modèles `single`, `legacy`) revient à `none`, comme avant. Le cas n'est pas couvert par les tests figés de CA-4 : signalé à Didier.
+- OD4 (reporté à la tranche 4) : en revue d'ensemble, une réouverture en attente donne `writing-tests` même pour un chantier `tdd: no`. Tant que `reopen-tests` reste accepté dans une tranche « TDD : non », une réouverture peut y rester en attente ; CA-10 (tranche 4) doit la refuser.
+- OD5 (corrigé) : `slice_tdd` lu sans casse.
+- Hors tranche : `codeCommittedFact` et `sliceCodeFiles` (`lib/cli/`) lisent encore `tdd` du chantier ; prévu en tranche 5 (CA-13).

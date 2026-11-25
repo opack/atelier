@@ -7,15 +7,34 @@ import { ENTRY_START, parseAmendments } from './spec.mjs'
 
 // ---------- Test-driven phases ----------
 
-// 'none'          : the chantier does not follow TDD (`tdd: no`, decided by the human).
-// 'writing-tests' : TDD, tests are being written; implementation code is forbidden.
-// 'implementing'  : TDD, tests are committed and frozen; only implementation code may change.
-export function testDrivenPhase(chantier) {
+// TDD that applies to the current slice: `slice_tdd` (written by the atelier command from the
+// plan) when set, otherwise the `tdd` of the chantier.
+export function effectiveTdd(chantier) {
   const data = chantier?.spec?.data ?? {}
-  if (data.tdd !== 'yes') {
+  const sliceTdd = String(data.slice_tdd ?? '').trim().toLowerCase()
+  return sliceTdd || data.tdd
+}
+
+// 'none'          : no « tests first » for the current slice: the chantier or the slice does not
+//                   follow TDD (decided by the human), or the review of the whole chantier.
+// 'writing-tests' : TDD, tests are being written; implementation code is forbidden.
+// 'implementing'  : tests are committed and frozen; only implementation code may change.
+// Tests frozen under TDD (of the chantier or of the slice) stay frozen whatever the plan says;
+// a chantier switched to `tdd: no` after the freeze, without slice TDD, has no frozen tests. During the review of the whole chantier,
+// tests are only written after a reopening, still pending.
+export function testDrivenPhase(chantier) {
+  const { model, slice } = sliceState(chantier)
+  if (model === 'none') {
     return 'none'
   }
-  return data.tests_commit ? 'implementing' : 'writing-tests'
+  const data = chantier?.spec?.data ?? {}
+  if (data.tests_commit && (data.tdd === 'yes' || effectiveTdd(chantier) === 'yes')) {
+    return 'implementing'
+  }
+  if (slice === 'chantier') {
+    return isRefreeze(parseAmendments(chantier.spec.body ?? '').entries) ? 'writing-tests' : 'none'
+  }
+  return effectiveTdd(chantier) === 'yes' ? 'writing-tests' : 'none'
 }
 
 // Fixed labels of the entries written by the atelier command.
