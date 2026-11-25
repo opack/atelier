@@ -16,7 +16,9 @@ La signature est une décision humaine : « cette spec suffit pour lancer le cha
 
 ## 2. Relecture critique
 
-`atelier review-ids --json` donne le premier numéro libre des points de relecture de spec (`next.SB`, `next.SD`). Lance le sous-agent `atelier:spec-critic` avec le chemin de la spec (et le dossier racine du projet) et ces deux numéros. Présente ses remarques classées **bloquant** (`SB1`, `SB2`…) / **à discuter** (`SD1`…), chacune avec son identifiant, sans les noyer. Si tu relances le sous-agent dans la même session, continue la numérotation à la suite de ce que tu as déjà présenté. Pour chaque point retenu par l'utilisateur, modifie la spec ; quand le point change quelque chose, cite son identifiant dans la spec ou dans `decisions.md`. Les points écartés n'ont pas besoin d'être tracés.
+`atelier review-ids --json` donne le premier numéro libre des points de relecture de spec (`next.SB`, `next.SD`). Lance le sous-agent `atelier:spec-critic` avec le chemin de la spec (et le dossier racine du projet) et ces deux numéros. Présente ses remarques classées **bloquant** (`SB1`, `SB2`…) / **à discuter** (`SD1`…), sans les noyer. Présente chaque point par son identifiant suivi d'un résumé du problème en quelques mots, puis la correction proposée, ses deux coûts (correction, non-correction), le verdict du relecteur et ton avis : `SD1, la liste vide n'est pas traitée : je propose…, ça coûte…, sinon…, avis : …`. Corriger n'est pas le choix par défaut : l'utilisateur tranche avec les deux coûts sous les yeux. Ses **idées** de relance, sans identifiant, se citent en une ligne, sans traitement.
+
+Si tu relances le sous-agent dans la même session après des retouches, c'est une **relance** : dis-le-lui et donne-lui les points du passage précédent et les sections de la spec modifiées depuis ; continue la numérotation à la suite de ce que tu as déjà présenté. Un passage dans une nouvelle session est un premier passage. Pour chaque point retenu par l'utilisateur, modifie la spec ; quand le point change quelque chose, cite son identifiant dans la spec ou dans `decisions.md`. Les points écartés n'ont pas besoin d'être tracés.
 
 ## 3. Confirmation
 
