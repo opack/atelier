@@ -16,6 +16,14 @@ La signature est une décision humaine : « cette spec suffit pour lancer le cha
 
 ## 2. Relecture critique
 
+Modèle et effort du sous-agent : une seule fois pour toute la commande, relances comprises, lance
+
+```
+atelier agent-settings spec-critic --user-model '${user_config.spec_critic_model}' --user-effort '${user_config.spec_critic_effort}' --args '$ARGUMENTS'
+```
+
+Si l'argument de la commande contient une apostrophe, arrête-toi sans lancer la commande et demande-le sans apostrophe : il est placé entre guillemets simples. Si la commande échoue, affiche son message et arrête-toi. Sinon, elle rend en JSON `model`, `effort`, leurs sources (`argument`, `utilisateur`, `défaut`) et des avertissements. Annonce le modèle, l’effort, leur source et les avertissements, par exemple « spec-critic : opus / high (défaut) ». Passe `model` et `effort` à l’appel du sous-agent. Si cet appel est refusé parce que le modèle n'est pas disponible pour l'organisation, arrête-toi et indique l'argument de la commande ou l'option (`/plugin configure atelier`) à changer.
+
 `atelier review-ids --json` donne le premier numéro libre des points de relecture de spec (`next.SB`, `next.SD`). Lance le sous-agent `atelier:spec-critic` avec le chemin de la spec (et le dossier racine du projet) et ces deux numéros. Présente ses remarques classées **bloquant** (`SB1`, `SB2`…) / **à discuter** (`SD1`…), chacune avec son identifiant, sans les noyer. Si tu relances le sous-agent dans la même session, continue la numérotation à la suite de ce que tu as déjà présenté. Pour chaque point retenu par l'utilisateur, modifie la spec ; quand le point change quelque chose, cite son identifiant dans la spec ou dans `decisions.md`. Les points écartés n'ont pas besoin d'être tracés.
 
 ## 3. Confirmation

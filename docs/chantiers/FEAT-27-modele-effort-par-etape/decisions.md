@@ -65,3 +65,11 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 ## 2026-11-24 : traitement du contrôle de surapprentissage, tranche 3 (OD11, OD12)
 - OD11, corrigé : une option répétée (`--args 'opus sonnet' --args ''`) écrasait la précédente et contournait le refus de CA-7. Une option répétée est maintenant refusée (code 1).
 - OD12, comme OD5 et OD10 : les tests de la commande sont un peu faibles (option utilisateur valide non transmise de bout en bout, refus de deux efforts non testé par la commande). Le module d'entrées / sorties est mince et la logique est couverte en tranche 1, donc on ne rouvre pas les tests.
+
+## 2026-11-24 : traitement du contrôle de surapprentissage, tranche 4 (OD13 à OD16)
+- OD3 (reporté de la tranche 1) et OD13, corrigés : `build` sépare les deux cas du reste de l'argument. En `SPIKE` sans TDD, c'est la tranche, et une tranche absente du plan fait arrêter. Ailleurs, un numéro de tranche est ignoré et tout autre mot fait arrêter (modèle mal écrit, `inherit`).
+- OD14, corrigé : après un « Arrêt : test à revoir », `build` répond au hook de fin sans relancer `implementer`.
+- OD15, corrigé : la voie sans TDD reprend l'arrêt sur un test faux et la consignation des décisions.
+- OD16, corrigé : un nombre pair d'apostrophes dans l'argument permettait de sortir des guillemets simples et d'injecter du shell. Les trois skills refusent maintenant tout argument qui contient une apostrophe, avant de lancer la commande. La garantie de la §6 repose donc sur cette consigne, en plus des guillemets.
+- Remarque mineure, corrigée : `review` précise que la correction confiée à `/atelier:build` passe par `atelier:implementer`.
+- Tests jugés faibles (CA-11, CA-12, consignes non testées) : comme OD5, OD10 et OD12, on ne rouvre pas les tests.

@@ -28,12 +28,20 @@ Base de comparaison :
 
 Avant de lancer le sous-agent, `atelier review-ids --json` donne les prochains numéros (`next.RB`, `next.RD`) et les points ouverts (`open` : `id`, `title`, `section`). Ajoute-y les points dont la dernière occurrence dans `revue.md` est `reporté (tranche N)` vers la tranche en cours (ou vers une tranche passée) : ils doivent être repris et traités dans cette revue.
 
+Modèle et effort du reviewer : une seule fois pour toute la commande, relances comprises, lance
+
+```
+atelier agent-settings reviewer --user-model '${user_config.reviewer_model}' --user-effort '${user_config.reviewer_effort}' --args '$ARGUMENTS'
+```
+
+Si l'argument de la commande contient une apostrophe, arrête-toi sans lancer la commande et demande-le sans apostrophe : il est placé entre guillemets simples. Si la commande échoue, affiche son message et arrête-toi. Sinon, elle rend en JSON `model`, `effort`, leurs sources (`argument`, `utilisateur`, `défaut`) et des avertissements. Annonce le modèle, l’effort, leur source et les avertissements, par exemple « reviewer : opus / high (défaut) ». Passe `model` et `effort` à l’appel du sous-agent, à chaque revue. Si cet appel est refusé parce que le modèle n'est pas disponible pour l'organisation, arrête-toi et indique l'argument de la commande ou l'option (`/plugin configure atelier`) à changer.
+
 Lance le sous-agent `atelier:reviewer` en lui donnant : le chemin de la spec, du plan, de `decisions.md` et de `revue.md` s'ils existent (les revues précédentes disent ce qui a déjà été tranché), la base, la portée (« revue de la tranche N (CA couverts : … selon `plan.md`) », « revue du chantier » ou « chantier à tranche unique »), les prochains numéros `RB` et `RD`, et la liste des points à reprendre. Le reviewer ne calcule pas les numéros lui-même. Présente ses points classés **bloquant** (`RB`) / **à discuter** (`RD`), chacun avec son identifiant et `fichier:ligne`.
 
 ## 3. Traiter chaque point
 
 Désigne chaque point par son identifiant (« je corrige RB2, on écarte RD3 »). Pour chaque point, propose un traitement et laisse l'utilisateur décider ; le traitement consigné commence par le mot-clé entre parenthèses :
-- **correction du code** (`corrigé`, avec le commit) : en suivant `/atelier:build` (résumé, accord de l'utilisateur, commit `[<ID>]` qui cite le point : `fix(<scope>): [<ID>] RB2 <description>`) ;
+- **correction du code** (`corrigé`, avec le commit) : en suivant `/atelier:build` (qui la confie à `atelier:implementer`) (résumé, accord de l'utilisateur, commit `[<ID>]` qui cite le point : `fix(<scope>): [<ID>] RB2 <description>`) ;
 - **test manquant ou faux** (`test ajouté`) : `/atelier:write-tests <raison>` (en TDD, il rouvre les tests figés) ;
 - **spec fausse ou incomplète** (`spec amendée`) : `/atelier:amend` ;
 - **exception** (`exception acceptée`) : acceptée **explicitement** par l'utilisateur, avec qui et pourquoi ;
