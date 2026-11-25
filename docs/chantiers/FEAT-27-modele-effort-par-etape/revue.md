@@ -109,3 +109,20 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD12. Sujet ambigu après la fusion dans `implementation.md` | `site/cycle/implementation.md:19` | corrigé (e02591e) |
 
 - Bilan de la revue : chantier cohérent, fusion de `main` sans contradiction. RD10 a mené à l'amendement « recommandé (…) » (tests rouverts et regelés), à vérifier par la relance.
+
+## Revue 2 : chantier : 2026-11-25
+- Commit revu : 2c79790
+- Base : 90c92ab (merge-base avec main)
+- Corrections depuis la revue 1 : 54fe0e9, 0122333, f7dd172, 842110c, e02591e
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD13. Test du renvoi de `configuration.md` vers `modes.md` sans effet (le lien existait déjà) | `plugins/atelier/test/agent-settings.test.mjs:303` | écarté (Didier) : rouvrir les tests pour une ligne de doc coûte plus que le gain ; le texte est juste et la justesse de la doc se vérifie en revue (OD21, SD9) |
+
+- Bilan de la revue : corrections de la revue 1 vérifiées, « recommandé » cohérent partout. Idée : vérifier, au premier changement d'une valeur recommandée, ce qu'affiche `/plugin configure` pour une valeur enregistrée périmée (phrase de `configuration.md`).
