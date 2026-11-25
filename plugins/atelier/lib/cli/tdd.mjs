@@ -12,6 +12,8 @@ import {
   reopenTestsRefusal,
   setTddRefusal,
   testDrivenPhase,
+  testFilesChangedByChantier,
+  withoutSpaces,
 } from '../tdd.mjs'
 import {
   findProjectRoot,
@@ -33,11 +35,48 @@ function uncommittedTestFiles(projectRoot, config) {
   return uncommittedFiles(projectRoot).filter((file) => matchesAny(file, config.testPaths, config.ignoreCase))
 }
 
-// Test files changed since the tests were frozen (committed or not).
+// Test files changed since the tests were frozen at `commit`: uncommitted ones, and committed ones
+// that the chantier itself touched (its commits and the resolution of its merges, see
+// codeFilesSince) with a change that merges of the default branch do not explain (see
+// testFilesChangedByChantier): a test file brought or extended by such a merge, conflict included,
+// does not count. When `commit` is no longer an ancestor of HEAD (rebase after the freeze), the
+// chantier's history since the freeze cannot be read: the whole diff counts.
 export function testFilesChangedSince(projectRoot, config, commit) {
-  const committed = gitPaths(projectRoot, ['diff', '--name-only', '-z', commit, '--'])
-    .filter((file) => matchesAny(file, config.testPaths, config.ignoreCase))
+  const isTest = (file) => matchesAny(file, config.testPaths, config.ignoreCase)
+  let committed
+  if (isAncestorOfHead(projectRoot, commit)) {
+    const candidates = [...new Set(codeFilesSince(projectRoot, commit, 'first-parent'))].filter(isTest)
+    committed = candidates.length ? committedTestChanges(projectRoot, commit, candidates) : []
+  } else {
+    committed = gitPaths(projectRoot, ['diff', '--name-only', '-z', commit, '--']).filter(isTest)
+  }
   return [...new Set([...committed, ...uncommittedTestFiles(projectRoot, config)])]
+}
+
+// Among `candidates`, the files whose changes since `commit` are not explained by the merged
+// commits (second parents of the merges since `commit`). The diff is limited to the candidates.
+function committedTestChanges(projectRoot, commit, candidates) {
+  const range = [commit, 'HEAD', '--', ...candidates.map((file) => `:(literal)${file}`)]
+  const diff = gitRaw(projectRoot, ['-c', 'core.quotePath=false', 'diff', '--no-renames', '--no-color', '--no-ext-diff', '--src-prefix=a/', '--dst-prefix=b/', '--ignore-all-space', '--ignore-cr-at-eol', ...range])
+  const merged = git(projectRoot, ['rev-list', '--merges', `${commit}..HEAD`]).split('\n').filter(Boolean)
+  const cache = new Map()
+  const mergedLines = (file) => {
+    if (!cache.has(file)) {
+      const lines = new Set()
+      for (const merge of merged) {
+        let text = ''
+        try {
+          text = gitRaw(projectRoot, ['show', `${merge}^2:${file}`])
+        } catch {
+          continue // the file does not exist on that side
+        }
+        for (const line of text.split('\n')) lines.add(withoutSpaces(line))
+      }
+      cache.set(file, lines)
+    }
+    return cache.get(file)
+  }
+  return testFilesChangedByChantier(diff, mergedLines).filter((file) => candidates.includes(file))
 }
 
 // Test files present at `base` whose lines were changed or removed in HEAD (whitespace and line

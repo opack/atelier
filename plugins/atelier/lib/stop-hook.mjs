@@ -34,7 +34,7 @@ export function decideStop(context) {
   }
   const pass = (newState = state) => ({ block: false, state: { ...newState, lastBlock: null } })
   if (phase === 'implementing' && changedTests.length) {
-    return block(`atelier : des tests figés ont été modifiés (${changedTests.join(', ')}). Restaure-les (git checkout ${chantier.spec.data.tests_commit} -- <fichier>) et corrige l’implémentation. Si un test est réellement faux, arrête-toi et signale-le à l’utilisateur au lieu de le modifier.`)
+    return block(`atelier : des tests figés ont été modifiés (${changedTests.join(', ')}). Restaure-les (git checkout ${chantier.spec.data.tests_commit} -- <fichier>) et corrige l’implémentation. Si la modification vient d’une fusion de la branche par défaut (résolution de conflit), ne restaure rien : elle effacerait les apports de cette branche ; rouvre les tests (/atelier:write-tests <raison>) puis fige-les à nouveau. Si un test est réellement faux, arrête-toi et signale-le à l’utilisateur au lieu de le modifier.`)
   }
   const ignoredPaths = [...config.freePaths, `${config.chantiersDir}/**`, '.atelier/**']
   const codeFiles = changedFiles.filter((file) => !matchesAny(file, ignoredPaths, config.ignoreCase))

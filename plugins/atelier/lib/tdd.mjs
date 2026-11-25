@@ -80,6 +80,43 @@ export function removedTestLines(diff) {
   return [...files]
 }
 
+// A line without any whitespace, as `git diff --ignore-all-space` compares lines.
+export function withoutSpaces(line) {
+  return line.replace(/\s+/g, '')
+}
+
+// Test files whose changes in a `git diff` output (frozen state to HEAD) are not explained by merges
+// of the default branch: a removed line, a binary change, or an added line found in none of the
+// merged versions of the file (`mergedLines(file)`: a Set of lines normalized by withoutSpaces).
+// Blank added lines are ignored; lines are compared without whitespace, like the diff (-w).
+export function testFilesChangedByChantier(diff, mergedLines) {
+  const files = new Set()
+  let oldFile = null
+  let newFile = null
+  let inHunk = false
+  for (const line of diff.replace(/\r\n/g, '\n').split('\n')) {
+    if (line.startsWith('diff --git ')) {
+      oldFile = newFile = null
+      inHunk = false
+    } else if (!inHunk && line.startsWith('--- ')) {
+      oldFile = line === '--- /dev/null' ? null : line.slice(4).replace(/\t$/, '').replace(/^a\//, '')
+    } else if (!inHunk && line.startsWith('+++ ')) {
+      newFile = line === '+++ /dev/null' ? null : line.slice(4).replace(/\t$/, '').replace(/^b\//, '')
+    } else if (!inHunk && line.startsWith('Binary files ')) {
+      const match = /^Binary files (?:a\/(.+?)|\/dev\/null) and (?:b\/(.+)|\/dev\/null) differ$/.exec(line)
+      if (match) files.add(match[2] ?? match[1])
+    } else if (line.startsWith('@@')) {
+      inHunk = true
+    } else if (inHunk && line.startsWith('-') && oldFile) {
+      files.add(oldFile)
+    } else if (inHunk && line.startsWith('+') && newFile) {
+      const added = withoutSpaces(line.slice(1))
+      if (added && !mergedLines(newFile).has(added)) files.add(newFile)
+    }
+  }
+  return [...files]
+}
+
 // Why `atelier freeze-tests` is refused, or null. `sliceBaseIsAncestor` is false when the
 // `slice_base` of the spec is no longer an ancestor of HEAD; `removedTestFiles` are the test
 // files with lines removed since `slice_base` (see removedTestLines).
