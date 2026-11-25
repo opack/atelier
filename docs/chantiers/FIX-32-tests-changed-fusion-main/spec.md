@@ -2,7 +2,7 @@
 id: FIX-32
 type: FIX
 title: Les tests venus de main comptent comme tests modifiés depuis le gel
-status: signed
+status: done
 tdd: yes
 created_at: 2026-11-25
 source: FIX-20, revue de la tranche 2 après fusion de main (14753db)
@@ -12,6 +12,7 @@ signed_at: 2026-11-25
 tests_commit: ceb8ad9
 slice: 1
 reviewed_commit: 342c7ce66424cef1c4f29877fc882d752aa868df
+done_at: 2026-11-25
 ---
 
 # FIX-32 Les tests venus de main comptent comme tests modifiés depuis le gel
