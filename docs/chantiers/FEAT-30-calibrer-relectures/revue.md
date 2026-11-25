@@ -89,3 +89,20 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD6. Forme d'une relance dans revue.md non décrite | plugins/atelier/skills/review/SKILL.md:57 | corrigé (8909015), contre le verdict « ne pas corriger » du relecteur : Didier veut un historique homogène |
 
 - Bilan de la revue : deux points à discuter, corrigés.
+
+## Revue : chantier (relance) : 2026-11-25
+- Commit revu : fc9ea6e
+- Base : 67ca088
+- Relance depuis : 62c601f (corrections : 8909015)
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+- Bilan de la revue : RD5 et RD6 vérifiés corrigés, sans régression ; format accepté par review-ids et le contrôle de clôture ; aucune idée.
