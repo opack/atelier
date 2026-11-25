@@ -31,7 +31,9 @@ Puis :
 
 Quand tout est vert, `atelier review-ids --json` donne le premier numéro libre des points de surapprentissage (`next.OB`, `next.OD`). Lance le sous-agent `atelier:overfit-checker` avec le chemin de la spec, la liste des fichiers de test et des fichiers d'implémentation de la tranche, et ces deux numéros. Il vérifie, sans rien modifier, que l'implémentation résout le problème général et ne se contente pas de satisfaire les tests.
 
-Présente ses points, chacun avec son identifiant (`OB1`, `OD1`…). Si tu relances le sous-agent dans la même session, continue la numérotation à la suite de ce que tu as déjà présenté. Corrige ceux qui sont fondés, toujours sans toucher aux tests, puis relance tests et contrôles. Si un point révèle un test trop faible, ne le renforce pas toi-même : signale-le à l'utilisateur. Un point reporté, accepté ou écarté pour une raison qui compte se note dans `decisions.md`, avec son identifiant.
+Présente ses points (`OB1`, `OD1`…). Présente chaque point par son identifiant suivi d'un résumé du problème en quelques mots, puis la correction proposée, ses deux coûts (correction, non-correction), le verdict du relecteur et ton avis : `OD1, la liste vide n'est pas traitée : je propose…, ça coûte…, sinon…, avis : …`. Corriger n'est pas le choix par défaut : l'utilisateur tranche avec les deux coûts sous les yeux. Ses **idées** de relance, sans identifiant, se citent en une ligne, sans traitement.
+
+Si tu relances le sous-agent dans la même session après des corrections, c'est une **relance** : dis-le-lui et donne-lui les points du passage précédent et les fichiers modifiés depuis ; continue la numérotation à la suite de ce que tu as déjà présenté. Un passage dans une nouvelle session est un premier passage. Corrige les points que l'utilisateur retient, toujours sans toucher aux tests, puis relance tests et contrôles. Si un point révèle un test trop faible, ne le renforce pas toi-même : signale-le à l'utilisateur. Un point reporté, accepté ou écarté pour une raison qui compte se note dans `decisions.md`, avec son identifiant.
 
 ## 3. Faire valider, puis commiter
 

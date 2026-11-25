@@ -165,3 +165,65 @@ describe('site reference pages', () => {
     }
   })
 })
+
+describe('calibrated review points', () => {
+  const pluginText = (relativePath) => readFileSync(fileURLToPath(new URL(`../${relativePath}`, import.meta.url)), 'utf8')
+  const reviewers = ['agents/spec-critic.md', 'agents/overfit-checker.md', 'agents/reviewer.md']
+  const presenters = ['skills/sign/SKILL.md', 'skills/build/SKILL.md', 'skills/review/SKILL.md']
+  const missing = (text, patterns) => patterns.filter((pattern) => !pattern.test(text)).map(String)
+
+  for (const file of reviewers) {
+    it(`${file} demande le bilan de chaque point : deux coûts, silencieux ou bruyant, verdict, question [FEAT-30 CA-1]`, () => {
+      assert.deepEqual(missing(pluginText(file), [/bloquant ou à discuter/, /coût de la correction/i, /coût de la non-correction/i, /silencieux/, /bruyant/, /verdict/i, /toujours à corriger/, /point qui est une question/]), [])
+    })
+
+    it(`${file} tire l'usage réel de CLAUDE.md et du README [FEAT-30 CA-2]`, () => {
+      assert.deepEqual(missing(pluginText(file), [/usage réel/, /`CLAUDE\.md`/, /`README`/, /signale-le une fois/]), [])
+    })
+
+    it(`${file} énonce la règle de proportion [FEAT-30 CA-3]`, () => {
+      assert.deepEqual(missing(pluginText(file), [/option la moins chère/, /supprimer le problème bloquant/]), [])
+    })
+
+    it(`${file} distingue premier passage et relance, avec les idées sans identifiant [FEAT-30 CA-4]`, () => {
+      assert.deepEqual(missing(pluginText(file), [/premier passage/, /relance/, /causé par une correction/, /n'est retenu que s'il est bloquant/, /\*\*Idées\*\*/, /sans identifiant/]), [])
+    })
+  }
+
+  it('review définit la relance, transmet le commit précédent, garde les idées hors de revue.md et associe chaque issue à un traitement [FEAT-30 CA-5]', () => {
+    assert.deepEqual(missing(pluginText('skills/review/SKILL.md'), [
+      /\*\*relance\*\*/, /sont des premiers passages/, /commit de la revue précédente/, /liste des corrections faites depuis/, /## Revue 2 : tranche 1/, /Corrections depuis la revue 1 :/,
+      /idée[^\n]*n'entre jamais dans ces tableaux/i,
+      /ne pas corriger[^\n]*`exception acceptée`/, /chantier séparé → `reporté`/, /limite documentée → `corrigé`/,
+    ]), [])
+  })
+
+  for (const file of ['skills/sign/SKILL.md', 'skills/build/SKILL.md']) {
+    it(`${file} transmet la relance et traite une nouvelle session comme un premier passage [FEAT-30 CA-5]`, () => {
+      assert.deepEqual(missing(pluginText(file), [/\*\*relance\*\*/, /points du passage précédent/, /nouvelle session est un premier passage/]), [])
+    })
+  }
+
+  for (const file of presenters) {
+    it(`${file} présente chaque point avec un résumé, les deux coûts, le verdict et l'avis [FEAT-30 CA-6]`, () => {
+      assert.deepEqual(missing(pluginText(file), [/résumé du problème/, /deux coûts/, /verdict du relecteur/, /ton avis/]), [])
+    })
+  }
+})
+
+describe('calibrated review points in the documentation', () => {
+  const repositoryText = (relativePath) => readFileSync(fileURLToPath(new URL(`../../../${relativePath}`, import.meta.url)), 'utf8')
+  const pages = {
+    'site/cycle/revue.md': [/### Bilan de chaque point/, /coût de la non-correction/, /silencieux/, /option la moins chère/, /### Relance/, /que s’il est bloquant/, /idées/],
+    'site/cycle/signature.md': [/revue#bilan-de-chaque-point/, /revue#relance/],
+    'site/cycle/implementation.md': [/option la moins chère/, /revue#bilan-de-chaque-point/, /revue#relance/],
+    'README.md': [/coût de la non-correction/, /option la moins chère/, /relance/],
+  }
+
+  for (const [file, patterns] of Object.entries(pages)) {
+    it(`${file} décrit le bilan des points, la proportion et la relance [FEAT-30 CA-7]`, () => {
+      const text = repositoryText(file)
+      assert.deepEqual(patterns.filter((pattern) => !pattern.test(text)).map(String), [])
+    })
+  }
+})
