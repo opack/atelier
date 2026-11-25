@@ -37,3 +37,20 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | Aucun | | |
 
 - Bilan de la revue : RD1 et RD2 vérifiés corrigés, sans régression ; aucune idée.
+
+## Revue : tranche 2 : 2026-11-25
+- Commit revu : caa736b
+- Base : efbe964
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD3. Règle de proportion absente de la page Implémentation | site/cycle/implementation.md:17 | corrigé (81bfe38) |
+| RD4. Apostrophe typographique isolée dans le README | README.md:108 | corrigé (81bfe38) |
+
+- Bilan de la revue : deux points à discuter triviaux, corrigés à l'accord de Didier.
