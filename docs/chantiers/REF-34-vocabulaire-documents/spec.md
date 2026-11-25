@@ -2,11 +2,11 @@
 id: REF-34
 type: REF
 title: Regrouper le vocabulaire des documents lu par le code
-status: draft
+status: signed
 tdd: no
 created_at: 2026-11-25
-signed_by:
-signed_at:
+signed_by: Opack
+signed_at: 2026-11-25
 rel_parent: EPIC-17
 ---
 
@@ -23,14 +23,14 @@ Les termes français que le code de `plugins/atelier/lib/` lit ou écrit dans le
 - amendements écrits et relus par le code : « tests rouverts » et « tests regelés » (`lib/tdd.mjs`, relus aussi par `lib/slices.mjs`) ;
 - plan : titre de la section « Tranches » (`lib/slices.mjs`) ;
 - revue (`lib/review-points.mjs`) : titres des tableaux « Bloquant » et « À discuter », et leurs formes normalisées en minuscules ; anciennes sections « Tour » ; colonnes « Point », « Fichier », « Traitement » ; mots-clés de traitement (« corrigé », « écarté »…) ; marqueurs de point « (repris) » et « (ex-RBn) » ; ligne vide « Aucun » ; formes « reporté (tranche N) » et « requalifié (RBn) » ;
-- les deux-points, précédés d’une espace en français et pas en anglais (SD2) : dans les lignes « Libellé : » que `meaningfulContent` tient pour vides et dans le début d'une entrée d'amendement (`ENTRY_START`, entrées écrites par `lib/tdd.mjs` et `lib/spec.mjs`). Ce séparateur entre dans le vocabulaire sous la clé `colon`, valeur ` :` en français. Le format de date AAAA-MM-JJ, lui, n'est pas une question de langue (il se trie) et reste fixe ;
 - les citations de ces termes dans les messages (`lib/write-guard.mjs`, `lib/review-points.mjs`, et tout autre module de `lib/` ou `lib/cli/`) : un terme **cité** comme élément du document (« la section « ## Amendements » », la liste des mots-clés de traitement) est tiré du vocabulaire. Le texte du message ne change pas.
 
 Hors périmètre :
 - aucune traduction, aucun choix de langue, aucun réglage : le vocabulaire reste le seul français (EPIC-14) ;
 - le texte des messages eux-mêmes, et tout mot employé dans une phrase plutôt que cité comme élément du document (« reporté à une tranche », « requalifiée ») : une phrase se traduit entière, jamais mot à mot, par le catalogue de messages d'EPIC-14 (SD4) ;
 - skills, agents, templates, site, et les chaînes attendues par les tests existants, qui restent en français ;
-- le front matter, déjà neutre (`status`, `tdd`, `rel_*`…).
+- le front matter, déjà neutre (`status`, `tdd`, `rel_*`…) ;
+- la typographie (SD2) : une seule convention pour toutes les langues, celle d'aujourd'hui (« Libellé : », entrée d'amendement « - AAAA-MM-JJ : »), sans clé de vocabulaire. Le format de date AAAA-MM-JJ n'est pas une question de langue (il se trie) et reste fixe.
 
 ## 2. Pourquoi maintenant
 <!-- La douleur, si possible mesurable : bugs récurrents, temps perdu, duplication, feature bloquée.
@@ -42,7 +42,7 @@ EPIC-14 (atelier sur n'importe quel dépôt) doit permettre des documents dans u
 <!-- Ce qui existe, ce qu'on veut obtenir. -->
 
 - **Actuel** : les termes sont dispersés dans `lib/spec.mjs`, `lib/tdd.mjs`, `lib/slices.mjs`, `lib/review-points.mjs` (tableaux, expressions régulières) et cités en dur dans les messages de `lib/write-guard.mjs` et `lib/review-points.mjs`.
-- **Cible** : un module pur `lib/vocabulary.mjs`, sans import, exporte `VOCABULARY`, le vocabulaire français sous des clés canoniques en anglais : `sections.<TYPE>` (une clé par section exigée), `criteria.<TYPE>`, `amendments`, `amendmentEntries.reopened`, `amendmentEntries.refrozen`, `slices`, `colon`, `review.tables.blocking`, `review.tables.discuss`, `review.legacyRound`, `review.columns.point`, `review.columns.file`, `review.columns.treatment`, `review.treatments.<clé>` (huit clés), `review.markers.resumed`, `review.markers.formerly`, `review.empty`. Les autres modules le lisent au lieu d'écrire les termes. Les exports existants (`REQUIRED_SECTIONS`, etc.) restent disponibles et donnent les mêmes valeurs. Domaine du module et de son test : `vocabulary`.
+- **Cible** : un module pur `lib/vocabulary.mjs`, sans import, exporte `VOCABULARY`, le vocabulaire français sous des clés canoniques en anglais : `sections.<TYPE>` (une clé par section exigée), `criteria.<TYPE>`, `amendments`, `amendmentEntries.reopened`, `amendmentEntries.refrozen`, `slices`, `review.tables.blocking`, `review.tables.discuss`, `review.legacyRound`, `review.columns.point`, `review.columns.file`, `review.columns.treatment`, `review.treatments.<clé>` (huit clés), `review.markers.resumed`, `review.markers.formerly`, `review.empty`. Les autres modules le lisent au lieu d'écrire les termes. Les exports existants (`REQUIRED_SECTIONS`, etc.) restent disponibles et donnent les mêmes valeurs. Domaine du module et de son test : `vocabulary`.
 
 ## 4. Preuve de non-régression
 <!-- Tests existants qui couvrent la zone ; tests de caractérisation à ajouter AVANT de toucher au code ; vérifications manuelles restantes.
@@ -74,7 +74,7 @@ Une seule PR ; chaque étape laisse la suite verte. Placement dans EPIC-17 : apr
 - CA-2 : Étant donné le dépôt, quand `npm test` tourne, alors un test d'architecture (SB2) lit chaque fichier de `lib/` et `lib/cli/` autre que `lib/vocabulary.mjs`, commentaires retirés, et échoue s'il trouve, pour l'un des termes de `VOCABULARY` (liste calculée depuis le module, pas figée dans le test), à l'une de ces positions de grammaire : un littéral de chaîne ou de gabarit dont le contenu entier est le terme ; une expression régulière qui contient le terme ; le terme cité entre « » dans une chaîne, seul ou précédé de `## ` ou `### `. La comparaison respecte la casse. Les mots courants exclus nommément (« Description », « Point », « Fichier », « Question », « Budget », « Cadre », « Quoi », « Pourquoi ») ne sont exclus que comme terme entier : « Pourquoi maintenant » reste visé. Le test échoue aussi si `lib/vocabulary.mjs` importe un module. Des exemples fabriqués montrent la règle en échec pour chaque position (chaîne, gabarit, expression régulière, citation entre « ») et pour l'import, et montrent qu'un mot-clé dans une phrase (« reporté à une tranche ») n'est pas signalé.
 - CA-3 : Étant donné `lib/vocabulary.mjs`, quand un test le lit, alors `VOCABULARY` porte exactement les clés listées au §3 avec les valeurs françaises d'aujourd'hui (SD3), et `REQUIRED_SECTIONS`, ainsi que les listes de tableaux, de colonnes et de mots-clés de traitement lues par `lib/review-points.mjs`, gardent leurs valeurs actuelles.
 
-Laissé en l'état : les textes des messages et les mots employés dans leurs phrases, les skills, agents, templates, le site, le format de date AAAA-MM-JJ, et tout choix de langue (EPIC-14).
+Laissé en l'état : les textes des messages et les mots employés dans leurs phrases, les skills, agents, templates, le site, la typographie des deux-points et le format de date AAAA-MM-JJ, et tout choix de langue (EPIC-14).
 
 ## Amendements
 <!-- Après signature : une entrée datée par modification de la spec. -->
