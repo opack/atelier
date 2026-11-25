@@ -33,7 +33,7 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 ### À discuter
 | Point | Fichier | Traitement |
 |---|---|---|
-| RD1. Tests venus de la branche d'intégration comptés comme tests du chantier (gel refusé, tests changés) | plugins/atelier/lib/cli/tdd.mjs:43 | |
+| RD1. Tests venus de la branche d'intégration comptés comme tests du chantier (gel refusé, tests changés) | plugins/atelier/lib/cli/tdd.mjs:43 | corrigé (8863dfe), test ajouté (64aa051) après réouverture des tests |
 | RD2. La spec §3 dit encore que `reviewFacts` ne change pas, contredit par CA-15 | docs/chantiers/FEAT-21-epic-branche-integration/spec.md:59 | reporté (tranche 4) : la phrase sera corrigée par l'amendement prévu en tranche 4, décision de Didier |
 
 - Bilan de la revue : CA-6, CA-7, CA-13, CA-15 couverts et testés ; un seul calcul de la base par commande. Deux points à discuter.
