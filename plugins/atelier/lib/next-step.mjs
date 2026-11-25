@@ -68,6 +68,12 @@ export function codeCommittedMatters(chantier, review) {
   return review === 'none' && testDrivenPhase(chantier) !== 'writing-tests' && sliceState(chantier).slice !== 'chantier'
 }
 
+// Whether the current numbered slice of a chantier with several slices is declared without TDD.
+function sliceWithoutTdd(chantier) {
+  const { model, slice } = sliceState(chantier)
+  return model === 'sliced' && typeof slice === 'number' && String(chantier.spec.data.slice_tdd ?? '').trim().toLowerCase() === 'no'
+}
+
 // Next step of the current phase (tests, build, review, close), for a slice or the chantier.
 // `implemented`: code was committed in the slice and no review covers it.
 function phaseStep(chantier, review = 'none', implemented = false) {
@@ -77,7 +83,7 @@ function phaseStep(chantier, review = 'none', implemented = false) {
   }
   const build = phase === 'implementing'
     ? 'Implémenter jusqu’à ce que tous les tests passent, sans modifier les tests, puis commiter : /atelier:build'
-    : 'Implémenter (sans TDD pour ce chantier), puis commiter : /atelier:build'
+    : `Implémenter (sans TDD pour ${sliceWithoutTdd(chantier) ? 'cette tranche' : 'ce chantier'}), puis commiter : /atelier:build`
   const resume = '(ou reprendre /atelier:build si elle n’est pas finie)'
   if (isReviewExempt(chantier)) {
     return implemented ? `Implémentation commitée : clôturer : /atelier:close ${resume}` : `${build} ; ensuite clôturer : /atelier:close`

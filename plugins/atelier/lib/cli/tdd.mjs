@@ -3,6 +3,8 @@
 import { matchesAny } from '../common.mjs'
 import { parseAmendments } from '../spec.mjs'
 import {
+  FREEZE_WITHOUT_TEST_MESSAGE,
+  freezeTestsPhaseRefusal,
   freezeTestsRefusal,
   freezeTestsValues,
   isRefreeze,
@@ -11,11 +13,12 @@ import {
   reopenTestsEntry,
   reopenTestsRefusal,
   setTddRefusal,
-  testDrivenPhase,
+  setTddUpdate,
   testFilesChangedByChantier,
   withoutSpaces,
 } from '../tdd.mjs'
 import {
+  chantierFilePath,
   findProjectRoot,
   git,
   gitPaths,
@@ -115,9 +118,10 @@ export function commandFreezeTests() {
   const projectRoot = findProjectRoot()
   const config = requireConfig(projectRoot)
   const chantier = requireActiveChantier(projectRoot, config)
-  if (testDrivenPhase(chantier) !== 'writing-tests') {
-    console.error('Ce chantier n’est pas en phase « tests d’abord ».')
-    process.exit(1)
+  const phaseRefusal = freezeTestsPhaseRefusal(chantier)
+  if (phaseRefusal) {
+    console.error(`Gel refusé : ${phaseRefusal}`)
+    process.exit(2)
   }
   const pending = uncommittedTestFiles(projectRoot, config)
   if (pending.length) {
@@ -127,7 +131,7 @@ export function commandFreezeTests() {
   const commit = git(projectRoot, ['rev-parse', '--short', 'HEAD'])
   const lastCommitFiles = gitPaths(projectRoot, ['show', '--name-only', '-z', '--format=', 'HEAD'])
   if (!lastCommitFiles.some((file) => matchesAny(file, config.testPaths, config.ignoreCase))) {
-    console.error('Le dernier commit ne contient aucun fichier de test. Commite les tests (et seulement les tests) avant de les figer.')
+    console.error(FREEZE_WITHOUT_TEST_MESSAGE)
     process.exit(2)
   }
   const sliceBase = chantier.spec.data.slice_base || null
@@ -145,6 +149,17 @@ export function commandFreezeTests() {
   console.log(`Tests figés au commit ${commit}. Phase suivante : implémentation, sans modifier les tests (/atelier:build).`)
 }
 
+// Whether a slice of the chantier froze tests: a non-empty `tests_commit` in a committed
+// version of the spec.
+function testsFrozenBefore(projectRoot, chantier) {
+  try {
+    const specPath = chantierFilePath(projectRoot, chantier, 'spec.md')
+    return git(projectRoot, ['log', '--format=%h', '-G', '^tests_commit: *[0-9a-f]', '--', specPath]) !== ''
+  } catch {
+    return false
+  }
+}
+
 export function commandReopenTests(reasonWords) {
   const reason = reasonWords.join(' ').trim()
   if (!reason) {
@@ -154,7 +169,7 @@ export function commandReopenTests(reasonWords) {
   const projectRoot = findProjectRoot()
   const config = requireConfig(projectRoot)
   const chantier = requireActiveChantier(projectRoot, config)
-  const refusal = reopenTestsRefusal(chantier)
+  const refusal = reopenTestsRefusal(chantier, { frozenBefore: testsFrozenBefore(projectRoot, chantier) })
   if (refusal) {
     console.error(`Réouverture refusée : ${refusal}`)
     process.exit(2)
@@ -178,15 +193,15 @@ export function commandSetTdd([value, ...reasonWords]) {
     console.error(`TDD refusé : ${refusal}`)
     process.exit(2)
   }
-  const wasSigned = chantier.spec.data.status === 'signed'
-  const { specPath } = updateSpec(projectRoot, config, { tdd: value })
-  const reason = reasonWords.join(' ').trim()
-  if (wasSigned) {
-    appendAmendment(specPath, `${today()} : TDD ${value === 'yes' ? 'activé' : 'désactivé'}${reason ? ` : ${reason}` : ''}`)
+  const { values, entry } = setTddUpdate(chantier, value, today(), reasonWords.join(' ').trim())
+  const { specPath } = updateSpec(projectRoot, config, values)
+  if (entry) {
+    appendAmendment(specPath, entry)
   }
+  const scope = 'slice_tdd' in values ? 'Tranche' : 'Chantier'
   console.log(value === 'yes'
-    ? 'Chantier en TDD : tests écrits, commités et figés avant l’implémentation.'
-    : 'Chantier sans TDD : pas de phase tests d’abord imposée.')
+    ? `${scope} en TDD : tests écrits, commités et figés avant l’implémentation.`
+    : `${scope} sans TDD : pas de phase tests d’abord imposée.`)
 }
 
 export function commandTestsChanged() {

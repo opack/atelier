@@ -42,6 +42,13 @@
 
 ## 2026-11-24 : tranche 2, points de surapprentissage
 - OB1 (corrigé) : `tests_commit` ne vaut `implementing` que si le chantier ou la tranche est en TDD ; un chantier passé en `tdd: no` après le gel (modèles `single`, `legacy`) revient à `none`, comme avant. Le cas n'est pas couvert par les tests figés de CA-4 : signalé à Didier.
-- OD4 (reporté à la tranche 4) : en revue d'ensemble, une réouverture en attente donne `writing-tests` même pour un chantier `tdd: no`. Tant que `reopen-tests` reste accepté dans une tranche « TDD : non », une réouverture peut y rester en attente ; CA-10 (tranche 4) doit la refuser.
+- OD4 (reporté à la tranche 3, où se trouve CA-10, et non 4) : en revue d’ensemble, une réouverture en attente donne `writing-tests` même pour un chantier `tdd: no`. Tant que `reopen-tests` reste accepté dans une tranche « TDD : non », une réouverture peut y rester en attente ; CA-10 (tranche 3) la refuse.
 - OD5 (corrigé) : `slice_tdd` lu sans casse.
 - Hors tranche : `codeCommittedFact` et `sliceCodeFiles` (`lib/cli/`) lisent encore `tdd` du chantier ; prévu en tranche 5 (CA-13).
+
+## 2026-11-25 : tranche 3, points de surapprentissage
+- OB2 (corrigé, message) : la spec refuse `set-tdd` sur une tranche aux tests figés et `set-tdd no` pendant une réouverture ; une tranche qui a figé des tests reste donc en TDD. Le message ne promet plus de passer par `reopen-tests` pour changer son TDD : il dit que la tranche reste en TDD et renvoie vers la réouverture pour corriger ses tests (CA-9). Écarté : `set-tdd no` qui viderait `tests_commit`, parce qu'il permettrait de quitter le TDD en abandonnant des tests figés.
+- OD6 (corrigé) : hors tranche numérotée (plan à une tranche), `set-tdd` écrit aussi `slice_tdd` s'il est renseigné, sinon la commande serait sans effet. Test à ajouter avec CA-12 (tranche 4).
+- OD7 (corrigé) : « sans TDD pour cette tranche » dépend de `slice_tdd: no`, pas du `tdd` du chantier.
+- OD8 (corrigé pour le chemin, test reporté) : `testsFrozenBefore` lit l'historique de la spec par son chemin relatif au projet. Le cas `tdd: no` dont une tranche a figé des tests, en revue d'ensemble, est à couvrir en tranche 4.
+- OD9 (corrigé) : le refus « tests figés » de `set-tdd` ne joue qu'en phase `implementing` ; un `tests_commit` hérité d'un chantier repassé en `tdd: no` ne bloque plus.
