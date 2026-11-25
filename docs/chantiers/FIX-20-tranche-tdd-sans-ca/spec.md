@@ -8,9 +8,10 @@ created_at: 2026-11-23
 source: TEC-15, tranche 6 (site, README, montée de version)
 signed_by: Opack
 signed_at: 2026-11-23
-tests_commit: f881bdf
-slice: 3
-slice_base: 895512d308302dc187a8a910f0a6ae4410d7ef58
+tests_commit: 
+slice: 4
+slice_base: 6d2d1b2c851dd30eaa403a55588777f54b0d69b6
+slice_tdd: yes
 ---
 
 
