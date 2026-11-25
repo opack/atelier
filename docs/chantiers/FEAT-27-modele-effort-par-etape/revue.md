@@ -66,7 +66,7 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 ### À discuter
 | Point | Fichier | Traitement |
 |---|---|---|
-| RD3 (repris de la tranche 3). Refus d'une option répétée sans test | `plugins/atelier/test/agent-settings.test.mjs` | corrigé (1431167) : test ajouté avec ceux de la tranche 4 |
+| RD3. Refus d'une option répétée sans test (repris de la tranche 3) | `plugins/atelier/test/agent-settings.test.mjs` | corrigé (1431167) : test ajouté avec ceux de la tranche 4 |
 | RD5. `build` appelé avec un identifiant de point (`RB2`) pris pour un mot inconnu | `plugins/atelier/skills/build/SKILL.md` | écarté : la revue ne transmet pas d'identifiant en argument ; cas improbable, et l'échec serait bruyant et sans dommage |
 | RD6. Apostrophe dans une valeur d'option substituée non refusée | `plugins/atelier/skills/{build,review,sign}/SKILL.md` | corrigé (f1edfac) : la consigne couvre aussi les valeurs d'options substituées |
 | RD7. Test modifié par Bash pendant l'implémentation | `plugins/atelier/skills/build/SKILL.md` | écarté : déjà rattrapé par le hook de fin et `atelier tests-changed` |
