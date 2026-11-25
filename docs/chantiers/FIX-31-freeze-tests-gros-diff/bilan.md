@@ -48,6 +48,6 @@ Une revue (chantier à tranche unique, 2026-11-25, commit revu 1f2ed1d, base a16
 |---|---|
 | Aucun | |
 
-- Verdict :
-- Validé par :
-- Date :
+- Verdict : accepté
+- Validé par : Didier
+- Date : 2026-11-25
