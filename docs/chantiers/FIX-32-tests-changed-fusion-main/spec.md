@@ -2,13 +2,13 @@
 id: FIX-32
 type: FIX
 title: Les tests venus de main comptent comme tests modifiés depuis le gel
-status: draft
-tdd:                 # yes | no : décision humaine, obligatoire avant signature
+status: signed
+tdd: yes
 created_at: 2026-11-25
 source: FIX-20, revue de la tranche 2 après fusion de main (14753db)
 rel_origin: FIX-20
-signed_by:
-signed_at:
+signed_by: Opack
+signed_at: 2026-11-25
 ---
 
 # FIX-32 Les tests venus de main comptent comme tests modifiés depuis le gel
