@@ -86,8 +86,9 @@ export function withoutSpaces(line) {
 }
 
 // Test files whose changes in a `git diff` output (frozen state to HEAD) are not explained by merges
-// of the default branch: a removed line, a binary change, or an added line found in none of the
-// merged versions of the file (`mergedLines(file)`: a Set of lines normalized by withoutSpaces).
+// of the default branch: a removed line, or an added line found in none of the merged versions of
+// the file (`mergedLines(file)`: a Set of lines normalized by withoutSpaces). Deleted and binary
+// files are left to git's file lists, as in removedTestLines' callers.
 // Blank added lines are ignored; lines are compared without whitespace, like the diff (-w).
 export function testFilesChangedByChantier(diff, mergedLines) {
   const files = new Set()
@@ -102,9 +103,6 @@ export function testFilesChangedByChantier(diff, mergedLines) {
       oldFile = line === '--- /dev/null' ? null : line.slice(4).replace(/\t$/, '').replace(/^a\//, '')
     } else if (!inHunk && line.startsWith('+++ ')) {
       newFile = line === '+++ /dev/null' ? null : line.slice(4).replace(/\t$/, '').replace(/^b\//, '')
-    } else if (!inHunk && line.startsWith('Binary files ')) {
-      const match = /^Binary files (?:a\/(.+?)|\/dev\/null) and (?:b\/(.+)|\/dev\/null) differ$/.exec(line)
-      if (match) files.add(match[2] ?? match[1])
     } else if (line.startsWith('@@')) {
       inHunk = true
     } else if (inHunk && line.startsWith('-') && oldFile) {
