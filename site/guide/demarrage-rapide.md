@@ -5,6 +5,8 @@ En dix minutes : installer le plugin, préparer un projet, mener un premier chan
 ## Prérequis
 
 - [Claude Code](https://code.claude.com) installé.
+- [Node.js](https://nodejs.org) 20 ou plus récent : la commande `atelier` du plugin en a besoin.
+- [git](https://git-scm.com) 2.36 ou plus récent (voir [La version de git](../reference/limites#la-version-de-git)).
 - Un projet sous git, avec idéalement des commandes de **types**, **lint** et **tests** qui fonctionnent.
 
 ::: warning Des tests qui testent vraiment
@@ -31,7 +33,7 @@ atelier est un plugin Claude Code : ses commandes `/atelier:*` se lancent **dans
 /atelier:init
 ```
 
-atelier détecte vos commandes de contrôle, crée `docs/chantiers/` et `docs/decisions/`, ajoute une section « Process » au `CLAUDE.md` et déclare le plugin dans `.claude/settings.json` : vos coéquipiers se le verront proposer automatiquement.
+atelier détecte vos commandes de contrôle, crée `docs/chantiers/` et `docs/decisions/`, ajoute une section « Process » au `CLAUDE.md` et déclare le plugin dans `.claude/settings.json` : vos coéquipiers se le verront proposer automatiquement (sauf en session cloud, voir [Installation](../projet/installation#dans-une-session-cloud)).
 
 ## 3. Ouvrir un chantier
 
@@ -61,13 +63,15 @@ Un agent critique relit la spec, vous tranchez ses remarques, puis vous signez. 
 - `write-tests` écrit les tests à partir des critères d’acceptation, vérifie qu’ils échouent, et les commite (si TDD).
 - `build` implémente jusqu’à ce que tout passe, sans toucher aux tests, puis commite après votre accord.
 
+`write-tests`, `build` et `review` se répètent **pour chaque tranche** du plan : `/atelier:status` indique la tranche en cours.
+
 ## 6. Faire relire
 
 ```text
 /atelier:review
 ```
 
-Un agent indépendant relit le chantier. Vous tranchez chaque point (correction, test, amendement ou exception), autant de tours que nécessaire, puis le commit relu est enregistré.
+Un agent indépendant relit le chantier. Vous tranchez chaque point (correction, test, amendement ou exception), autant de revues que nécessaire. Pour un chantier découpé en tranches, cela se fait après chaque tranche, puis une dernière fois sur l’ensemble ; le commit relu est alors enregistré.
 
 ## 7. Clôturer
 

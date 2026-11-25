@@ -1,0 +1,6 @@
+{
+  "extraKnownMarketplaces": {
+    "atelier": { "source": { "source": "github", "repo": "opack/atelier" } }
+  },
+  "enabledPlugins": { "atelier@atelier": true }
+}

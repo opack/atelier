@@ -5,16 +5,16 @@
 ## Avec atelier
 
 ```text
-/atelier:build [tranche]
+/atelier:build
 ```
 
-Sans argument, atelier prend la prochaine tranche du plan.
+atelier travaille sur la **tranche en cours** (`/atelier:status` l’indique : « Tranche 2/3 »). Pour un `SPIKE` sans TDD, hors du découpage en tranches, on peut nommer la tranche : `/atelier:build <tranche>`.
 
 ## En TDD : les tests sont figés
 
 1. **Ne pas modifier les tests.** Le hook refuse toute écriture dans un fichier de test. Le contrôle de fin détecte aussi un test modifié par une commande shell ou un commit.
 2. **Itérer jusqu’au vert.** L’agent code, lance les tests, corrige, recommence, sans vous solliciter à chaque tour. Tant qu’un contrôle échoue, le hook de fin le renvoie au travail.
-3. **Vérifier le surapprentissage.** Une fois tout au vert, le sous-agent `overfit-checker` vérifie que le code résout **le problème de la spec**, pas seulement **les cas des tests** : valeurs codées en dur, cas particuliers, entrées hors des tests.
+3. **Vérifier le surapprentissage.** Une fois tout au vert, le sous-agent `overfit-checker` vérifie que le code résout **le problème de la spec**, pas seulement **les cas des tests** : valeurs codées en dur, cas particuliers, entrées hors des tests. Ses points sont numérotés `OB1`… (bloquants), `OD1`… (à discuter), en continu sur tout le chantier (`atelier review-ids`) ; un point reporté, accepté ou écarté pour une raison qui compte est cité dans `decisions.md`. Chaque point arrive avec son bilan (coût de la correction, coût de la non-correction, verdict, et l’option la moins chère quand la correction est disproportionnée, voir [Bilan de chaque point](./revue#bilan-de-chaque-point)), et l’agent ne corrige que ceux que vous retenez. Relancé dans la même session après des corrections, il fait une **relance** (voir [Relance](./revue#relance)).
 4. **Valider, puis commiter** : l’agent résume la tranche et attend votre accord avant de commiter.
 
 ::: warning La limite du TDD
@@ -23,7 +23,9 @@ Sans argument, atelier prend la prochaine tranche du plan.
 
 Si un test semble faux, l’agent **s’arrête et vous l’explique**. À vous de décider de le rouvrir (`/atelier:write-tests <raison>`), ou d’[amender la spec](./amendement) si c’est elle qui est fausse.
 
-Quand la dernière tranche est commitée, place à la [revue](./revue).
+Quand on corrige un point de revue, le commit le cite après l’identifiant du chantier (`fix(plugin): [TEC-15] RB2 …`).
+
+Quand la tranche est commitée, place à sa [revue](./revue). C’est la validation de cette revue qui fait passer à la tranche suivante.
 
 ## Sans TDD
 

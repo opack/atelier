@@ -16,7 +16,7 @@ Elle s’applique **avant chaque écriture par les outils d’édition** de Clau
 | 2 | **Fichier sensible** (`sensitivePaths`) | Toujours refusé, même en débrayage |
 | 3 | **État d’atelier** : `.atelier/**` | Refusé |
 |   | `.claude/atelier.json` | Création autorisée (c’est ce que fait `/atelier:init`), modification et suppression refusées : la configuration est modifiée par l’humain |
-| 4 | **En-tête de spec** : `status`, `signed_by`, `signed_at`, `done_at`, `tests_commit`, `reviewed_commit` | Ne changent que par la commande `atelier` |
+| 4 | **En-tête de spec** : `status`, `signed_by`, `signed_at`, `done_at`, `tests_commit`, `reviewed_commit`, `slice`, `slice_base`, `last_slice` | Ne changent que par la commande `atelier` |
 |   | `tdd` | Libre en brouillon ; ensuite, seulement par `atelier set-tdd`, tracé en amendement |
 |   | `id`, `type` | Figés dès que la spec n’est plus en brouillon |
 |   | Réécriture complète d’une spec non brouillon (`abandoned` compris) | Refusée |
@@ -40,7 +40,7 @@ Il s’exécute quand l’agent s’apprête à rendre la main.
 1. **Phase tests (TDD)** : aucun contrôle, des tests rouges sont attendus.
 2. **Phase implémentation (TDD)** : si un test figé a été modifié depuis `tests_commit`, y compris par le shell ou par un commit, le tour est bloqué.
 3. **Code modifié sans chantier signé** : du code changé hors des chemins libres, sans débrayage (typiquement par le shell), bloque le tour **une fois** et l’agent doit vous le signaler. Un même état de l’arbre de travail n’est signalé qu’une fois.
-4. **Contrôles du projet** (`checks`) : lancés seulement si du code a changé hors des chemins libres, de `chantiersDir` et de `.atelier/`, **et** si cet état n’est pas déjà passé au vert. Rouge : l’agent continue.
+4. **Contrôles du projet** (`checks`) : lancés seulement si du code a changé hors des chemins libres, de `chantiersDir` et de `.atelier/`, **et** si cet état n’est pas déjà passé au vert (par ce hook, ou par `atelier checks`, `close-check` ou `set-status done`). Rouge : l’agent continue.
 5. **Anti-boucle** : si l’agent bute sans rien changer à l’arbre de travail depuis le blocage précédent, il est autorisé à s’arrêter, et l’échec vous est montré **une fois**. Les contrôles ne sont pas relancés sur un état connu comme rouge. Tant que l’agent fait progresser le code, il continue d’itérer.
 
 En cas d’erreur, ce hook **ne bloque pas**, mais le signale.
@@ -83,7 +83,7 @@ Local, non versionné (ajouté au `.gitignore` par `/atelier:init`), protégé c
 | Fichier | Rôle |
 |---|---|
 | `bypass.json` | Le débrayage en cours, avec sa branche et sa raison. |
-| `gate.json` | L’état du contrôle de fin de tour : dernier état vert, dernier blocage. |
+| `gate.json` | L’état du contrôle de fin de tour : dernier état vert, dernier blocage. Le dernier état vert est partagé avec `atelier checks`, `close-check` et `set-status done`, qui ne relancent pas les contrôles sur un code déjà vert. Le supprimer force simplement le prochain lancement. |
 | `gate-index` | L’index git temporaire qui sert à calculer l’état de l’arbre de travail. |
 
 ## En-tête de `spec.md`
@@ -95,5 +95,10 @@ Local, non versionné (ajouté au `.gitignore` par `/atelier:init`), protégé c
 | `tdd` | `yes`, `no` | Vous, en brouillon ; ensuite `atelier set-tdd` |
 | `signed_by`, `signed_at` | — | `atelier sign` |
 | `done_at` | date | `atelier set-status done` |
-| `tests_commit` | hash git | `atelier freeze-tests`, `atelier reopen-tests` |
-| `reviewed_commit` | hash git complet | `atelier set-reviewed` |
+| `tests_commit` | hash git : gel des tests de la tranche en cours | `atelier freeze-tests`, `atelier reopen-tests`, `atelier set-reviewed` (vidé au passage de tranche) |
+| `slice` | numéro de la tranche en cours, ou `chantier` (revue du chantier) | `atelier freeze-tests`, `atelier set-reviewed` |
+| `slice_base` | hash git complet : commit revu qui a clos la tranche précédente | `atelier set-reviewed` |
+| `last_slice` | numéro de la dernière tranche revue | `atelier set-reviewed` |
+| `reviewed_commit` | hash git complet : revue du chantier, ou de l’unique tranche | `atelier set-reviewed` |
+
+Un chantier signé sans `slice` mais avec `tests_commit`, `reviewed_commit` ou des tests rouverts / regelés a été mené avant le cycle par tranche : il est traité comme une tranche unique et se termine comme avant.

@@ -7,7 +7,7 @@ docs/chantiers/FEAT-27-total-enveloppes/
   spec.md        l’intention signée
   plan.md        la conception, les tranches
   decisions.md   le journal tenu pendant le chantier
-  revue.md       les tours de revue : points et leur traitement
+  revue.md       les revues, par tranche puis du chantier : points et leur traitement
   bilan.md       la synthèse finale et le verdict de revue
 ```
 

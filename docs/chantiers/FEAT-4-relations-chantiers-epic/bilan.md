@@ -62,9 +62,9 @@ Pour les utilisateurs du plugin : on ne clôt plus un chantier dont un prérequi
 - **Normaliser `chantiersDir` dans `loadConfig`** : comportement antérieur à FEAT-4, laissé hors périmètre.
 
 ## 6. Dette et suites
-- **Chantier à ouvrir : normaliser `chantiersDir`** dans `loadConfig`. Avec un `/` final, les motifs `${chantiersDir}/**` deviennent `//**`.
-- **Chantier à ouvrir : écrire et figer les tests tranche par tranche.** Les tests figés d'un bloc et un contrôle global ont forcé ici un commit d'implémentation unique (b4377e7) au lieu des 7 tranches du plan.
-- **Chantier à ouvrir : dates de la CLI en UTC (`today()`)**, comportement antérieur à FEAT-4.
+- **Dette connue, laissée en l'état : `chantiersDir` non normalisé.** Avec un `/` final, les motifs `${chantiersDir}/**` deviennent `//**` et ne correspondent plus à rien. La protection de la spec et l'exclusion des documents du chantier sautent alors en silence. Il n'y a pas de chantier pour l'instant : le cas ne se produit qu'avec cette configuration.
+- **Tests tranche par tranche : FEAT-7** (branche `FEAT-7-tdd-par-tranche`), cycle TDD complet par tranche. Ici, les tests figés d'un bloc et un contrôle global ont forcé un commit d'implémentation unique (b4377e7) au lieu des 7 tranches du plan.
+- **Dates de la CLI en UTC (`today()`)** : c'est voulu, pas une dette. Tout le monde partage la même référence, et la conversion en date locale se fait à l'affichage si besoin.
 - **Performance de l'index** (environ 170 ms sous Windows) : à reprendre seulement si une gêne est observée.
 - **Ligne de commande** : rien à prévoir, les requêtes `cat-file` passent par l'entrée standard.
 - **ADR** : `docs/decisions/0001-statut-juge-dans-l-arbre-courant.md` (statut jugé dans l'arbre courant, liens dans toutes les branches), à appliquer à tout futur index (Notion, vue globale).

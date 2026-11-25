@@ -12,8 +12,9 @@
 | **Gel des tests** | En TDD, moment où les tests commités deviennent non modifiables par l’agent (`tests_commit`). |
 | **Journal de décisions** | `decisions.md` : une entrée datée par décision prise pendant le chantier. |
 | **Regel** | Nouveau gel des tests après une réouverture, tracé dans la spec. |
+| **Point de relecture** | Remarque d’un sous-agent de relecture, avec un identifiant stable : préfixe et numéro, continus sur tout le chantier. Revue de code : `RB1` (bloquant), `RD1` (à discuter), consignés dans `revue.md`, jamais réutilisés ; relecture de spec : `SB1`, `SD1` ; surapprentissage : `OB1`, `OD1`, qui ne sont suivis que s’ils sont cités dans la spec ou `decisions.md`. Prochains numéros : `atelier review-ids`. On le cite dans la conversation, les commits, la spec, `decisions.md` et le bilan. |
 | **Porte** | Contrôle à passer pour changer d’étape : automatique (types, lint, tests, complétude) ou humaine (signature, verdict). |
-| **Revue** | Relecture du chantier par un sous-agent indépendant, en tours successifs jusqu’à zéro point bloquant ; consignée dans `revue.md`. Obsolète dès que du code est commité ou la spec amendée après le commit revu. |
+| **Revue** | Passage du sous-agent relecteur indépendant, relancé après chaque correction jusqu’à ce que chaque point ait un traitement ; consignée dans `revue.md`. **Revue de tranche** : le diff de la tranche, ligne à ligne ; sa validation fait passer à la tranche suivante. **Revue du chantier** : après la dernière tranche, transversale. Obsolète dès que du code est commité ou la spec amendée après le commit revu. |
 | **Signature** | Validation humaine qu’une spec suffit pour lancer le chantier. |
 | **Socle commun** | Règles partagées par tous les projets, dont chaque projet hérite. |
 | **Spec** | Document qui décrit l’intention du chantier : quoi, pourquoi, comment on saura que c’est réussi. |
@@ -22,6 +23,7 @@
 | **TDD** | Développement piloté par les tests : tests écrits, échoués et commités avant l’implémentation. Décidé chantier par chantier. |
 | **Test de caractérisation** | Test qui fige le comportement actuel d’un code avant de le restructurer. |
 | **Test de non-régression** | Test qui reproduit un bug : rouge avant la correction, vert après. |
-| **Tranche** | Morceau de chantier livrable seul, relisible en moins de 15 minutes. Un commit par tranche. |
+| **Traitement** | Sort d’un point de revue, écrit dans la colonne « Traitement » de `revue.md` ; la cellule commence par un mot-clé : corrigé (commit), test ajouté, spec amendée, exception acceptée (par qui, pourquoi), écarté (pourquoi), reporté (chantier, « Dette et suites » du bilan, ou `reporté (tranche N)`), requalifié (`requalifié (RB4)`), sans objet. Sans mot-clé, le point est ouvert : `set-reviewed` et `close-check` refusent. |
+| **Tranche** | Morceau de chantier livrable seul, relisible en moins de 15 minutes, numéroté dans `plan.md`. Unité du cycle : ses tests, son implémentation et sa revue se font à part, dans l’ordre du plan. La tranche en cours est dans l’en-tête de la spec (`slice`). |
 | **Verdict** | Décision humaine finale à la clôture : accepté, accepté avec exceptions, refusé. |
 | **Voie rapide** | Enchaînement court pour les corrections de bugs. |
