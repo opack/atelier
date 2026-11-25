@@ -340,9 +340,10 @@ describe('tests modifiés depuis le gel, après une fusion de la branche par dé
     assert.equal(status, 0, output)
   })
 
-  it('signale un test figé dont le conflit avec la branche par défaut a été résolu par le chantier [FIX-32 CA-6]', () => {
-    // The chantier wrote its frozen test in `test/main.test.mjs`, a file shared with the default
-    // branch, which then adds its own lines at the same place: the merge conflicts.
+  // FIX-20's case: the chantier wrote its frozen test in `test/main.test.mjs`, a file shared with the
+  // default branch, which then adds its own lines at the same place: the merge conflicts and is
+  // resolved with `resolution`, then committed.
+  function conflictOnSharedTest(resolution) {
     const directory = makeSlicedRepository({ id: 'FIX-20', tdd: 'yes', plan: null })
     git(directory, 'switch', '-q', 'main')
     commitFiles(directory, { 'test/main.test.mjs': 'ligne a\n' }, 'test: main')
@@ -356,9 +357,20 @@ describe('tests modifiés depuis le gel, après une fusion de la branche par dé
     let conflict = false
     try { git(directory, 'merge', '-q', '--no-edit', 'main') } catch { conflict = true }
     assert.ok(conflict, 'la fusion doit être en conflit')
-    writeFileSync(join(directory, 'test/main.test.mjs'), 'ligne a\nligne fix\nligne main\n')
+    writeFileSync(join(directory, 'test/main.test.mjs'), resolution)
     git(directory, 'add', '-A')
     commit(directory, 'chore(merge): main')
+    return directory
+  }
+
+  it('ne signale pas un test figé dont le conflit avec la branche par défaut est résolu en gardant les deux côtés [FIX-32 CA-6]', () => {
+    const directory = conflictOnSharedTest('ligne a\nligne fix\nligne main\n')
+    const { status, output } = atelierRun(directory, 'tests-changed')
+    assert.equal(status, 0, output)
+  })
+
+  it('signale un test figé dont la résolution du conflit modifie une ligne figée [FIX-32 CA-8]', () => {
+    const directory = conflictOnSharedTest('ligne a\nligne fix modifiée\nligne main\n')
     const { status, output } = atelierRun(directory, 'tests-changed')
     assert.equal(status, 2, output)
     assert.match(output, /- test\/main\.test\.mjs/)
