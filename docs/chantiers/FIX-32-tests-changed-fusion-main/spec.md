@@ -9,6 +9,8 @@ source: FIX-20, revue de la tranche 2 après fusion de main (14753db)
 rel_origin: FIX-20
 signed_by: Opack
 signed_at: 2026-11-25
+tests_commit: 4df075b
+slice: 1
 ---
 
 # FIX-32 Les tests venus de main comptent comme tests modifiés depuis le gel
