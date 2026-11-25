@@ -168,3 +168,60 @@ describe('values written by check-plan', () => {
     assert.equal(specData(epic, 'EPIC-41').slice_tdd ?? '', '')
   })
 })
+
+describe('check-plan, complements', () => {
+  const values = (header, body = specBody) => checkPlanValues(chantierOf({ body, plan: goodPlan, ...header }))
+  const amended = (entry) => `${specBody}\n## Amendements\n- ${entry}\n`
+
+  it('n’écrit rien après une réouverture ou un regel des tests, ni pour un EPIC ou un SPIKE sans TDD [FIX-20 CA-12]', () => {
+    assert.deepEqual(values({}, amended('2026-11-01 : tests rouverts (gel quitté : abc1234) : oubli')), {}, 'tests rouverts')
+    assert.deepEqual(values({}, amended('2026-11-02 : tests regelés : def5678')), {}, 'tests regelés')
+    assert.deepEqual(values({ type: 'EPIC', tdd: 'no' }), {}, 'EPIC')
+    assert.deepEqual(values({ type: 'SPIKE', tdd: 'no' }), {}, 'SPIKE sans TDD')
+  })
+
+  it('signale un plan sans tranche et une numérotation trouée [FIX-20 CA-11]', () => {
+    const empty = planProblems(chantierOf({ body: specBody, plan: '# Plan\n\n## Tranches\nÀ venir.\n' }))
+    assert.ok(empty.some((problem) => /aucune tranche/i.test(problem)), empty.join('\n'))
+    const gap = planProblems(chantierOf({ body: specBody, plan: tranches(
+      '1. Lecture — CA couverts : CA-1, CA-2 — TDD : oui',
+      '3. Commande — CA couverts : CA-3 — TDD : oui',
+    ) }))
+    assert.equal(gap.length, 1, gap.join('\n'))
+    assert.match(gap[0], /tranche 2/i)
+  })
+
+  it('lit les CA de la spec sans casse, avec les puces -, * ou + [FIX-20 CA-11]', () => {
+    const body = '# FIX-40\n\n## 5. Critères\n- [ ] ca-1 : premier\n* CA-2 : second\n+ [x] CA-3 : troisième\n'
+    assert.deepEqual(planProblems(chantierOf({ body, plan: goodPlan })), [])
+    const problems = planProblems(chantierOf({ body: `${body}* CA-4 : quatrième\n`, plan: goodPlan }))
+    assert.deepEqual(problems.filter((problem) => /CA-4/.test(problem)).length, 1, problems.join('\n'))
+  })
+
+  it('atelier check-plan : 1 sans argument ni plan.md, et sur un dossier [FIX-20 CA-12]', () => {
+    const directory = makeSlicedRepository({ id: 'FIX-40', plan: null })
+    const missing = atelierRun(directory, 'check-plan')
+    assert.equal(missing.status, 1, missing.output)
+    assert.match(missing.output, /introuvable/i)
+    const folder = atelierRun(directory, 'check-plan', 'docs')
+    assert.equal(folder.status, 1, folder.output)
+    assert.match(folder.output, /introuvable/i)
+  })
+
+  it('atelier check-plan sur un autre fichier que le plan du chantier : contrôle sans écrire slice_tdd [FIX-20 CA-12]', () => {
+    const directory = makeSlicedRepository({ id: 'FIX-40', plan: goodPlan.replace('TDD : oui', 'TDD : non') })
+    const chantierDirectory = chantierDirectoryOf(directory, 'FIX-40').slice(directory.length + 1)
+    commitFiles(directory, {
+      [`${chantierDirectory}/spec.md`]: specText({ id: 'FIX-40', tdd: 'yes', body: specBody }),
+      'notes/autre-plan.md': goodPlan,
+    }, 'docs: spec')
+    const other = atelierRun(directory, 'check-plan', 'notes/autre-plan.md')
+    assert.equal(other.status, 0, other.output)
+    assert.equal(specData(directory, 'FIX-40').slice_tdd ?? '', '', 'autre fichier : rien d’écrit')
+    assert.doesNotMatch(other.output, /[Cc]ommite la spec/)
+
+    const own = atelierRun(directory, 'check-plan', `${chantierDirectory}/plan.md`)
+    assert.equal(own.status, 0, own.output)
+    assert.equal(specData(directory, 'FIX-40').slice_tdd, 'no', 'le plan du chantier, désigné par son chemin')
+  })
+})
