@@ -22,7 +22,7 @@
   <g class="cycle-step"><rect x="60" y="16" width="180" height="44" rx="8" /><text x="150" y="43">/atelier:new</text></g>
   <g class="cycle-step"><rect x="60" y="88" width="180" height="44" rx="8" /><text x="150" y="115">/atelier:sign</text></g>
   <g class="cycle-step cycle-optional"><rect x="60" y="160" width="180" height="50" rx="8" /><text x="150" y="182">/atelier:plan</text><text x="150" y="200" class="cycle-note">FEAT, REF, gros chantiers</text></g>
-  <g class="cycle-step cycle-optional"><rect x="60" y="238" width="180" height="50" rx="8" /><text x="150" y="260">/atelier:write-tests</text><text x="150" y="278" class="cycle-note">si tdd: yes</text></g>
+  <g class="cycle-step cycle-optional"><rect x="60" y="238" width="180" height="50" rx="8" /><text x="150" y="260">/atelier:write-tests</text><text x="150" y="278" class="cycle-note">si la tranche est en TDD</text></g>
   <g class="cycle-step"><rect x="60" y="316" width="180" height="44" rx="8" /><text x="150" y="343">/atelier:build</text></g>
   <g class="cycle-step"><rect x="60" y="410" width="180" height="50" rx="8" /><text x="150" y="432">/atelier:review</text><text x="150" y="450" class="cycle-note">revue de la tranche</text></g>
   <g class="cycle-step cycle-optional"><rect x="60" y="510" width="180" height="50" rx="8" /><text x="150" y="532">/atelier:review</text><text x="150" y="550" class="cycle-note">revue du chantier</text></g>

@@ -16,7 +16,7 @@ Elle s’applique **avant chaque écriture par les outils d’édition** de Clau
 | 2 | **Fichier sensible** (`sensitivePaths`) | Toujours refusé, même en débrayage |
 | 3 | **État d’atelier** : `.atelier/**` | Refusé |
 |   | `.claude/atelier.json` | Création autorisée (c’est ce que fait `/atelier:init`), modification et suppression refusées : la configuration est modifiée par l’humain |
-| 4 | **En-tête de spec** : `status`, `signed_by`, `signed_at`, `done_at`, `tests_commit`, `reviewed_commit`, `slice`, `slice_base`, `last_slice` | Ne changent que par la commande `atelier` |
+| 4 | **En-tête de spec** : `status`, `signed_by`, `signed_at`, `done_at`, `tests_commit`, `reviewed_commit`, `slice`, `slice_base`, `slice_tdd`, `last_slice` | Ne changent que par la commande `atelier` |
 |   | `tdd` | Libre en brouillon ; ensuite, seulement par `atelier set-tdd`, tracé en amendement |
 |   | `id`, `type` | Figés dès que la spec n’est plus en brouillon |
 |   | Réécriture complète d’une spec non brouillon (`abandoned` compris) | Refusée |
@@ -25,7 +25,7 @@ Elle s’applique **avant chaque écriture par les outils d’édition** de Clau
 | 5 | **Chemins libres** (`freePaths`) | Autorisés |
 | 6 | **Débrayage actif** sur la branche | Autorisé |
 | 7 | **Sans chantier signé** : branche sans chantier (`main`, HEAD détachée), spec en brouillon, chantier clos (`done` ou `abandoned`) | Refusé. Un chantier clos rebloque le code : il faut en ouvrir un nouveau |
-| 8 | **TDD** (si `tdd: yes`) | Phase tests : seuls les fichiers de `testPaths`. Phase implémentation : ces fichiers sont refusés |
+| 8 | **TDD** (si la tranche en cours est en TDD : `slice_tdd`, sinon `tdd` du chantier) | Phase tests : seuls les fichiers de `testPaths`. Phase implémentation : ces fichiers sont refusés |
 
 Une spec est « non brouillon » dès qu’elle ne l’est plus dans le fichier **ou** dans sa version commitée (`HEAD`). Le corps est comparé à la version commitée : on peut écrire l’entrée d’amendement, puis modifier la spec en plusieurs éditions.
 

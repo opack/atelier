@@ -2,7 +2,7 @@
 
 **Objectif** : écrire la spécification **exécutable** du chantier avant le code, pour que l’agent puisse ensuite se vérifier lui-même.
 
-Cette étape ne s’applique qu’aux chantiers, et aux tranches, en TDD : `tdd: yes`, et pour un chantier en tranches, une tranche déclarée `TDD : oui` dans le [plan](./conception). Une tranche `TDD : non` saute la phase « tests d’abord » : ses tests s’écrivent avec le code ([Implémentation](./implementation)).
+Cette étape s’applique quand la tranche en cours est en TDD : déclarée `TDD : oui` dans le [plan](./conception) (recopié dans `slice_tdd`), ou à défaut `tdd: yes` du chantier. Une tranche `TDD : oui` d’un chantier `tdd: no` passe donc aussi par les tests d’abord. Une tranche `TDD : non` saute la phase « tests d’abord » : ses tests s’écrivent avec le code ([Implémentation](./implementation)).
 
 ## Pourquoi les tests d’abord ?
 
