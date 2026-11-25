@@ -24,7 +24,8 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 
 ## Revue : tranche 1 (relance) : 2026-11-25
 - Commit revu : 742c0ee
-- Base : a16af62 ; relance depuis 4bfd335 (corrections d417792)
+- Base : a16af62
+- Relance depuis : 4bfd335 (corrections : d417792)
 
 ### Bloquant
 | Point | Fichier | Traitement |
@@ -57,7 +58,8 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 
 ## Revue : tranche 2 (relance) : 2026-11-25
 - Commit revu : 23d04c1
-- Base : efbe964 ; relance depuis caa736b (corrections 81bfe38)
+- Base : efbe964
+- Relance depuis : caa736b (corrections : 81bfe38)
 
 ### Bloquant
 | Point | Fichier | Traitement |
@@ -70,3 +72,20 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | Aucun | | |
 
 - Bilan de la revue : RD3 et RD4 vérifiés corrigés, sans régression ; aucune idée.
+
+## Revue : chantier : 2026-11-25
+- Commit revu : 62c601f
+- Base : 67ca088
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD5. Le site présente un échec bruyant comme à corriger plus tard | site/cycle/revue.md:57 | corrigé (8909015) |
+| RD6. Forme d'une relance dans revue.md non décrite | plugins/atelier/skills/review/SKILL.md:57 | corrigé (8909015), contre le verdict « ne pas corriger » du relecteur : Didier veut un historique homogène |
+
+- Bilan de la revue : deux points à discuter, corrigés.
