@@ -8,6 +8,8 @@ created_at: 2026-11-23
 rel_depends_on: REF-29
 signed_by: Opack
 signed_at: 2026-11-23
+tests_commit: 7c2317c
+slice: 1
 ---
 
 # FEAT-21 EPIC en branche d'intégration
