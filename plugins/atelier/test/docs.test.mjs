@@ -210,3 +210,20 @@ describe('calibrated review points', () => {
     })
   }
 })
+
+describe('calibrated review points in the documentation', () => {
+  const repositoryText = (relativePath) => readFileSync(fileURLToPath(new URL(`../../../${relativePath}`, import.meta.url)), 'utf8')
+  const pages = {
+    'site/cycle/revue.md': [/### Bilan de chaque point/, /coût de la non-correction/, /silencieux/, /option la moins chère/, /### Relance/, /que s’il est bloquant/, /idées/],
+    'site/cycle/signature.md': [/revue#bilan-de-chaque-point/, /revue#relance/],
+    'site/cycle/implementation.md': [/revue#bilan-de-chaque-point/, /revue#relance/],
+    'README.md': [/coût de la non-correction/, /option la moins chère/, /relance/],
+  }
+
+  for (const [file, patterns] of Object.entries(pages)) {
+    it(`${file} décrit le bilan des points, la proportion et la relance [FEAT-30 CA-7]`, () => {
+      const text = repositoryText(file)
+      assert.deepEqual(patterns.filter((pattern) => !pattern.test(text)).map(String), [])
+    })
+  }
+})

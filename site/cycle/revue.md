@@ -46,6 +46,22 @@ Ses remarques sont classées **bloquant** / **à discuter**, avec `fichier:ligne
 - Un point **encore ouvert** à la revue suivante garde son identifiant, marqué `(repris)` : `RB2 (repris). Push non vérifié`.
 - Un point qui **change de gravité** prend un nouvel identifiant dans l’autre série et renvoie à l’ancien : `RB4 (ex-RD3)`. L’ancien est fermé par `requalifié (RB4)`.
 
+### Bilan de chaque point
+
+Le relecteur cherche et signale tout ce qu’il trouve, petits problèmes compris : le bilan ne réduit pas la recherche, il outille votre décision. Pour chaque point, bloquant ou à discuter, il donne, en plus de la correction proposée :
+
+- le **coût de la correction** : lignes de code et de tests, et tout nouveau concept à maintenir (option, champ, cas particulier, commande) ;
+- le **coût de la non-correction** : le scénario concret dans l’usage réel du projet, et si l’échec est **silencieux** (rien ne le signale : revue validée à tort, donnée perdue ou fausse) ou **bruyant** (erreur claire, visible tout de suite, qu’on corrigera le jour où elle arrive) ;
+- un **verdict** : corriger ou ne pas corriger, avec sa raison.
+
+L’usage réel (qui utilise le projet, comment, dans quel environnement) se lit dans `CLAUDE.md` et le `README` : aucun réglage de plus. S’ils n’en disent rien, le relecteur le signale une fois.
+
+Un bloquant est toujours à corriger : son bilan justifie sa gravité. Si le coût de la non-correction ne montre aucun échec réel dans l’usage du projet, le point est à discuter, pas bloquant.
+
+**Proportion** : quand la correction pèse nettement plus lourd que le problème, le relecteur propose aussi l’**option la moins chère** : documenter la limite, un message d’erreur clair, ou un chantier séparé. Pour un bloquant, cette option doit supprimer le problème (refuser un cas par une erreur claire plutôt que le prendre en charge, par exemple) : documenter ou reporter ne suffit pas.
+
+L’agent vous présente chaque point par son identifiant suivi d’un résumé du problème, puis la correction, les deux coûts, le verdict du relecteur et son propre avis : `RD1, la liste vide plante l’affichage : je propose…, ça coûte…, sinon…, avis : …`. Corriger n’est pas le choix par défaut : vous tranchez avec les deux coûts sous les yeux. Les mêmes règles valent pour `spec-critic` à la [signature](./signature) et pour `overfit-checker` à l’[implémentation](./implementation).
+
 La revue de l’agent **précède** la vôtre, elle ne la remplace pas. Voir [Relire du code généré](../agent/revue).
 
 ## 3. Traiter chaque point
@@ -57,15 +73,27 @@ Vous décidez du traitement de chaque point :
 | Une erreur dans le code | **corrigé** (commit), comme une tranche (`/atelier:build`) |
 | Un test manquant ou faux | **test ajouté** : `/atelier:write-tests`, qui en TDD rouvre les tests figés, raison à l’appui |
 | Une spec fausse ou incomplète | **spec amendée** : [amendement](./amendement) (`/atelier:amend`) |
-| Un écart que vous assumez | **exception acceptée**, **explicitement** par vous, avec sa raison |
+| Un écart que vous assumez, ou un point que vous choisissez de ne pas corriger après son bilan | **exception acceptée**, **explicitement** par vous, avec sa raison (le verdict, le cas échéant) |
 | Rien de fondé | **écarté**, avec la raison |
-| Un sujet pour plus tard | **reporté** : vers un autre chantier, la section « Dette et suites » du bilan, ou une tranche suivante (`reporté (tranche N)`), où il devra être repris et traité |
+| Un sujet pour plus tard, ou un chantier séparé | **reporté** : vers un autre chantier, la section « Dette et suites » du bilan, ou une tranche suivante (`reporté (tranche N)`), où il devra être repris et traité |
 | Une gravité mal évaluée | **requalifié** (`requalifié (RB4)`), repris sous son nouvel identifiant |
 | Un point devenu caduc | **sans objet** |
+
+Une limite documentée plutôt que corrigée se consigne **corrigé**, avec le commit de la documentation. **écarté** reste réservé au point non fondé.
 
 La cellule « Traitement » commence par l’un de ces mots-clés (casse ignorée), suivi du détail libre. Vide, ou sans mot-clé (« À corriger au build »), elle laisse le point ouvert. Un commit qui traite un point le cite après l’identifiant du chantier : `fix(plugin): [TEC-15] RB2 refuse an empty treatment`.
 
 Après des corrections, on relance une **revue**. On continue jusqu’à ce que **chaque point ait un traitement**, les points à discuter compris.
+
+### Relance
+
+Une **relance** est une nouvelle revue de la même portée (même tranche, ou le chantier) après correction de points de la revue précédente. La revue de la tranche suivante et la revue du chantier sont des premiers passages, qui couvrent tout leur périmètre.
+
+Sans règle, un relecteur relancé tire de nouvelles remarques à chaque passage, y compris sur du code qu’il avait déjà lu : les revues s’enchaînent sans converger. En relance, `/atelier:review` donne au reviewer le commit de la revue précédente et la liste des corrections faites depuis ; le reviewer :
+
+- vérifie les corrections et signale leurs régressions ;
+- retient, quelle que soit sa gravité, un point **causé par une correction**, même sur du code déjà relu (un appelant devenu faux, une vérification devenue inutile), en nommant la correction qui le cause ;
+- ne retient un point sur du code inchangé, que la revue précédente pouvait déjà voir, que s’il est bloquant. Sinon, il le cite en une ligne dans une liste d’**idées**, sans identifiant : une idée n’entre pas dans les tableaux de `revue.md` et n’exige aucun traitement. Si vous voulez la traiter, elle devient un point nouveau, avec son numéro.
 
 ## 4. Consigner, valider, passer à la suite
 
