@@ -14,7 +14,7 @@ Arguments reçus : `$ARGUMENTS`
 ## 0. Préalables
 
 `atelier status --json` : il faut une spec **signée**. `slice` et `sliceCount` donnent la tranche en cours (`null` pour un chantier à tranche unique ; `"chantier"` pendant la revue du chantier). Puis, selon `testDrivenPhase` :
-- **`none`** : l'utilisateur a choisi de ne pas mener ce chantier en TDD (`tdd: no`). Il n'y a ni phase « tests d'abord » ni gel : dis-le et propose `/atelier:build`, où les tests s'ajoutent avec le code.
+- **`none`** : l'utilisateur a choisi de ne pas mener ce chantier, ou cette tranche, en TDD (`tdd: no` du chantier, ou tranche déclarée « TDD : non » dans le plan, `slice_tdd: no`). Il n'y a ni phase « tests d'abord » ni gel : dis-le et propose `/atelier:build`, où les tests s'ajoutent avec le code.
 - **`writing-tests`** : tests de la tranche en cours, ou tests déjà rouverts. Va à l'étape 1. Si un test d'une tranche précédente doit changer (argument fourni), rouvre-le d'abord comme ci-dessous : c'est possible dès la tranche 2.
 - **`implementing`** : les tests sont figés. Les rouvrir est une décision de l'utilisateur.
 
@@ -26,7 +26,7 @@ Rouvrir des tests figés :
 
 Puis :
 - Repère le framework de tests et les conventions du projet : emplacement, nommage, utilitaires de test existants. La commande de tests est dans `.claude/atelier.json`.
-- Si en cours de route le TDD s'avère inadapté (ex. rendu purement visuel), ne contourne pas : propose à l'utilisateur `atelier set-tdd no <raison>`, tracé dans la spec. C'est sa décision. Après la commande, commite aussitôt la spec seule : `docs(chantiers): [<ID>] set tdd`.
+- Si en cours de route le TDD s'avère inadapté (ex. rendu purement visuel), ne contourne pas : propose à l'utilisateur `atelier set-tdd yes|no <raison>`, tracé dans la spec. C'est sa décision. Dans un chantier en tranches, elle ne change que la tranche courante ; elle est refusée si les tests de la tranche sont figés, et `no` l'est pendant une réouverture. Corrige aussi `plan.md` en parallèle (« TDD : … » de la tranche), avec une entrée dans `decisions.md`. Après la commande, commite aussitôt la spec seule : `docs(chantiers): [<ID>] set tdd`.
 
 ## Tests de la tranche seulement
 

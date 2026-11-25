@@ -64,3 +64,9 @@
 - OD14 (reporté en tranche 6, accord de Didier) : `status` n'affiche pas « TDD : non » pour un chantier à une seule tranche (modèle `single`) dont `slice_tdd` est renseigné, alors que le JSON porte `sliceTdd`. Correction en tranche 6 (sans TDD : test écrit avec le code) : afficher la ligne dès que `sliceTdd` est renseigné hors modèle `none`.
 - OD15 (écarté, accord de Didier) : `check-plan` compare strictement le chemin du plan à celui du chantier ; sur un disque insensible à la casse, une casse différente n'écrit pas `slice_tdd`. Défaut prudent (rien n'est écrit à tort, le message l'explique), cas très improbable.
 - OD16 (reporté en tranche 6, avec OD14) : test de l'absence de la ligne « TDD : … » quand `slice_tdd` est vide, et du rattachement de la ligne à la tranche.
+
+## 2026-11-25 : tranche 6 (sans TDD)
+- Fusion de main (FEAT-27, version 0.6.0) au début de la tranche ; version du plugin portée à 0.7.0 (nouvelle commande `check-plan`).
+- OD14 (corrigé) : `formatStatus` reçoit le modèle de tranche (`sliceState`) en argument, pour ne pas changer le JSON de `status`. Tranche numérotée : « Tranche N/M : TDD : oui|non » ; modèle `single` : « TDD : oui|non » seul ; rien en modèle `none`, `legacy` ni en revue d'ensemble.
+- OD16 (corrigé) : tests de l'absence de la ligne quand `slice_tdd` est vide et du rattachement de la ligne à la tranche (`test/tdd-slice-status.test.mjs`).
+- Skill `plan` : `atelier check-plan` est lancé avant le commit du plan ; quand il écrit `slice_tdd`, la spec est commitée avec le plan dans `docs(chantiers): [<ID>] plan`.

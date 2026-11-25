@@ -16,7 +16,7 @@ L’agent lit la spec et le code concerné, puis propose :
 
 - **l’approche** recommandée, et s’il existe un vrai choix, deux ou trois options avec leurs compromis ;
 - **les fichiers et couches touchés** ;
-- **les tranches**, chacune livrable seule, avec les critères qu’elle couvre ;
+- **les tranches**, chacune livrable seule, avec les critères qu’elle couvre et leur décision TDD (oui ou non, avec une recommandation : c’est vous qui tranchez) ;
 - **les risques** et les zones critiques à relire ligne à ligne ;
 - **ce qui manque dans la spec**, si la conception révèle un trou (on l’amende plutôt que de le combler en silence).
 
@@ -39,7 +39,9 @@ Une tranche est un morceau de chantier :
 
 Plus gros : on redécoupe. Les petites tranches gardent les revues lisibles et les retours en arrière simples.
 
-Dans `plan.md`, chaque tranche est une entrée numérotée de premier niveau de la section « Tranches », avec ses critères : `2. Export CSV — CA couverts : CA-3, CA-4`. atelier y lit le nombre de tranches. Une tranche garde son numéro : on peut ajouter ou redécouper des tranches à venir, pas retirer une tranche déjà revue.
+Dans `plan.md`, chaque tranche est une entrée numérotée de premier niveau de la section « Tranches », avec ses critères : `2. Export CSV — CA couverts : CA-3, CA-4 — TDD : oui`. atelier y lit le nombre de tranches. Une tranche garde son numéro : on peut ajouter ou redécouper des tranches à venir, pas retirer une tranche déjà revue.
+
+Chaque tranche déclare son TDD : `TDD : oui` ou `TDD : non`. Le `tdd` du chantier est la valeur proposée par défaut. Une tranche qui n’a rien à tester (doc, site, version) se déclare `TDD : non` ; `TDD : oui` exige au moins un critère. Avant de commiter le plan, `/atelier:plan` lance `atelier check-plan`, qui signale les problèmes du plan (TDD non déclaré, `TDD : oui` sans critère, critère non couvert…) (sortie 2 : on corrige le plan avec vous et on relance), puis recopie le TDD de la tranche 1 dans la spec (`slice_tdd`) : la spec est commitée avec le plan. Les EPIC n’ont pas ce contrôle.
 
 ## Sortie
 

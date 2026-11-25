@@ -116,6 +116,7 @@ Local, non versionné (ajouté au `.gitignore` par `/atelier:init`), protégé c
 | `done_at` | date | `atelier set-status done` |
 | `tests_commit` | hash git : gel des tests de la tranche en cours | `atelier freeze-tests`, `atelier reopen-tests`, `atelier set-reviewed` (vidé au passage de tranche) |
 | `slice` | numéro de la tranche en cours, ou `chantier` (revue du chantier) | `atelier freeze-tests`, `atelier set-reviewed` |
+| `slice_tdd` | `yes` ou `no` : TDD de la tranche en cours, d’après le plan | `atelier check-plan`, `atelier set-reviewed`, `atelier set-tdd` |
 | `slice_base` | hash git complet : commit revu qui a clos la tranche précédente | `atelier set-reviewed` |
 | `last_slice` | numéro de la dernière tranche revue | `atelier set-reviewed` |
 | `reviewed_commit` | hash git complet : revue du chantier, ou de l’unique tranche | `atelier set-reviewed` |

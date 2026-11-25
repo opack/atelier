@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { toProjectRelativePath } from '../common.mjs'
 import { codeCommittedMatters, nextStep } from '../next-step.mjs'
-import { sliceLabel } from '../slices.mjs'
+import { sliceLabel, sliceState } from '../slices.mjs'
 import { checkSpec } from '../spec.mjs'
 import { effectiveTdd, testDrivenPhase } from '../tdd.mjs'
 import { findProjectRoot, isAncestorOfHead, loadConfig } from './common.mjs'
@@ -56,10 +56,11 @@ export function commandStatus(options) {
     console.log(JSON.stringify(summary, null, 2))
     return
   }
-  console.log(formatStatus(summary))
+  console.log(formatStatus(summary, sliceState(chantier).model))
 }
 
-function formatStatus(summary) {
+// `sliceModel`: slice model of the chantier (see sliceState), to tell a single-slice chantier from the others.
+function formatStatus(summary, sliceModel) {
   const lines = [`Branche : ${summary.branch ?? '(aucune)'}`]
   if (summary.chantier) {
     const { id, title, type, status, files, specProblems } = summary.chantier
@@ -75,8 +76,13 @@ function formatStatus(summary) {
     }
     const { slice, sliceCount } = summary.chantier
     const { sliceTdd } = summary.chantier
-    if (typeof slice === 'number' && sliceTdd) {
-      lines.push(`${sliceLabel(slice, sliceCount)} : TDD : ${sliceTdd === 'yes' ? 'oui' : 'non'}`)
+    if (sliceTdd) {
+      const tddLabel = `TDD : ${sliceTdd === 'yes' ? 'oui' : 'non'}`
+      if (typeof slice === 'number') {
+        lines.push(`${sliceLabel(slice, sliceCount)} : ${tddLabel}`)
+      } else if (sliceModel === 'single') {
+        lines.push(tddLabel)
+      }
     }
     if (typeof slice === 'number' && slice > sliceCount) {
       lines.push(`Tranche ${slice} absente du plan : la revue de la tranche mène à la revue du chantier.`)
@@ -136,7 +142,7 @@ export function hookSessionStart() {
     nextStep: nextStep(chantier, review.reviewState, relations?.children, codeCommittedFact(projectRoot, config, chantier, review.reviewState)),
   }
   const statusText = summary.chantier
-    ? formatStatus({ ...summary, chantier: { ...summary.chantier, specProblems: [] } })
+    ? formatStatus({ ...summary, chantier: { ...summary.chantier, specProblems: [] } }, sliceState(chantier).model)
     : formatStatus(summary)
   console.log(`Projet géré avec atelier (process IA : chantiers, spec signée avant le code, tests d'abord, bilan).\n${statusText}`)
 }

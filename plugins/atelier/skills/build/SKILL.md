@@ -14,7 +14,7 @@ Pendant la revue du chantier (`slice: "chantier"`), les corrections des points d
 ## 0. Préalables
 
 - `atelier status --json` : spec **signée**. Si `testDrivenPhase` vaut `writing-tests`, arrête-toi : les tests ne sont pas encore écrits et commités, propose `/atelier:write-tests`.
-- Si `testDrivenPhase` vaut `none` (`tdd: no`), suis la section « Sans TDD » en fin de document à la place des étapes 1 et 2.
+- Si `testDrivenPhase` vaut `none` (`tdd: no`, ou tranche « TDD : non » d'un chantier TDD), suis la section « Sans TDD » en fin de document à la place des étapes 1 et 2.
 - Lis la spec, `plan.md` et `decisions.md` s'ils existent, puis les tests figés du chantier.
 
 ### Modèle et effort des sous-agents
@@ -63,7 +63,9 @@ Seulement après son accord :
 2. Commite la tranche : `<prefix>(<scope>): [<ID>] <description>` (un commit par tranche). Un commit qui corrige un point de revue le cite après l'identifiant du chantier : `fix(<scope>): [<ID>] RB2 <description>`.
 3. Suite : `/atelier:review`, la revue de la tranche (ou du chantier si tu corrigeais ses points). C'est la validation de cette revue qui fait passer à la tranche suivante. Pour un `SPIKE` sans TDD : la tranche suivante du plan (`/atelier:build <tranche>`), puis `/atelier:close` (revue facultative).
 
-## Sans TDD (`tdd: no`)
+## Sans TDD (`tdd: no`, ou tranche « TDD : non »)
+
+Dans une tranche « TDD : non » d'un chantier TDD, les tests comptent comme du code de la tranche : ils ne sont pas figés.
 
 1. Lance le sous-agent `atelier:implementer` comme à l'étape 1, avec la mission d'implémenter la tranche sans TDD : il ajoute des tests **seulement là où ils ont de la valeur** (logique non triviale, cas limite fragile, bug évité), pas de test pour le principe ni de test redondant avec ceux qui existent.
 2. Après chaque retour, `atelier checks`, et relance `implementer` jusqu'à ce que tout soit vert, comme à l'étape 1 : arrêt sur « Arrêt : test à revoir » (point 3) et décisions consignées dans `decisions.md` (point 4).

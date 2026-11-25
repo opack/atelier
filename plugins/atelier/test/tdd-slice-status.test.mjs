@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { atelierOk, atelierRun, commitFiles, git, headOf, makeSlicedRepository, setHeader } from './helpers.mjs'
+import { planOf } from './helpers.mjs'
 
 // Slice 2 of a chantier with `tdd` (chantier) and `sliceTdd` (slice_tdd of slice 2): slice 1's
 // code committed before slice_base, so that only slice 2's commits count.
@@ -56,5 +57,28 @@ describe('slice TDD in status and in the code of the slice', () => {
     }
     const undeclared = atSliceTwoWith({ tdd: 'yes', sliceTdd: '' })
     assert.equal(status(undeclared).chantier.sliceTdd, null, 'slice_tdd vide')
+  })
+})
+
+describe('slice TDD line of the status text', () => {
+  it('chantier à une seule tranche, slice_tdd: no : le texte indique « TDD : non » [FIX-20 CA-14]', () => {
+    for (const plan of [planOf([1]), null]) {
+      const directory = makeSlicedRepository({ id: 'FEAT-20', tdd: 'yes', plan })
+      setHeader(directory, 'FEAT-20', { slice_tdd: 'no' })
+      assert.match(atelierOk(directory, 'status'), /^TDD : non$/m, plan === null ? 'sans plan' : 'plan d’une tranche')
+    }
+  })
+
+  it('slice_tdd vide : aucune ligne « TDD : » dans le texte, tranche numérotée ou unique [FIX-20 CA-14]', () => {
+    for (const [plan, slice] of [[undefined, '2'], [planOf([1]), '1'], [null, '1']]) {
+      const directory = makeSlicedRepository({ id: 'FEAT-20', tdd: 'yes', ...(plan === undefined ? {} : { plan }) })
+      setHeader(directory, 'FEAT-20', { slice, slice_tdd: '' })
+      assert.doesNotMatch(atelierOk(directory, 'status'), /TDD : (oui|non)/, `tranche ${slice}`)
+    }
+  })
+
+  it('tranche numérotée : la ligne est rattachée à la tranche [FIX-20 CA-14]', () => {
+    const directory = atSliceTwoWith({ tdd: 'yes', sliceTdd: 'no' })
+    assert.match(atelierOk(directory, 'status'), /Tranche 2\/3 : TDD : non/)
   })
 })
