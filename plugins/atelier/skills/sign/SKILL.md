@@ -1,5 +1,6 @@
 ---
 description: Fait relire la spec du chantier actif par un agent critique, puis la signe sur confirmation explicite de l'utilisateur. Rien ne se code avant.
+argument-hint: "[modèle] [effort]"
 disable-model-invocation: true
 ---
 

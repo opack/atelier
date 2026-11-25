@@ -1,5 +1,6 @@
 ---
 description: Revue indépendante du chantier actif — revue de la tranche en cours, puis revue du chantier après la dernière tranche — contrôles, relecture par le sous-agent reviewer, traitement de chaque point RB/RD (correction, test, amendement, exception acceptée, écarté, reporté ou requalifié), autant de revues que nécessaire, validation de l'utilisateur, puis passage à la tranche suivante ou enregistrement du commit revu.
+argument-hint: "[modèle] [effort]"
 ---
 
 # Faire relire la tranche ou le chantier

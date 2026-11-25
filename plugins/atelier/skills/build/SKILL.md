@@ -1,6 +1,6 @@
 ---
 description: Étapes 4 et 5 du TDD pour le chantier actif — faire implémenter la tranche par le sous-agent implementer jusqu'à ce que tous les tests passent sans jamais les modifier, vérifier l'absence de surapprentissage avec un sous-agent indépendant, puis commiter après validation.
-argument-hint: "[tranche, seulement pour un SPIKE sans TDD]"
+argument-hint: "[modèle] [effort] [tranche, seulement pour un SPIKE sans TDD]"
 ---
 
 # Implémenter (TDD, étapes 4 et 5)

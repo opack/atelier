@@ -76,6 +76,23 @@ Créé par `/atelier:init`, puis modifié **par vous** : l’agent ne peut pas l
 | `sensitivePaths` | `.env`, `.env.*`, `*.pem`, `*.key`, `**/secrets/**` | Jamais modifiables par l’agent. |
 | `testPaths` | `*.test.*`, `*.spec.*`, `*.snap`, `**/__tests__/**`, `**/__snapshots__/**`, `test/**`, `tests/**`, `e2e/**` | Ce qui compte comme test pour le TDD. |
 
+## Modèle et effort des sous-agents
+
+Ce sont des **options du plugin**, réglées par `/plugin configure atelier` et valables pour tous vos projets : elles ne passent pas par `.claude/atelier.json`. Pour chaque sous-agent, une option règle le modèle et une autre l’effort. L’ordre de résolution (argument de la commande, option, défaut) est décrit dans [Modes de travail](../agent/modes).
+
+| Option | Défaut | Valeurs possibles |
+|---|---|---|
+| `implementer_model` | `sonnet` | `sonnet`, `opus`, `haiku`, `fable` |
+| `implementer_effort` | `medium` | `low`, `medium`, `high`, `xhigh`, `max` |
+| `overfit_checker_model` | `opus` | `sonnet`, `opus`, `haiku`, `fable` |
+| `overfit_checker_effort` | `medium` | `low`, `medium`, `high`, `xhigh`, `max` |
+| `reviewer_model` | `opus` | `sonnet`, `opus`, `haiku`, `fable` |
+| `reviewer_effort` | `high` | `low`, `medium`, `high`, `xhigh`, `max` |
+| `spec_critic_model` | `opus` | `sonnet`, `opus`, `haiku`, `fable` |
+| `spec_critic_effort` | `high` | `low`, `medium`, `high`, `xhigh`, `max` |
+
+Une valeur inconnue est ignorée avec un avertissement : atelier retombe sur le défaut.
+
 ## Le dossier `.atelier/`
 
 Local, non versionné (ajouté au `.gitignore` par `/atelier:init`), protégé contre les outils d’édition de l’agent. Il contient :

@@ -73,3 +73,10 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - OD16, corrigé : un nombre pair d'apostrophes dans l'argument permettait de sortir des guillemets simples et d'injecter du shell. Les trois skills refusent maintenant tout argument qui contient une apostrophe, avant de lancer la commande. La garantie de la §6 repose donc sur cette consigne, en plus des guillemets.
 - Remarque mineure, corrigée : `review` précise que la correction confiée à `/atelier:build` passe par `atelier:implementer`.
 - Tests jugés faibles (CA-11, CA-12, consignes non testées) : comme OD5, OD10 et OD12, on ne rouvre pas les tests.
+
+## 2026-11-25 : traitement du contrôle de surapprentissage, tranche 5 (OB2, OB3, OD17 à OD21)
+- OB2, OB3, OD17, OD18, corrigés : `site/cycle/implementation.md` décrit la délégation à `implementer` (`build` relance les contrôles et `implementer` ; `build` résume, fait valider et commite ; arrêt sur un test faux présenté par `build` ; décisions consignées par `build`).
+- OD19, OD20, corrigés : dans `commandes.md`, l'ordre des mots de l'argument de `build` est libre, un mot inconnu fait arrêter hors `SPIKE` sans TDD ; `atelier agent-settings` rend aussi `rest` et refuse un sous-agent inconnu ou une option répétée.
+- OD21, comme OD5, OD10 et OD12 : les tests de CA-14 ne vérifient que des mots clés (SD9 : la doc reste libre). On ne rouvre pas les tests ; la justesse du texte est vérifiée en revue.
+- RD1 : rien à faire, `CLAUDE.md` décrit déjà les modules de domaine de `lib/` depuis REF-29.
+- Version : 0.6.0 et non 0.5.0, prise par FEAT-30 qui fusionne avant (décision de Didier, 2026-11-25). À la fusion de `main`, garder 0.6.0.
