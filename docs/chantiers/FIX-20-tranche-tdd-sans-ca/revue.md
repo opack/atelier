@@ -73,3 +73,19 @@ Traitement d'un point : corrigé (commit), test ajouté, spec amendée, exceptio
 
 - Bilan de la revue : aucun bloquant ; RD1 et RD6 (reportés), OD3, OD6 et OD8 réglés et testés ; tranche 4 validée par Didier le 2026-11-25.
 - Hors chantier : la spec de FEAT-4 contient un commentaire HTML jamais refermé qui avale CA-6 à CA-8 (idée restante de FIX-22).
+
+## Revue : tranche 5 : 2026-11-25
+- Commit revu : b15ce46
+- Base : 2235812 (slice_base)
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+- Bilan de la revue : aucun point ; RD8, RD9 (tranche 4), OB3, OD11, OD12 et OD13 réglés et testés ; OD14 et OD16 reportés en tranche 6 (decisions.md) ; tranche 5 validée par Didier le 2026-11-25.
