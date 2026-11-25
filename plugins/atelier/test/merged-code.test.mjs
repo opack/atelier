@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, it } from 'node:test'
-import { codeLogArguments, parseGitVersion } from '../lib/common.mjs'
+import { codeLogArguments } from '../lib/common.mjs'
 import { atelierOk, atelierRun, commit, commitFiles, git, headOf, makeSlicedRepository, setHeader } from './helpers.mjs'
 
 const status = (directory) => JSON.parse(atelierOk(directory, 'status', '--json'))
@@ -105,34 +105,6 @@ describe('code apporté par une fusion de la branche par défaut', () => {
     assert.match(result.output, /tranche vide/i)
   })
 
-  it('lit la version de git et ne prend le nouveau calcul qu’à partir de 2.36 [FIX-28 CA-6]', () => {
-    for (const [text, newCalculation] of [
-      ['git version 2.35.1', false],
-      ['git version 2.31.0', false],
-      ['git version 1.99.9', false],
-      ['git version 2.36.0', true],
-      ['git version 2.39.3 (Apple Git-146)', true],
-      ['git version 2.45.1.windows.1', true],
-      ['git version 3.0.0', true],
-    ]) {
-      const version = parseGitVersion(text)
-      assert.notEqual(version, null, text)
-      const args = codeLogArguments({ from: 'abc', gitVersion: version, excludedRefs: ['origin/main', 'main'], fallbackDiffMerges: 'first-parent' })
-      assert.equal(args.includes('--diff-merges=remerge'), newCalculation, text)
-      assert.equal(args.includes('^origin/main') && args.includes('^main'), newCalculation, text)
-    }
-    for (const text of ['', 'pas une version', 'git version', 'git version x.y']) {
-      assert.equal(parseGitVersion(text), null, JSON.stringify(text))
-    }
-    const legacy = ['log', '--name-only', '-z', '--no-renames', '--diff-merges=first-parent', '--format=', 'abc..HEAD']
-    assert.deepEqual(codeLogArguments({ from: 'abc', gitVersion: null, excludedRefs: ['main'], fallbackDiffMerges: 'first-parent' }), legacy, 'version illisible')
-    assert.deepEqual(
-      codeLogArguments({ from: 'abc', gitVersion: parseGitVersion('git version 2.35.1'), excludedRefs: ['main'], fallbackDiffMerges: null }),
-      ['log', '--name-only', '-z', '--no-renames', '--format=', 'abc..HEAD'],
-      'repli de la tranche',
-    )
-  })
-
   it('sans référence à exclure, le calcul actuel s’applique sans erreur [FIX-28 CA-7]', () => {
     const noDefault = reviewedFix()
     git(noDefault, 'branch', '-m', 'main', 'trunk')
@@ -148,9 +120,19 @@ describe('code apporté par une fusion de la branche par défaut', () => {
       assert.match(summary.chantier.reviewProblems.join('\n'), /src\/after\.mjs/, label)
     }
     assert.deepEqual(
-      codeLogArguments({ from: 'abc', gitVersion: parseGitVersion('git version 2.43.0'), excludedRefs: [], fallbackDiffMerges: 'first-parent' }),
+      codeLogArguments({ from: 'abc', excludedRefs: [], fallbackDiffMerges: 'first-parent' }),
       ['log', '--name-only', '-z', '--no-renames', '--diff-merges=first-parent', '--format=', 'abc..HEAD'],
       'aucune référence à exclure',
+    )
+    assert.deepEqual(
+      codeLogArguments({ from: 'abc', excludedRefs: [], fallbackDiffMerges: null }),
+      ['log', '--name-only', '-z', '--no-renames', '--format=', 'abc..HEAD'],
+      'aucune référence à exclure, sans repli de l’appelant',
+    )
+    assert.deepEqual(
+      codeLogArguments({ from: 'abc', excludedRefs: ['origin/main', 'main'], fallbackDiffMerges: 'first-parent' }),
+      ['log', '--name-only', '-z', '--no-renames', '--diff-merges=remerge', '--format=', 'abc..HEAD', '^origin/main', '^main'],
+      'références à exclure',
     )
   })
 
