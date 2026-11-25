@@ -94,7 +94,7 @@ export function git(projectRoot, gitArguments) {
 
 // Untrimmed output: `git status --porcelain` lines start with a significant space.
 export function gitRaw(projectRoot, gitArguments) {
-  return execFileSync('git', gitArguments, { cwd: projectRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
+  return execFileSync('git', gitArguments, { cwd: projectRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 256 * 1024 * 1024 })
 }
 
 // File list printed by a git command run with -z (NUL-separated, never quoted).
