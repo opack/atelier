@@ -36,3 +36,7 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 ## 2026-11-25 : OD3 (tranche 2) corrigé, OD2 reporté à la tranche 3
 - OD3 : la base et les refs de la branche d'intégration étaient calculées deux fois par `sliceCodeFiles`, et l'index deux fois par `set-reviewed`. Corrigé : `integrationBranchOf` calcule une fois `{ branch, local, remote }`, dont on tire la ref de base (`baseRefOf`) et les refs à exclure (`integrationRefsOf`) ; `set-reviewed` construit l'index une fois.
 - OD2 : les tests figés de CA-6 ne distinguent pas « toujours la locale » de « toujours la distante » quand les deux existent, parce que les deux refs sont exclues du calcul du code. Écarté : rouvrir les tests de la tranche 2 pour un cas que la fonction pure couvre simplement. Conséquence : la tranche 3 ajoute un test pur de `integrationRefChoice` (ni l'une ni l'autre, une seule, l'une contient l'autre dans chaque sens, divergence).
+
+## 2026-11-25 : RD1 (revue 1 de la tranche 2) corrigé ; OD4 reporté à la tranche 3
+- RD1 : `chantierTestFiles` exclut aussi les refs de la branche d'intégration ; freeze-tests, tests-changed, le hook Stop et set-reviewed en profitent. Test ajouté après réouverture (64aa051).
+- OD4 : le test de RD1 ne vérifie que le gel, et pas qu'un test commun retouché par l'enfant lui-même reste compté. Écarté : rouvrir encore les tests de la tranche 2. Conséquence : la tranche 3 ajoute, dans le même scénario, `atelier tests-changed` après le gel (fichier du frère non cité), puis une retouche de l'enfant (fichier cité).

@@ -29,6 +29,7 @@ import {
   uncommittedFiles,
 } from './common.mjs'
 import { requireActiveChantier } from './identifiers.mjs'
+import { integrationBranchOf, integrationRefsOf } from './integration.mjs'
 import { codeFilesSince } from './slices.mjs'
 import { appendAmendment, updateSpec } from './spec.mjs'
 
@@ -39,9 +40,11 @@ function uncommittedTestFiles(projectRoot, config) {
 }
 
 // Test files changed by the chantier itself since `base` (its commits and the resolution of its
-// merges): files brought by a merge of the default branch do not count (see codeFilesSince).
-function chantierTestFiles(projectRoot, config, base) {
-  return [...new Set(codeFilesSince(projectRoot, base, 'first-parent'))]
+// merges): files brought by a merge of the default branch, or of the integration branch of the
+// chantier's EPIC, do not count (see codeFilesSince).
+function chantierTestFiles(projectRoot, config, base, chantier, index = null) {
+  const baseRefs = chantier ? integrationRefsOf(integrationBranchOf(projectRoot, config, chantier, index)) : []
+  return [...new Set(codeFilesSince(projectRoot, base, 'first-parent', baseRefs))]
     .filter((file) => matchesAny(file, config.testPaths, config.ignoreCase))
 }
 
@@ -65,10 +68,12 @@ function candidatesDiff(projectRoot, base, candidates) {
 // branch do not explain (see testFilesChangedByChantier): a test file brought or extended by such a
 // merge, conflict included, does not count. When `commit` is no longer an ancestor of HEAD (rebase
 // after the freeze), the chantier's history since the freeze cannot be read: the whole diff counts.
-export function testFilesChangedSince(projectRoot, config, commit) {
+// `chantier` gives the integration branch whose merges do not count either; `index` reuses an index
+// of chantiers already built.
+export function testFilesChangedSince(projectRoot, config, commit, chantier, index = null) {
   let committed
   if (isAncestorOfHead(projectRoot, commit)) {
-    const candidates = chantierTestFiles(projectRoot, config, commit)
+    const candidates = chantierTestFiles(projectRoot, config, commit, chantier, index)
     committed = candidates.length ? committedTestChanges(projectRoot, commit, candidates) : []
   } else {
     committed = gitPaths(projectRoot, ['diff', '--name-only', '-z', commit, '--'])
@@ -106,8 +111,8 @@ function committedTestChanges(projectRoot, commit, candidates) {
 
 // Test files present at `base` whose lines were changed or removed in HEAD, among the test files
 // changed by the chantier itself since `base` (see chantierTestFiles and candidatesDiff).
-function testFilesWithRemovedLines(projectRoot, config, base) {
-  const candidates = chantierTestFiles(projectRoot, config, base)
+function testFilesWithRemovedLines(projectRoot, config, base, chantier) {
+  const candidates = chantierTestFiles(projectRoot, config, base, chantier)
   if (!candidates.length) return []
   const { diff, deleted, binary } = candidatesDiff(projectRoot, base, candidates)
   return [...new Set([...removedTestLines(diff), ...deleted, ...binary])].filter((file) => candidates.includes(file))
@@ -136,7 +141,7 @@ export function commandFreezeTests() {
   }
   const sliceBase = chantier.spec.data.slice_base || null
   const sliceBaseIsAncestor = sliceBase ? isAncestorOfHead(projectRoot, sliceBase) : null
-  const removedTestFiles = sliceBase && sliceBaseIsAncestor ? testFilesWithRemovedLines(projectRoot, config, sliceBase) : []
+  const removedTestFiles = sliceBase && sliceBaseIsAncestor ? testFilesWithRemovedLines(projectRoot, config, sliceBase, chantier) : []
   const refusal = freezeTestsRefusal({ chantier, sliceBaseIsAncestor, removedTestFiles })
   if (refusal) {
     console.error(`Gel refusé : ${refusal}`)
@@ -213,7 +218,7 @@ export function commandTestsChanged() {
     console.log('Tests pas encore figés.')
     return
   }
-  const changed = testFilesChangedSince(projectRoot, config, commit)
+  const changed = testFilesChangedSince(projectRoot, config, commit, chantier)
   if (changed.length === 0) {
     console.log(`Aucun test modifié depuis le commit ${commit}.`)
     return

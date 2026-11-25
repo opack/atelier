@@ -84,10 +84,11 @@ export function commandSetReviewed() {
   const { model, slice } = sliceState(chantier)
   const sliceBase = chantier.spec.data.slice_base || null
   const sliceBaseIsAncestor = model === 'sliced' && sliceBase ? isAncestorOfHead(projectRoot, sliceBase) : null
+  const index = needsIndex(chantier) ? chantierIndex(projectRoot, config) : null
   let codeFiles = null
   try {
     codeFiles = model === 'sliced' && slice !== 'chantier' && sliceBaseIsAncestor !== false
-      ? sliceCodeFiles(projectRoot, config, chantier, sliceBase, effectiveTdd(chantier) === 'yes', needsIndex(chantier) ? chantierIndex(projectRoot, config) : null)
+      ? sliceCodeFiles(projectRoot, config, chantier, sliceBase, effectiveTdd(chantier) === 'yes', index)
       : null
   } catch (error) {
     console.error(`Revue non enregistrée : ${error.message}`)
@@ -100,7 +101,7 @@ export function commandSetReviewed() {
     uncommittedCode: reviewCodeFiles(uncommitted, config),
     specUncommitted: uncommitted.some((file) => samePath(config, file, specPath)),
     changedTests: testDrivenPhase(chantier) === 'implementing'
-      ? testFilesChangedSince(projectRoot, config, chantier.spec.data.tests_commit)
+      ? testFilesChangedSince(projectRoot, config, chantier.spec.data.tests_commit, chantier, index)
       : [],
   })
   if (refusal) {
