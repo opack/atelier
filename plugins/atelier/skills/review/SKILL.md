@@ -37,7 +37,11 @@ atelier agent-settings reviewer --user-model '${user_config.reviewer_model}' --u
 
 Si l'argument de la commande ou une valeur d'option substituée dans la ligne contient une apostrophe, arrête-toi sans lancer la commande et demande de la retirer : ces valeurs sont placées entre guillemets simples. Si la commande échoue, affiche son message et arrête-toi. Sinon, elle rend en JSON `model`, `effort`, leurs sources (`argument`, `utilisateur`, `défaut`) et des avertissements. Annonce le modèle, l’effort, leur source et les avertissements, par exemple « reviewer : opus / high (défaut) ». Passe `model` et `effort` à l’appel du sous-agent, à chaque revue. Si cet appel est refusé parce que le modèle n'est pas disponible pour l'organisation, arrête-toi et indique l'argument de la commande ou l'option (`/plugin configure atelier`) à changer.
 
-Lance le sous-agent `atelier:reviewer` en lui donnant : le chemin de la spec, du plan, de `decisions.md` et de `revue.md` s'ils existent (les revues précédentes disent ce qui a déjà été tranché), la base, la portée (« revue de la tranche N (CA couverts : … selon `plan.md`) », « revue du chantier » ou « chantier à tranche unique »), les prochains numéros `RB` et `RD`, et la liste des points à reprendre. Le reviewer ne calcule pas les numéros lui-même. Présente ses points classés **bloquant** (`RB`) / **à discuter** (`RD`), chacun avec son identifiant et `fichier:ligne`.
+Lance le sous-agent `atelier:reviewer` en lui donnant : le chemin de la spec, du plan, de `decisions.md` et de `revue.md` s'ils existent (les revues précédentes disent ce qui a déjà été tranché), la base, la portée (« revue de la tranche N (CA couverts : … selon `plan.md`) », « revue du chantier » ou « chantier à tranche unique »), les prochains numéros `RB` et `RD`, et la liste des points à reprendre. Le reviewer ne calcule pas les numéros lui-même.
+
+Les revues d'une même portée (même tranche, ou le chantier) sont numérotées : revue 1, revue 2… Une **relance** est une revue 2 ou suivante, faite après correction de points de la revue précédente ; la revue de la tranche suivante et la revue du chantier sont des premiers passages. Pour une relance, dis-le au reviewer et donne-lui en plus le commit de la revue précédente (consigné dans `revue.md`) et la liste des corrections faites depuis.
+
+Présente ses points classés **bloquant** (`RB`) / **à discuter** (`RD`), avec `fichier:ligne`. Présente chaque point par son identifiant suivi d'un résumé du problème en quelques mots, puis la correction proposée, ses deux coûts (correction, non-correction), le verdict du relecteur et ton avis : `RD1, la liste vide plante l'affichage : je propose…, ça coûte…, sinon…, avis : …`. Corriger n'est pas le choix par défaut : l'utilisateur tranche avec les deux coûts sous les yeux. Ses **idées** de relance, sans identifiant, se citent en une ligne : elles n'exigent aucun traitement.
 
 ## 3. Traiter chaque point
 
@@ -51,19 +55,23 @@ Désigne chaque point par son identifiant (« je corrige RB2, on écarte RD3 »)
 - **requalifié** (`requalifié (RB4)`) : le point change de gravité ; il reçoit un nouvel identifiant dans l'autre série, écrit `RB4 (ex-RD3)` dans le tableau de sa nouvelle gravité, dans la même revue ou une suivante ;
 - **sans objet** (`sans objet`) : le point ne s'applique plus.
 
+Selon l'issue retenue après le bilan : ne pas corriger (verdict suivi) → `exception acceptée`, avec le verdict pour motif ; chantier séparé → `reporté` ; limite documentée → `corrigé`, avec le commit de la documentation. `écarté` reste réservé au point non fondé.
+
 Un nouvel identifiant attribué pendant ce traitement (requalification) prend le numéro qui suit le plus grand de sa série déjà attribué, reviewer compris : `atelier review-ids` ne lit que `revue.md`, où cette revue n'est pas encore écrite, et redonnerait un numéro déjà pris. Un point repris que le reviewer juge désormais réglé reçoit son traitement (`corrigé (<commit>)`, `sans objet`…) dans sa dernière occurrence, la ligne d'une section précédente ; si cette cellule porte `reporté (tranche N)`, le traitement remplace le report en le citant : `corrigé (abc1234), reporté de la tranche 2`.
 
 Avant de relancer, consigne cette revue dans `revue.md` (étape 4) : `atelier review-ids` et le reviewer suivant ne voient que ce qui y est écrit, et redonneraient sinon les mêmes numéros. Puis, après des corrections, relance l'étape 1 et l'étape 2 : c'est une nouvelle revue. **Continue jusqu'à ce que chaque point, bloquant ou à discuter, ait un traitement.**
 
 ## 4. Consigner
 
-Dans le dossier du chantier, `revue.md` (créé depuis `atelier template revue` s'il n'existe pas ; remplace `{{ID}}`, `{{TITLE}}`, `{{DATE}}`) : une section `## ` par revue, avec sa portée (« tranche N » ou « chantier »), la date, le commit revu (`git rev-parse --short HEAD`), la base, les points et leur traitement.
+Dans le dossier du chantier, `revue.md` (créé depuis `atelier template revue` s'il n'existe pas ; remplace `{{ID}}`, `{{TITLE}}`, `{{DATE}}`) : une section `## ` par revue, avec sa portée (« tranche N » ou « chantier »), la date, le commit revu (`git rev-parse --short HEAD`), la base, les points et leur traitement. Le titre de section porte le numéro de la revue dans sa portée : `## Revue 1 : tranche 1 : <date>`, puis `## Revue 2 : tranche 1 : <date>` pour la relance, qui ajoute sous la base une ligne `- Corrections depuis la revue 1 : <commits>`.
 
 Les points vont dans les tableaux `### Bloquant` (`RB`) et `### À discuter` (`RD`), titres exacts. La cellule « Point » a la forme `<ID>[ (repris)| (ex-<ID>)]. <intitulé>` :
 - point nouveau : `RB2. Push non vérifié` ;
 - point encore ouvert, repris d'une revue précédente : `RB2 (repris). Push non vérifié` (la dernière occurrence d'un point est celle qui compte) ;
 - point requalifié : `RB4 (ex-RD3). Commit non signé`, et l'ancien fermé par `requalifié (RB4)` ;
 - aucun point : `Aucun`, seul dans la cellule.
+
+Une **idée** de relance n'entre jamais dans ces tableaux (elle n'a pas d'identifiant, et `set-reviewed` la prendrait pour un point sans traitement) : note-la, si tu veux la garder, en texte libre sous la section de la revue. Si l'utilisateur veut la traiter, elle devient un point nouveau, avec le prochain numéro.
 
 Un `|` dans une cellule s'écrit `\|`. Un `revue.md` aux points sans identifiant (`B1.`, `1.`) est refusé : propose à l'utilisateur de les renommer et de compléter leurs traitements : `B1` → `RB1`, `D1` → `RD1` si le fichier n'a encore aucun `RB`/`RD` ; sinon à partir de `next.RB` / `next.RD` de `atelier review-ids`, pour ne pas reprendre un numéro existant.
 

@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict'
+import { writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, it } from 'node:test'
 import { isRefreeze, refreezeTestsEntry, removedTestLines, reopenTestsEntry, reopenTestsRefusal, testDrivenPhase } from '../lib/tdd.mjs'
 import { parseFrontMatter } from '../lib/common.mjs'
@@ -217,5 +219,169 @@ describe('freezing the tests of a slice', () => {
       assert.match(output, /ancêtre/, command)
       assert.equal(specFileText(directory, 'FEAT-20'), before, `${command} : rien n’est écrit`)
     }
+  })
+})
+
+describe('gel après un gros diff ou une fusion de la branche par défaut', () => {
+  // FEAT-20 on feat/FEAT-20-x, in slice 2: `test/main.test.mjs` comes from the default branch,
+  // merged before slice_base; `test/one.test.mjs` is a test of slice 1.
+  function sliceTwoWithMainTest() {
+    const directory = makeSlicedRepository()
+    git(directory, 'switch', '-q', 'main')
+    commitFiles(directory, { 'test/main.test.mjs': 'ligne a\nligne b\n' }, 'test: main')
+    git(directory, 'switch', '-q', 'feat/FEAT-20-x')
+    git(directory, 'merge', '-q', '--no-edit', 'main')
+    commitFiles(directory, { 'test/one.test.mjs': 'ligne a\nligne b\n' }, 'test: one')
+    commitFiles(directory, { 'src/one.mjs': 'export const one = 1\n' }, 'feat: one')
+    setHeader(directory, 'FEAT-20', { slice: '2', slice_base: headOf(directory) })
+    return directory
+  }
+
+  // The default branch changes a line of `test/main.test.mjs`, then is merged without conflict.
+  function mergeMainChangingItsTest(directory) {
+    git(directory, 'switch', '-q', 'main')
+    commitFiles(directory, { 'test/main.test.mjs': 'ligne a\nligne B\n' }, 'test: main changed')
+    git(directory, 'switch', '-q', 'feat/FEAT-20-x')
+    git(directory, 'merge', '-q', '--no-edit', 'main')
+  }
+
+  it('fige les tests quand le diff depuis slice_base dépasse 1 Mo hors fichiers de test [FIX-31 CA-1]', () => {
+    const { directory } = atSliceTwo()
+    commitFiles(directory, { 'src/big.mjs': `// ${'x'.repeat(100)}\n`.repeat(20000) }, 'feat: big')
+    commitFiles(directory, { 'test/two.test.mjs': 'test\n' }, 'test: two')
+    const { status, output } = atelierRun(directory, 'freeze-tests')
+    assert.equal(status, 0, output)
+    assert.ok(specData(directory, 'FEAT-20').tests_commit)
+  })
+
+  it('ne refuse pas le gel pour un test modifié par la branche par défaut et apporté par une fusion [FIX-31 CA-2]', () => {
+    const directory = sliceTwoWithMainTest()
+    mergeMainChangingItsTest(directory)
+    commitFiles(directory, { 'test/two.test.mjs': 'test\n' }, 'test: two')
+    const { status, output } = atelierRun(directory, 'freeze-tests')
+    assert.equal(status, 0, output)
+    assert.ok(specData(directory, 'FEAT-20').tests_commit)
+  })
+
+  it('refuse le gel en ne citant que le test d’une tranche précédente modifié par le chantier, malgré une fusion [FIX-31 CA-3]', () => {
+    const directory = sliceTwoWithMainTest()
+    mergeMainChangingItsTest(directory)
+    commitFiles(directory, { 'test/one.test.mjs': 'ligne a\nligne B\n', 'test/two.test.mjs': 'test\n' }, 'test: two')
+    const { status, output } = atelierRun(directory, 'freeze-tests')
+    assert.equal(status, 2, output)
+    assert.match(output, /- test\/one\.test\.mjs/)
+    assert.doesNotMatch(output, /main\.test\.mjs/)
+    assert.equal(specData(directory, 'FEAT-20').tests_commit ?? '', '')
+  })
+})
+
+describe('tests modifiés depuis le gel, après une fusion de la branche par défaut', () => {
+  // FIX-20 (single slice, TDD) on fix/FIX-20-x: `test/main.test.mjs` comes from the default branch,
+  // `test/fix.test.mjs` is the chantier's test; both frozen at `tests_commit`.
+  function frozenFix() {
+    const directory = makeSlicedRepository({ id: 'FIX-20', tdd: 'yes', plan: null })
+    git(directory, 'switch', '-q', 'main')
+    commitFiles(directory, { 'test/main.test.mjs': 'ligne a\nligne b\n' }, 'test: main')
+    git(directory, 'switch', '-q', 'fix/FIX-20-x')
+    git(directory, 'merge', '-q', '--no-edit', 'main')
+    commitFiles(directory, { 'test/fix.test.mjs': 'ligne a\nligne b\n' }, 'test: fix')
+    setHeader(directory, 'FIX-20', { tests_commit: git(directory, 'rev-parse', '--short', 'HEAD').trim(), slice: '1' })
+    return directory
+  }
+
+  // The default branch changes `test/main.test.mjs` (and `files`), then is merged without conflict.
+  function mergeMainChangingItsTest(directory, files = {}) {
+    git(directory, 'switch', '-q', 'main')
+    commitFiles(directory, { 'test/main.test.mjs': 'ligne a\nligne B\n', ...files }, 'test: main changed')
+    git(directory, 'switch', '-q', 'fix/FIX-20-x')
+    git(directory, 'merge', '-q', '--no-edit', 'main')
+  }
+
+  it('ne signale pas un test modifié par la branche par défaut et apporté par une fusion sans conflit [FIX-32 CA-1]', () => {
+    const directory = frozenFix()
+    mergeMainChangingItsTest(directory)
+    const { status, output } = atelierRun(directory, 'tests-changed')
+    assert.equal(status, 0, output)
+    assert.doesNotMatch(output, /main\.test\.mjs/)
+  })
+
+  it('signale le seul test figé modifié par un commit du chantier, malgré la fusion [FIX-32 CA-2]', () => {
+    const directory = frozenFix()
+    mergeMainChangingItsTest(directory)
+    commitFiles(directory, { 'test/fix.test.mjs': 'ligne a\nligne B\n' }, 'fix: change a frozen test')
+    const { status, output } = atelierRun(directory, 'tests-changed')
+    assert.equal(status, 2, output)
+    assert.match(output, /- test\/fix\.test\.mjs/)
+    assert.doesNotMatch(output, /main\.test\.mjs/)
+  })
+
+  it('signale un test figé auquel un commit du chantier ajoute une ligne, malgré la fusion [FIX-32 CA-2]', () => {
+    const directory = frozenFix()
+    mergeMainChangingItsTest(directory)
+    commitFiles(directory, { 'test/fix.test.mjs': 'ligne a\nligne b\nligne c\n' }, 'fix: extend a frozen test')
+    const { status, output } = atelierRun(directory, 'tests-changed')
+    assert.equal(status, 2, output)
+    assert.match(output, /- test\/fix\.test\.mjs/)
+  })
+
+  it('set-reviewed ne refuse pas la revue pour un test venu de la branche par défaut [FIX-32 CA-3]', () => {
+    const directory = frozenFix()
+    commitFiles(directory, { 'src/fix.mjs': 'export const fix = 1\n' }, 'fix: fix')
+    mergeMainChangingItsTest(directory)
+    const { status, output } = atelierRun(directory, 'set-reviewed')
+    assert.equal(status, 0, output)
+    assert.ok(specData(directory, 'FIX-20').reviewed_commit)
+  })
+
+  it('signale un test figé modifié sans être commité [FIX-32 CA-4]', () => {
+    const directory = frozenFix()
+    writeFileSync(join(directory, 'test/fix.test.mjs'), 'ligne a\nligne B\n')
+    const { status, output } = atelierRun(directory, 'tests-changed')
+    assert.equal(status, 2, output)
+    assert.match(output, /- test\/fix\.test\.mjs/)
+  })
+
+  it('ne signale pas un test figé modifié puis rétabli à l’identique par le chantier [FIX-32 CA-5]', () => {
+    const directory = frozenFix()
+    commitFiles(directory, { 'test/fix.test.mjs': 'ligne a\nligne B\n' }, 'fix: change a frozen test')
+    commitFiles(directory, { 'test/fix.test.mjs': 'ligne a\nligne b\n' }, 'fix: restore it')
+    const { status, output } = atelierRun(directory, 'tests-changed')
+    assert.equal(status, 0, output)
+  })
+
+  // FIX-20's case: the chantier wrote its frozen test in `test/main.test.mjs`, a file shared with the
+  // default branch, which then adds its own lines at the same place: the merge conflicts and is
+  // resolved with `resolution`, then committed.
+  function conflictOnSharedTest(resolution) {
+    const directory = makeSlicedRepository({ id: 'FIX-20', tdd: 'yes', plan: null })
+    git(directory, 'switch', '-q', 'main')
+    commitFiles(directory, { 'test/main.test.mjs': 'ligne a\n' }, 'test: main')
+    git(directory, 'switch', '-q', 'fix/FIX-20-x')
+    git(directory, 'merge', '-q', '--no-edit', 'main')
+    commitFiles(directory, { 'test/main.test.mjs': 'ligne a\nligne fix\n' }, 'test: fix')
+    setHeader(directory, 'FIX-20', { tests_commit: git(directory, 'rev-parse', '--short', 'HEAD').trim(), slice: '1' })
+    git(directory, 'switch', '-q', 'main')
+    commitFiles(directory, { 'test/main.test.mjs': 'ligne a\nligne main\n' }, 'test: main changed')
+    git(directory, 'switch', '-q', 'fix/FIX-20-x')
+    let conflict = false
+    try { git(directory, 'merge', '-q', '--no-edit', 'main') } catch { conflict = true }
+    assert.ok(conflict, 'la fusion doit être en conflit')
+    writeFileSync(join(directory, 'test/main.test.mjs'), resolution)
+    git(directory, 'add', '-A')
+    commit(directory, 'chore(merge): main')
+    return directory
+  }
+
+  it('ne signale pas un test figé dont le conflit avec la branche par défaut est résolu en gardant les deux côtés [FIX-32 CA-6]', () => {
+    const directory = conflictOnSharedTest('ligne a\nligne fix\nligne main\n')
+    const { status, output } = atelierRun(directory, 'tests-changed')
+    assert.equal(status, 0, output)
+  })
+
+  it('signale un test figé dont la résolution du conflit modifie une ligne figée [FIX-32 CA-8]', () => {
+    const directory = conflictOnSharedTest('ligne a\nligne fix modifiée\nligne main\n')
+    const { status, output } = atelierRun(directory, 'tests-changed')
+    assert.equal(status, 2, output)
+    assert.match(output, /- test\/main\.test\.mjs/)
   })
 })

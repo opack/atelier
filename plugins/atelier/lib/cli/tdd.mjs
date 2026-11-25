@@ -12,6 +12,8 @@ import {
   reopenTestsRefusal,
   setTddRefusal,
   testDrivenPhase,
+  testFilesChangedByChantier,
+  withoutSpaces,
 } from '../tdd.mjs'
 import {
   findProjectRoot,
@@ -24,6 +26,7 @@ import {
   uncommittedFiles,
 } from './common.mjs'
 import { requireActiveChantier } from './identifiers.mjs'
+import { codeFilesSince } from './slices.mjs'
 import { appendAmendment, updateSpec } from './spec.mjs'
 
 // ---------- Test commands ----------
@@ -32,25 +35,79 @@ function uncommittedTestFiles(projectRoot, config) {
   return uncommittedFiles(projectRoot).filter((file) => matchesAny(file, config.testPaths, config.ignoreCase))
 }
 
-// Test files changed since the tests were frozen (committed or not).
-export function testFilesChangedSince(projectRoot, config, commit) {
-  const committed = gitPaths(projectRoot, ['diff', '--name-only', '-z', commit, '--'])
+// Test files changed by the chantier itself since `base` (its commits and the resolution of its
+// merges): files brought by a merge of the default branch do not count (see codeFilesSince).
+function chantierTestFiles(projectRoot, config, base) {
+  return [...new Set(codeFilesSince(projectRoot, base, 'first-parent'))]
     .filter((file) => matchesAny(file, config.testPaths, config.ignoreCase))
-  return [...new Set([...committed, ...uncommittedTestFiles(projectRoot, config)])]
 }
 
-// Test files present at `base` whose lines were changed or removed in HEAD (whitespace and line
-// endings ignored). Deleted files and binary files are taken from git's file lists, as the text
-// diff has no removed line for an empty or binary file and quotes unusual paths.
-function testFilesWithRemovedLines(projectRoot, config, base) {
-  const range = [base, 'HEAD', '--']
-  const fromDiff = removedTestLines(gitRaw(projectRoot, ['-c', 'core.quotePath=false', 'diff', '--no-renames', '--no-color', '--no-ext-diff', '--src-prefix=a/', '--dst-prefix=b/', '--ignore-all-space', '--ignore-cr-at-eol', ...range]))
+// Changes of `candidates` between `base` and HEAD: the text diff (whitespace and line endings
+// ignored), and the deleted and binary files, taken from git's file lists, as the text diff has no
+// removed line for an empty or binary file and quotes unusual paths. Limited to the candidates, so
+// the output stays small.
+function candidatesDiff(projectRoot, base, candidates) {
+  const range = [base, 'HEAD', '--', ...candidates.map((file) => `:(literal)${file}`)]
+  const diff = gitRaw(projectRoot, ['-c', 'core.quotePath=false', 'diff', '--no-renames', '--no-color', '--no-ext-diff', '--src-prefix=a/', '--dst-prefix=b/', '--ignore-all-space', '--ignore-cr-at-eol', ...range])
   const deleted = gitPaths(projectRoot, ['diff', '--no-renames', '--name-only', '-z', '--diff-filter=D', ...range])
   // `--numstat -z` entries: "<added>\t<removed>\t<path>", "-" for both counts on a binary file.
   const binary = gitPaths(projectRoot, ['diff', '--no-renames', '--numstat', '-z', ...range])
     .filter((entry) => entry.startsWith('-\t-\t'))
     .map((entry) => entry.slice(4))
-  return [...new Set([...fromDiff, ...deleted, ...binary])].filter((file) => matchesAny(file, config.testPaths, config.ignoreCase))
+  return { diff, deleted, binary }
+}
+
+// Test files changed since the tests were frozen at `commit`: uncommitted ones, and committed ones
+// that the chantier itself touched (see chantierTestFiles) with a change that merges of the default
+// branch do not explain (see testFilesChangedByChantier): a test file brought or extended by such a
+// merge, conflict included, does not count. When `commit` is no longer an ancestor of HEAD (rebase
+// after the freeze), the chantier's history since the freeze cannot be read: the whole diff counts.
+export function testFilesChangedSince(projectRoot, config, commit) {
+  let committed
+  if (isAncestorOfHead(projectRoot, commit)) {
+    const candidates = chantierTestFiles(projectRoot, config, commit)
+    committed = candidates.length ? committedTestChanges(projectRoot, commit, candidates) : []
+  } else {
+    committed = gitPaths(projectRoot, ['diff', '--name-only', '-z', commit, '--'])
+      .filter((file) => matchesAny(file, config.testPaths, config.ignoreCase))
+  }
+  return [...new Set([...committed, ...uncommittedTestFiles(projectRoot, config)])]
+}
+
+// Among `candidates`, the files whose changes since `commit` are not explained by the merged
+// commits (second parents of the branch's own merges since `commit`, read along the first-parent
+// chain: merges inside the default branch are already in those). Deleted and binary files count.
+function committedTestChanges(projectRoot, commit, candidates) {
+  const { diff, deleted, binary } = candidatesDiff(projectRoot, commit, candidates)
+  const merged = git(projectRoot, ['rev-list', '--merges', '--first-parent', `${commit}..HEAD`]).split('\n').filter(Boolean)
+  const cache = new Map()
+  const mergedLines = (file) => {
+    if (!cache.has(file)) {
+      const lines = new Set()
+      for (const merge of merged) {
+        let text = ''
+        try {
+          text = gitRaw(projectRoot, ['show', `${merge}^2:${file}`])
+        } catch {
+          continue // the file does not exist on that side
+        }
+        for (const line of text.split('\n')) lines.add(withoutSpaces(line))
+      }
+      cache.set(file, lines)
+    }
+    return cache.get(file)
+  }
+  const changed = [...testFilesChangedByChantier(diff, mergedLines), ...deleted, ...binary]
+  return [...new Set(changed)].filter((file) => candidates.includes(file))
+}
+
+// Test files present at `base` whose lines were changed or removed in HEAD, among the test files
+// changed by the chantier itself since `base` (see chantierTestFiles and candidatesDiff).
+function testFilesWithRemovedLines(projectRoot, config, base) {
+  const candidates = chantierTestFiles(projectRoot, config, base)
+  if (!candidates.length) return []
+  const { diff, deleted, binary } = candidatesDiff(projectRoot, base, candidates)
+  return [...new Set([...removedTestLines(diff), ...deleted, ...binary])].filter((file) => candidates.includes(file))
 }
 
 // Step 3 of the TDD workflow: the tests must be committed before implementation starts.
