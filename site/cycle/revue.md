@@ -51,7 +51,7 @@ Ses remarques sont classées **bloquant** / **à discuter**, avec `fichier:ligne
 Le relecteur cherche et signale tout ce qu’il trouve, petits problèmes compris : le bilan ne réduit pas la recherche, il outille votre décision. Pour chaque point, bloquant ou à discuter, il donne, en plus de la correction proposée :
 
 - le **coût de la correction** : lignes de code et de tests, et tout nouveau concept à maintenir (option, champ, cas particulier, commande) ;
-- le **coût de la non-correction** : le scénario concret dans l’usage réel du projet, et si l’échec est **silencieux** (rien ne le signale : revue validée à tort, donnée perdue ou fausse) ou **bruyant** (erreur claire, visible tout de suite, qu’on corrigera le jour où elle arrive) ;
+- le **coût de la non-correction** : le scénario concret dans l’usage réel du projet, et si l’échec est **silencieux** (rien ne le signale : revue validée à tort, donnée perdue ou fausse) ou **bruyant** (erreur claire, visible tout de suite) ;
 - un **verdict** : corriger ou ne pas corriger, avec sa raison.
 
 L’usage réel (qui utilise le projet, comment, dans quel environnement) se lit dans `CLAUDE.md` et le `README` : aucun réglage de plus. S’ils n’en disent rien, le relecteur le signale une fois.
@@ -97,7 +97,7 @@ Sans règle, un relecteur relancé tire de nouvelles remarques à chaque passage
 
 ## 4. Consigner, valider, passer à la suite
 
-Chaque revue est consignée dans `revue.md`, dans le dossier du chantier : une section `## ` par revue, avec sa portée (tranche N ou chantier), la date, le commit revu, puis les tableaux `### Bloquant` et `### À discuter`, une ligne par point (`RB2. Intitulé`, ou `Aucun`) avec son traitement. Le relecteur lit les revues précédentes pour ne pas revenir sur ce qui est tranché.
+Chaque revue est consignée dans `revue.md`, dans le dossier du chantier : une section `## ` par revue, avec sa portée (tranche N ou chantier, suivie de `(relance)` pour une [relance](#relance)), la date, le commit revu (et, pour une relance, la ligne `Relance depuis :` qui cite le commit de la revue précédente et les corrections), puis les tableaux `### Bloquant` et `### À discuter`, une ligne par point (`RB2. Intitulé`, ou `Aucun`) avec son traitement. Le relecteur lit les revues précédentes pour ne pas revenir sur ce qui est tranché.
 
 Quand chaque point a un traitement, l’agent vous présente le résultat et vous demande **explicitement** de valider. Sans votre accord, rien n’est écrit : la tranche reste en cours. Après votre « oui », `atelier set-reviewed` :
 

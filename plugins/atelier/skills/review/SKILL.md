@@ -54,7 +54,7 @@ Avant de relancer, consigne cette revue dans `revue.md` (étape 4) : `atelier re
 
 ## 4. Consigner
 
-Dans le dossier du chantier, `revue.md` (créé depuis `atelier template revue` s'il n'existe pas ; remplace `{{ID}}`, `{{TITLE}}`, `{{DATE}}`) : une section `## ` par revue, avec sa portée (« tranche N » ou « chantier »), la date, le commit revu (`git rev-parse --short HEAD`), la base, les points et leur traitement.
+Dans le dossier du chantier, `revue.md` (créé depuis `atelier template revue` s'il n'existe pas ; remplace `{{ID}}`, `{{TITLE}}`, `{{DATE}}`) : une section `## ` par revue, avec sa portée (« tranche N » ou « chantier »), la date, le commit revu (`git rev-parse --short HEAD`), la base, les points et leur traitement. Une relance se reconnaît à sa portée, suivie de `(relance)` (`## Revue : tranche 1 (relance) : <date>`), et à une ligne `- Relance depuis : <commit de la revue précédente> (corrections : <commits>)` sous la base.
 
 Les points vont dans les tableaux `### Bloquant` (`RB`) et `### À discuter` (`RD`), titres exacts. La cellule « Point » a la forme `<ID>[ (repris)| (ex-<ID>)]. <intitulé>` :
 - point nouveau : `RB2. Push non vérifié` ;

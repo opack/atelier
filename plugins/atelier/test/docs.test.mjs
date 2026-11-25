@@ -192,7 +192,7 @@ describe('calibrated review points', () => {
 
   it('review définit la relance, transmet le commit précédent, garde les idées hors de revue.md et associe chaque issue à un traitement [FEAT-30 CA-5]', () => {
     assert.deepEqual(missing(pluginText('skills/review/SKILL.md'), [
-      /\*\*relance\*\*/, /sont des premiers passages/, /commit de la revue précédente/, /liste des corrections faites depuis/,
+      /\*\*relance\*\*/, /sont des premiers passages/, /commit de la revue précédente/, /liste des corrections faites depuis/, /\(relance\)/, /Relance depuis :/,
       /idée[^\n]*n'entre jamais dans ces tableaux/i,
       /ne pas corriger[^\n]*`exception acceptée`/, /chantier séparé → `reporté`/, /limite documentée → `corrigé`/,
     ]), [])
