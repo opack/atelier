@@ -245,3 +245,12 @@ describe('slice TDD of a chantier without TDD, and of a plan with a single slice
     assert.equal(phaseOf(directory), 'none')
   })
 })
+
+describe('first slice without TDD, before any review', () => {
+  it('une tranche 1 « TDD : non » (ni slice écrit ni gel) reste en tranches, puis set-reviewed passe à la tranche 2 [FIX-20 CA-6]', () => {
+    const sliceOne = slicedChantier({ slice_tdd: 'no' }, { plan: planOf([1, 2]) })
+    assert.deepEqual(sliceState(sliceOne), { model: 'sliced', slice: 1, sliceCount: 2 })
+    assert.equal(testDrivenPhase(sliceOne), 'none')
+    assert.equal(setReviewedUpdate(sliceOne, 'a'.repeat(40)).values.slice, '2')
+  })
+})

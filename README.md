@@ -87,6 +87,8 @@ Identifiants : `<TYPE>-<numéro>`, avec un compteur unique par projet (qui conti
 
 Pour chaque chantier, **tu décides** s'il suit le TDD : champ `tdd: yes | no` dans l'en-tête de la spec, **obligatoire avant signature**. `/atelier:new` te pose la question avec une recommandation (plutôt oui pour la logique métier, un bug reproductible ou un refactor sensible ; plutôt non pour de la configuration, une montée de version, du texte, de la mise en page ou une exploration). « Non » ne veut pas dire « aucun test » : seulement pas de phase imposée, et pas de test pour le principe.
 
+Ce choix vaut **par défaut** pour tout le chantier, et chaque tranche du plan peut le redéfinir : `2. Export — CA couverts : CA-3 — TDD : oui`, `4. Site et version — CA couverts : aucun — TDD : non`. Une tranche de documentation n'a donc pas à inventer un critère pour passer le gel, et une tranche de logique pure peut suivre le TDD dans un chantier qui ne l'impose pas. `/atelier:plan` propose ce choix tranche par tranche et `atelier check-plan` vérifie le plan (TDD déclaré, critères couverts). atelier recopie le TDD de la tranche en cours dans la spec (`slice_tdd`), seulement par ses commandes : éditer le plan ne suffit pas à sortir des tests d'abord.
+
 Quand c'est oui, atelier suit le workflow « write tests, commit; code, iterate, commit » recommandé par Anthropic ([Claude Code: Best practices for agentic coding](https://www.anthropic.com/engineering/claude-code-best-practices)) et le fait respecter par les hooks :
 
 1. **Tests d'abord** (`/atelier:write-tests`) : seuls les fichiers de test sont modifiables. Toute écriture d'implémentation, même factice, est refusée.
@@ -95,9 +97,9 @@ Quand c'est oui, atelier suit le workflow « write tests, commit; code, iterate,
 4. **Implémentation** (`/atelier:build`) : les tests sont en lecture seule. L'agent itère jusqu'à ce que tout passe ; un sous-agent indépendant vérifie que l'implémentation ne surapprend pas les tests.
 5. **Commit** de l'implémentation après validation.
 
-Ce cycle tourne **par tranche** de `plan.md`, revue comprise : `[write-tests → build → review] × tranches → review (chantier) → close`. Les tests d'une tranche ne couvrent que ses critères ; ceux des tranches précédentes restent figés (`atelier freeze-tests` refuse le gel si l'une de leurs lignes a changé sans réouverture). La validation de la revue d'une tranche fait passer à la suivante ; après la dernière, une revue du chantier, transversale, précède la clôture. Un chantier sans plan ou à une seule tranche garde un seul cycle.
+Ce cycle tourne **par tranche** de `plan.md`, revue comprise : `[write-tests → build → review] × tranches → review (chantier) → close`, `write-tests` sauté pour une tranche « TDD : non ». Les tests d'une tranche ne couvrent que ses critères ; ceux des tranches précédentes restent figés (`atelier freeze-tests` refuse le gel si l'une de leurs lignes a changé sans réouverture). Pendant une tranche « TDD : non », et pendant la revue du chantier qui la suit, aucun gel n'a lieu : seule la revue protège alors ces tests. La validation de la revue d'une tranche fait passer à la suivante ; après la dernière, une revue du chantier, transversale, précède la clôture. Un chantier sans plan ou à une seule tranche garde un seul cycle.
 
-Un test oublié ou réellement faux se rouvre explicitement (`/atelier:write-tests <raison>`) ; la décision TDD peut changer en cours de chantier (`atelier set-tdd <yes|no> <raison>`). Les deux sont tracés dans la spec et commités aussitôt.
+Un test oublié ou réellement faux se rouvre explicitement (`/atelier:write-tests <raison>`) ; la décision TDD peut changer en cours de chantier (`atelier set-tdd <yes|no> <raison>`, qui dans un chantier en tranches ne change que la tranche en cours). Les deux sont tracés dans la spec et commités aussitôt.
 
 ## Ce que font les hooks
 

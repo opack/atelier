@@ -101,7 +101,7 @@ Chaque revue est consignée dans `revue.md`, dans le dossier du chantier : une s
 
 Quand chaque point a un traitement, l’agent vous présente le résultat et vous demande **explicitement** de valider. Sans votre accord, rien n’est écrit : la tranche reste en cours. Après votre « oui », `atelier set-reviewed` :
 
-- **tranche N avant la dernière** : passe à la tranche N+1. Le début de la nouvelle tranche (`slice_base`) est le commit revu ; en TDD, elle repart en phase « tests d’abord » ;
+- **tranche N avant la dernière** : passe à la tranche N+1. Le début de la nouvelle tranche (`slice_base`) est le commit revu ; elle prend le TDD déclaré pour elle au plan (`slice_tdd`, à défaut le `tdd` du chantier) : en TDD, elle repart en phase « tests d’abord », sinon directement en implémentation ;
 - **dernière tranche** : passe à la revue du chantier (`slice: chantier`) ;
 - **revue du chantier**, ou chantier à tranche unique : écrit le hash complet du commit revu (`reviewed_commit`), celui que la clôture vérifie.
 

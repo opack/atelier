@@ -65,7 +65,7 @@ Seulement après son accord :
 
 ## Sans TDD (`tdd: no`, ou tranche « TDD : non »)
 
-Dans une tranche « TDD : non » d'un chantier TDD, les tests comptent comme du code de la tranche : ils ne sont pas figés.
+Dans une tranche « TDD : non » d'un chantier TDD, les tests écrits dans la tranche comptent comme du code de la tranche : ils ne sont pas figés. Les tests des tranches précédentes, eux, ne se modifient pas : aucun gel ne les protège ici, seule la revue. Donne cette consigne à `implementer` : s'il lui semble devoir en modifier un, il s'arrête sur « Arrêt : test à revoir » (point 3) au lieu de le retoucher.
 
 1. Lance le sous-agent `atelier:implementer` comme à l'étape 1, avec la mission d'implémenter la tranche sans TDD : il ajoute des tests **seulement là où ils ont de la valeur** (logique non triviale, cas limite fragile, bug évité), pas de test pour le principe ni de test redondant avec ceux qui existent.
 2. Après chaque retour, `atelier checks`, et relance `implementer` jusqu'à ce que tout soit vert, comme à l'étape 1 : arrêt sur « Arrêt : test à revoir » (point 3) et décisions consignées dans `decisions.md` (point 4).

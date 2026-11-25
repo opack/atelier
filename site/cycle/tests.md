@@ -24,7 +24,7 @@ Le TDD se décide tranche par tranche : atelier recopie la déclaration de la tr
 
 Pour un chantier découpé en tranches, on n’écrit pas d’un coup les tests de tous les critères : seulement ceux des **CA de la tranche en cours** (le plan dit lesquels). Les tests des tranches suivantes s’écrivent après la revue de celle-ci, avec ce qu’elle a appris. Le cycle tests → implémentation → [revue](./revue) se répète pour chaque tranche.
 
-Les tests des tranches précédentes restent figés : on **ajoute** des tests, on ne modifie ni ne supprime les leurs. Comme ils vivent souvent dans le même fichier, la règle est vérifiée **au gel**, ligne par ligne : `atelier freeze-tests` refuse si une ligne de test présente au début de la tranche a été modifiée ou supprimée (fichier supprimé ou renommé compris ; espaces et fins de ligne ignorés), en listant les fichiers. Le contrôle ne voit pas une assertion ajoutée au milieu d’un test existant : le relecteur, si.
+Les tests des tranches précédentes restent figés : on **ajoute** des tests, on ne modifie ni ne supprime les leurs. Comme ils vivent souvent dans le même fichier, la règle est vérifiée **au gel**, ligne par ligne : `atelier freeze-tests` refuse si une ligne de test présente au début de la tranche a été modifiée ou supprimée (fichier supprimé ou renommé compris ; espaces et fins de ligne ignorés), en listant les fichiers. Le contrôle ne voit pas une assertion ajoutée au milieu d’un test existant : le relecteur, si. Pendant une tranche `TDD : non`, et pendant la revue du chantier qui suit une telle tranche, il n’y a pas de gel : les tests des tranches précédentes ne sont alors protégés que par la revue.
 
 ## Avec atelier
 
