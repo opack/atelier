@@ -326,6 +326,24 @@ describe('slice fields written by the command', () => {
   })
 })
 
+describe('slice TDD written by the command', () => {
+  it('le hook refuse que l’agent change ou retire slice_tdd d’une spec signée [FIX-20 CA-8]', () => {
+    const relativePath = 'docs/chantiers/FIX-20-x/spec.md'
+    const signedText = '---\nid: FIX-20\ntype: FIX\ntitle: X\nstatus: signed\ntdd: yes\nslice: 2\nslice_tdd: yes\n---\n# FIX-20\n'
+    for (const newValue of ['slice_tdd: no', 'slice_tdd:']) {
+      const proposed = applyToolEdit(signedText, 'Edit', { old_string: 'slice_tdd: yes', new_string: newValue })
+      const decision = decide({
+        relativePath,
+        existingSpec: parseFrontMatter(signedText),
+        proposedSpec: parseFrontMatter(proposed),
+        committedSpec: parseFrontMatter(signedText),
+      })
+      assert.equal(decision.allowed, false, newValue)
+      assert.match(decision.reason, /« slice_tdd »/, newValue)
+    }
+  })
+})
+
 describe('write guard on an EPIC', () => {
   it('sur un EPIC signé, aucune écriture hors des chemins libres ; docs/ et le débrayage restent permis [FEAT-4 CA-8]', () => {
     const epic = { id: 'EPIC-5', directory: '/p/docs/chantiers/EPIC-5-x', spec: { data: { status: 'signed', type: 'EPIC', tdd: 'no' } }, files: ['spec.md', 'plan.md'] }

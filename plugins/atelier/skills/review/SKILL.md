@@ -1,5 +1,6 @@
 ---
 description: Revue indépendante du chantier actif — revue de la tranche en cours, puis revue du chantier après la dernière tranche — contrôles, relecture par le sous-agent reviewer, traitement de chaque point RB/RD (correction, test, amendement, exception acceptée, écarté, reporté ou requalifié), autant de revues que nécessaire, validation de l'utilisateur, puis passage à la tranche suivante ou enregistrement du commit revu.
+argument-hint: "[modèle] [effort]"
 ---
 
 # Faire relire la tranche ou le chantier
@@ -28,6 +29,14 @@ Base de comparaison :
 
 Avant de lancer le sous-agent, `atelier review-ids --json` donne les prochains numéros (`next.RB`, `next.RD`) et les points ouverts (`open` : `id`, `title`, `section`). Ajoute-y les points dont la dernière occurrence dans `revue.md` est `reporté (tranche N)` vers la tranche en cours (ou vers une tranche passée) : ils doivent être repris et traités dans cette revue.
 
+Modèle et effort du reviewer : une seule fois pour toute la commande, relances comprises, lance
+
+```
+atelier agent-settings reviewer --user-model '${user_config.reviewer_model}' --user-effort '${user_config.reviewer_effort}' --args '$ARGUMENTS'
+```
+
+Si l'argument de la commande ou une valeur d'option substituée dans la ligne contient une apostrophe, arrête-toi sans lancer la commande et demande de la retirer : ces valeurs sont placées entre guillemets simples. Si la commande échoue, affiche son message et arrête-toi. Sinon, elle rend en JSON `model`, `effort`, leurs sources (`argument`, `utilisateur`, `recommandé`) et des avertissements. Annonce le modèle, l’effort, leur source et les avertissements, par exemple « reviewer : opus / high (recommandé) ». Passe `model` et `effort` à l’appel du sous-agent, à chaque revue. Si cet appel est refusé parce que le modèle n'est pas disponible pour l'organisation, arrête-toi et indique l'argument de la commande ou l'option (`/plugin configure atelier`) à changer.
+
 Lance le sous-agent `atelier:reviewer` en lui donnant : le chemin de la spec, du plan, de `decisions.md` et de `revue.md` s'ils existent (les revues précédentes disent ce qui a déjà été tranché), la base, la portée (« revue de la tranche N (CA couverts : … selon `plan.md`) », « revue du chantier » ou « chantier à tranche unique »), les prochains numéros `RB` et `RD`, et la liste des points à reprendre. Le reviewer ne calcule pas les numéros lui-même.
 
 Les revues d'une même portée (même tranche, ou le chantier) sont numérotées : revue 1, revue 2… Une **relance** est une revue 2 ou suivante, faite après correction de points de la revue précédente ; la revue de la tranche suivante et la revue du chantier sont des premiers passages. Pour une relance, dis-le au reviewer et donne-lui en plus le commit de la revue précédente (consigné dans `revue.md`) et la liste des corrections faites depuis.
@@ -37,7 +46,7 @@ Présente ses points classés **bloquant** (`RB`) / **à discuter** (`RD`), avec
 ## 3. Traiter chaque point
 
 Désigne chaque point par son identifiant (« je corrige RB2, on écarte RD3 »). Pour chaque point, propose un traitement et laisse l'utilisateur décider ; le traitement consigné commence par le mot-clé entre parenthèses :
-- **correction du code** (`corrigé`, avec le commit) : en suivant `/atelier:build` (résumé, accord de l'utilisateur, commit `[<ID>]` qui cite le point : `fix(<scope>): [<ID>] RB2 <description>`) ;
+- **correction du code** (`corrigé`, avec le commit) : en lançant `/atelier:build`, qui la confie à `atelier:implementer` (résumé, accord de l'utilisateur, commit `[<ID>]` qui cite le point : `fix(<scope>): [<ID>] RB2 <description>`) ;
 - **test manquant ou faux** (`test ajouté`) : `/atelier:write-tests <raison>` (en TDD, il rouvre les tests figés) ;
 - **spec fausse ou incomplète** (`spec amendée`) : `/atelier:amend` ;
 - **exception** (`exception acceptée`) : acceptée **explicitement** par l'utilisateur, avec qui et pourquoi ;
@@ -79,6 +88,6 @@ Seulement après son accord :
    La commande refuse sans spec signée, avec du code non commité, avec des changements non commités de `spec.md`, en TDD si les tests ne sont pas figés ou ont changé depuis leur gel, si `slice_base` n'est plus un ancêtre de `HEAD` (seul l'utilisateur corrige ce champ), pour une tranche sans aucun commit de code (« tranche vide »), ou si `revue.md` (copie de travail) a un point sans traitement reconnu ou mal formé : elle liste alors les problèmes, à traiter à l'étape 3 ou 4, puis redemande la validation à l'utilisateur.
 2. Commite aussitôt la spec et `revue.md` : `git add <dossier du chantier>/spec.md <dossier du chantier>/revue.md` puis `git commit -m "docs(chantiers): [<ID>] review <tranche>"` (`<tranche>` : son numéro, ou `chantier` ; rien pour un chantier à tranche unique).
 3. Suite, donnée par la commande :
-   - tranche suivante : `/atelier:write-tests` en TDD, sinon `/atelier:build` ;
+   - tranche suivante : `/atelier:write-tests` si elle est en TDD (`slice_tdd`, sinon `tdd` du chantier), sinon `/atelier:build` ;
    - revue du chantier : `/atelier:review` ;
    - revue enregistrée : `/atelier:close`. Tout commit de code après ce point (tests compris), tout amendement de la spec ou tout rebase rendra la revue obsolète : il faudra repasser par `/atelier:review`.

@@ -9,8 +9,8 @@ import { testDrivenPhase } from './tdd.mjs'
 // ---------- Write guard ----------
 
 // Spec header fields written only by the atelier command (sign, set-status, freeze-tests,
-// reopen-tests, set-reviewed).
-export const COMMAND_SPEC_FIELDS = ['status', 'signed_by', 'signed_at', 'done_at', 'tests_commit', 'reviewed_commit', 'slice', 'slice_base', 'last_slice']
+// reopen-tests, set-reviewed, check-plan, set-tdd).
+export const COMMAND_SPEC_FIELDS = ['status', 'signed_by', 'signed_at', 'done_at', 'tests_commit', 'reviewed_commit', 'slice', 'slice_base', 'last_slice', 'slice_tdd']
 
 // Fields that cannot change through the edit tool once the spec is no longer a draft, besides
 // the command fields: `tdd` changes through `atelier set-tdd`; `id` and `type` are bound to the

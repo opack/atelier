@@ -4,8 +4,9 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { toProjectRelativePath } from '../common.mjs'
 import { codeCommittedMatters, nextStep } from '../next-step.mjs'
+import { sliceLabel, sliceState } from '../slices.mjs'
 import { checkSpec } from '../spec.mjs'
-import { testDrivenPhase } from '../tdd.mjs'
+import { effectiveTdd, testDrivenPhase } from '../tdd.mjs'
 import { findProjectRoot, isAncestorOfHead, loadConfig } from './common.mjs'
 import { activeChantier } from './identifiers.mjs'
 import { chantierBaseOf } from './integration.mjs'
@@ -63,10 +64,11 @@ export function commandStatus(options) {
     console.log(JSON.stringify(summary, null, 2))
     return
   }
-  console.log(formatStatus(summary))
+  console.log(formatStatus(summary, sliceState(chantier).model))
 }
 
-function formatStatus(summary) {
+// `sliceModel`: slice model of the chantier (see sliceState), to tell a single-slice chantier from the others.
+function formatStatus(summary, sliceModel) {
   const lines = [`Branche : ${summary.branch ?? '(aucune)'}`]
   if (summary.chantier) {
     const { id, title, type, status, files, specProblems } = summary.chantier
@@ -81,6 +83,15 @@ function formatStatus(summary) {
       implementing: 'implémentation — tests figés, ne pas les modifier',
     }
     const { slice, sliceCount } = summary.chantier
+    const { sliceTdd } = summary.chantier
+    if (sliceTdd) {
+      const tddLabel = `TDD : ${sliceTdd === 'yes' ? 'oui' : 'non'}`
+      if (typeof slice === 'number') {
+        lines.push(`${sliceLabel(slice, sliceCount)} : ${tddLabel}`)
+      } else if (sliceModel === 'single') {
+        lines.push(tddLabel)
+      }
+    }
     if (typeof slice === 'number' && slice > sliceCount) {
       lines.push(`Tranche ${slice} absente du plan : la revue de la tranche mène à la revue du chantier.`)
     }
@@ -104,14 +115,15 @@ function formatStatus(summary) {
   return lines.join('\n')
 }
 
-// Whether code was committed in the current slice, for the next step (see nextStep): since the
-// freeze of its tests in TDD (test files excluded), otherwise since `slice_base` or the merge base
-// with the default branch. null when it cannot change the next step, or cannot be computed (no
-// base, git error, start of the slice no longer an ancestor of HEAD).
+// Whether code was committed in the current slice, for the next step (see nextStep): in a slice
+// in TDD (effective TDD, see effectiveTdd), since the freeze of its tests, test files excluded;
+// otherwise since `slice_base` or the merge base with the default branch, tests included. null
+// when it cannot change the next step, or cannot be computed (no base, git error, start of the
+// slice no longer an ancestor of HEAD).
 function codeCommittedFact(projectRoot, config, chantier, review) {
   if (!codeCommittedMatters(chantier, review)) return null
   try {
-    const testDriven = chantier.spec.data.tdd === 'yes'
+    const testDriven = effectiveTdd(chantier) === 'yes'
     const start = (testDriven ? chantier.spec.data.tests_commit : chantier.spec.data.slice_base) || null
     if (start && !isAncestorOfHead(projectRoot, start)) return null
     const files = sliceCodeFiles(projectRoot, config, start, testDriven)
@@ -138,7 +150,7 @@ export function hookSessionStart() {
     nextStep: nextStep(chantier, review.reviewState, relations?.children, codeCommittedFact(projectRoot, config, chantier, review.reviewState)),
   }
   const statusText = summary.chantier
-    ? formatStatus({ ...summary, chantier: { ...summary.chantier, specProblems: [] } })
+    ? formatStatus({ ...summary, chantier: { ...summary.chantier, specProblems: [] } }, sliceState(chantier).model)
     : formatStatus(summary)
   console.log(`Projet géré avec atelier (process IA : chantiers, spec signée avant le code, tests d'abord, bilan).\n${statusText}`)
 }
