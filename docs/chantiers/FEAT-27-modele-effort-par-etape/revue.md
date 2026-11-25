@@ -73,3 +73,21 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD8. `overfit-checker` résolu même sans TDD | `plugins/atelier/skills/build/SKILL.md` | corrigé (f1edfac) : résolu en TDD seulement |
 
 - Bilan de la revue : tranche saine (370 tests verts, gel respecté, tout le code de `build` passe par `implementer`). RD1 et RD2 restent reportés à la tranche 5.
+
+## Revue : tranche 5 : 2026-11-25
+- Commit revu : baa3a52, correction c8543c3
+- Base : 53c0149 (fin de la tranche 4)
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD1 (repris). Mise à jour de `CLAUDE.md` promise par la spec | `CLAUDE.md` | sans objet : REF-29 a déjà décrit les modules de domaine de `lib/` |
+| RD2 (repris). Apostrophes droites dans la nouvelle section de `modes.md` | `site/agent/modes.md` | corrigé (baa3a52) |
+| RD9. Ligne `/atelier:build` de `commandes.md` inexacte sur l'argument de tranche | `site/reference/commandes.md:15` | corrigé (c8543c3) : `[tranche]` dans l'intitulé ; hors `SPIKE`, un numéro de tranche est ignoré, tout autre mot fait arrêter |
+
+- Bilan de la revue : tranche saine (375 tests verts, gel respecté, texte du site vérifié contre le code). Plus aucun point reporté.
