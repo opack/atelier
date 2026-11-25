@@ -4,8 +4,9 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { toProjectRelativePath } from '../common.mjs'
 import { codeCommittedMatters, nextStep } from '../next-step.mjs'
+import { sliceLabel } from '../slices.mjs'
 import { checkSpec } from '../spec.mjs'
-import { testDrivenPhase } from '../tdd.mjs'
+import { effectiveTdd, testDrivenPhase } from '../tdd.mjs'
 import { findProjectRoot, isAncestorOfHead, loadConfig } from './common.mjs'
 import { activeChantier } from './identifiers.mjs'
 import { formatRelations, relationsSummary } from './relations.mjs'
@@ -73,6 +74,10 @@ function formatStatus(summary) {
       implementing: 'implémentation — tests figés, ne pas les modifier',
     }
     const { slice, sliceCount } = summary.chantier
+    const { sliceTdd } = summary.chantier
+    if (typeof slice === 'number' && sliceTdd) {
+      lines.push(`${sliceLabel(slice, sliceCount)} : TDD : ${sliceTdd === 'yes' ? 'oui' : 'non'}`)
+    }
     if (typeof slice === 'number' && slice > sliceCount) {
       lines.push(`Tranche ${slice} absente du plan : la revue de la tranche mène à la revue du chantier.`)
     }
@@ -96,14 +101,15 @@ function formatStatus(summary) {
   return lines.join('\n')
 }
 
-// Whether code was committed in the current slice, for the next step (see nextStep): since the
-// freeze of its tests in TDD (test files excluded), otherwise since `slice_base` or the merge base
-// with the default branch. null when it cannot change the next step, or cannot be computed (no
-// base, git error, start of the slice no longer an ancestor of HEAD).
+// Whether code was committed in the current slice, for the next step (see nextStep): in a slice
+// in TDD (effective TDD, see effectiveTdd), since the freeze of its tests, test files excluded;
+// otherwise since `slice_base` or the merge base with the default branch, tests included. null
+// when it cannot change the next step, or cannot be computed (no base, git error, start of the
+// slice no longer an ancestor of HEAD).
 function codeCommittedFact(projectRoot, config, chantier, review) {
   if (!codeCommittedMatters(chantier, review)) return null
   try {
-    const testDriven = chantier.spec.data.tdd === 'yes'
+    const testDriven = effectiveTdd(chantier) === 'yes'
     const start = (testDriven ? chantier.spec.data.tests_commit : chantier.spec.data.slice_base) || null
     if (start && !isAncestorOfHead(projectRoot, start)) return null
     const files = sliceCodeFiles(projectRoot, config, start, testDriven)

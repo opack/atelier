@@ -93,24 +93,30 @@ export function planProblems(chantier) {
 }
 
 // Spec header values written by `atelier check-plan` on a plan without problems: the TDD of
-// slice 1 into `slice_tdd`, only while slice 1 has neither frozen tests (current, reopened or
-// refrozen) nor a review, and only
-// if `slice_tdd` is still empty (afterwards, the plan no longer changes it).
+// slice 1 into `slice_tdd`, only for a chantier in the slice cycle (not an EPIC, not a SPIKE
+// without TDD), while slice 1 has neither frozen tests (current, reopened or refrozen) nor a
+// review, and only if `slice_tdd` is still empty (afterwards, the plan no longer changes it).
 export function checkPlanValues(chantier) {
   const data = chantier?.spec?.data ?? {}
+  if ((data.type ?? '').toUpperCase() === 'EPIC') {
+    return {}
+  }
   const written = String(data.slice ?? '').trim()
   if (String(data.slice_tdd ?? '').trim() || data.tests_commit || data.reviewed_commit || (written && written !== '1')) {
     return {}
   }
-  // A reopening or a refreeze means tests were frozen (a reopening empties tests_commit), and the
-  // legacy model keeps the TDD of the chantier.
-  const reopenedOrRefrozen = parseAmendments(chantier.spec.body ?? '').entries
-    .some((entry) => /^(tests rouverts|tests regelés)/.test(entry.replace(ENTRY_START, '')))
-  if (reopenedOrRefrozen || !['single', 'sliced'].includes(sliceState(chantier).model)) {
+  // A reopening or a refreeze means tests were frozen (a reopening empties tests_commit).
+  if (hasReopeningEntry(chantier) || sliceState(chantier).model === 'none') {
     return {}
   }
   const tdd = planSlices(chantier?.plan).find((slice) => slice.number === 1)?.tdd
   return tdd ? { slice_tdd: tdd } : {}
+}
+
+// Whether the amendments of the spec record a reopening or a refreeze of the tests.
+function hasReopeningEntry(chantier) {
+  return parseAmendments(chantier?.spec?.body ?? '').entries
+    .some((entry) => /^(tests rouverts|tests regelés)/.test(entry.replace(ENTRY_START, '')))
 }
 
 // Number of slices of a plan: the highest slice number read by planSlices; 0 without slices.
@@ -133,9 +139,7 @@ export function sliceState(chantier) {
   }
   const written = String(data.slice ?? '').trim()
   if (!written) {
-    const reopenedOrRefrozen = parseAmendments(chantier?.spec?.body ?? '').entries
-      .some((entry) => /^(tests rouverts|tests regelés)/.test(entry.replace(ENTRY_START, '')))
-    if (data.tests_commit || data.reviewed_commit || reopenedOrRefrozen) {
+    if (data.tests_commit || data.reviewed_commit || hasReopeningEntry(chantier)) {
       return flat('legacy')
     }
   }

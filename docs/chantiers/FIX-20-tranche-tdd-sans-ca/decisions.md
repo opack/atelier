@@ -59,3 +59,8 @@
 - OD11 (corrigé) : `planProblems` signale un plan sans tranche et une numérotation trouée. Test à ajouter en tranche 5.
 - OD12 (corrigé) : les CA de la spec se lisent sans casse, avec les puces `-`, `*` ou `+`. Test à ajouter en tranche 5.
 - OD13 (corrigé en partie) : un chemin de plan qui désigne un dossier sort en 1 au lieu de lever EISDIR. Tests de `check-plan` sans argument et du dossier à ajouter en tranche 5.
+
+## 2026-11-25 : tranche 5, points de surapprentissage
+- OD14 (reporté en tranche 6, accord de Didier) : `status` n'affiche pas « TDD : non » pour un chantier à une seule tranche (modèle `single`) dont `slice_tdd` est renseigné, alors que le JSON porte `sliceTdd`. Correction en tranche 6 (sans TDD : test écrit avec le code) : afficher la ligne dès que `sliceTdd` est renseigné hors modèle `none`.
+- OD15 (écarté, accord de Didier) : `check-plan` compare strictement le chemin du plan à celui du chantier ; sur un disque insensible à la casse, une casse différente n'écrit pas `slice_tdd`. Défaut prudent (rien n'est écrit à tort, le message l'explique), cas très improbable.
+- OD16 (reporté en tranche 6, avec OD14) : test de l'absence de la ligne « TDD : … » quand `slice_tdd` est vide, et du rattachement de la ligne à la tranche.

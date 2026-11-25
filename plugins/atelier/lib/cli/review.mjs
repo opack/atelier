@@ -7,7 +7,7 @@ import { toProjectRelativePath } from '../common.mjs'
 import { reviewCodeFiles, reviewProblems, reviewState, setReviewedRefusal, setReviewedUpdate } from '../review.mjs'
 import { sliceState } from '../slices.mjs'
 import { amendmentsDiffer } from '../spec.mjs'
-import { testDrivenPhase } from '../tdd.mjs'
+import { effectiveTdd, testDrivenPhase } from '../tdd.mjs'
 import {
   chantierFilePath,
   committedFileText,
@@ -84,7 +84,7 @@ export function commandSetReviewed() {
     chantier,
     sliceBaseIsAncestor,
     sliceCodeFiles: model === 'sliced' && slice !== 'chantier' && sliceBaseIsAncestor !== false
-      ? sliceCodeFiles(projectRoot, config, sliceBase, chantier.spec.data.tdd === 'yes')
+      ? sliceCodeFiles(projectRoot, config, sliceBase, effectiveTdd(chantier) === 'yes')
       : null,
     uncommittedCode: reviewCodeFiles(uncommitted, config),
     specUncommitted: uncommitted.some((file) => samePath(config, file, specPath)),

@@ -5,16 +5,18 @@ import { join, resolve } from 'node:path'
 import { codeLogArguments, matchesAny } from '../common.mjs'
 import { reviewCodeFiles } from '../review.mjs'
 import { checkPlanValues, planProblems, sliceState } from '../slices.mjs'
+import { declaredSliceTdd } from '../tdd.mjs'
 import { findProjectRoot, git, gitObjectExists, gitPaths, isAncestor, requireConfig } from './common.mjs'
 import { defaultBaseRef, defaultBranchName, requireActiveChantier } from './identifiers.mjs'
 import { updateSpec } from './spec.mjs'
 
 // ---------- Code of the chantier and of the slice ----------
 
-// Current slice and number of slices, both null outside the slice cycle.
+// Current slice and number of slices, both null outside the slice cycle, and the TDD declared for
+// the slice (`slice_tdd`: 'yes' | 'no', or null).
 export function slicePosition(chantier) {
   const { slice, sliceCount } = sliceState(chantier)
-  return { slice, sliceCount }
+  return { slice, sliceCount, sliceTdd: declaredSliceTdd(chantier?.spec?.data.slice_tdd) }
 }
 
 // Files changed by the chantier since `from` (see codeLogArguments in lib/common.mjs): the commits
@@ -66,7 +68,8 @@ export function commandCheckPlan([planPath]) {
     console.log(`${chantier.id} est un EPIC : ses lots n’ont pas de TDD, le plan n’est pas contrôlé.`)
     return
   }
-  const path = planPath ? resolve(process.cwd(), planPath) : join(chantier.directory, 'plan.md')
+  const ownPlan = join(chantier.directory, 'plan.md')
+  const path = planPath ? resolve(process.cwd(), planPath) : ownPlan
   if (!statSync(path, { throwIfNoEntry: false })?.isFile()) {
     console.error(`Plan introuvable : ${planPath ?? 'plan.md'}.`)
     process.exit(1)
@@ -76,6 +79,11 @@ export function commandCheckPlan([planPath]) {
   if (problems.length) {
     console.error(`Le plan de ${chantier.id} a des problèmes :\n${problems.map((problem) => `- ${problem}`).join('\n')}`)
     process.exit(2)
+  }
+  // Only the chantier's own plan decides the TDD of slice 1: another file is checked, nothing more.
+  if (path !== resolve(ownPlan)) {
+    console.log('Plan sans problème. Ce fichier n’est pas le plan.md du chantier : slice_tdd n’est pas écrit.')
+    return
   }
   const values = checkPlanValues(withPlan)
   if (values.slice_tdd) {
