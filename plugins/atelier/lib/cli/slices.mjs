@@ -3,7 +3,7 @@
 import { codeLogArguments, matchesAny } from '../common.mjs'
 import { reviewCodeFiles } from '../review.mjs'
 import { sliceState } from '../slices.mjs'
-import { git, gitObjectExists, gitPaths, gitVersion, isAncestor } from './common.mjs'
+import { git, gitObjectExists, gitPaths, isAncestor } from './common.mjs'
 import { defaultBaseRef, defaultBranchName } from './identifiers.mjs'
 
 // ---------- Code of the chantier and of the slice ----------
@@ -14,13 +14,12 @@ export function slicePosition(chantier) {
   return { slice, sliceCount }
 }
 
-// Files changed by the chantier since `from` (see codeLogArguments in lib/core.mjs): the commits of
-// the default branch brought by a merge do not count, only the resolution of the merge does.
-// `fallbackDiffMerges` keeps the caller's former command for an old git or without a ref to exclude.
+// Files changed by the chantier since `from` (see codeLogArguments in lib/common.mjs): the commits
+// of the default branch brought by a merge do not count, only the resolution of the merge does.
+// `fallbackDiffMerges` keeps the caller's former command without a ref to exclude.
 export function codeFilesSince(projectRoot, from, fallbackDiffMerges) {
   return gitPaths(projectRoot, codeLogArguments({
     from,
-    gitVersion: gitVersion(),
     excludedRefs: defaultBranchRefsToExclude(projectRoot, from),
     fallbackDiffMerges,
   }))

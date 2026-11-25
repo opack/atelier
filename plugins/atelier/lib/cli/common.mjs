@@ -4,7 +4,7 @@ import { execFileSync, spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { DEFAULT_CONFIG, parseGitVersion, parsePorcelainPaths, toProjectRelativePath } from '../common.mjs'
+import { DEFAULT_CONFIG, parsePorcelainPaths, toProjectRelativePath } from '../common.mjs'
 
 // ---------- Project and configuration ----------
 
@@ -148,16 +148,6 @@ export function isAncestorOfHead(projectRoot, commit) {
     return false
   }
   return isAncestor(projectRoot, commit, 'HEAD')
-}
-
-let cachedGitVersion
-
-export function gitVersion() {
-  if (cachedGitVersion === undefined) {
-    const result = spawnSync('git', ['--version'], { encoding: 'utf8' })
-    cachedGitVersion = result.status === 0 ? parseGitVersion(result.stdout) : null
-  }
-  return cachedGitVersion
 }
 
 // Project-relative path of a file of the chantier directory, as git lists it.

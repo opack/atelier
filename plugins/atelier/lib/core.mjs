@@ -23,7 +23,6 @@ export {
   matchesAny,
   parseCatFileBatch,
   parseFrontMatter,
-  parseGitVersion,
   parsePorcelainPaths,
   parseTreeEntries,
   setFrontMatterValues,
