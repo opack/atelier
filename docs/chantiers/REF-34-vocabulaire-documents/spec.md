@@ -3,7 +3,7 @@ id: REF-34
 type: REF
 title: Regrouper le vocabulaire des documents lu par le code
 status: draft
-tdd:                 # yes | no : décision humaine, obligatoire avant signature
+tdd: no
 created_at: 2026-11-25
 signed_by:
 signed_at:
