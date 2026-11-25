@@ -37,6 +37,12 @@ describe('stop hook', () => {
     assert.match(decision.message, /git checkout abc1234/)
   })
 
+  it('for a change brought by a merge of the default branch, advises reopening the tests rather than restoring them [FIX-32 CA-7]', () => {
+    const decision = stop({ chantier: implementingChantier, changedTests: ['src/budget.test.ts'] })
+    assert.equal(decision.block, true)
+    assert.match(decision.message, /fusion[^.]*\/atelier:write-tests/)
+  })
+
   it('reports code changed without a signed chantier once per working tree', () => {
     const first = stop({ chantier: draftChantier })
     assert.equal(first.block, true)
