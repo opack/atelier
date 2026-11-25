@@ -210,3 +210,38 @@ describe('slice TDD across transitions and commands', () => {
     assert.equal(phaseOf(directory), 'implementing')
   })
 })
+
+describe('slice TDD of a chantier without TDD, and of a plan with a single slice', () => {
+  const base = 'a'.repeat(40)
+
+  it('en revue d’ensemble d’un chantier tdd: no, des tests figés par une tranche TDD restent figés [FIX-20 CA-15]', () => {
+    const chantier = slicedChantier({ slice: 'chantier', last_slice: '3', slice_base: base, tests_commit: 'abc1234' }, { tdd: 'no' })
+    assert.equal(testDrivenPhase(chantier), 'implementing')
+    assert.equal(decide({ chantier, relativePath: 'test/one.test.mjs' }).allowed, false)
+  })
+
+  it('en revue d’ensemble d’un chantier tdd: no, reopen-tests est accepté si une tranche a figé des tests, refusé sinon [FIX-20 CA-15]', () => {
+    const frozen = atSliceTwo({ tdd: 'no' }).directory
+    setHeader(frozen, 'FEAT-20', { slice: '3', slice_tdd: 'yes', tests_commit: 'abc1234' })
+    setHeader(frozen, 'FEAT-20', { slice: 'chantier', last_slice: '3', slice_tdd: '', tests_commit: '' })
+    atelierOk(frozen, 'reopen-tests', 'cas', 'oublié')
+    commitSpec(frozen)
+    assert.equal(phaseOf(frozen), 'writing-tests')
+
+    const never = atSliceTwo({ tdd: 'no' }).directory
+    setHeader(never, 'FEAT-20', { slice: 'chantier', last_slice: '3' })
+    const refused = atelierRun(never, 'reopen-tests', 'cas', 'oublié')
+    assert.notEqual(refused.status, 0)
+    assert.match(refused.output, /ne suit pas le TDD/)
+  })
+
+  it('dans un plan à une seule tranche, set-tdd change aussi slice_tdd [FIX-20 CA-12]', () => {
+    const { directory } = atSliceTwo({ plan: planOf([1]) })
+    setHeader(directory, 'FEAT-20', { slice: '1', slice_base: '', slice_tdd: 'yes' })
+    atelierOk(directory, 'set-tdd', 'no', 'rien', 'à', 'tester')
+    const data = specData(directory, 'FEAT-20')
+    assert.equal(data.tdd, 'no')
+    assert.equal(data.slice_tdd, 'no')
+    assert.equal(phaseOf(directory), 'none')
+  })
+})
