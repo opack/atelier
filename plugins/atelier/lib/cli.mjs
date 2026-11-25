@@ -8,6 +8,7 @@ import { commandNextId } from './cli/identifiers.mjs'
 import { commandStatus, hookSessionStart } from './cli/next-step.mjs'
 import { commandReviewIds } from './cli/review-points.mjs'
 import { commandSetReviewed } from './cli/review.mjs'
+import { commandCheckPlan } from './cli/slices.mjs'
 import { commandCheckSpec, commandSign } from './cli/spec.mjs'
 import { hookGate } from './cli/stop-hook.mjs'
 import { commandFreezeTests, commandReopenTests, commandSetTdd, commandTestsChanged } from './cli/tdd.mjs'
@@ -17,6 +18,7 @@ const commands = {
   'next-id': commandNextId,
   status: commandStatus,
   'check-spec': commandCheckSpec,
+  'check-plan': commandCheckPlan,
   'check-process': commandCheckProcess,
   template: commandTemplate,
   sign: commandSign,

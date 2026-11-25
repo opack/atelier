@@ -52,3 +52,10 @@
 - OD7 (corrigé) : « sans TDD pour cette tranche » dépend de `slice_tdd: no`, pas du `tdd` du chantier.
 - OD8 (corrigé pour le chemin, test reporté) : `testsFrozenBefore` lit l'historique de la spec par son chemin relatif au projet. Le cas `tdd: no` dont une tranche a figé des tests, en revue d'ensemble, est à couvrir en tranche 4.
 - OD9 (corrigé) : le refus « tests figés » de `set-tdd` ne joue qu'en phase `implementing` ; un `tests_commit` hérité d'un chantier repassé en `tdd: no` ne bloque plus.
+
+## 2026-11-25 : tranche 4, points de surapprentissage
+- OB3 (corrigé) : `checkPlanValues` n'écrit rien après une réouverture ou un regel (entrées « tests rouverts » / « tests regelés ») ni en modèle `legacy` : `reopen-tests` vide `tests_commit`, et sans ce garde-fou un agent sortait des « tests d'abord » en éditant le plan puis en lançant `check-plan`. Test à ajouter en tranche 5.
+- OD10 (exception acceptée par Didier le 2026-11-25 : fenêtre étroite, la skill `plan` lance `check-plan` avant le commit du plan, seuls les plans antérieurs à FIX-20 sont exposés, et l'édition du plan reste visible au diff et à la revue) : avant le premier gel de la tranche 1, avec `slice_tdd` vide, éditer le plan puis lancer `check-plan` fait sauter le TDD. La spec l'autorise (écriture tant que `slice_tdd` est vide) ; le garde-fou « plan pas encore commité » contredirait le test CA-12 figé.
+- OD11 (corrigé) : `planProblems` signale un plan sans tranche et une numérotation trouée. Test à ajouter en tranche 5.
+- OD12 (corrigé) : les CA de la spec se lisent sans casse, avec les puces `-`, `*` ou `+`. Test à ajouter en tranche 5.
+- OD13 (corrigé en partie) : un chemin de plan qui désigne un dossier sort en 1 au lieu de lever EISDIR. Tests de `check-plan` sans argument et du dossier à ajouter en tranche 5.

@@ -58,8 +58,9 @@ export const FREEZE_WITHOUT_TEST_MESSAGE = 'Le dernier commit ne contient aucun 
 //                   follow TDD (decided by the human), or the review of the whole chantier.
 // 'writing-tests' : TDD, tests are being written; implementation code is forbidden.
 // 'implementing'  : tests are committed and frozen; only implementation code may change.
-// Tests frozen under TDD (of the chantier or of the slice) stay frozen whatever the plan says;
-// a chantier switched to `tdd: no` after the freeze, without slice TDD, has no frozen tests.
+// Tests frozen under TDD (of the chantier or of the slice, or during the review of the whole
+// chantier) stay frozen whatever the plan says; a chantier switched to `tdd: no` after the
+// freeze, without slice TDD, has no frozen tests.
 // During the review of the whole chantier, tests are only written after a reopening, still
 // pending.
 export function testDrivenPhase(chantier) {
@@ -68,7 +69,7 @@ export function testDrivenPhase(chantier) {
     return 'none'
   }
   const data = chantier?.spec?.data ?? {}
-  if (data.tests_commit && (data.tdd === 'yes' || effectiveTdd(chantier) === 'yes')) {
+  if (data.tests_commit && (data.tdd === 'yes' || effectiveTdd(chantier) === 'yes' || slice === 'chantier')) {
     return 'implementing'
   }
   if (slice === 'chantier') {

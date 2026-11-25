@@ -43,6 +43,76 @@ function sliceAttributes(text) {
   return { criteria, tdd }
 }
 
+// Acceptance criteria of a spec body: the `CA-n` identifiers at the head of a list item
+// (`- [ ] CA-1 :` or `- CA-1 :`, any list marker, any case), HTML comments ignored.
+function specCriteria(body) {
+  const text = (body ?? '').replace(/\r\n/g, '\n').replace(/<!--[\s\S]*?-->/g, '')
+  return [...new Set([...text.matchAll(/^\s*[-*+]\s+(?:\[[ xX]\]\s+)?(CA-\d+)\b/gim)].map((match) => match[1].toUpperCase()))]
+}
+
+// Problems of the plan of a chantier, checked by `atelier check-plan` before the plan is
+// committed: no slice, a gap in the numbering, a slice number used twice, a slice without
+// « TDD : oui|non », a TDD slice without
+// criteria, a criterion of the spec covered by no slice, a criterion cited but absent from the
+// spec. An EPIC is not checked: its lots have no TDD.
+export function planProblems(chantier) {
+  if ((chantier?.spec?.data?.type ?? '').toUpperCase() === 'EPIC') {
+    return []
+  }
+  const slices = planSlices(chantier?.plan)
+  const specIds = specCriteria(chantier?.spec?.body)
+  const problems = []
+  if (!slices.length) {
+    problems.push('Aucune tranche : la section « ## Tranches » du plan doit numéroter ses tranches (1., 2., …).')
+  }
+  const numbers = [...new Set(slices.map((slice) => slice.number))].sort((a, b) => a - b)
+  const missing = numbers.length ? Array.from({ length: numbers.at(-1) }, (_, index) => index + 1).filter((number) => !numbers.includes(number)) : []
+  if (missing.length) {
+    problems.push(`Numérotation des tranches trouée : ${missing.map((number) => `tranche ${number}`).join(', ')} absente(s) du plan.`)
+  }
+  const seen = new Set()
+  for (const { number, criteria, tdd } of slices) {
+    if (seen.has(number)) {
+      problems.push(`Tranche ${number} : numéro en double dans le plan.`)
+    }
+    seen.add(number)
+    if (tdd === null) {
+      problems.push(`Tranche ${number} : TDD non déclaré (« TDD : oui » ou « TDD : non »).`)
+    } else if (tdd === 'yes' && !criteria.length) {
+      problems.push(`Tranche ${number} : « TDD : oui » sans CA couvert ; une tranche qui n’a rien à tester se déclare « TDD : non ».`)
+    }
+    for (const id of criteria.filter((criterion) => !specIds.includes(criterion))) {
+      problems.push(`${id} : cité par la tranche ${number}, absent de la spec.`)
+    }
+  }
+  const covered = new Set(slices.flatMap((slice) => slice.criteria))
+  for (const id of specIds.filter((criterion) => !covered.has(criterion))) {
+    problems.push(`${id} : couvert par aucune tranche.`)
+  }
+  return problems
+}
+
+// Spec header values written by `atelier check-plan` on a plan without problems: the TDD of
+// slice 1 into `slice_tdd`, only while slice 1 has neither frozen tests (current, reopened or
+// refrozen) nor a review, and only
+// if `slice_tdd` is still empty (afterwards, the plan no longer changes it).
+export function checkPlanValues(chantier) {
+  const data = chantier?.spec?.data ?? {}
+  const written = String(data.slice ?? '').trim()
+  if (String(data.slice_tdd ?? '').trim() || data.tests_commit || data.reviewed_commit || (written && written !== '1')) {
+    return {}
+  }
+  // A reopening or a refreeze means tests were frozen (a reopening empties tests_commit), and the
+  // legacy model keeps the TDD of the chantier.
+  const reopenedOrRefrozen = parseAmendments(chantier.spec.body ?? '').entries
+    .some((entry) => /^(tests rouverts|tests regelés)/.test(entry.replace(ENTRY_START, '')))
+  if (reopenedOrRefrozen || !['single', 'sliced'].includes(sliceState(chantier).model)) {
+    return {}
+  }
+  const tdd = planSlices(chantier?.plan).find((slice) => slice.number === 1)?.tdd
+  return tdd ? { slice_tdd: tdd } : {}
+}
+
 // Number of slices of a plan: the highest slice number read by planSlices; 0 without slices.
 export function planSliceCount(planText) {
   return planSlices(planText).reduce((count, slice) => Math.max(count, slice.number), 0)
