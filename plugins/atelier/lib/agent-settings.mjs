@@ -14,13 +14,14 @@ export const AGENT_DEFAULTS = {
 // Agents whose command takes other arguments (the slice of a SPIKE for build).
 const AGENTS_WITH_REST = new Set(['implementer'])
 
-const SOURCE = { argument: 'argument', user: 'utilisateur', default: 'défaut' }
+const SOURCE = { argument: 'argument', user: 'utilisateur', default: 'recommandé' }
 
-// An option left unset reaches the skill as the literal placeholder, or empty.
+// An option left unset reaches the skill as the literal placeholder, empty, or
+// "recommandé (…)" (follows the recommended value, whatever is in the parentheses).
 function isUnset(value) {
   if (value === undefined || value === null) return true
   const text = String(value).trim()
-  return text === '' || /^\$\{user_config\.[^}]*\}$/.test(text)
+  return text === '' || /^\$\{user_config\.[^}]*\}$/.test(text) || /^recommandé\s*\(.*\)$/i.test(text)
 }
 
 function optionName(agent, kind) {

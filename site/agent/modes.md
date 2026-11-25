@@ -20,7 +20,9 @@ Tous les moments d’un chantier ne demandent pas le même agent.
 
 Les étapes coûteuses et sans dialogue sont confiées à des sous-agents dont atelier règle le modèle et l’effort. Les étapes où vous dialoguez avec l’agent (`new`, `amend`, `plan`, `write-tests`…) gardent le modèle de votre session : pour `/atelier:plan`, l’alias `opusplan` (Opus en mode plan, Sonnet ensuite) applique le tableau sans réglage.
 
-| Sous-agent | Lancé par | Modèle par défaut | Effort par défaut |
+Valeurs recommandées de la version installée :
+
+| Sous-agent | Lancé par | Modèle recommandé | Effort recommandé |
 |---|---|---|---|
 | `implementer` | `/atelier:build` | `sonnet` | `medium` |
 | `overfit-checker` | `/atelier:build` | `opus` | `medium` |
@@ -30,12 +32,12 @@ Les étapes coûteuses et sans dialogue sont confiées à des sous-agents dont a
 Pour chaque sous-agent, le modèle et l’effort se résolvent séparément, du plus fort au plus faible :
 
 1. **l’argument de la commande**, pour cet appel : `/atelier:build opus`, `/atelier:review medium`, `/atelier:build opus high` ;
-2. **votre option**, réglée une fois pour tous vos projets avec `/plugin configure atelier` (`implementer_model`, `reviewer_effort`…) ;
-3. **le défaut** du tableau.
+2. **votre option**, réglée une fois pour tous vos projets avec `/plugin configure atelier` (`implementer_model`, `reviewer_effort`…). Une option laissée sur `recommandé (…)` (ou vide) suit la valeur recommandée de la version installée.
+3. **la valeur recommandée** du tableau.
 
-Dans `/atelier:build`, l’argument ne règle qu’`implementer` : `overfit-checker` suit votre option ou le défaut.
+Dans `/atelier:build`, l’argument ne règle qu’`implementer` : `overfit-checker` suit votre option ou la valeur recommandée.
 
-Avant de lancer un sous-agent, la commande annonce ce qu’elle utilise et d’où vient chaque valeur, par exemple « implementer : sonnet / medium (défaut) ».
+Avant de lancer un sous-agent, la commande annonce ce qu’elle utilise et d’où vient chaque valeur, par exemple « implementer : sonnet / medium (recommandé) ».
 
 ## Le mode « tout automatique »
 

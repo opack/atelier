@@ -78,20 +78,22 @@ Créé par `/atelier:init`, puis modifié **par vous** : l’agent ne peut pas l
 
 ## Modèle et effort des sous-agents
 
-Ce sont des **options du plugin**, réglées par `/plugin configure atelier` et valables pour tous vos projets : elles ne passent pas par `.claude/atelier.json`. Pour chaque sous-agent, une option règle le modèle et une autre l’effort. L’ordre de résolution (argument de la commande, option, défaut) est décrit dans [Modes de travail](../agent/modes).
+Ce sont des **options du plugin**, réglées par `/plugin configure atelier` et valables pour tous vos projets : elles ne passent pas par `.claude/atelier.json`. Pour chaque sous-agent, une option règle le modèle et une autre l’effort. L’ordre de résolution (argument de la commande, option, valeur recommandée) est décrit dans [Modes de travail](../agent/modes).
 
-| Option | Défaut | Valeurs possibles |
-|---|---|---|
-| `implementer_model` | `sonnet` | `sonnet`, `opus`, `haiku`, `fable` |
-| `implementer_effort` | `medium` | `low`, `medium`, `high`, `xhigh`, `max` |
-| `overfit_checker_model` | `opus` | `sonnet`, `opus`, `haiku`, `fable` |
-| `overfit_checker_effort` | `medium` | `low`, `medium`, `high`, `xhigh`, `max` |
-| `reviewer_model` | `opus` | `sonnet`, `opus`, `haiku`, `fable` |
-| `reviewer_effort` | `high` | `low`, `medium`, `high`, `xhigh`, `max` |
-| `spec_critic_model` | `opus` | `sonnet`, `opus`, `haiku`, `fable` |
-| `spec_critic_effort` | `high` | `low`, `medium`, `high`, `xhigh`, `max` |
+| Option | Valeurs possibles |
+|---|---|
+| `implementer_model` | `recommandé (…)`, `sonnet`, `opus`, `haiku`, `fable` |
+| `implementer_effort` | `recommandé (…)`, `low`, `medium`, `high`, `xhigh`, `max` |
+| `overfit_checker_model` | `recommandé (…)`, `sonnet`, `opus`, `haiku`, `fable` |
+| `overfit_checker_effort` | `recommandé (…)`, `low`, `medium`, `high`, `xhigh`, `max` |
+| `reviewer_model` | `recommandé (…)`, `sonnet`, `opus`, `haiku`, `fable` |
+| `reviewer_effort` | `recommandé (…)`, `low`, `medium`, `high`, `xhigh`, `max` |
+| `spec_critic_model` | `recommandé (…)`, `sonnet`, `opus`, `haiku`, `fable` |
+| `spec_critic_effort` | `recommandé (…)`, `low`, `medium`, `high`, `xhigh`, `max` |
 
-Une valeur inconnue est ignorée avec un avertissement : atelier retombe sur le défaut.
+Les valeurs recommandées de la version installée sont dans [Modes de travail](../agent/modes). `recommandé (…)` suit toujours celles de la version installée ; la parenthèse montre celle du jour où vous avez enregistré la configuration, et la valeur réellement utilisée est annoncée à chaque lancement. Choisir une autre valeur de la liste la fige.
+
+Une valeur inconnue est ignorée avec un avertissement : atelier retombe sur la valeur recommandée.
 
 ## Le dossier `.atelier/`
 
