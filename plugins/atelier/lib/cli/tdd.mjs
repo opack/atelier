@@ -24,6 +24,7 @@ import {
   uncommittedFiles,
 } from './common.mjs'
 import { requireActiveChantier } from './identifiers.mjs'
+import { codeFilesSince } from './slices.mjs'
 import { appendAmendment, updateSpec } from './spec.mjs'
 
 // ---------- Test commands ----------
@@ -40,17 +41,22 @@ export function testFilesChangedSince(projectRoot, config, commit) {
 }
 
 // Test files present at `base` whose lines were changed or removed in HEAD (whitespace and line
-// endings ignored). Deleted files and binary files are taken from git's file lists, as the text
-// diff has no removed line for an empty or binary file and quotes unusual paths.
+// endings ignored), among the test files changed by the chantier itself since `base`: files brought
+// by a merge of the default branch do not count (see codeFilesSince). Deleted files and binary files
+// are taken from git's file lists, as the text diff has no removed line for an empty or binary file
+// and quotes unusual paths. The diffs are limited to those files, so their size stays small.
 function testFilesWithRemovedLines(projectRoot, config, base) {
-  const range = [base, 'HEAD', '--']
+  const candidates = [...new Set(codeFilesSince(projectRoot, base, 'first-parent'))]
+    .filter((file) => matchesAny(file, config.testPaths, config.ignoreCase))
+  if (!candidates.length) return []
+  const range = [base, 'HEAD', '--', ...candidates.map((file) => `:(literal)${file}`)]
   const fromDiff = removedTestLines(gitRaw(projectRoot, ['-c', 'core.quotePath=false', 'diff', '--no-renames', '--no-color', '--no-ext-diff', '--src-prefix=a/', '--dst-prefix=b/', '--ignore-all-space', '--ignore-cr-at-eol', ...range]))
   const deleted = gitPaths(projectRoot, ['diff', '--no-renames', '--name-only', '-z', '--diff-filter=D', ...range])
   // `--numstat -z` entries: "<added>\t<removed>\t<path>", "-" for both counts on a binary file.
   const binary = gitPaths(projectRoot, ['diff', '--no-renames', '--numstat', '-z', ...range])
     .filter((entry) => entry.startsWith('-\t-\t'))
     .map((entry) => entry.slice(4))
-  return [...new Set([...fromDiff, ...deleted, ...binary])].filter((file) => matchesAny(file, config.testPaths, config.ignoreCase))
+  return [...new Set([...fromDiff, ...deleted, ...binary])].filter((file) => candidates.includes(file))
 }
 
 // Step 3 of the TDD workflow: the tests must be committed before implementation starts.
