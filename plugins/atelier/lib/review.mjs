@@ -4,7 +4,7 @@
 import { matchesAny, specStatus } from './common.mjs'
 import { parseReviewPoints, reviewPointProblems } from './review-points.mjs'
 import { planSlices, sliceState } from './slices.mjs'
-import { testDrivenPhase } from './tdd.mjs'
+import { declaredSliceTdd, testDrivenPhase } from './tdd.mjs'
 
 // ---------- Review ----------
 
@@ -99,7 +99,7 @@ export function setReviewedUpdate(chantier, head) {
     if (slice < sliceCount) {
       // The TDD declared by the plan for the next slice applies; undeclared, the chantier's.
       const sliceTdd = planSlices(chantier.plan).find((entry) => entry.number === slice + 1)?.tdd ?? ''
-      const next = (sliceTdd || chantier.spec.data.tdd) === 'yes'
+      const next = (declaredSliceTdd(sliceTdd) ?? chantier.spec.data.tdd) === 'yes'
         ? 'écrire ses tests : /atelier:write-tests'
         : `l’implémenter${sliceTdd === 'no' ? ' (sans TDD pour cette tranche)' : ''} : /atelier:build`
       return {

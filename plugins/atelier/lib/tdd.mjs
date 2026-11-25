@@ -11,12 +11,17 @@ import { ENTRY_START, parseAmendments } from './spec.mjs'
 // plan) when set, otherwise the `tdd` of the chantier.
 export function effectiveTdd(chantier) {
   const data = chantier?.spec?.data ?? {}
-  const sliceTdd = String(data.slice_tdd ?? '').trim().toLowerCase()
-  return ['yes', 'no'].includes(sliceTdd) ? sliceTdd : data.tdd
+  return declaredSliceTdd(data.slice_tdd) ?? data.tdd
+}
+
+// A slice TDD value read without case: 'yes' | 'no', or null when empty or unknown.
+export function declaredSliceTdd(value) {
+  const normalized = String(value ?? '').trim().toLowerCase()
+  return ['yes', 'no'].includes(normalized) ? normalized : null
 }
 
 // The current slice when it is a numbered slice of a chantier with several slices, else null.
-function numberedSlice(chantier) {
+export function numberedSlice(chantier) {
   const { model, slice } = sliceState(chantier)
   return model === 'sliced' && typeof slice === 'number' ? slice : null
 }

@@ -3,7 +3,7 @@
 
 import { isReviewExempt } from './close.mjs'
 import { sliceLabel, sliceState } from './slices.mjs'
-import { testDrivenPhase } from './tdd.mjs'
+import { declaredSliceTdd, numberedSlice, testDrivenPhase } from './tdd.mjs'
 
 // ---------- Next step ----------
 
@@ -70,8 +70,7 @@ export function codeCommittedMatters(chantier, review) {
 
 // Whether the current numbered slice of a chantier with several slices is declared without TDD.
 function sliceWithoutTdd(chantier) {
-  const { model, slice } = sliceState(chantier)
-  return model === 'sliced' && typeof slice === 'number' && String(chantier.spec.data.slice_tdd ?? '').trim().toLowerCase() === 'no'
+  return numberedSlice(chantier) !== null && declaredSliceTdd(chantier.spec.data.slice_tdd) === 'no'
 }
 
 // Next step of the current phase (tests, build, review, close), for a slice or the chantier.
