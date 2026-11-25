@@ -33,12 +33,12 @@ git 2.36 date d'avril 2022 : un git plus ancien n'est pas une cible d'atelier (d
 - `plugins/atelier/lib/cli/slices.mjs` : `codeFilesSince` n'appelle plus `gitVersion` ; commentaires mis à jour.
 - `plugins/atelier/lib/core.mjs` : retirer le réexport de `parseGitVersion` (aucun appelant hors des fichiers ci-dessus).
 - `plugins/atelier/test/merged-code.test.mjs` : supprimer le test FIX-28 CA-6 (lecture de version, repli sous 2.36) ; adapter les appels de `codeLogArguments` du test CA-7.
-- Site : `site/reference/limites.md`, section « La version de git » renommée (le code apporté par la branche par défaut) sans mention de version ; `site/cycle/revue.md` : lien et mention « git 2.36 ou plus » retirés.
+- Site : `site/reference/limites.md`, section « La version de git » conservée : elle explique pourquoi atelier demande git 2.36 ou plus (`git log --diff-merges=remerge`, qui ne garde d'une fusion de la branche par défaut que sa résolution), sans plus décrire de comportement pour un git plus ancien ; le repli sans référence de la branche par défaut y reste décrit, sans la mention « git 2.31 ». `site/cycle/revue.md` : le lien « git 2.36 ou plus » vers cette section reste.
 
 Hors périmètre :
 - Le repli sans référence de la branche par défaut, ou quand elle contient déjà des commits du chantier (FIX-28 CA-7, CA-8) : il reste, avec `fallbackDiffMerges`.
 - Les documents des chantiers clos (`docs/chantiers/FIX-28…`, `FIX-31…`) : historiques, inchangés.
-- Toute vérification ou documentation d'une version minimale de git.
+- Toute vérification de la version de git à l'exécution.
 
 ## 4. Impacts indirects
 <!-- Comportement visible malgré tout ? Données, déploiement, coûts, autres développeurs. Optionnel pour une petite tâche.
@@ -52,8 +52,8 @@ FIX-32 (en cours) appelle `codeFilesSince` sans toucher à la version de git : c
 <!-- Comment prouve-t-on que ça marche : CI verte, test de règles, déploiement sur un environnement, mesure avant / après. -->
 
 - `npm test` vert, sans le test CA-6 de FIX-28 ; les tests CA-1 à CA-5, CA-7, CA-8 de FIX-28 passent inchangés sur le fond.
-- `git grep -n "parseGitVersion\|gitVersion\|supportsRemergeDiff\|2\.36" -- plugins site` ne renvoie rien.
-- `npm run build` dans `site/` sans lien mort (l'ancre `la-version-de-git` n'est plus citée).
+- `git grep -n "parseGitVersion\|gitVersion\|supportsRemergeDiff\|2\.36" -- plugins` ne renvoie rien ; sur le site, « 2.36 » n'apparaît plus que comme version requise (section « La version de git » et le lien de `revue.md`), jamais avec un comportement de repli.
+- `npm run build` dans `site/` sans lien mort.
 
 ## 6. Retour arrière
 <!-- Comment annuler si ça casse en production. Optionnel pour une petite tâche. -->
