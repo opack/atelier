@@ -7,6 +7,9 @@ tdd: no
 created_at: 2026-11-24
 signed_by: Opack
 signed_at: 2026-11-24
+slice: 2
+slice_base: efbe964f9face4cd69d9842f504fae55aadb2b53
+tests_commit: 
 ---
 
 # FEAT-30 Calibrer la rigueur des relectures
