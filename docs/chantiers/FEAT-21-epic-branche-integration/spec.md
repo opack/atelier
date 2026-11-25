@@ -8,7 +8,7 @@ created_at: 2026-11-23
 rel_depends_on: REF-29
 signed_by: Opack
 signed_at: 2026-11-23
-tests_commit: c7daf7b
+tests_commit: 
 slice: 2
 slice_base: 7e4dec9e6ab43cb5ae9dcebe22659f6904047468
 ---
@@ -116,3 +116,4 @@ Dépôts git temporaires construits par les tests : branche par défaut, `epic/E
 <!-- Après signature : une entrée datée par modification de la spec (date, quoi, pourquoi). -->
 - 2026-11-25 : dépendance à REF-29 et recalage sur le code d'après REF-29 et FIX-28, parce que le lot 2 d'EPIC-17 est livré et que la spec citait des emplacements disparus.
   Ajout de `rel_depends_on: REF-29` (Q4) ; chemins de §1 et §3 recalés sur `lib/` rangé par domaine ; §2 « Pourquoi merge » et nouveau CA-15 : depuis FIX-28, une fusion de la branche par défaut sans résolution de conflit sur du code ne périme pas la revue, et la fusion de la branche d'intégration dans un enfant suit la même règle (sinon chaque synchronisation forcerait une nouvelle revue listant le code des enfants frères).
+- 2026-11-25 : tests rouverts (gel quitté : c7daf7b) : RD1 (revue 1 de la tranche 2) : les tests apportés par une fusion de la branche d'intégration ne doivent pas compter comme tests du chantier
