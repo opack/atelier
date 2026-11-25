@@ -50,6 +50,16 @@ describe('agent settings: defaults and user options', () => {
     }
   })
 
+  it('une option « défaut (…) » compte comme non réglée, quelle que soit la valeur entre parenthèses, même périmée [FEAT-27 CA-3]', () => {
+    for (const [userModel, userEffort] of [['défaut (opus)', 'défaut (high)'], ['Défaut (haiku)', 'DÉFAUT (low)']]) {
+      const result = resolve('reviewer', { userModel, userEffort })
+      assert.equal(result.model, 'opus', userModel)
+      assert.equal(result.effort, 'high', userEffort)
+      assert.deepEqual(result.sources, { model: 'défaut', effort: 'défaut' }, userModel)
+      assert.deepEqual(result.warnings, [], userModel)
+    }
+  })
+
   it('une option invalide est ignorée au profit du défaut, avec un avertissement qui nomme la valeur et l’option [FEAT-27 CA-6]', () => {
     for (const userModel of ['gpt', 'inherit', 'claude-opus-5-5']) {
       const result = resolve('reviewer', { userModel })
@@ -144,7 +154,7 @@ describe('agent settings: defaults declared in the plugin files', () => {
   // userConfig keys only allow letters, digits and underscores.
   const optionKey = (agent, kind) => `${agent.replaceAll('-', '_')}_${kind}`
 
-  it('le manifeste déclare, par sous-agent, une option de modèle et une d’effort, facultatives, au défaut du code et à liste fermée [FEAT-27 CA-10]', () => {
+  it('le manifeste déclare, par sous-agent, une option de modèle et une d’effort, facultatives, « défaut (<défaut du code>) » par défaut et en tête d’une liste fermée [FEAT-27 CA-10]', () => {
     const userConfig = JSON.parse(pluginFile('.claude-plugin/plugin.json')).userConfig ?? {}
     for (const [agent, expected] of Object.entries(DEFAULTS)) {
       for (const [kind, allowed] of [['model', ['sonnet', 'opus', 'haiku', 'fable']], ['effort', ['low', 'medium', 'high', 'xhigh', 'max']]]) {
@@ -152,8 +162,9 @@ describe('agent settings: defaults declared in the plugin files', () => {
         assert.ok(option, `option ${optionKey(agent, kind)} absente`)
         assert.equal(option.type, 'string', optionKey(agent, kind))
         assert.notEqual(option.required, true, optionKey(agent, kind))
-        assert.equal(option.default, expected[kind], optionKey(agent, kind))
-        assert.deepEqual([...option.options].sort(), [...allowed].sort(), optionKey(agent, kind))
+        assert.equal(option.default, `défaut (${expected[kind]})`, optionKey(agent, kind))
+        assert.equal(option.options[0], option.default, `${optionKey(agent, kind)} : « ${option.default} » en tête de liste`)
+        assert.deepEqual(option.options.slice(1).sort(), [...allowed].sort(), optionKey(agent, kind))
       }
     }
   })
