@@ -42,6 +42,6 @@ Revue unique (chantier à tranche unique) du 2026-11-25, commit revu 0bb0ff3 pui
 |---|---|
 | Aucun | |
 
-- Verdict :
-- Validé par :
-- Date :
+- Verdict : accepté
+- Validé par : Didier
+- Date : 2026-11-25
