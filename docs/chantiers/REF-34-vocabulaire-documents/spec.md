@@ -42,7 +42,7 @@ EPIC-14 (atelier sur n'importe quel dépôt) doit permettre des documents dans u
 <!-- Ce qui existe, ce qu'on veut obtenir. -->
 
 - **Actuel** : les termes sont dispersés dans `lib/spec.mjs`, `lib/tdd.mjs`, `lib/slices.mjs`, `lib/review-points.mjs` (tableaux, expressions régulières) et cités en dur dans les messages de `lib/write-guard.mjs` et `lib/review-points.mjs`.
-- **Cible** : un module pur `lib/vocabulary.mjs`, sans import, exporte `VOCABULARY`, le vocabulaire français sous des clés canoniques en anglais : `sections.<TYPE>` (une clé par section exigée), `criteria.<TYPE>`, `amendments`, `amendmentEntries.reopened`, `amendmentEntries.refrozen`, `slices`, `review.tables.blocking`, `review.tables.discuss`, `review.legacyRound`, `review.columns.point`, `review.columns.file`, `review.columns.treatment`, `review.treatments.<clé>` (huit clés), `review.markers.resumed`, `review.markers.formerly`, `review.empty`. Les autres modules le lisent au lieu d'écrire les termes. Les exports existants (`REQUIRED_SECTIONS`, etc.) restent disponibles et donnent les mêmes valeurs. Domaine du module et de son test : `vocabulary`.
+- **Cible** : un module pur `lib/vocabulary.mjs`, sans import, exporte `VOCABULARY`, le vocabulaire français sous des clés canoniques en anglais : `sections.<TYPE>` (une clé par section exigée), `criteria.<TYPE>`, `amendments`, `amendmentEntries.reopened`, `amendmentEntries.refrozen`, `slices`, `review.tables.blocking`, `review.tables.discuss`, `review.legacyRound`, `review.columns.point`, `review.columns.file`, `review.columns.treatment`, `review.treatments.<clé>` (huit clés), `review.postponedSlice`, `review.markers.resumed`, `review.markers.formerly`, `review.empty`. Les autres modules le lisent au lieu d'écrire les termes. Les exports existants (`REQUIRED_SECTIONS`, etc.) restent disponibles et donnent les mêmes valeurs. Domaine du module et de son test : `vocabulary`.
 
 ## 4. Preuve de non-régression
 <!-- Tests existants qui couvrent la zone ; tests de caractérisation à ajouter AVANT de toucher au code ; vérifications manuelles restantes.
@@ -78,3 +78,4 @@ Laissé en l'état : les textes des messages et les mots employés dans leurs ph
 
 ## Amendements
 <!-- Après signature : une entrée datée par modification de la spec. -->
+- 2026-11-25 : clé `review.postponedSlice` (« tranche ») ajoutée à la liste du §3, pourquoi : la regex de « reporté (tranche N) » contient ce mot, et CA-3 fige exactement les clés du §3 (oubli relevé à la conception).
