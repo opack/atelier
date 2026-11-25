@@ -8,6 +8,8 @@ const { theme } = useData()
 
 ## Sur votre machine
 
+Prérequis : [Node.js](https://nodejs.org) 20 ou plus récent et [git](https://git-scm.com) 2.36 ou plus récent (voir [La version de git](../reference/limites#la-version-de-git)).
+
 ```bash
 claude plugin marketplace add opack/atelier
 ```
