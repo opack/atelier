@@ -11,6 +11,7 @@ signed_by: Opack
 signed_at: 2026-11-24
 tests_commit: 1d78ce5
 slice: 1
+reviewed_commit: 0da9242dc26fc8a48a9d2415abe24da5c3c6834c
 ---
 
 # FIX-31 freeze-tests plante sur un gros diff et compte les tests venus de main
