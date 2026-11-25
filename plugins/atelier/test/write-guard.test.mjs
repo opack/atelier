@@ -186,6 +186,23 @@ describe('write guard on a spec that is no longer a draft', () => {
     assert.equal(setStatusRefusal(draftChantier, 'draft'), null)
     assert.equal(setStatusRefusal(signedChantier, 'abandoned'), null)
   })
+
+  it('gèle integration_branch après la signature (changé, ajouté, retiré), le laisse libre en brouillon [FEAT-21 CA-3]', () => {
+    const withOption = signedText.replace('type: FEAT', 'type: EPIC').replace('tdd: yes', 'tdd: no\nintegration_branch: yes')
+    const withoutOption = signedText.replace('type: FEAT', 'type: EPIC').replace('tdd: yes', 'tdd: no')
+    const cases = [
+      ['changé', withOption, { old_string: 'integration_branch: yes', new_string: 'integration_branch: no' }],
+      ['ajouté', withoutOption, { old_string: 'tdd: no', new_string: 'tdd: no\nintegration_branch: yes' }],
+      ['retiré', withOption, { old_string: 'tdd: no\nintegration_branch: yes', new_string: 'tdd: no' }],
+    ]
+    for (const [label, text, change] of cases) {
+      const decision = edit([entry, change], { current: text, committed: text })
+      assert.equal(decision.allowed, false, label)
+      assert.match(decision.reason, /« integration_branch »/, label)
+      const draft = text.replace('status: signed', 'status: draft')
+      assert.equal(edit([change], { current: draft, committed: draft }).allowed, true, `${label} en brouillon`)
+    }
+  })
 })
 
 describe('write guard on a spec whose committed version is a draft', () => {
