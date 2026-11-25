@@ -26,14 +26,15 @@ function closeCheckProblems(projectRoot, config, chantier) {
   } catch (error) {
     uncommittedError = error.message
   }
+  const index = needsIndex(chantier) ? chantierIndex(projectRoot, config) : null
   return closeProblems({
     chantier,
-    reviewFacts: reviewFacts(projectRoot, config, chantier),
+    reviewFacts: reviewFacts(projectRoot, config, chantier, index),
     uncommittedCode,
     uncommittedError,
     revueUncommitted,
     checksFailure: runChecksOnce(projectRoot, config).failure,
-    index: needsIndex(chantier) ? chantierIndex(projectRoot, config) : null,
+    index,
   })
 }
 

@@ -68,3 +68,20 @@ export function chantierBase(index, parentId, defaultBranch) {
   }
   return fallback()
 }
+
+// Git reference to use for the integration branch `branch`, from what git says about its local
+// branch and its remote-tracking branch (`local`, `remote`: whether each exists; `localInRemote`,
+// `remoteInLocal`: whether one contains the other). The more advanced one when one contains the
+// other; never the default branch. Returns { ref: 'local' | 'remote' } or { error }.
+export function integrationRefChoice({ branch, local, remote, localInRemote = false, remoteInLocal = false }) {
+  if (!local && !remote) {
+    return { error: `la branche d’intégration ${branch} est introuvable, ni locale ni distante : récupère-la (git fetch) ou pousse-la.` }
+  }
+  if (!local || (remote && localInRemote)) {
+    return { ref: 'remote' }
+  }
+  if (!remote || remoteInLocal) {
+    return { ref: 'local' }
+  }
+  return { error: `la branche d’intégration ${branch} et sa branche distante ont divergé : synchronise-la (git pull, puis git push) avant de continuer.` }
+}

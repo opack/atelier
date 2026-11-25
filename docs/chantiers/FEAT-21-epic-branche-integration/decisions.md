@@ -22,3 +22,17 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Contexte : la vérification de surapprentissage note qu'aucun test en ligne de commande ne vérifie que `status --json` d'un EPIC à l'option donne la base de son parent (règle testée seulement sur la fonction pure).
 - Écarté : renforcer les tests figés de la tranche 1, parce que le code est juste et que la tranche 3 teste déjà l'EPIC à l'option en ligne de commande (CA-8, CA-14).
 - Conséquence : la tranche 3 ajoute un cas `status --json` sur `epic/EPIC-1-x` à l'option, qui attend `baseBranch: "main"` et `baseEpic: null`.
+
+## 2026-11-25 : la branche distante de la branche d'intégration est lue sur `origin`
+- Contexte : CA-6 compare la branche locale `epic/<ID>-<slug>` à « sa branche de suivi distante ».
+- Écarté : lire la branche suivie configurée (`branch.<nom>.merge`), parce qu'une branche seulement distante n'a pas de configuration de suivi, et que la branche par défaut est déjà lue sur `origin` (`defaultBaseRef`).
+- Conséquence : `refs/remotes/origin/epic/<ID>-<slug>` ; un dépôt dont le remote principal porte un autre nom n'a que la branche locale.
+
+## 2026-11-25 : l'index des chantiers est passé d'une fonction à l'autre plutôt que mis en cache
+- Contexte : `status` et `close-check` ont besoin de l'index pour les relations, la base et maintenant la revue (refs à exclure).
+- Écarté : un cache par processus dans `chantierIndex`, parce qu'il cacherait un état partagé et qu'une commande écrit parfois la spec avant de relire l'index.
+- Conséquence : `reviewFacts`, `reviewSummary` et `sliceCodeFiles` prennent un `index` optionnel ; sans lui, ils le construisent eux-mêmes.
+
+## 2026-11-25 : OD3 (tranche 2) corrigé, OD2 reporté à la tranche 3
+- OD3 : la base et les refs de la branche d'intégration étaient calculées deux fois par `sliceCodeFiles`, et l'index deux fois par `set-reviewed`. Corrigé : `integrationBranchOf` calcule une fois `{ branch, local, remote }`, dont on tire la ref de base (`baseRefOf`) et les refs à exclure (`integrationRefsOf`) ; `set-reviewed` construit l'index une fois.
+- OD2 : les tests figés de CA-6 ne distinguent pas « toujours la locale » de « toujours la distante » quand les deux existent, parce que les deux refs sont exclues du calcul du code. Écarté : rouvrir les tests de la tranche 2 pour un cas que la fonction pure couvre simplement. Conséquence : la tranche 3 ajoute un test pur de `integrationRefChoice` (ni l'une ni l'autre, une seule, l'une contient l'autre dans chaque sens, divergence).

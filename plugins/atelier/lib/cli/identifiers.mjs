@@ -53,8 +53,11 @@ export function defaultBaseRef(projectRoot) {
   ) ?? null
 }
 
+// Subjects of the branch's own commits since `base`, newest first: the first-parent chain only, so
+// that commits brought by a merge (of the integration branch of an EPIC, for instance) do not pass
+// in front of those of the branch.
 export function branchCommitSubjects(projectRoot, base) {
-  const output = gitOutput(projectRoot, ['log', '-n', '200', '--format=%s', `${base}..HEAD`])
+  const output = gitOutput(projectRoot, ['log', '-n', '200', '--first-parent', '--format=%s', `${base}..HEAD`])
   return output ? output.split('\n') : []
 }
 
