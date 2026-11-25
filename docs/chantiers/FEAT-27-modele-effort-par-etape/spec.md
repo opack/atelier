@@ -8,7 +8,7 @@ created_at: 2026-11-23
 signed_by: Opack
 signed_at: 2026-11-24
 rel_depends_on: TEC-15
-tests_commit: 
+tests_commit: 842110c
 slice: chantier
 slice_base: c8543c31c48ede8dd7f1b01fc34bd3d761b1d56a
 last_slice: 5
@@ -148,3 +148,4 @@ Les essais du 23/11/2026 sont à rejouer avec un plugin jetable installé par `c
 - 2026-11-25 : tests regelés : f7dd172
 - 2026-11-25 : « défaut » devient « recommandé » dans ce que voit l'utilisateur : valeur d'option `recommandé (<valeur>)`, source « recommandé » dans l'annonce et le JSON, tableau de `modes.md` intitulé « Valeurs recommandées », vers lequel `configuration.md` renvoie. « Défaut » mêlait « non réglé » et « valeur de la version » (OD22, OD23, demande de Didier).
 - 2026-11-25 : tests rouverts (gel quitté : f7dd172) : amendement « recommandé » : valeur d'option et source (OD22, OD23)
+- 2026-11-25 : tests regelés : 842110c
