@@ -86,7 +86,7 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | Point | Fichier | Traitement |
 |---|---|---|
 | RD5. Le site présente un échec bruyant comme à corriger plus tard | site/cycle/revue.md:57 | corrigé (8909015) |
-| RD6. Forme d'une relance dans revue.md non décrite | plugins/atelier/skills/review/SKILL.md:57 | corrigé (8909015), contre le verdict « ne pas corriger » du relecteur : Didier veut un historique homogène |
+| RD6. Forme d'une relance dans revue.md non décrite | plugins/atelier/skills/review/SKILL.md:57 | corrigé (8909015, cf28add), contre le verdict « ne pas corriger » du relecteur : Didier veut un historique homogène |
 
 - Bilan de la revue : deux points à discuter, corrigés.
 
@@ -106,3 +106,20 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | Aucun | | |
 
 - Bilan de la revue : RD5 et RD6 vérifiés corrigés, sans régression ; format accepté par review-ids et le contrôle de clôture ; aucune idée.
+
+## Revue 3 : chantier : 2026-11-25
+- Commit revu : cf28add
+- Base : 67ca088
+- Corrections depuis la revue 2 : cf28add
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+- Bilan de la revue : RD6 (revues numérotées par portée) vérifié, sans régression. Idées : compléter le traitement de RD6 avec cf28add (fait) ; aligner un jour les titres des fixtures de test review-points (non retenu).
