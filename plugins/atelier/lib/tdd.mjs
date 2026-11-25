@@ -20,8 +20,9 @@ export function effectiveTdd(chantier) {
 // 'writing-tests' : TDD, tests are being written; implementation code is forbidden.
 // 'implementing'  : tests are committed and frozen; only implementation code may change.
 // Tests frozen under TDD (of the chantier or of the slice) stay frozen whatever the plan says;
-// a chantier switched to `tdd: no` after the freeze, without slice TDD, has no frozen tests. During the review of the whole chantier,
-// tests are only written after a reopening, still pending.
+// a chantier switched to `tdd: no` after the freeze, without slice TDD, has no frozen tests.
+// During the review of the whole chantier, tests are only written after a reopening, still
+// pending.
 export function testDrivenPhase(chantier) {
   const { model, slice } = sliceState(chantier)
   if (model === 'none') {
