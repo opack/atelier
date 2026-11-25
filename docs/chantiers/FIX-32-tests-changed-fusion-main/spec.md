@@ -11,6 +11,7 @@ signed_by: Opack
 signed_at: 2026-11-25
 tests_commit: ceb8ad9
 slice: 1
+reviewed_commit: 342c7ce66424cef1c4f29877fc882d752aa868df
 ---
 
 # FIX-32 Les tests venus de main comptent comme tests modifiés depuis le gel
