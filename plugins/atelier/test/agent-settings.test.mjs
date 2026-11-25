@@ -269,3 +269,51 @@ describe('agent settings: skills that launch the subagents', () => {
     assert.match(repeated.output, /--args/)
   })
 })
+
+describe('agent settings: documentation', () => {
+  const read = (path) => readFileSync(fileURLToPath(new URL(path, import.meta.url)), 'utf8')
+  const site = (page) => read(`../../../site/${page}`)
+  const tableRow = (text, start) => text.split(/\r?\n/).find((line) => line.startsWith(`| ${start}`))
+  const options = Object.keys(DEFAULTS).flatMap((agent) => ['model', 'effort'].map((kind) => `${agent.replaceAll('-', '_')}_${kind}`))
+
+  it('modes.md présente l’ordre de résolution et opusplan [FEAT-27 CA-14]', () => {
+    const text = site('agent/modes.md')
+    assert.ok(text.includes('/plugin configure atelier'), 'option utilisateur non expliquée')
+    assert.match(text, /argument de la commande/)
+    assert.match(text, /défaut/)
+    assert.ok(text.includes('opusplan'), 'opusplan absent')
+  })
+
+  it('configuration.md liste les 8 options [FEAT-27 CA-14]', () => {
+    const text = site('reference/configuration.md')
+    for (const option of options) {
+      assert.ok(text.includes(`\`${option}\``), `option ${option} absente de configuration.md`)
+    }
+  })
+
+  it('commandes.md donne le modèle et l’effort en argument de build, review et sign, et décrit implementer [FEAT-27 CA-14]', () => {
+    const text = site('reference/commandes.md')
+    for (const command of ['build', 'review', 'sign']) {
+      const row = tableRow(text, `\`/atelier:${command}`)
+      assert.ok(row, `ligne /atelier:${command} absente`)
+      assert.match(row, /modèle/, `/atelier:${command} : modèle non mentionné`)
+      assert.match(row, /effort/, `/atelier:${command} : effort non mentionné`)
+    }
+    assert.ok(tableRow(text, '`implementer`'), 'ligne implementer absente du tableau des sous-agents')
+  })
+
+  it('limites.md dit que les variables d’environnement l’emportent sur la résolution [FEAT-27 CA-14]', () => {
+    const text = site('reference/limites.md')
+    for (const variable of ['CLAUDE_CODE_EFFORT_LEVEL', 'CLAUDE_CODE_SUBAGENT_MODEL_FORCE']) {
+      assert.ok(text.includes(`\`${variable}\``), `${variable} absente de limites.md`)
+    }
+  })
+
+  it('l’argument-hint de build, review et sign mentionne le modèle et l’effort [FEAT-27 CA-14]', () => {
+    for (const name of ['build', 'review', 'sign']) {
+      const hint = parseFrontMatter(read(`../skills/${name}/SKILL.md`)).data['argument-hint'] ?? ''
+      assert.match(hint, /modèle/, `${name} : modèle absent de l’argument-hint`)
+      assert.match(hint, /effort/, `${name} : effort absent de l’argument-hint`)
+    }
+  })
+})
