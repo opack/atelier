@@ -71,6 +71,12 @@ Sous Windows, PowerShell et cmd lancent `atelier` par son lanceur `bin/atelier.c
 
 Une raison libre (`atelier bypass on`, `atelier set-tdd no`, `atelier reopen-tests`) qui contient ces caractères peut donc être tronquée. Écrivez-la sans eux, ou lancez la commande depuis Git Bash. Dans cmd, écrire le nom de la commande entre guillemets (`"atelier" status`) peut aussi faire chercher le script au mauvais endroit : écrivez `atelier status`.
 
+### Le modèle et l’effort annoncés
+
+Quand les variables d’environnement `CLAUDE_CODE_EFFORT_LEVEL` ou `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` sont définies, elles l’emportent sur la résolution d’atelier : le modèle ou l’effort annoncé par la commande n’est alors pas celui utilisé.
+
+Un modèle non disponible pour votre organisation fait échouer l’appel : la commande s’arrête et indique quoi changer (l’argument ou l’option).
+
 ### La qualité de l’implémentation
 
 En TDD, une implémentation codée en dur passe les tests :

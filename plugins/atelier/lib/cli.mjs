@@ -1,6 +1,7 @@
 // Command-line entry point of atelier, used by the skills (through `atelier <command>`)
 // and by the hooks. Every user-facing message is in French, like the rest of the method.
 
+import { commandAgentSettings } from './cli/agent-settings.mjs'
 import { commandChecks } from './cli/checks.mjs'
 import { commandCloseCheck, commandSetStatus } from './cli/close.mjs'
 import { commandCheckProcess, commandTemplate } from './cli/docs.mjs'
@@ -32,6 +33,7 @@ const commands = {
   'review-ids': commandReviewIds,
   bypass: commandBypass,
   checks: commandChecks,
+  'agent-settings': commandAgentSettings,
   'hook-guard': hookGuard,
   'hook-gate': hookGate,
   'hook-session-start': hookSessionStart,
