@@ -11,6 +11,7 @@ slice: chantier
 slice_base: a295c5a0f0c15a458b199456a95b5833eaf28706
 tests_commit: 
 last_slice: 2
+reviewed_commit: b1c18a9be217b0901403837007e73a1eaf467ea6
 ---
 
 # FEAT-30 Calibrer la rigueur des relectures
