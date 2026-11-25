@@ -7,6 +7,7 @@ atelier est un **garde-fou contre l’oubli, pas une barrière**. Il empêche de
 - Les **outils d’édition** de l’agent ne peuvent pas écrire de code sans chantier signé, modifier des tests figés, écrire dans l’état d’atelier, modifier les champs réservés de la spec, ni modifier une spec signée sans trace datée dans « Amendements ». Voir [Garde d’écriture](./configuration#garde-d-ecriture).
 - Le **contrôle de fin de tour** repère, après coup, ce qui a échappé à la garde : du code modifié sans chantier signé, un test figé modifié, des contrôles rouges.
 - La **clôture** refuse un chantier dont du code a changé depuis la revue (commit, fusion, rebase), ou dont la spec a été amendée depuis.
+- Les **contrôles** ne sont pas relancés sur un état du code déjà vert : `atelier checks`, `close-check`, `set-status done` et le contrôle de fin de tour partagent ce résultat. L’état est une empreinte git de l’arbre de travail : un changement limité à un fichier ignoré, à la version de Node ou à l’environnement n’est pas vu, y compris à la clôture. `atelier checks --force` relance.
 - La **trace** (spec, décisions, revue, bilan, commits identifiés) reste dans git, quoi qu’il arrive au plugin.
 
 ## Ce qu’atelier ne garantit pas
@@ -42,7 +43,13 @@ Une spec signée ne repasse jamais en brouillon : sinon, il suffirait de la repa
 
 ### La version de git
 
-La détection des commits de code depuis la revue utilise `git log --diff-merges=first-parent`, qui demande git 2.31 ou plus récent.
+La détection du code du chantier (revue obsolète, tranche vide, prochaine étape) ignore le code que la branche par défaut apporte par une fusion : seule compte la résolution de la fusion. Ce calcul utilise `git log --diff-merges=remerge`, qui ne garde d’un commit de fusion que ce qui diffère de la fusion automatique : c’est pourquoi atelier demande git 2.36 ou plus récent, la version qui l’a introduit.
+
+Sans référence connue de la branche par défaut, ou quand la branche par défaut contient déjà des commits du chantier depuis le début (branche courante = branche par défaut, branche déjà fusionnée dans `main`, fusion de `main` en avance rapide), atelier revient au calcul précédent : une fusion de la branche par défaut compte alors comme du code du chantier, et rend la revue obsolète.
+
+Ce calcul suppose que la PR du chantier n’est pas fusionnée avant la clôture (voir [Clôture](../cycle/cloture)). Si elle l’est, puis que la branche reçoit par un `git pull` du code commité après la revue depuis un autre poste, ce code peut échapper au contrôle de la revue obsolète.
+
+Seule la branche par défaut (`origin/main` et `main`, par exemple) est ignorée : le code apporté par une autre branche d’intégration (`develop`, `upstream/main` d’un fork) compte comme du code du chantier.
 
 ### Le chantier déduit des commits
 
@@ -54,6 +61,15 @@ Sur une branche dont le nom ne porte pas d’identifiant, le chantier actif vien
 - **Plusieurs chantiers sur une même branche imposée** : le plus récent gagne, et une seule PR mêle deux chantiers. Ouvrez plutôt une session (donc une branche) par chantier.
 - **Identifiant présent par hasard dans un nom de branche imposé** (`users/bob/fix-12-crash`, `claude/spike-2-…`) : le nom est lu comme portant `FIX-12` ou `SPIKE-2`, et il l’emporte sur les commits. `/atelier:new` crée alors une branche `<type>/<ID>-<slug>` au lieu de proposer de rester sur la branche imposée.
 - **Branche créée depuis une branche de chantier non fusionnée** : sans commit propre, elle hérite du chantier de sa branche parente.
+
+### Les arguments sous PowerShell et cmd
+
+Sous Windows, PowerShell et cmd lancent `atelier` par son lanceur `bin/atelier.cmd`, qui transmet les arguments à Node par l’intermédiaire de cmd. Comme pour tout lanceur `.cmd` (ceux de npm compris), cmd réinterprète au passage :
+
+- `&`, `|`, `<`, `>` et `^` hors guillemets ;
+- les variables `%NOM%`.
+
+Une raison libre (`atelier bypass on`, `atelier set-tdd no`, `atelier reopen-tests`) qui contient ces caractères peut donc être tronquée. Écrivez-la sans eux, ou lancez la commande depuis Git Bash. Dans cmd, écrire le nom de la commande entre guillemets (`"atelier" status`) peut aussi faire chercher le script au mauvais endroit : écrivez `atelier status`.
 
 ### La qualité de l’implémentation
 

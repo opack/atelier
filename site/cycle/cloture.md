@@ -24,7 +24,7 @@ La revue doit être enregistrée et à jour (`/atelier:status` le dit). Pour un 
 4. **Éléments de code principaux** : ce qu’un nouveau venu doit lire en premier.
 5. **Pistes écartées**, et pourquoi. C’est ce qui évite de refaire le chemin.
 6. **Dette et suites.**
-7. **Verdict de revue**, repris de `revue.md`.
+7. **Verdict de revue**, repris de `revue.md` : un point par identifiant (`RB1`, `RD1`…) avec son traitement final.
 
 Pour un `FIX`, s’y ajoute la cause réelle (confirmée ou non) et les autres endroits où le même schéma existe. Pour un `SPIKE`, la réponse à la question.
 
@@ -42,6 +42,7 @@ Après votre verdict, juste avant de passer le chantier en `done`, `atelier clos
 - **aucun amendement** de la spec depuis la revue ;
 - aucun changement de code non commité ;
 - en TDD, les tests sont figés ;
+- chaque point de `revue.md` a un traitement, aucun n’est encore `reporté (tranche N)`, aucun n’est mal formé (mêmes contrôles qu’à la [revue](./revue#_4-consigner-valider-passer-a-la-suite)), et `revue.md` est commité ;
 - les contrôles de `.claude/atelier.json` sont verts.
 
 Un `SPIKE` ignore tout ce qui touche à la revue ; le reste s’applique. En cas d’échec : la liste des problèmes, et retour à `/atelier:review`.

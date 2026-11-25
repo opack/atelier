@@ -29,9 +29,11 @@ Puis :
 
 ## 2. Vérifier l'absence de surapprentissage
 
-Quand tout est vert, lance le sous-agent `atelier:overfit-checker` avec le chemin de la spec, la liste des fichiers de test et des fichiers d'implémentation de la tranche. Il vérifie, sans rien modifier, que l'implémentation résout le problème général et ne se contente pas de satisfaire les tests.
+Quand tout est vert, `atelier review-ids --json` donne le premier numéro libre des points de surapprentissage (`next.OB`, `next.OD`). Lance le sous-agent `atelier:overfit-checker` avec le chemin de la spec, la liste des fichiers de test et des fichiers d'implémentation de la tranche, et ces deux numéros. Il vérifie, sans rien modifier, que l'implémentation résout le problème général et ne se contente pas de satisfaire les tests.
 
-Présente ses points. Corrige ceux qui sont fondés, toujours sans toucher aux tests, puis relance tests et contrôles. Si un point révèle un test trop faible, ne le renforce pas toi-même : signale-le à l'utilisateur.
+Présente ses points (`OB1`, `OD1`…). Présente chaque point par son identifiant suivi d'un résumé du problème en quelques mots, puis la correction proposée, ses deux coûts (correction, non-correction), le verdict du relecteur et ton avis : `OD1, la liste vide n'est pas traitée : je propose…, ça coûte…, sinon…, avis : …`. Corriger n'est pas le choix par défaut : l'utilisateur tranche avec les deux coûts sous les yeux. Ses **idées** de relance, sans identifiant, se citent en une ligne, sans traitement.
+
+Si tu relances le sous-agent dans la même session après des corrections, c'est une **relance** : dis-le-lui et donne-lui les points du passage précédent et les fichiers modifiés depuis ; continue la numérotation à la suite de ce que tu as déjà présenté. Un passage dans une nouvelle session est un premier passage. Corrige les points que l'utilisateur retient, toujours sans toucher aux tests, puis relance tests et contrôles. Si un point révèle un test trop faible, ne le renforce pas toi-même : signale-le à l'utilisateur. Un point reporté, accepté ou écarté pour une raison qui compte se note dans `decisions.md`, avec son identifiant.
 
 ## 3. Faire valider, puis commiter
 
@@ -39,7 +41,7 @@ Présente un résumé de la tranche : fichiers modifiés, tests passés, points 
 
 Seulement après son accord :
 1. Vérifie `atelier tests-changed` : aucun test ne doit avoir changé depuis leur commit.
-2. Commite la tranche : `<prefix>(<scope>): [<ID>] <description>` (un commit par tranche).
+2. Commite la tranche : `<prefix>(<scope>): [<ID>] <description>` (un commit par tranche). Un commit qui corrige un point de revue le cite après l'identifiant du chantier : `fix(<scope>): [<ID>] RB2 <description>`.
 3. Suite : `/atelier:review`, la revue de la tranche (ou du chantier si tu corrigeais ses points). C'est la validation de cette revue qui fait passer à la tranche suivante. Pour un `SPIKE` sans TDD : la tranche suivante du plan (`/atelier:build <tranche>`), puis `/atelier:close` (revue facultative).
 
 ## Sans TDD (`tdd: no`)

@@ -5,6 +5,8 @@ En dix minutes : installer le plugin, préparer un projet, mener un premier chan
 ## Prérequis
 
 - [Claude Code](https://code.claude.com) installé.
+- [Node.js](https://nodejs.org) 20 ou plus récent : la commande `atelier` du plugin en a besoin.
+- [git](https://git-scm.com) 2.36 ou plus récent (voir [La version de git](../reference/limites#la-version-de-git)).
 - Un projet sous git, avec idéalement des commandes de **types**, **lint** et **tests** qui fonctionnent.
 
 ::: warning Des tests qui testent vraiment
@@ -31,7 +33,7 @@ atelier est un plugin Claude Code : ses commandes `/atelier:*` se lancent **dans
 /atelier:init
 ```
 
-atelier détecte vos commandes de contrôle, crée `docs/chantiers/` et `docs/decisions/`, ajoute une section « Process » au `CLAUDE.md` et déclare le plugin dans `.claude/settings.json` : vos coéquipiers se le verront proposer automatiquement.
+atelier détecte vos commandes de contrôle, crée `docs/chantiers/` et `docs/decisions/`, ajoute une section « Process » au `CLAUDE.md` et déclare le plugin dans `.claude/settings.json` : vos coéquipiers se le verront proposer automatiquement (sauf en session cloud, voir [Installation](../projet/installation#dans-une-session-cloud)).
 
 ## 3. Ouvrir un chantier
 
