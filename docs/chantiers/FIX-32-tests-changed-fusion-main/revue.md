@@ -20,3 +20,19 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD2. La page Référence ne reflète pas l'amendement (conflits) | site/reference/commandes.md:36 | corrigé (1cf1904) |
 
 - Bilan de la revue : aucun bloquant ; deux points à discuter corrigés.
+
+## Revue 2 : 2026-11-25
+- Commit revu : d29fcc9
+- Base : 67ca088
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD3. Versions fusionnées lues pour toutes les fusions de la plage, fusions internes à main comprises | plugins/atelier/lib/cli/tdd.mjs:82 | corrigé (bc6f8f2) : `--first-parent`, seules les fusions de la branche |
+
+- Bilan de la revue : RD1 et RD2 confirmés corrigés ; aucun bloquant ; RD3 corrigé.
