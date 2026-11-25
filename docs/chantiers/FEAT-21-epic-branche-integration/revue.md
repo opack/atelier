@@ -37,3 +37,20 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD2. La spec §3 dit encore que `reviewFacts` ne change pas, contredit par CA-15 | docs/chantiers/FEAT-21-epic-branche-integration/spec.md:59 | reporté (tranche 4) : la phrase sera corrigée par l'amendement prévu en tranche 4, décision de Didier |
 
 - Bilan de la revue : CA-6, CA-7, CA-13, CA-15 couverts et testés ; un seul calcul de la base par commande. Deux points à discuter.
+
+## Revue 2 : tranche 2 : 2026-11-25
+- Commit revu : 0f91212
+- Base : 7e4dec9 (slice_base ; fusions de main ignorées)
+- Corrections depuis la revue 1 : dd8bf20 (réouverture des tests), 64aa051 (test de RD1), 4430173 (regel), 8863dfe (correction de RD1), 0f91212 (traitement consigné)
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+- Bilan de la revue : RD1 réglé (test rouge avant le correctif, vert après) ; RD2 reporté à la tranche 4 ; OD4 reporté à la tranche 3 (decisions.md).
