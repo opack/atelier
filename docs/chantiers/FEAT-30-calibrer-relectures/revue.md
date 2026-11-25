@@ -21,3 +21,19 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD2. Deux règles centrales sans marqueur de présence | plugins/atelier/test/docs.test.mjs:176 | corrigé (d417792) |
 
 - Bilan de la revue : deux points à discuter, corrigés à l'accord de Didier (une ligne de texte, trois regex).
+
+## Revue : tranche 1 (relance) : 2026-11-25
+- Commit revu : 742c0ee
+- Base : a16af62 ; relance depuis 4bfd335 (corrections d417792)
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+- Bilan de la revue : RD1 et RD2 vérifiés corrigés, sans régression ; aucune idée.
