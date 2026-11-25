@@ -53,3 +53,23 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD4. Commit de fusion de `main` sans `[FEAT-27]` | commit 82ac375 | écarté : réécrire une fusion déjà poussée coûte plus que le gain ; les prochaines fusions seront nommées `chore(merge): [FEAT-27] …` |
 
 - Bilan de la revue : tranche saine (366 tests verts, gel respecté, réouverture limitée à l'import exigé par REF-29). RD1 et RD2 restent reportés à la tranche 5.
+
+## Revue : tranche 4 : 2026-11-25
+- Commit revu : 3dd4188, corrections f1edfac
+- Base : 8edcea1 (fin de la tranche 3)
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD3 (repris de la tranche 3). Refus d'une option répétée sans test | `plugins/atelier/test/agent-settings.test.mjs` | corrigé (1431167) : test ajouté avec ceux de la tranche 4 |
+| RD5. `build` appelé avec un identifiant de point (`RB2`) pris pour un mot inconnu | `plugins/atelier/skills/build/SKILL.md` | écarté : la revue ne transmet pas d'identifiant en argument ; cas improbable, et l'échec serait bruyant et sans dommage |
+| RD6. Apostrophe dans une valeur d'option substituée non refusée | `plugins/atelier/skills/{build,review,sign}/SKILL.md` | corrigé (f1edfac) : la consigne couvre aussi les valeurs d'options substituées |
+| RD7. Test modifié par Bash pendant l'implémentation | `plugins/atelier/skills/build/SKILL.md` | écarté : déjà rattrapé par le hook de fin et `atelier tests-changed` |
+| RD8. `overfit-checker` résolu même sans TDD | `plugins/atelier/skills/build/SKILL.md` | corrigé (f1edfac) : résolu en TDD seulement |
+
+- Bilan de la revue : tranche saine (370 tests verts, gel respecté, tout le code de `build` passe par `implementer`). RD1 et RD2 restent reportés à la tranche 5.
