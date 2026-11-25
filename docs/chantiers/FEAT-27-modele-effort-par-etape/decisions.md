@@ -80,3 +80,8 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - OD21, comme OD5, OD10 et OD12 : les tests de CA-14 ne vérifient que des mots clés (SD9 : la doc reste libre). On ne rouvre pas les tests ; la justesse du texte est vérifiée en revue.
 - RD1 : rien à faire, `CLAUDE.md` décrit déjà les modules de domaine de `lib/` depuis REF-29.
 - Version : 0.6.0 et non 0.5.0, prise par FEAT-30 qui fusionne avant (décision de Didier, 2026-11-25). À la fusion de `main`, garder 0.6.0.
+
+## 2026-11-25 : revue du chantier, RD10 et suites (OD22, OD23)
+- RD10 : vérifié en local par Didier, « save » dans `/plugin configure` enregistre les valeurs affichées. Spec amendée : chaque option propose `recommandé (<valeur>)`, préremplie, traitée comme non réglée quelle que soit la parenthèse, pour suivre la valeur recommandée de la version installée.
+- OD22, OD23 : « défaut » mêlait « non réglé » et « valeur de la version ». Le mot devient « recommandé » côté utilisateur (valeur d'option, source de l'annonce, tableau de `modes.md` « Valeurs recommandées ») ; `configuration.md` renvoie à `modes.md` au lieu de recopier les valeurs. Pas de page dédiée : le tableau de `modes.md` est déjà la source unique, vérifiée par un test.
+- `recommandé\s*(` toléré sans espace : refuser des saisies inoffensives n'apporte rien.

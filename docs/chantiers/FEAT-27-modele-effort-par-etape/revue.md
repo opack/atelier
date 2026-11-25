@@ -91,3 +91,21 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD9. Ligne `/atelier:build` de `commandes.md` inexacte sur l'argument de tranche | `site/reference/commandes.md:15` | corrigé (c8543c3) : `[tranche]` dans l'intitulé ; hors `SPIKE`, un numéro de tranche est ignoré, tout autre mot fait arrêter |
 
 - Bilan de la revue : tranche saine (375 tests verts, gel respecté, texte du site vérifié contre le code). Plus aucun point reporté.
+
+## Revue 1 : chantier : 2026-11-25
+- Commit revu : 6908794
+- Base : 90c92ab (merge-base avec main)
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD10. Vérification locale de `/plugin configure` (OD8) jamais consignée | `docs/chantiers/FEAT-27-modele-effort-par-etape/decisions.md:61` | spec amendée (54fe0e9, 0122333) : vérifié par Didier, « save » enregistre les valeurs affichées ; chaque option propose `recommandé (…)`, traité comme non réglé ; corrigé (e02591e) |
+| RD11. Correction de revue « en suivant `/atelier:build` » sans dire de lancer la commande | `plugins/atelier/skills/review/SKILL.md:49` | corrigé (e02591e) |
+| RD12. Sujet ambigu après la fusion dans `implementation.md` | `site/cycle/implementation.md:19` | corrigé (e02591e) |
+
+- Bilan de la revue : chantier cohérent, fusion de `main` sans contradiction. RD10 a mené à l'amendement « recommandé (…) » (tests rouverts et regelés), à vérifier par la relance.
