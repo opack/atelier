@@ -2,7 +2,7 @@
 id: FEAT-27
 type: FEAT
 title: Modèle et effort réglés par étape
-status: signed
+status: done
 tdd: yes
 created_at: 2026-11-23
 signed_by: Opack
@@ -13,6 +13,7 @@ slice: chantier
 slice_base: c8543c31c48ede8dd7f1b01fc34bd3d761b1d56a
 last_slice: 5
 reviewed_commit: 2c79790d593ef75662b7eb23002351cf64dfb7a0
+done_at: 2026-11-25
 ---
 
 # FEAT-27 Modèle et effort réglés par étape
