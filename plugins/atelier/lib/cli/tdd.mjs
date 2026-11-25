@@ -75,10 +75,11 @@ export function testFilesChangedSince(projectRoot, config, commit) {
 }
 
 // Among `candidates`, the files whose changes since `commit` are not explained by the merged
-// commits (second parents of the merges since `commit`). Deleted and binary files always count.
+// commits (second parents of the branch's own merges since `commit`, read along the first-parent
+// chain: merges inside the default branch are already in those). Deleted and binary files count.
 function committedTestChanges(projectRoot, commit, candidates) {
   const { diff, deleted, binary } = candidatesDiff(projectRoot, commit, candidates)
-  const merged = git(projectRoot, ['rev-list', '--merges', `${commit}..HEAD`]).split('\n').filter(Boolean)
+  const merged = git(projectRoot, ['rev-list', '--merges', '--first-parent', `${commit}..HEAD`]).split('\n').filter(Boolean)
   const cache = new Map()
   const mergedLines = (file) => {
     if (!cache.has(file)) {
