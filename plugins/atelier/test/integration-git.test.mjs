@@ -197,3 +197,22 @@ describe('integration branch merged into a reviewed child', () => {
     assert.doesNotMatch(problems, /src\/later\.mjs/)
   })
 })
+
+describe('tests brought by a merge of the integration branch', () => {
+  it('un test commun modifié par un frère et apporté par une fusion de la branche d’intégration ne bloque pas le gel de l’enfant [FEAT-21 CA-15]', () => {
+    const directory = makeRepository('main')
+    git(directory, 'switch', '-q', '-c', EPIC_BRANCH)
+    writeChantier(directory, { id: 'EPIC-1', relations: { integration_branch: 'yes' }, files: epicPlan })
+    commitFiles(directory, { 'test/shared.test.mjs': 'ligne a\nligne b\n' }, 'docs(chantiers): [EPIC-1] spec')
+    const branch = 'feat/FEAT-2-x'
+    git(directory, 'switch', '-q', '-c', branch, EPIC_BRANCH)
+    writeChantier(directory, { id: 'FEAT-2', tdd: 'yes', relations: { rel_parent: 'EPIC-1' }, files: { 'plan.md': twoSlices } })
+    commitFiles(directory, { 'test/one.test.mjs': 'un\n', 'src/one.mjs': 'export const one = 1\n' }, 'feat(one): [FEAT-2] slice 1')
+    setHeader(directory, 'FEAT-2', { slice: '2', slice_base: headOf(directory) })
+    deliverSibling(directory, 'FIX-5', { 'test/shared.test.mjs': 'ligne a\nligne b modifiée par le frère\n' }, branch)
+    git(directory, 'merge', '-q', '--no-edit', EPIC_BRANCH)
+    commitFiles(directory, { 'test/two.test.mjs': 'deux\n' }, 'test(two): [FEAT-2] add failing tests for CA-2')
+    const result = atelierRun(directory, 'freeze-tests')
+    assert.equal(result.status, 0, result.output)
+  })
+})
