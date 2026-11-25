@@ -4,9 +4,11 @@ import { closeProblems } from '../lib/close.mjs'
 import { nextStep } from '../lib/next-step.mjs'
 import { setReviewedRefusal, setReviewedUpdate } from '../lib/review.mjs'
 import { sliceState } from '../lib/slices.mjs'
-import { reopenTestsRefusal, testDrivenPhase } from '../lib/tdd.mjs'
+import { testDrivenPhase } from '../lib/tdd.mjs'
+import { decide, slicedChantier, planOf } from './helpers.mjs'
+import { reopenTestsRefusal } from '../lib/tdd.mjs'
 import { parseAmendments } from '../lib/spec.mjs'
-import { decide, slicedChantier, planOf, atSliceTwo, atelierOk, atelierRun, commitFiles, commitSpec, setHeader, specData, specFileText } from './helpers.mjs'
+import { atSliceTwo, atelierOk, atelierRun, commitFiles, commitSpec, setHeader, specData, specFileText } from './helpers.mjs'
 
 describe('effective TDD of the current slice (slice_tdd)', () => {
   const base = 'a'.repeat(40)
