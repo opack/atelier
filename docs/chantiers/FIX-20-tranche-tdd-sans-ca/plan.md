@@ -4,9 +4,14 @@
 Une seule fonction pure décide du TDD effectif : `effectiveTdd(chantier)` = `slice_tdd` s'il est renseigné, sinon le `tdd` du chantier. `testDrivenPhase` s'appuie dessus (tranche numérotée, revue d'ensemble, `tests_commit` prioritaire, SPIKE, legacy) : le hook de garde, le hook Stop, la revue et la clôture l'appellent déjà et suivent sans changement local. Les commandes (`check-plan`, `set-reviewed`, `set-tdd`) se contentent d'écrire `slice_tdd` au bon moment ; le plan n'est lu qu'à ces moments-là, jamais pour décider d'une écriture.
 
 ## Fichiers et couches touchés
-- `plugins/atelier/lib/core.mjs` : `planSlices`, `planSliceCount`, `effectiveTdd`, `testDrivenPhase`, `COMMAND_SPEC_FIELDS`, `setReviewedUpdate`, `setTddRefusal` et entrée d'amendement, `reopenTestsRefusal`, messages de `freeze-tests`, `planProblems`, `nextStep` / `phaseStep`.
-- `plugins/atelier/lib/cli.mjs` : commande `check-plan`, `set-tdd` sur la tranche courante, `freeze-tests`, `sliceCodeFiles`, `status` (`sliceTdd`).
-- `plugins/atelier/test/` : un fichier de test par domaine (`plan.test.mjs` pour la lecture du plan dès la tranche 1), selon la convention de `CLAUDE.md`.
+- Logique pure, par domaine (`lib/core.mjs` ne reçoit rien, règle de REF-29) :
+  - `plugins/atelier/lib/slices.mjs` : `planSlices`, `planSliceCount`, `planProblems` et valeurs écrites par `check-plan` ;
+  - `plugins/atelier/lib/tdd.mjs` : `effectiveTdd`, `testDrivenPhase`, `setTddRefusal` et entrée d'amendement, `reopenTestsRefusal`, messages de `freeze-tests` ;
+  - `plugins/atelier/lib/write-guard.mjs` : `COMMAND_SPEC_FIELDS` ;
+  - `plugins/atelier/lib/review.mjs` : `setReviewedUpdate` ;
+  - `plugins/atelier/lib/next-step.mjs` : `nextStep` / `phaseStep`.
+- Entrées / sorties : `plugins/atelier/lib/cli/slices.mjs` (commande `check-plan`, `sliceCodeFiles`), `plugins/atelier/lib/cli/tdd.mjs` (`set-tdd` sur la tranche courante, `freeze-tests`), `plugins/atelier/lib/cli/next-step.mjs` (`status`, `sliceTdd`), `plugins/atelier/lib/cli.mjs` (table des commandes).
+- `plugins/atelier/test/` : un fichier de test par domaine, selon la convention de `CLAUDE.md` : `plan.test.mjs` (lecture du plan), `tdd-slice.test.mjs` (TDD effectif de la tranche), `write-guard.test.mjs` (`slice_tdd` réservé).
 - `plugins/atelier/skills/` : `plan`, `new`, `write-tests`, `build`.
 - `plugins/atelier/templates/plan.md` : format de tranche.
 - `site/cycle/conception.md`, `site/cycle/tests.md`, `site/cycle/implementation.md`, `site/reference/commandes.md` ; version du plugin.
