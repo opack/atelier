@@ -123,3 +123,20 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | Aucun | | |
 
 - Bilan de la revue : RD6 (revues numérotées par portée) vérifié, sans régression. Idées : compléter le traitement de RD6 avec cf28add (fait) ; aligner un jour les titres des fixtures de test review-points (non retenu).
+
+## Revue 4 : chantier : 2026-11-25
+- Commit revu : 426bc96
+- Base : 67ca088
+- Corrections depuis la revue 3 : 426bc96 (version 0.5.0, demandée par Didier)
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+- Bilan de la revue : montée de version vérifiée (seul plugin.json porte la version, site lu au build, validation du plugin OK) ; aucune idée.
