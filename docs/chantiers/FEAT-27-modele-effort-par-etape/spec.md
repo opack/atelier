@@ -8,7 +8,7 @@ created_at: 2026-11-23
 signed_by: Opack
 signed_at: 2026-11-24
 rel_depends_on: TEC-15
-tests_commit: 
+tests_commit: f7dd172
 slice: chantier
 slice_base: c8543c31c48ede8dd7f1b01fc34bd3d761b1d56a
 last_slice: 5
@@ -145,3 +145,4 @@ Les essais du 23/11/2026 sont à rejouer avec un plugin jetable installé par `c
 - 2026-11-24 : tests regelés : 7d35476
 - 2026-11-25 : chaque option propose la valeur `défaut (<valeur du défaut actuel>)`, par exemple `défaut (opus)`, qui est aussi son `default` dans le manifeste ; toute valeur `défaut (…)` est traitée comme une option non réglée, quelle que soit la valeur entre parenthèses, pour qu'une valeur enregistrée avec une version précédente suive le défaut actuel. La parenthèse montre à l'utilisateur la valeur utilisée aujourd'hui (demande de Didier). Vérifié en local par Didier : « save » dans `/plugin configure` sans rien changer écrit les valeurs affichées, ce qui figeait les défauts du jour comme choix de l'utilisateur (RD10, OD8).
 - 2026-11-25 : tests rouverts (gel quitté : 0caad4e) : amendement « défaut (…) » : CA-3 et CA-10 (RD10)
+- 2026-11-25 : tests regelés : f7dd172
