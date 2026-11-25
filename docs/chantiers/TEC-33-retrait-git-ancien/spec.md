@@ -8,6 +8,8 @@ created_at: 2026-11-25
 signed_by: Opack
 signed_at: 2026-11-25
 rel_origin: FIX-28
+reviewed_commit: 5ecfe4ddb6b8761b0a764bbb2777b5941837b4fe
+slice: 1
 ---
 
 # TEC-33 Retirer le support de git avant 2.36

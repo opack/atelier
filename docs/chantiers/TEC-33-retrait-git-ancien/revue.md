@@ -6,7 +6,7 @@ Points : RB1, RB2… (bloquants) et RD1, RD2… (à discuter), numérotés en co
 Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé (commit), test ajouté, spec amendée, exception acceptée (par qui, pourquoi), écarté (pourquoi), reporté (chantier, « Dette et suites » du bilan, ou `reporté (tranche N)`), requalifié (`requalifié (RB4)`), sans objet. Une cellule vide ou sans mot-clé laisse le point ouvert : `atelier set-reviewed` et `atelier close-check` refusent alors. -->
 
 ## Revue : 2026-11-25
-- Commit revu : 0bb0ff3
+- Commit revu : 0bb0ff3, puis fusion de main (FIX-32, FEAT-30) en 5ecfe4d sans conflit : 383 tests verts, aucun nouvel appelant de la version de git
 - Base : 67ca088 (merge-base avec origin/main)
 
 ### Bloquant
