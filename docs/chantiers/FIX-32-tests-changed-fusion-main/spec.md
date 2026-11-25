@@ -9,7 +9,7 @@ source: FIX-20, revue de la tranche 2 après fusion de main (14753db)
 rel_origin: FIX-20
 signed_by: Opack
 signed_at: 2026-11-25
-tests_commit: 0d150dc
+tests_commit: 
 slice: 1
 ---
 
@@ -67,3 +67,4 @@ Questions si manquant : corrige-t-on la cause ou le symptôme ? Des données dé
 - 2026-11-25 : un fichier de test touché par une fusion n'est signalé que si une ligne de sa version figée est modifiée ou retirée, ou si une ligne ajoutée est absente des versions fusionnées ; CA-6 inversé, CA-8 ajouté. Pourquoi : le cas réel de FIX-20 est une fusion en conflit sur `tdd.test.mjs` (deux `describe` ajoutés en fin de fichier), la limite assumée de SD1 ; la spec signée ne débloquait donc pas FIX-20, et ce conflit est le cas courant du dépôt (décision de Didier).
 - 2026-11-25 : tests rouverts (gel quitté : 4df075b) : spec amendée : CA-6 inversé, CA-8 ajouté (conflit de fusion sur un test figé)
 - 2026-11-25 : tests regelés : 0d150dc
+- 2026-11-25 : tests rouverts (gel quitté : 0d150dc) : OD3 : couvrir une ligne ajoutée par le chantier dans un test figé
