@@ -20,3 +20,20 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | Aucun | | |
 
 - Bilan de la revue : aucun point. CA-1 à CA-5 couverts et testés, règle de base calculée en un seul endroit, index construit une fois et seulement avec un parent, architecture respectée. OD1 (test status --json d’un EPIC à l’option) déjà reporté à la tranche 3 dans decisions.md.
+
+## Revue 1 : tranche 2 : 2026-11-25
+- Commit revu : 4cabf4b
+- Base : 7e4dec9 (slice_base ; fusions de main 2caed55 et fbde138 ignorées)
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD1. Tests venus de la branche d'intégration comptés comme tests du chantier (gel refusé, tests changés) | plugins/atelier/lib/cli/tdd.mjs:43 | |
+| RD2. La spec §3 dit encore que `reviewFacts` ne change pas, contredit par CA-15 | docs/chantiers/FEAT-21-epic-branche-integration/spec.md:59 | |
+
+- Bilan de la revue : CA-6, CA-7, CA-13, CA-15 couverts et testés ; un seul calcul de la base par commande. Deux points à discuter.
