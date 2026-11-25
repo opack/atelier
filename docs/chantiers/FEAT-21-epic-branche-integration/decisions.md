@@ -17,3 +17,8 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Contexte : FEAT-27 modifie les skills `review`, `build`, `sign` ; FIX-20 touche `slices`, `tdd`, `next-step`.
 - Écarté : skills dans chaque tranche, parce que cela multiplie les conflits avec FEAT-27 sans gain de relecture.
 - Conséquence : fusionner `main` au début de chaque tranche ; la tranche 4 attend idéalement la fusion de FEAT-27.
+
+## 2026-11-25 : OD1 (tranche 1) reporté à la tranche 3
+- Contexte : la vérification de surapprentissage note qu'aucun test en ligne de commande ne vérifie que `status --json` d'un EPIC à l'option donne la base de son parent (règle testée seulement sur la fonction pure).
+- Écarté : renforcer les tests figés de la tranche 1, parce que le code est juste et que la tranche 3 teste déjà l'EPIC à l'option en ligne de commande (CA-8, CA-14).
+- Conséquence : la tranche 3 ajoute un cas `status --json` sur `epic/EPIC-1-x` à l'option, qui attend `baseBranch: "main"` et `baseEpic: null`.

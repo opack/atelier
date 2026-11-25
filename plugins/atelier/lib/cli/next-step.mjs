@@ -8,7 +8,8 @@ import { checkSpec } from '../spec.mjs'
 import { testDrivenPhase } from '../tdd.mjs'
 import { findProjectRoot, isAncestorOfHead, loadConfig } from './common.mjs'
 import { activeChantier } from './identifiers.mjs'
-import { formatRelations, relationsSummary } from './relations.mjs'
+import { chantierBaseOf } from './integration.mjs'
+import { chantierIndex, formatRelations, needsIndex, relationsSummary } from './relations.mjs'
 import { reviewSummary } from './review.mjs'
 import { sliceCodeFiles, slicePosition } from './slices.mjs'
 import { readBypass } from './write-guard.mjs'
@@ -25,7 +26,12 @@ export function commandStatus(options) {
   const { branch, chantier, source } = activeChantier(projectRoot, config)
   const bypass = readBypass(projectRoot, branch)
   const review = reviewSummary(projectRoot, config, chantier)
-  const relations = relationsSummary(projectRoot, config, chantier)
+  const index = chantier?.spec && needsIndex(chantier) ? chantierIndex(projectRoot, config) : null
+  const relations = relationsSummary(projectRoot, config, chantier, index)
+  const base = chantier?.spec ? chantierBaseOf(projectRoot, config, chantier, index) : null
+  if (base?.warning) {
+    console.error(base.warning)
+  }
   const codeCommitted = codeCommittedFact(projectRoot, config, chantier, review.reviewState)
   const summary = {
     installed: true,
@@ -44,6 +50,8 @@ export function commandStatus(options) {
           ...review,
           codeCommitted,
           relations,
+          baseBranch: base?.branch ?? null,
+          baseEpic: base?.epic ?? null,
           files: chantier.files,
           specProblems: chantier.spec ? checkSpec(readFileSync(join(chantier.directory, 'spec.md'), 'utf8')) : [],
         }

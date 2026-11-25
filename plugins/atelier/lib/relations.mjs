@@ -31,27 +31,40 @@ export function hasRelations(data) {
   return Object.values(RELATION_FIELDS).some((field) => relationValues(data?.[field]).length)
 }
 
-// Chantier directories of a raw chantiers tree: [{ id, tree }], `tree` being the directory's id.
+// Chantier directories of a raw chantiers tree: [{ id, directory, tree }], `directory` being the
+// directory's name and `tree` its id.
 export function chantierTreesOf(content, idLength = 20) {
   return parseTreeEntries(content, idLength)
     .filter((entry) => entry.mode === '40000')
-    .map((entry) => ({ id: chantierIdFromDirectoryName(entry.name), tree: entry.id }))
+    .map((entry) => ({ id: chantierIdFromDirectoryName(entry.name), directory: entry.name, tree: entry.id }))
     .filter((entry) => entry.id)
 }
 
-// Index of the known chantiers, by identifier: { id, here (header in the current tree, or null),
-// branches ([{ branch, data }] in the other branches) }. `here` is [{ id, data }].
+// Index of the known chantiers, by identifier: { id, directory (name of its directory, in the
+// current tree first, or null), here (header in the current tree, or null), branches
+// ([{ branch, data }] in the other branches) }. `here` is [{ id, directory, data }] and
+// `branchHeaders` [{ branch, id, directory, data }]; `directory` may be missing.
 export function buildChantierIndex(here, branchHeaders) {
   const index = new Map()
   const entry = (id) => {
     if (!index.has(id)) {
-      index.set(id, { id, here: null, branches: [] })
+      index.set(id, { id, directory: null, here: null, branches: [] })
     }
     return index.get(id)
   }
-  here.forEach(({ id, data }) => { entry(id).here = data })
-  branchHeaders.forEach(({ branch, id, data }) => entry(id).branches.push({ branch, data }))
+  here.forEach(({ id, directory, data }) => Object.assign(entry(id), { here: data, directory: directory ?? null }))
+  branchHeaders.forEach(({ branch, id, directory, data }) => {
+    const known = entry(id)
+    known.branches.push({ branch, data })
+    known.directory ??= directory ?? null
+  })
   return index
+}
+
+// Header of a chantier as the index knows it: in the current tree first, otherwise its first
+// version found on another branch; null when unknown.
+export function headerOf(entry) {
+  return entry?.here ?? entry?.branches[0]?.data ?? null
 }
 
 // Status in the current tree; null for a chantier found only on other branches (not merged).
