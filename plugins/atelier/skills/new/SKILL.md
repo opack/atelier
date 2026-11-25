@@ -80,6 +80,8 @@ Repères pour recommander :
 
 « Non » ne veut pas dire « aucun test » : des tests peuvent être ajoutés là où ils ont de la valeur, simplement sans phase imposée. Pas de test pour le principe.
 
+Ce `tdd` du chantier est la valeur par défaut des tranches : le plan pourra déclarer chaque tranche « TDD : oui » ou « TDD : non ».
+
 Enregistre la réponse : `atelier set-tdd yes` ou `atelier set-tdd no [raison]`.
 
 **EPIC** : ne pose pas la question. Un EPIC n'implémente rien, il est toujours en `tdd: no` (déjà dans son template ; `atelier set-tdd yes` est refusé).

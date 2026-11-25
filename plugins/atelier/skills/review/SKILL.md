@@ -88,6 +88,6 @@ Seulement après son accord :
    La commande refuse sans spec signée, avec du code non commité, avec des changements non commités de `spec.md`, en TDD si les tests ne sont pas figés ou ont changé depuis leur gel, si `slice_base` n'est plus un ancêtre de `HEAD` (seul l'utilisateur corrige ce champ), pour une tranche sans aucun commit de code (« tranche vide »), ou si `revue.md` (copie de travail) a un point sans traitement reconnu ou mal formé : elle liste alors les problèmes, à traiter à l'étape 3 ou 4, puis redemande la validation à l'utilisateur.
 2. Commite aussitôt la spec et `revue.md` : `git add <dossier du chantier>/spec.md <dossier du chantier>/revue.md` puis `git commit -m "docs(chantiers): [<ID>] review <tranche>"` (`<tranche>` : son numéro, ou `chantier` ; rien pour un chantier à tranche unique).
 3. Suite, donnée par la commande :
-   - tranche suivante : `/atelier:write-tests` en TDD, sinon `/atelier:build` ;
+   - tranche suivante : `/atelier:write-tests` si elle est en TDD (`slice_tdd`, sinon `tdd` du chantier), sinon `/atelier:build` ;
    - revue du chantier : `/atelier:review` ;
    - revue enregistrée : `/atelier:close`. Tout commit de code après ce point (tests compris), tout amendement de la spec ou tout rebase rendra la revue obsolète : il faudra repasser par `/atelier:review`.
