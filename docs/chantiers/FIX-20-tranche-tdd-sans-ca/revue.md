@@ -108,3 +108,27 @@ Traitement d'un point : corrigé (commit), test ajouté, spec amendée, exceptio
 | RD12. Import en double depuis `helpers.mjs` | plugins/atelier/test/tdd-slice-status.test.mjs:4 | écarté : la correction modifierait une ligne d'un test figé de la tranche 5, pour un bruit sans effet ; accord de Didier |
 
 - Bilan de la revue : aucun bloquant ; OD14 et OD16 réglés et testés ; relance propre après e0e6019 ; tranche 6 validée par Didier le 2026-11-25.
+
+## Revue : chantier : 2026-11-25
+- Commit revu : 82f1135
+- Base : 642d5da (merge-base avec main ; fusions de main exclues de la relecture)
+- Corrections depuis la première relecture : bf50d62, 82f1135
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD1. Tolérances de lecture du plan (« – », texte après oui/non, CA en minuscules) sans test | plugins/atelier/lib/slices.mjs | corrigé (d0cd3c3) : test « lit le plan avec tolérance » [FIX-20 CA-11] |
+| RD6. Revue d'ensemble d'un chantier `tdd: no` dont une tranche était en TDD : la phase retombe à `none` malgré `tests_commit` | plugins/atelier/lib/tdd.mjs | corrigé (2235812) : test (d0cd3c3) puis condition `slice === 'chantier'` dans `testDrivenPhase` |
+| RD8. `check-plan <chemin>` écrit `slice_tdd` d'après un fichier qui n'est pas le `plan.md` du chantier | plugins/atelier/lib/cli/slices.mjs | corrigé (b15ce46) : test (a54935b) |
+| RD9. Garde-fous de `checkPlanValues` en double ou hors logique pure | plugins/atelier/lib/slices.mjs | corrigé (b15ce46) : test (a54935b) |
+| RD13. README et pages du site non alignés sur le TDD par tranche | README.md:88 | corrigé (bf50d62) : le `tdd` du chantier vaut par défaut, chaque tranche peut le redéfinir ; `slice_tdd` dans signature.md ; revue.md reformulé |
+| RD14. Tests des tranches précédentes protégés par la seule revue en tranche « TDD : non » et en revue d'ensemble qui suit ; doc qui les disait figés | site/cycle/tests.md:27 | corrigé (bf50d62, 82f1135) : doc et skill `build` (arrêt « test à revoir ») ; garde technique en suite au bilan ; accord de Didier |
+| RD15. Chantier `tdd: yes` à une seule tranche « TDD : non » : messages contradictoires (`reopen-tests`, prochaine étape) | plugins/atelier/lib/tdd.mjs:114 | écarté : cas rare, messages seulement, aucune garde touchée ; noté en suite au bilan ; accord de Didier |
+| RD16. Note de la spec « à vérifier en test » (tranche 1 « TDD : non » avant le premier `set-reviewed`) sans test | plugins/atelier/test/tdd-slice.test.mjs | test ajouté (bf50d62) [FIX-20 CA-6] |
+
+- Bilan de la revue : aucun bloquant ; CA-1 à CA-15 couverts par des tests verts ; parcours complet rejoué (tranches oui/non mêlées, de `check-plan` à `close-check`) ; relance propre après 82f1135 ; revue du chantier validée par Didier le 2026-11-25.
