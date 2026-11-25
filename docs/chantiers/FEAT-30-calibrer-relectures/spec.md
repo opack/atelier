@@ -2,7 +2,7 @@
 id: FEAT-30
 type: FEAT
 title: Calibrer la rigueur des relectures
-status: signed
+status: done
 tdd: no
 created_at: 2026-11-24
 signed_by: Opack
@@ -12,6 +12,7 @@ slice_base: a295c5a0f0c15a458b199456a95b5833eaf28706
 tests_commit: 
 last_slice: 2
 reviewed_commit: fcb7f00d8bbe9e368b13cf42f6efa591e4d9db65
+done_at: 2026-11-25
 ---
 
 # FEAT-30 Calibrer la rigueur des relectures
