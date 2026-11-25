@@ -54,3 +54,19 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD4. Apostrophe typographique isolée dans le README | README.md:108 | corrigé (81bfe38) |
 
 - Bilan de la revue : deux points à discuter triviaux, corrigés à l'accord de Didier.
+
+## Revue : tranche 2 (relance) : 2026-11-25
+- Commit revu : 23d04c1
+- Base : efbe964 ; relance depuis caa736b (corrections 81bfe38)
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+- Bilan de la revue : RD3 et RD4 vérifiés corrigés, sans régression ; aucune idée.
