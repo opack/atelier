@@ -82,6 +82,6 @@ Revues : tranches 1 à 6 (une par tranche, relance après corrections pour la tr
 | OD10 | exception acceptée par Didier le 2026-11-25 : avant le premier gel de la tranche 1, éditer le plan puis lancer `check-plan` change le TDD de la tranche 1 ; fenêtre étroite, édition visible au diff et à la revue |
 | OD15 | écarté : casse des chemins dans `check-plan`, défaut prudent ; accord de Didier |
 
-- Verdict :
-- Validé par :
-- Date :
+- Verdict : accepté
+- Validé par : Didier
+- Date : 2026-11-25
