@@ -28,3 +28,8 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Contexte : FIX-20 (fusionné après l'écriture du plan) exige que chaque tranche déclare son TDD ; `atelier check-plan` refusait le plan.
 - Écarté : « TDD : oui » pour la tranche 5, parce qu'elle ne contient que skills, site et version : CA-20 se vérifie par `npm run build` du site, pas par un test unitaire.
 - Conséquence : la tranche 5 se fait directement en `/atelier:build`.
+
+## 2026-11-26 : tests de la tranche 1 (validés par Didier)
+- Contexte : relecture des tests de CA-7 et CA-8.
+- Décidé : les libellés utilisent l'apostrophe typographique (« tests d’abord »), comme le reste du code ; un `rel_parent` en minuscules désigne le même parent.
+- Reporté : les clauses de CA-8 qui passent par la commande (« y compris avec `--type EPIC` », « y compris sans `--all` ») se testent en tranche 2, avec `atelier list` ; ces tests porteront l'étiquette CA-8.
