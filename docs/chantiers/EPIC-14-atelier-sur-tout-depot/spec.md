@@ -2,12 +2,12 @@
 id: EPIC-14
 type: EPIC
 title: Travailler avec atelier sur n'importe quel dépôt
-status: draft
+status: signed
 tdd: no              # un EPIC n'implémente rien : toujours no
 integration_branch: no
 created_at: 2026-11-21
-signed_by:
-signed_at:
+signed_by: Opack
+signed_at: 2026-11-26
 ---
 
 # EPIC-14 Travailler avec atelier sur n'importe quel dépôt
@@ -76,10 +76,10 @@ Règles associées :
 **Dépôt compagnon.**
 - Un dépôt git par mission, ailleurs sur le disque, qui contient la configuration d'atelier, les chantiers et les décisions. Il n'a pas d'état local : tout l'état local (pointeur, débrayage, état du hook de fin) décrit une copie de travail du projet et vit dans `.atelier/` de cette copie, exclu par `.git/info/exclude` ; sinon le débrayage d'un worktree s'appliquerait aux autres (SD1). Plusieurs compagnons peuvent être rangés dans un même dossier parent : rien ne l'impose ni ne l'empêche.
 - Il est trouvé par un **registre utilisateur** (dans `~/.claude/`), indexé par l'URL du remote du projet : chaque clone et chaque worktree le retrouve. L'URL est normalisée (hôte et chemin, sans schéma, sans `.git` final, sans tenir compte de la casse), pour qu'un clone https retrouve un compagnon enregistré depuis un clone ssh ; le remote est choisi par la règle de `/atelier:new` (remote suivi, puis `origin`, puis l'unique) ; un dépôt sans remote ne peut pas être enregistré, avec un message clair (SD2). L'emplacement du compagnon n'est jamais stocké dans un fichier non versionné de la copie de travail (absent d'une copie neuve, il rendrait atelier silencieux).
-- Plusieurs copies du projet partagent une seule copie du compagnon : le compagnon reste sur une seule branche, chaque chantier n'écrit que dans son dossier, et chaque commit du compagnon nomme ses chemins (`git commit -- <dossier du chantier>`), pour ne jamais emporter les fichiers d'un autre chantier (SD3).
+- Plusieurs copies du projet partagent une seule copie du compagnon : le compagnon reste sur une seule branche, chaque chantier n'écrit que dans son dossier et, à la clôture, dans `decisionsDir` (ADR), et chaque commit du compagnon nomme ses chemins (`git commit -- <dossier du chantier> [<ADR>]`) (SD11), pour ne jamais emporter les fichiers d'un autre chantier (SD3).
 - Lectures (SD9) : tout ce qui concerne les chantiers se lit dans le compagnon (dossiers, historique des specs, identifiants pris par `next-id`, index des relations) ; seuls le code, les tests et leurs commits se lisent dans le projet. Les identifiants du client (`FIX-3` dans ses commits) n'entrent donc jamais en collision.
 - Claude est lancé dans le dossier du **projet** (le code du client), jamais dans le compagnon : les hooks, la branche, le gel des tests, la revue et les contrôles portent sur le code. Le compagnon est le dossier distant, rendu accessible en plus (répertoire additionnel).
-- Rien n'est écrit dans un fichier versionné du dépôt du projet. Seuls fichiers locaux tolérés : le pointeur dans `.atelier/`, ignoré via `.git/info/exclude` (jamais via le `.gitignore` du projet), et les réglages personnels de Claude Code non versionnés.
+- Rien n'est écrit dans un fichier versionné du dépôt du projet. Seuls fichiers locaux tolérés : l'état local dans `.atelier/` (SD10), ignoré via `.git/info/exclude` (jamais via le `.gitignore` du projet), et les réglages personnels de Claude Code non versionnés. En mode compagnon, toute création de `.atelier/` (hook, CLI, skill) pose d'abord, de façon idempotente, son exclusion dans `.git/info/exclude`, que `/atelier:init` ait été lancé dans la copie ou non (SB2).
 - En mode compagnon, le plugin est activé au scope **utilisateur** (`~/.claude/settings.json`), une fois par machine : jamais au scope projet (`.claude/settings.json`, versionné chez le client). Sur un dépôt sans configuration ni compagnon enregistré, il reste muet (`loadConfig` rend `null`) ; seules ses commandes `/atelier:*` y sont proposées. Dans un projet atelier, le scope projet reste la règle ; l'activation aux deux scopes désigne le même plugin. `/atelier:init`, dans sa variante compagnon, enregistre le compagnon dans le registre puis configure la copie de travail : accès au compagnon (`additionalDirectories` dans `.claude/settings.local.json`, jamais commité) et exclusion de `.atelier/` (et de `settings.local.json` si besoin) via `.git/info/exclude`. Les règles de la section Process sont injectées par le hook de démarrage de session au lieu du `CLAUDE.md` du projet.
 - Choix du scope (SB1) : le scope utilisateur, parce que l'accès au compagnon et l'activation vivent sinon dans un fichier absent de toute copie neuve, et que l'oubli passerait inaperçu ; au scope utilisateur, le hook de démarrage d'une copie neuve trouve le compagnon et demande `/atelier:init`. Écarté : le scope local, qui demanderait une installation en ligne de commande puis `/atelier:init` dans chaque copie, sans rappel. Coût accepté : les commandes `/atelier:*` visibles dans tous les projets de l'utilisateur.
 - Conventions de branche et de commit (SD5) : déclarées dans la configuration d'atelier, à côté de la langue du projet. `/atelier:new` propose de rester sur la branche courante ou d'en créer une au format déclaré ; le reviewer vérifie le format de commit déclaré, et rien s'il n'y en a pas ; les messages de commit et de fusion écrits par les skills suivent ce format. Dans un projet atelier, le format par défaut reste `<prefix>(<scope>): [<ID>] <description>` et `<type>/<ID>-<slug>`.
@@ -88,7 +88,7 @@ Règles associées :
 
 **Langues.**
 - Deux langues distinctes :
-  - la **langue du projet** : fichiers d'atelier (templates, titres de sections, spec, revue, bilan), commits et PR. Elle se règle dans la configuration d'atelier (`.claude/atelier.json`, ou celle du compagnon), commitée et partagée par tous ceux qui travaillent sur le projet ; `fr` par défaut, ce qui ne change rien aux projets existants. Elle ne change pas tant qu'un chantier est ouvert : relue avec un autre dictionnaire, une spec perdrait en silence ses critères et ses amendements (SD7) ;
+  - la **langue du projet** : fichiers d'atelier (templates, titres de sections, spec, revue, bilan), commits et PR. Elle se règle dans la configuration d'atelier (`.claude/atelier.json`, ou celle du compagnon), commitée et partagée par tous ceux qui travaillent sur le projet ; `fr` par défaut, ce qui ne change rien aux projets existants. Elle ne change pas tant qu'un chantier est ouvert : relue avec un autre dictionnaire, une spec perdrait en silence ses critères et ses amendements (SD7). C'est une règle documentée ; l'enfant « langues » décide s'il ajoute un contrôle (par exemple `check-spec` en échec quand une spec ouverte n'a aucun titre du dictionnaire courant) (SD12) ;
   - la **langue de l'utilisateur** : messages des hooks et de la CLI, questions des skills, présentation des revues. C'est un réglage personnel, jamais commité (par exemple `ATELIER_LANG` dans `~/.claude/settings.json`). Par défaut, c'est la langue du projet.
 - Les titres de sections que le code lit (`check-spec`, revue, clôture…) viennent d'un **dictionnaire par langue du projet**. Les messages destinés à l'utilisateur viennent d'un **catalogue par langue de l'utilisateur**, et citent les titres du dictionnaire du projet : un utilisateur francophone sur un projet anglais lit « section `Acceptance criteria` : aucun critère numéroté ».
 - Les skills et les agents sont écrits dans une langue pivot, l'anglais, et produisent les documents dans la langue du projet et les échanges dans celle de l'utilisateur.
