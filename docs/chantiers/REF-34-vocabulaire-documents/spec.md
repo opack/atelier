@@ -8,8 +8,8 @@ created_at: 2026-11-25
 signed_by: Opack
 signed_at: 2026-11-25
 rel_parent: EPIC-17
-slice: 2
-slice_base: 95739d95a6a9d494a29d9ec241a53e83593f72db
+slice: 3
+slice_base: a1402fc4c949c5a5635a3e273dd95e7cb6894c1f
 tests_commit: 
 slice_tdd: 
 ---
