@@ -3,7 +3,7 @@ id: TEC-37
 type: TEC
 title: Préfixe AC pour les critères d'acceptation
 status: draft
-tdd:                 # yes | no : décision humaine, obligatoire avant signature
+tdd: yes
 created_at: 2026-11-26
 signed_by:
 signed_at:
@@ -33,13 +33,13 @@ Décision de Didier du 2026-11-26 (fil « Ne plus oublier les suites des chantie
 - Lecture des deux formes, sans distinction de casse comme aujourd'hui : critères d'une spec (`lib/slices.mjs`, `specCriteria`), section obligatoire de critères (`lib/spec.mjs`, `checkSpec`), segment de couverture d'une tranche du plan (`CA couverts :` et `AC couverts :`, `lib/slices.mjs`), règle d'étiquette finale des tests (`test/architecture.test.mjs` : `[<ID> AC-n]`, `[<ID> CA-n]`, `[<ID> V-n]`).
 - Écriture en `AC-n` : templates `spec-feat.md`, `spec-fix.md`, `spec-tec.md`, `spec-ref.md`, `spec-epic.md`, `plan.md`, `plan-epic.md` ; skills `new`, `plan`, `amend`, `write-tests` et les autres qui citent un critère ; agent `reviewer` ; messages de la CLI (« aucun critère numéroté (AC-1, AC-2…) ») ; `CLAUDE.md` et `README.md` ; pages du site qui décrivent les critères (glossaire, cycle, fondations, référence).
 - Un chantier garde la forme de sa spec signée : FEAT-21, FEAT-35, REF-34 et EPIC-14, déjà rédigés en `CA-n`, continuent en `CA-n`, tests compris. Le skill `write-tests` étiquette avec le préfixe des critères de la spec.
-- Le glossaire du site signale `CA-n` comme ancienne forme, toujours lue.
+- Le site gagne une section « Nomenclature des identifiants » dans la Référence : un tableau unique qui donne, pour chaque identifiant (chantier `TYPE-n`, critère `AC-n`, points de relecture `SB`/`SD`, `OB`/`OD`, `RB`/`RD`, tranche, revue numérotée), ce qu'il désigne, le fichier où il vit et la façon de le citer d'un fichier à l'autre, précédé de la règle « une lettre dit ce qu'on désigne, en initiale anglaise ; un chiffre dit lequel ; les codes ne se traduisent pas ». Les anciennes formes `CA-n` et `V-n`, toujours lues, y figurent. Les entrées du glossaire y renvoient.
 - Version mineure du plugin (les specs et plans écrits changent de forme).
 
 Hors périmètre :
 - Réécrire les specs, plans, bilans, revues et commits des chantiers existants.
 - Modifier une ligne d'un test existant (les étiquettes `[… CA-n]` restent).
-- Le tableau de nomenclature complet du site : il vient avec le chantier des suites (`F1`).
+- Les suites `F1` : la ligne du tableau viendra avec le chantier des suites.
 - Exiger des critères numérotés dans les sections « Vérification » (TEC) et « Critère de fin » (REF) dans `check-spec` : c'est CA-6 d'EPIC-17 (lot 3), qui reprendra la forme `AC-n`. Ce chantier se limite à faire demander des `AC-n` par les templates `spec-tec.md` et `spec-ref.md`.
 - Les critères de ce chantier restent en `CA-n` : ses tests doivent respecter le test d'architecture actuel, qui ne connaît pas encore `AC`.
 
@@ -60,6 +60,7 @@ Question si manquant : qu'est-ce qui pourrait changer pour l'utilisateur malgré
 - CA-4 : Étant donné une tranche de plan `… — AC couverts : AC-1, AC-2 — TDD : oui`, quand on lit le plan, alors la tranche couvre `AC-1` et `AC-2` ; la forme `CA couverts : CA-1` reste lue à l'identique.
 - CA-5 : Étant donné un nom de test qui se termine par `[FEAT-40 AC-3]`, quand le test d'architecture s'applique, alors il est accepté ; `[FEAT-4 CA-3]` et `[TEC-5 V-1]` (ancienne forme des vérifications de TEC) le restent ; un `AC-3` hors de l'étiquette finale est refusé comme un `CA-3`.
 - CA-6 : Étant donné les templates, skills, agents, `CLAUDE.md`, `README.md` et le site (hors mention de l'ancienne forme dans le glossaire), quand on y cherche `CA-\d` ou « CA couverts », alors on ne trouve rien.
+- CA-8 : Étant donné le site construit, quand on ouvre la Référence, alors la section « Nomenclature des identifiants » liste chaque préfixe de cette spec avec ce qu'il désigne, et le glossaire y renvoie depuis ses entrées « CA (critère d'acceptation) » et « Point de relecture ».
 - CA-7 : `npm test` vert, sans qu'aucune ligne d'un fichier de test existant ait changé ; `claude plugin validate .` et `claude plugin validate ./plugins/atelier` passent ; `npm run build` dans `site/` passe.
 
 ## 6. Retour arrière
