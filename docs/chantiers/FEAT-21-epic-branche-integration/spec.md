@@ -8,7 +8,7 @@ created_at: 2026-11-23
 rel_depends_on: REF-29
 signed_by: Opack
 signed_at: 2026-11-23
-tests_commit: 
+tests_commit: d9746c1
 slice: chantier
 slice_base: 051c560e52b83ac4cdc4c3d6a5d3715016d026e1
 slice_tdd: 
@@ -123,3 +123,4 @@ Dépôts git temporaires construits par les tests : branche par défaut, `epic/E
 - 2026-11-26 : §3 et §2 alignés sur le code des tranches 2 et 3, parce que la spec contredisait CA-15 et la règle de FIX-28 (RD2 de la revue 1 de la tranche 2, OD6 de la tranche 3).
   §3 : `reviewFacts` exclut aussi les commits apportés par une fusion de la branche d'intégration (CA-15) ; §2 : une fusion de la branche par défaut dans la branche d'intégration après la revue d'ensemble suit la règle de FIX-28, seules ses résolutions de conflits sur du code périment cette revue.
 - 2026-11-26 : tests rouverts (gel quitté : c0e257d) : RD10 (revue 1 du chantier) : le correctif OD5 (dépendance déjà done dans la branche par défaut) n'a aucun test
+- 2026-11-26 : tests regelés : d9746c1
