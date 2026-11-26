@@ -13,6 +13,7 @@ slice_base: 2e7f3f871395468038bb87b84bd44ca652a9db4f
 tests_commit: 
 slice_tdd: 
 last_slice: 3
+reviewed_commit: da70401a96a86de84d63b6016333e8d238c50bc4
 ---
 
 # REF-34 Regrouper le vocabulaire des documents lu par le code
