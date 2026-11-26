@@ -30,7 +30,7 @@ function childReviewsOf(projectRoot, chantier, index) {
     })
 }
 
-// Deterministic checks before closing (see closeProblems in lib/core.mjs). Runs the project checks.
+// Deterministic checks before closing (see closeProblems in lib/close.mjs). Runs the project checks.
 function closeCheckProblems(projectRoot, config, chantier) {
   let uncommittedCode = []
   let uncommittedError = null
