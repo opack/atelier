@@ -112,3 +112,22 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD13. Titre « ## terme » écrit en dur dans une chaîne non couvert par CA-2 | spec.md (CA-2) ; plugins/atelier/test/architecture-vocabulary.test.mjs:130-138 | corrigé (d45af60), spec amendée (59549ed) |
 
 - Bilan de la revue : CA-1 tenu (`check-tests.mjs` non trompable sans le modifier, 498 tests à la base recomptés) ; faux négatifs du lecteur de code corrigés.
+
+## Revue 2 : tranche 3 : 2026-11-26
+- Commit revu : df0d4ec
+- Base : a1402fc
+- Corrections depuis la revue 1 : 59549ed, d45af60, df0d4ec
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD14. Chiffres de preuve de decisions.md périmés par d45af60 | docs/chantiers/REF-34-vocabulaire-documents/decisions.md:60-61 | corrigé (commit de cette revue : 23, 31, 8, 2, 4 ; 498 + 18 = 516) |
+| RD15. Antislash échappé devant un terme dans une regex non signalé (régression de RB1) | plugins/atelier/test/architecture-vocabulary.test.mjs:140 | corrigé (0e1d38a, sans relance : un caractère et une assertion, verdict du reviewer) |
+| RD16. Caractère `.` sans effet dans le lookbehind du contrôle d'import | plugins/atelier/test/architecture-vocabulary.test.mjs:150 | corrigé (0e1d38a, sans relance) |
+
+- Bilan de la revue : RB1, RD10 à RD13 vérifiés (variantes essayées, jetons du lecteur identiques sur tout lib/) ; trois suites mineures corrigées sans relance (accord de Didier).
