@@ -62,7 +62,7 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 ### Bloquant
 | Point | Fichier | Traitement |
 |---|---|---|
-| RB1. Message « enfant pas fusionné » de close-check modifié sans l'option (contredit CA-1) | plugins/atelier/lib/relations.mjs:185 | |
+| RB1. Message « enfant pas fusionné » de close-check modifié sans l'option (contredit CA-1) | plugins/atelier/lib/relations.mjs:185 | corrigé (d078d02) : texte identique à l'avant-FEAT-21 sans l'option |
 
 ### À discuter
 | Point | Fichier | Traitement |
