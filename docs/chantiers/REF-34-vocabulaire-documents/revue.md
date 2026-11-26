@@ -93,3 +93,22 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | Aucun | | |
 
 - Bilan de la revue : e8bded8 vérifié à comportement identique (messages au caractère près, `expectedTable`).
+
+## Revue 1 : tranche 3 : 2026-11-26
+- Commit revu : c7d9208
+- Base : a1402fc
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| RB1. Terme précédé d'un échappement (`\b`, `\s`, `\n`) dans une expression régulière non signalé | plugins/atelier/test/architecture-vocabulary.test.mjs:121, :137 | corrigé (d45af60) |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD10. Expression régulière dans le deuxième `${…}` d'un gabarit lue comme une division | plugins/atelier/test/architecture-vocabulary.test.mjs:37-40 | corrigé (d45af60, limite « après `}` ou `)` » complétée dans decisions.md) |
+| RD11. `export * as ns from` échappe au contrôle d'import de `vocabulary.mjs` | plugins/atelier/test/architecture-vocabulary.test.mjs:146 | corrigé (d45af60) |
+| RD12. Fichier de test qui exporte quatre fonctions et recopie `escapeRegExp` | plugins/atelier/test/architecture-vocabulary.test.mjs:21, :107, :118, :127, :144 | corrigé (d45af60) |
+| RD13. Titre « ## terme » écrit en dur dans une chaîne non couvert par CA-2 | spec.md (CA-2) ; plugins/atelier/test/architecture-vocabulary.test.mjs:130-138 | corrigé (d45af60), spec amendée (59549ed) |
+
+- Bilan de la revue : CA-1 tenu (`check-tests.mjs` non trompable sans le modifier, 498 tests à la base recomptés) ; faux négatifs du lecteur de code corrigés.
