@@ -176,3 +176,20 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 
 - Bilan de la revue : CA-1 à CA-15 couverts ; un reste de tranche sans test et une incohérence entre skills, traités sur accord de Didier.
 - Idée (sans traitement) : aucun test ne couvre le parcours set-reviewed puis close-check d'un EPIC à branche d'intégration (vérifié à la main).
+
+## Revue 2 : chantier : 2026-11-26
+- Commit revu : d8e1af9
+- Base : a799fb3 (merge-base avec main)
+- Corrections depuis la revue 1 : d9746c1 (RD10), 0c21128 (RD11), d8e1af9 (traitements consignés)
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+- Bilan de la revue : RD10 et RD11 réglés (contre-épreuve : le test de RD10 échoue sans le correctif OD5) ; rien de nouveau.
