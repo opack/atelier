@@ -193,3 +193,20 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | Aucun | | |
 
 - Bilan de la revue : RD10 et RD11 réglés (contre-épreuve : le test de RD10 échoue sans le correctif OD5) ; rien de nouveau.
+
+## Revue 3 : chantier : 2026-11-26
+- Commit revu : aea7abc
+- Base : a799fb3 (merge-base avec main)
+- Corrections depuis la revue 2 : aea7abc (version 0.8.0, décision de clôture de Didier)
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+- Bilan de la revue : seule la version change (0.7.0 → 0.8.0), aucune autre mention à mettre à jour.
