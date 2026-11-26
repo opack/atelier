@@ -62,8 +62,15 @@ export const VOCABULARY = deepFreeze({
   amendmentEntries: {
     reopened: 'tests rouverts',
     refrozen: 'tests regelés',
+    leftFreeze: 'gel quitté',
   },
   slices: 'Tranches',
+  plan: {
+    coverage: 'CA couverts',
+    tdd: 'TDD',
+    yes: 'oui',
+    no: 'non',
+  },
   review: {
     tables: {
       blocking: 'Bloquant',

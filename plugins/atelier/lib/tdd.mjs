@@ -81,7 +81,7 @@ export function testDrivenPhase(chantier) {
 
 // Fixed labels of the entries written by the atelier command.
 export function reopenTestsEntry(date, commit, reason) {
-  return `${date} : ${VOCABULARY.amendmentEntries.reopened} (gel quitté : ${commit}) : ${reason}`
+  return `${date} : ${VOCABULARY.amendmentEntries.reopened} (${VOCABULARY.amendmentEntries.leftFreeze} : ${commit}) : ${reason}`
 }
 
 export function refreezeTestsEntry(date, commit) {

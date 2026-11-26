@@ -33,8 +33,9 @@ test('VOCABULARY carries exactly the other keys of the spec, with today\'s value
   const { sections, criteria, ...others } = VOCABULARY
   assert.deepEqual(others, {
     amendments: 'Amendements',
-    amendmentEntries: { reopened: 'tests rouverts', refrozen: 'tests regelés' },
+    amendmentEntries: { reopened: 'tests rouverts', refrozen: 'tests regelés', leftFreeze: 'gel quitté' },
     slices: 'Tranches',
+    plan: { coverage: 'CA couverts', tdd: 'TDD', yes: 'oui', no: 'non' },
     review: {
       tables: { blocking: 'Bloquant', discuss: 'À discuter' },
       legacyRound: 'Tour',

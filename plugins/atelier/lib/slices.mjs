@@ -9,6 +9,13 @@ import { VOCABULARY } from './vocabulary.mjs'
 
 const SLICES_HEADING = new RegExp(`^##\\s+${escapeRegExp(VOCABULARY.slices)}\\s*$`)
 
+// Segment prefixes of a slice entry; spaces inside the coverage label match any whitespace run.
+const COVERAGE_SEGMENT = new RegExp(`^${escapeRegExp(VOCABULARY.plan.coverage).replace(/ +/g, '\\s+')}\\s*:`, 'i')
+const TDD_SEGMENT = new RegExp(
+  `^${escapeRegExp(VOCABULARY.plan.tdd)}\\s*:\\s*(${escapeRegExp(VOCABULARY.plan.yes)}|${escapeRegExp(VOCABULARY.plan.no)})\\b`,
+  'i',
+)
+
 // Slices of a plan: the first-level numbered entries of its « Tranches » section (HTML comments
 // and indented sub-lists ignored), in order. Each slice gives its number, the CA listed in its
 // « CA couverts » segment (any suffix after an identifier ignored) and its declared TDD:
@@ -36,14 +43,14 @@ export function planSlices(planText) {
 // identifiers normalised to upper case, any text after « oui » / « non » ignored.
 function sliceAttributes(text) {
   const segments = text.split(/\s+[—–]\s+/)
-  const coverage = segments.find((segment) => /^CA\s+couverts\s*:/i.test(segment.trim()))
+  const coverage = segments.find((segment) => COVERAGE_SEGMENT.test(segment.trim()))
   const criteria = [
     ...new Set((coverage?.match(/\bCA-\d+\b/gi) ?? []).map((id) => id.toUpperCase())),
   ]
   const tddSegment = segments
-    .map((segment) => /^TDD\s*:\s*(oui|non)\b/i.exec(segment.trim()))
+    .map((segment) => TDD_SEGMENT.exec(segment.trim()))
     .find(Boolean)
-  const tdd = tddSegment ? (tddSegment[1].toLowerCase() === 'oui' ? 'yes' : 'no') : null
+  const tdd = tddSegment ? (tddSegment[1].toLowerCase() === VOCABULARY.plan.yes ? 'yes' : 'no') : null
   return { criteria, tdd }
 }
 
