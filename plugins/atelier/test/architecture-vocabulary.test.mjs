@@ -137,7 +137,7 @@ function vocabularyProblems(source, terms = vocabularyTerms()) {
         else if (termPattern(term, `«${SPACE}(?:#{2,3} )?`, `${SPACE}»`).test(content)) problems.push(`« ${term} » est cité entre « » dans une chaîne`)
       }
     } else if (type === 'regex') {
-      const plain = text.replace(/\\[A-Za-z]/g, ' ') // escape sequences (\b, \s, \n…) are not letters of a term
+      const plain = text.replace(/\\[A-Za-z\\]/g, ' ') // escape pairs (\b, \s, \n, \\…) are not letters of a term
       for (const term of terms) if (termPattern(term).test(plain)) problems.push(`« ${term} » figure dans l'expression régulière /${text}/`)
     }
   }
@@ -147,7 +147,7 @@ function vocabularyProblems(source, terms = vocabularyTerms()) {
 // vocabulary.mjs text → problems: the module must import nothing.
 function vocabularyImportProblems(source) {
   const code = readSource(source).filter(({ type }) => type === 'code').map(({ text }) => text).join(' ')
-  return /(?<![\w$.])import(?![\w$])(?!\s*\.\s*meta)|(?<![\w$])export\s*(?:\*(?:\s*as\s*[\w$]+)?|\{[^}]*\})\s*from(?![\w$])/.test(code) ? ['lib/vocabulary.mjs importe un module'] : []
+  return /(?<![\w$])import(?![\w$])(?!\s*\.\s*meta)|(?<![\w$])export\s*(?:\*(?:\s*as\s*[\w$]+)?|\{[^}]*\})\s*from(?![\w$])/.test(code) ? ['lib/vocabulary.mjs importe un module'] : []
 }
 
 function mjsFiles(directory) {
@@ -196,6 +196,7 @@ describe('vocabulaire des documents dans lib/', () => {
     assert.equal(flagged('const a = /\\bTranches\\b/').length, 1)
     assert.equal(flagged('const a = /^##\\sAmendements$/m').length, 1)
     assert.equal(flagged('const a = /\\nAmendements/').length, 1)
+    assert.equal(flagged('const a = /\\\\Tranches/').length, 1)
     assert.equal(flagged('const a = `${b} ${/Tranches/.test(x)}`').length, 1)
   })
 
