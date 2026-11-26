@@ -34,9 +34,3 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Décision : un REF enfant d'EPIC-17 les regroupe dans un seul module de vocabulaire. Il ne traduit rien et ne change aucun comportement ; il prépare le multilingue, qui reste un chantier d'EPIC-14.
 - Ordre : après les lots 3 et 4, sauf avis contraire de Didier. Comme le lot 2, il touche plusieurs modules de `lib/` : aucun autre chantier sur ces modules pendant qu'il tourne, et preuve de non-régression par la suite inchangée.
 - Conséquence : le plan garde ses quatre lots (il n'est pas réécrit) ; la confrontation prévu / réalisé du bilan d'EPIC-17 compte ce lot 5 et le REF de suppression de la façade.
-
-## 2026-11-26 : REF-34 passe avant les lots 3 et 4, et REF-36 supprime la façade en parallèle
-- Contexte : la décision du 2026-11-25 plaçait REF-34 après les lots 3 et 4, pour éviter les conflits. Or le lot 3 doit ajouter les sections de critères TEC et REF dans `CRITERIA_SECTIONS` (`lib/spec.mjs`), que REF-34 déplace dans le vocabulaire. Les modules visés par REF-34 sont calmes aujourd'hui. Accord de Didier le 2026-11-26.
-- Écarté : garder l'ordre initial, parce que le lot 3 écrirait les titres TEC et REF en dur et REF-34 les déplacerait ensuite : du travail fait deux fois.
-- Décision : ordre REF-34, puis lot 3, puis lot 4. REF-36 (suppression de la façade `core.mjs`, décision du 2026-11-24) tourne en parallèle de REF-34 : aucun fichier en commun.
-- Conséquence : le lot 3 ajoute les sections TEC et REF au vocabulaire. Le test d'architecture de REF-34 (tranche 3) refusera les mots du vocabulaire écrits en dur dans `lib/` : tout chantier qui fusionne après lui (FEAT-35 compris) passe par le vocabulaire. Le risque « conflits avec le lot 3 » du plan de REF-34 ne s'applique plus.
