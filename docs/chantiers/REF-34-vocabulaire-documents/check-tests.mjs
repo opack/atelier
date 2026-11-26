@@ -11,8 +11,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const BASE_COMMIT = '5ef9b80'
-const BASE_TEST_COUNT = 498
+const BASE_COMMIT = '84bff20'
+const BASE_TEST_COUNT = 495
 const TESTS = 'plugins/atelier/test'
 const root = fileURLToPath(new URL('../../../', import.meta.url))
 
