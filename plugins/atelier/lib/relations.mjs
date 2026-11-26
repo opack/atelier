@@ -13,7 +13,7 @@ export const RELATION_FIELDS = { parent: 'rel_parent', dependsOn: 'rel_depends_o
 // Any identifier, legacy prefixes included (BUG-421, FEA-26), as accepted by the shared counter.
 const RELATION_ID_PATTERN = /^[A-Za-z]{2,6}-\d+$/
 
-const CLOSED_STATUSES = ['done', 'abandoned']
+export const CLOSED_STATUSES = ['done', 'abandoned']
 
 function relationValues(value) {
   return String(value ?? '').split(',').map((part) => part.trim()).filter(Boolean)

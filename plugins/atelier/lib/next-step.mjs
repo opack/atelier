@@ -8,15 +8,16 @@ import { declaredSliceTdd, numberedSlice, testDrivenPhase } from './tdd.mjs'
 
 // ---------- Next step ----------
 
-// `review` is the state of the review ('none', 'current' or 'stale'), computed by the command.
-// `children` are the direct children of an EPIC, as { id, closed } (see describeRelation).
-// `codeCommitted` is true when code was committed since the start of the current slice (since
-// the freeze of its tests in TDD), false when not, null when unknown (see codeCommittedMatters).
 // Whether a signed chantier of this type still lacks its plan: FEAT, REF and EPIC are designed
 // before being built.
 export function needsPlan(type, files) {
   return ['FEAT', 'REF', 'EPIC'].includes(String(type ?? '').toUpperCase()) && !files.includes('plan.md')
 }
+
+// `review` is the state of the review ('none', 'current' or 'stale'), computed by the command.
+// `children` are the direct children of an EPIC, as { id, closed } (see describeRelation).
+// `codeCommitted` is true when code was committed since the start of the current slice (since
+// the freeze of its tests in TDD), false when not, null when unknown (see codeCommittedMatters).
 
 export function nextStep(chantier, review = 'none', children = [], codeCommitted = null) {
   if (!chantier) {

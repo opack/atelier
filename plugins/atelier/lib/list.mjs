@@ -2,7 +2,7 @@
 // Pure functions: no access to the disk, git or the environment.
 
 import { needsPlan } from './next-step.mjs'
-import { parseRelations } from './relations.mjs'
+import { CLOSED_STATUSES, parseRelations } from './relations.mjs'
 import { hasReopeningEntry, planSliceCount, sliceLabel, sliceState } from './slices.mjs'
 import { parseAmendments } from './spec.mjs'
 import { isRefreeze, testDrivenPhase } from './tdd.mjs'
@@ -25,8 +25,6 @@ export function versionFacts({ data, specBody, planText, files }) {
 }
 
 // ---------- Step ----------
-
-const CLOSED = ['done', 'abandoned']
 
 // The step of every version, as Map id -> { step, stepLabel }. `versions` are { id, ...facts }
 // of all the known chantiers: the children of an EPIC are searched among them.
@@ -69,7 +67,7 @@ function stepOf(version, versions) {
     return { step: 'chantier-review', stepLabel: 'revue du chantier' }
   }
   if (data.reviewed_commit) {
-    return { step: 'reviewed', stepLabel: slice === 'chantier' ? 'revue enregistrée' : `${prefix}revue enregistrée` }
+    return { step: 'reviewed', stepLabel: `${prefix}revue enregistrée` }
   }
   return { step: 'build', stepLabel: `${prefix}implémentation` }
 }
@@ -79,7 +77,7 @@ function stepOf(version, versions) {
 function epicStep(version, versions) {
   const id = version.id.toUpperCase()
   const children = versions.filter((other) => other.id !== version.id && parseRelations(other.data).parent.includes(id))
-  const open = children.filter((child) => !CLOSED.includes(child.data.status))
+  const open = children.filter((child) => !CLOSED_STATUSES.includes(child.data.status))
   if (!children.length) {
     return { step: 'epic-children', stepLabel: 'aucun enfant' }
   }
