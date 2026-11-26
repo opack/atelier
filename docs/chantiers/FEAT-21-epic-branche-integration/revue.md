@@ -54,3 +54,19 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | Aucun | | |
 
 - Bilan de la revue : RD1 réglé (test rouge avant le correctif, vert après) ; RD2 reporté à la tranche 4 ; OD4 reporté à la tranche 3 (decisions.md).
+
+## Revue 1 : tranche 3 : 2026-11-26
+- Commit revu : f60e5b4
+- Base : 78826b3 (slice_base)
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| RB1. Message « enfant pas fusionné » de close-check modifié sans l'option (contredit CA-1) | plugins/atelier/lib/relations.mjs:185 | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+- Bilan de la revue : CA-8, CA-9, CA-10, CA-14 couverts et testés ; OD1, OD2, OD4 faits. Un bloquant : un texte de close-check a changé pour un EPIC sans l'option.
