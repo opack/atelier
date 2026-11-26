@@ -63,4 +63,4 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 ## 2026-11-26 : base de la preuve de CA-1 déplacée après la fusion de main (7734e5a)
 - Contexte : avant la revue du chantier, fusion de `origin/main` (`[REF-34] merge origin/main`, convention issue de RD1) qui apporte REF-36 (suppression de la façade `lib/core.mjs`) et EPIC-14 ; REF-36 retire 3 tests de `architecture.test.mjs`, ce que `check-tests.mjs` signale à juste titre contre l'ancienne base.
 - Décision : `BASE_COMMIT` passe de 5ef9b80 (498 tests) à 84bff20, tête de main fusionnée (495 tests, comptés sur un arbre extrait) ; même procédure que REF-29.
-- Conséquence : preuve à 495 + 18 = 513 tests, 30 fichiers de test identiques à la nouvelle base.
+- Conséquence : preuve à 495 + 18 = 513 tests, 29 fichiers de test identiques à la nouvelle base.
