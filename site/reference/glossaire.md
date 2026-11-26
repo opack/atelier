@@ -24,6 +24,6 @@
 | **Test de caractérisation** | Test qui fige le comportement actuel d’un code avant de le restructurer. |
 | **Test de non-régression** | Test qui reproduit un bug : rouge avant la correction, vert après. |
 | **Traitement** | Sort d’un point de revue, écrit dans la colonne « Traitement » de `revue.md` ; la cellule commence par un mot-clé : corrigé (commit), test ajouté, spec amendée, exception acceptée (par qui, pourquoi), écarté (pourquoi), reporté (chantier, « Dette et suites » du bilan, ou `reporté (tranche N)`), requalifié (`requalifié (RB4)`), sans objet. Sans mot-clé, le point est ouvert : `set-reviewed` et `close-check` refusent. |
-| **Tranche** | Morceau de chantier livrable seul, relisible en moins de 15 minutes, numéroté dans `plan.md`. Unité du cycle : ses tests, son implémentation et sa revue se font à part, dans l’ordre du plan. La tranche en cours est dans l’en-tête de la spec (`slice`). |
+| **Tranche** | Morceau de chantier livrable seul, relisible en moins de 15 minutes, numéroté dans `plan.md`. Unité du cycle : ses tests, son implémentation et sa revue se font à part, dans l’ordre du plan. La tranche en cours est dans l’en-tête de la spec (`slice`) ; chaque tranche déclare son TDD (`TDD : oui` ou `TDD : non`) dans le plan. |
 | **Verdict** | Décision humaine finale à la clôture : accepté, accepté avec exceptions, refusé. |
 | **Voie rapide** | Enchaînement court pour les corrections de bugs. |

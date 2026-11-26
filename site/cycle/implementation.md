@@ -31,6 +31,8 @@ Quand la tranche est commitée, place à sa [revue](./revue). C’est la validat
 
 ## Sans TDD
 
+Ce cycle s’applique à un chantier `tdd: no` et à une tranche déclarée `TDD : non` d’un chantier en TDD. Dans cette tranche, les tests qu’on y écrit comptent comme du code de la tranche : ils ne sont pas figés. Ceux des tranches précédentes ne se modifient pas pour autant : aucun gel ne les protège ici, seule la revue, donc `implementer` s’arrête et le signale plutôt que d’en retoucher un.
+
 1. `implementer` implémente la tranche selon la spec et le plan.
 2. Il ajoute des tests **là où ils ont de la valeur** : logique non triviale, cas limite fragile.
 3. Il itère jusqu’à ce que les contrôles soient verts.

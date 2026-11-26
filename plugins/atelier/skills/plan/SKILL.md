@@ -22,6 +22,7 @@ Présente, de façon concise :
 - **Approche** : la solution recommandée. S'il existe un vrai choix, 2 ou 3 options au plus, avec ta recommandation et pourquoi.
 - **Fichiers et couches touchés.**
 - **Tranches** : chacune livrable seule, relisible en moins de 15 minutes ; indique les `CA-x` couverts par chaque tranche. Chaque `CA` doit être couvert par au moins une tranche. Le cycle tests → build → revue tourne **par tranche**, dans l'ordre du plan : ordonne-les pour que chacune s'appuie sur des tranches déjà revues.
+- **TDD par tranche** : pour chaque tranche, propose la décision TDD (oui / non) avec ta recommandation, selon les mêmes repères que `/atelier:new` §5 : paires entrée / sortie vérifiables → oui ; doc, config, version, texte → non. Le `tdd` du chantier est la valeur par défaut ; « TDD : oui » exige au moins un `CA`. C'est l'utilisateur qui décide.
 - **Risques** et parades ; zones critiques (paiement, concurrence, règles de sécurité, autorisation, migrations) à relire ligne à ligne.
 - **Ce qui manque dans la spec**, si la conception révèle un trou : propose un amendement (`/atelier:amend`) plutôt que de le combler en silence.
 
@@ -33,8 +34,9 @@ Attends que l'utilisateur challenge et valide.
 
 ## 4. Écrire
 
-1. `atelier template plan` (pour un EPIC : `atelier template plan-epic`) → `plan.md` dans le dossier du chantier, rempli avec la version validée. Les tranches sont les entrées numérotées de premier niveau de la section `## Tranches` (`1. <tranche> — CA couverts : CA-1, CA-2`) : atelier y lit leur nombre. Une tranche garde son numéro ; on ne retire du plan que des tranches à venir.
-2. Pour chaque choix tranché pendant la discussion : une entrée datée dans `decisions.md` (créé depuis `atelier template decisions` s'il n'existe pas), avec l'option écartée et la raison.
-3. Commite : `docs(chantiers): [<ID>] plan`.
-4. Le plan d'un EPIC s'écrit une fois puis reste tel quel : les écarts vont dans `decisions.md`, la confrontation prévu / réalisé dans le bilan de clôture.
-5. Suite : pour un EPIC, fusionner sa branche dans la branche par défaut, puis ouvrir les lots avec `/atelier:new` (`rel_parent: <ID>`). Sinon, pour la tranche 1 : `/atelier:write-tests` si la spec indique `tdd: yes`, sinon `/atelier:build`. Conseille de repartir d'un contexte propre : le plan porte la mémoire, pas la conversation.
+1. `atelier template plan` (pour un EPIC : `atelier template plan-epic`) → `plan.md` dans le dossier du chantier, rempli avec la version validée. Les tranches sont les entrées numérotées de premier niveau de la section `## Tranches` (`1. <tranche> — CA couverts : CA-1, CA-2 — TDD : oui|non`) : atelier y lit leur nombre. Une tranche garde son numéro ; on ne retire du plan que des tranches à venir.
+2. Hors EPIC, lance `atelier check-plan` avant de commiter le plan. Sortie 2 : des problèmes sont listés, corrige le plan avec l'utilisateur et relance. Quand la commande écrit `slice_tdd` dans la spec (d'après la tranche 1), commite la spec avec le plan, dans le commit `docs(chantiers): [<ID>] plan`.
+3. Pour chaque choix tranché pendant la discussion : une entrée datée dans `decisions.md` (créé depuis `atelier template decisions` s'il n'existe pas), avec l'option écartée et la raison.
+4. Commite : `docs(chantiers): [<ID>] plan`.
+5. Le plan d'un EPIC s'écrit une fois puis reste tel quel : les écarts vont dans `decisions.md`, la confrontation prévu / réalisé dans le bilan de clôture.
+6. Suite : pour un EPIC, fusionner sa branche dans la branche par défaut, puis ouvrir les lots avec `/atelier:new` (`rel_parent: <ID>`). Sinon, pour la tranche 1 : `/atelier:write-tests` si `testDrivenPhase` (`atelier status --json`) vaut `writing-tests` (TDD de la tranche 1), sinon `/atelier:build`. Conseille de repartir d'un contexte propre : le plan porte la mémoire, pas la conversation.
