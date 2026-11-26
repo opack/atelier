@@ -42,3 +42,20 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 
 - Bilan de la revue : correction de RD2 vérifiée à comportement identique (regex exécutées) ; trois suites de RD2, corrigées.
 - Idée : les identifiants `CA-n`, `RB`, `RD` relèvent aussi de la grammaire ; laissés neutres et hors périmètre (decisions.md).
+
+## Revue 3 : tranche 1 : 2026-11-26
+- Commit revu : 7ab453d
+- Base : 971c3a6
+- Corrections depuis la revue 2 : b1a2ab2, 7ab453d
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD7. Import de `vocabulary.mjs` hors de l'ordre alphabétique | plugins/atelier/lib/cli/next-step.mjs:9 | corrigé (a6787dc, sans relance : déplacement d'une ligne, verdict du reviewer) |
+
+- Bilan de la revue : b1a2ab2 vérifié à comportement identique ; plus aucune citation « TDD : oui\|non » en dur hors commentaires.
