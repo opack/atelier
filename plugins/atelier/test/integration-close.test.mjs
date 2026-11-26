@@ -59,6 +59,18 @@ describe('close of an EPIC with an integration branch', () => {
     assert.match(stale.output, /Revue obsolète/)
   })
 
+  it('une fusion de la branche par défaut sans conflit après la revue d’ensemble la laisse à jour (règle de FIX-28) [FEAT-21 CA-8]', () => {
+    const directory = epicRepository()
+    closedChild(directory)
+    setHeader(directory, 'EPIC-1', { reviewed_commit: headOf(directory) })
+    git(directory, 'switch', '-q', 'main')
+    commitFiles(directory, { 'src/main-only.mjs': 'export const m = 1\n' }, 'feat(m): [FEAT-9] code on main')
+    git(directory, 'switch', '-q', EPIC_BRANCH)
+    git(directory, 'merge', '-q', '--no-ff', '--no-edit', 'main')
+    const result = closeCheck(directory)
+    assert.equal(result.status, 0, result.output)
+  })
+
   it('un EPIC sans l’option reste exempté de revue [FEAT-21 CA-8]', () => {
     const directory = epicRepository('no')
     closedChild(directory)
