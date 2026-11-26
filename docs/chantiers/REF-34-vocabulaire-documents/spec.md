@@ -8,6 +8,10 @@ created_at: 2026-11-25
 signed_by: Opack
 signed_at: 2026-11-25
 rel_parent: EPIC-17
+slice: 2
+slice_base: 95739d95a6a9d494a29d9ec241a53e83593f72db
+tests_commit: 
+slice_tdd: 
 ---
 
 # REF-34 Regrouper le vocabulaire des documents lu par le code
