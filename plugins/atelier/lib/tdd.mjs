@@ -4,6 +4,7 @@
 import { specStatus } from './common.mjs'
 import { sliceState } from './slices.mjs'
 import { ENTRY_START, parseAmendments } from './spec.mjs'
+import { VOCABULARY } from './vocabulary.mjs'
 
 // ---------- Test-driven phases ----------
 
@@ -52,7 +53,7 @@ export function freezeTestsPhaseRefusal(chantier) {
 }
 
 // Refusal of freeze-tests when the last commit holds no test file.
-export const FREEZE_WITHOUT_TEST_MESSAGE = 'Le dernier commit ne contient aucun fichier de test. Commite les tests (et seulement les tests) avant de les figer. Une tranche qui n’a rien à tester se déclare « TDD : non » au plan ; en cours de tranche : atelier set-tdd no <raison>.'
+export const FREEZE_WITHOUT_TEST_MESSAGE = `Le dernier commit ne contient aucun fichier de test. Commite les tests (et seulement les tests) avant de les figer. Une tranche qui n’a rien à tester se déclare « ${VOCABULARY.plan.tdd} : ${VOCABULARY.plan.no} » au plan ; en cours de tranche : atelier set-tdd no <raison>.`
 
 // 'none'          : no « tests first » for the current slice: the chantier or the slice does not
 //                   follow TDD (decided by the human), or the review of the whole chantier.
@@ -80,11 +81,11 @@ export function testDrivenPhase(chantier) {
 
 // Fixed labels of the entries written by the atelier command.
 export function reopenTestsEntry(date, commit, reason) {
-  return `${date} : tests rouverts (gel quitté : ${commit}) : ${reason}`
+  return `${date} : ${VOCABULARY.amendmentEntries.reopened} (${VOCABULARY.amendmentEntries.leftFreeze} : ${commit}) : ${reason}`
 }
 
 export function refreezeTestsEntry(date, commit) {
-  return `${date} : tests regelés : ${commit}`
+  return `${date} : ${VOCABULARY.amendmentEntries.refrozen} : ${commit}`
 }
 
 // Whether freezing the tests now is a refreeze: the last "tests rouverts" entry comes after the
@@ -92,8 +93,8 @@ export function refreezeTestsEntry(date, commit) {
 // format (`tests rouverts : <raison>`) starts the same way.
 export function isRefreeze(entries) {
   const lastIndexOf = (label) => entries.findLastIndex((entry) => entry.replace(ENTRY_START, '').startsWith(label))
-  const lastReopen = lastIndexOf('tests rouverts')
-  return lastReopen >= 0 && lastReopen > lastIndexOf('tests regelés')
+  const lastReopen = lastIndexOf(VOCABULARY.amendmentEntries.reopened)
+  return lastReopen >= 0 && lastReopen > lastIndexOf(VOCABULARY.amendmentEntries.refrozen)
 }
 
 // Why `atelier reopen-tests` is refused for this chantier, or null. `frozenBefore` is true when

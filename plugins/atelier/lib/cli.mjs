@@ -6,6 +6,7 @@ import { commandChecks } from './cli/checks.mjs'
 import { commandCloseCheck, commandSetStatus } from './cli/close.mjs'
 import { commandCheckProcess, commandTemplate } from './cli/docs.mjs'
 import { commandNextId } from './cli/identifiers.mjs'
+import { commandBase } from './cli/integration.mjs'
 import { commandStatus, hookSessionStart } from './cli/next-step.mjs'
 import { commandReviewIds } from './cli/review-points.mjs'
 import { commandSetReviewed } from './cli/review.mjs'
@@ -18,6 +19,7 @@ import { commandBypass, hookGuard } from './cli/write-guard.mjs'
 const commands = {
   'next-id': commandNextId,
   status: commandStatus,
+  base: commandBase,
   'check-spec': commandCheckSpec,
   'check-plan': commandCheckPlan,
   'check-process': commandCheckProcess,

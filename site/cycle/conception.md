@@ -43,6 +43,8 @@ Dans `plan.md`, chaque tranche est une entrée numérotée de premier niveau de 
 
 Chaque tranche déclare son TDD : `TDD : oui` ou `TDD : non`. Le `tdd` du chantier est la valeur proposée par défaut. Une tranche qui n’a rien à tester (doc, site, version) se déclare `TDD : non` ; `TDD : oui` exige au moins un critère. Avant de commiter le plan, `/atelier:plan` lance `atelier check-plan`, qui signale les problèmes du plan (TDD non déclaré, `TDD : oui` sans critère, critère non couvert…) (sortie 2 : on corrige le plan avec vous et on relance), puis recopie le TDD de la tranche 1 dans la spec (`slice_tdd`) : la spec est commitée avec le plan. Les EPIC n’ont pas ce contrôle.
 
+Le plan d’un EPIC découpe en lots, pas en tranches. Ensuite, sa branche est fusionnée dans la branche par défaut avant l’ouverture des lots ; celle d’un [EPIC à branche d’intégration](../fondations/types#epic-a-branche-d-integration) est seulement poussée : elle est la branche d’intégration dont partent les lots, et ne rejoint la branche par défaut qu’à la clôture de l’EPIC.
+
 ## Sortie
 
 - `plan.md` dans le dossier du chantier.

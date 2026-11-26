@@ -34,3 +34,8 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Décision : un REF enfant d'EPIC-17 les regroupe dans un seul module de vocabulaire. Il ne traduit rien et ne change aucun comportement ; il prépare le multilingue, qui reste un chantier d'EPIC-14.
 - Ordre : après les lots 3 et 4, sauf avis contraire de Didier. Comme le lot 2, il touche plusieurs modules de `lib/` : aucun autre chantier sur ces modules pendant qu'il tourne, et preuve de non-régression par la suite inchangée.
 - Conséquence : le plan garde ses quatre lots (il n'est pas réécrit) ; la confrontation prévu / réalisé du bilan d'EPIC-17 compte ce lot 5 et le REF de suppression de la façade.
+
+## 2026-11-26 : le lot 5 (REF-34, vocabulaire des documents) passe avant les lots 3 et 4
+- Contexte : REF-34 ouvert le 2026-11-25 ; proposition du fil « Rendre atelier multilingue » de le lancer tout de suite. Accord de Didier le 2026-11-26.
+- Écarté : attendre les lots 3 et 4, parce que le lot 3 ajouterait d'abord de nouveaux mots lus en dur (sections de critères des TEC et REF) que REF-34 devrait ensuite déplacer.
+- Conséquence : ordre REF-34, puis lot 3 (qui ajoute ses sections de critères directement au module de vocabulaire), puis lot 4. Le REF de suppression de la façade (REF-36) tourne en parallèle : il ne partage aucun fichier avec REF-34.

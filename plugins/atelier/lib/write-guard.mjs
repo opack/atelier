@@ -2,8 +2,10 @@
 // Pure functions: no access to the disk, git or the environment.
 
 import { matchesAny, specStatus } from './common.mjs'
+import { INTEGRATION_FIELD } from './integration.mjs'
 import { parseAmendments } from './spec.mjs'
 import { testDrivenPhase } from './tdd.mjs'
+import { VOCABULARY } from './vocabulary.mjs'
 
 // ---------- Write guard ----------
 
@@ -13,8 +15,8 @@ export const COMMAND_SPEC_FIELDS = ['status', 'signed_by', 'signed_at', 'done_at
 
 // Fields that cannot change through the edit tool once the spec is no longer a draft, besides
 // the command fields: `tdd` changes through `atelier set-tdd`; `id` and `type` are bound to the
-// branch, the directory and the next step.
-const FROZEN_AFTER_SIGNATURE_FIELDS = ['tdd', 'id', 'type']
+// branch, the directory and the next step; `integration_branch` is the base of the EPIC's children.
+const FROZEN_AFTER_SIGNATURE_FIELDS = ['tdd', 'id', 'type', INTEGRATION_FIELD]
 
 // Why a write to a spec file is refused, or null. `existingSpec` and `proposedSpec` are the
 // parsed spec before and after the write (null when absent or unknown); `committedSpec` is the
@@ -26,7 +28,7 @@ function specWriteRefusal(toolName, existingSpec, proposedSpec, committedSpec, c
   }
   const guarded = specStatus(existingSpec) !== 'draft' || (committedSpec && specStatus(committedSpec) !== 'draft')
   if (toolName === 'Write' && guarded) {
-    return 'atelier : cette spec n’est plus en brouillon, elle ne se réécrit pas. Modifie-la avec des éditions ciblées et ajoute une entrée datée dans la section « Amendements » (/atelier:amend).'
+    return `atelier : cette spec n’est plus en brouillon, elle ne se réécrit pas. Modifie-la avec des éditions ciblées et ajoute une entrée datée dans la section « ${VOCABULARY.amendments} » (/atelier:amend).`
   }
   if (!proposedSpec) {
     // An edit that cannot be replayed exactly cannot be checked: refuse rather than trust it.
@@ -49,6 +51,9 @@ function specWriteRefusal(toolName, existingSpec, proposedSpec, committedSpec, c
   if (frozenChanges.includes('tdd')) {
     return `atelier : la spec n’est plus en brouillon (statut : ${status}) ; « tdd » ne change plus que par « atelier set-tdd <yes|no> <raison> », tracé en amendement.`
   }
+  if (frozenChanges.includes(INTEGRATION_FIELD)) {
+    return `atelier : la spec n’est plus en brouillon (statut : ${status}) ; « ${INTEGRATION_FIELD} » ne change plus après la signature (les enfants de l’EPIC en dépendent). Si c’est vraiment nécessaire, abandonne cet EPIC et ouvre-en un nouveau.`
+  }
   if (frozenChanges.length) {
     return `atelier : la spec n’est plus en brouillon (statut : ${status}) ; ${frozenChanges.map((field) => `« ${field} »`).join(' et ')} ne change(nt) plus (liés à la branche et au dossier du chantier). Si c’est vraiment nécessaire, abandonne ce chantier et ouvre-en un nouveau.`
   }
@@ -61,17 +66,17 @@ function amendmentRefusal(referenceSpec, proposedSpec) {
   const reference = parseAmendments(referenceSpec.body ?? '')
   const proposed = parseAmendments(proposedSpec.body ?? '')
   if (proposed.sectionCount > 1) {
-    return 'atelier : la spec aurait plusieurs sections « ## Amendements ». Garde une seule section et ajoute les entrées à sa fin.'
+    return `atelier : la spec aurait plusieurs sections « ## ${VOCABULARY.amendments} ». Garde une seule section et ajoute les entrées à sa fin.`
   }
   const isPrefix = reference.entries.every((entry, index) => proposed.entries[index] === entry)
   if (!isPrefix) {
-    return 'atelier : les entrées existantes de la section « Amendements » ne se modifient ni ne se suppriment, et une nouvelle entrée s’ajoute à la fin de la section.'
+    return `atelier : les entrées existantes de la section « ${VOCABULARY.amendments} » ne se modifient ni ne se suppriment, et une nouvelle entrée s’ajoute à la fin de la section.`
   }
   const excluded = new Set([...COMMAND_SPEC_FIELDS, ...FROZEN_AFTER_SIGNATURE_FIELDS])
   const fields = new Set([...Object.keys(referenceSpec.data), ...Object.keys(proposedSpec.data)].filter((field) => !excluded.has(field)))
   const headerChanged = [...fields].some((field) => (referenceSpec.data[field] ?? '') !== (proposedSpec.data[field] ?? ''))
   if ((headerChanged || reference.rest !== proposed.rest) && proposed.entries.length <= reference.entries.length) {
-    return 'atelier : cette spec est signée ; toute modification doit être tracée. Ajoute d’abord, à la fin de la section « ## Amendements », une entrée « - AAAA-MM-JJ : quoi, pourquoi », puis modifie la spec (/atelier:amend). La comparaison se fait avec la version commitée : une modification non commitée sans entrée, même faite par l’utilisateur, bloque les éditions jusqu’à son commit ou l’ajout d’une entrée.'
+    return `atelier : cette spec est signée ; toute modification doit être tracée. Ajoute d’abord, à la fin de la section « ## ${VOCABULARY.amendments} », une entrée « - AAAA-MM-JJ : quoi, pourquoi », puis modifie la spec (/atelier:amend). La comparaison se fait avec la version commitée : une modification non commitée sans entrée, même faite par l’utilisateur, bloque les éditions jusqu’à son commit ou l’ajout d’une entrée.`
   }
   return null
 }

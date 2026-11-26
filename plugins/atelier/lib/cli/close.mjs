@@ -1,19 +1,36 @@
 // Closing commands: close-check and set-status.
 
 import { closeProblems, isReviewExempt, setStatusRefusal } from '../close.mjs'
+import { hasIntegrationBranch } from '../integration.mjs'
 import { toProjectRelativePath } from '../common.mjs'
-import { openChildren } from '../relations.mjs'
+import { childrenOf, openChildren } from '../relations.mjs'
 import { reviewCodeFiles } from '../review.mjs'
 import { runChecksOnce } from './checks.mjs'
-import { chantierFilePath, findProjectRoot, requireConfig, samePath, today, uncommittedFiles } from './common.mjs'
+import { chantierFilePath, findProjectRoot, gitObjectExists, isAncestorOfHead, requireConfig, samePath, today, uncommittedFiles } from './common.mjs'
 import { requireActiveChantier } from './identifiers.mjs'
+import { defaultBranchOf } from './integration.mjs'
 import { chantierIndex, isEpic, needsIndex } from './relations.mjs'
 import { reviewFacts } from './review.mjs'
 import { updateSpec } from './spec.mjs'
 
 // ---------- Close commands ----------
 
-// Deterministic checks before closing (see closeProblems in lib/core.mjs). Runs the project checks.
+// Reviews of the children done in the current tree of an EPIC with an integration branch, those
+// exempt from review left out (see childReviewProblems).
+function childReviewsOf(projectRoot, chantier, index) {
+  if (!index || !hasIntegrationBranch(chantier.spec.data)) {
+    return []
+  }
+  return childrenOf(index, chantier.id)
+    .filter((entry) => entry.here?.status === 'done' && !isReviewExempt({ id: entry.id, spec: { data: entry.here, body: '' }, plan: null }))
+    .map((entry) => {
+      const reviewedCommit = entry.here.reviewed_commit || null
+      const inHistory = Boolean(reviewedCommit) && gitObjectExists(projectRoot, `${reviewedCommit}^{commit}`) && isAncestorOfHead(projectRoot, reviewedCommit)
+      return { id: entry.id, reviewedCommit, inHistory }
+    })
+}
+
+// Deterministic checks before closing (see closeProblems in lib/close.mjs). Runs the project checks.
 function closeCheckProblems(projectRoot, config, chantier) {
   let uncommittedCode = []
   let uncommittedError = null
@@ -26,14 +43,17 @@ function closeCheckProblems(projectRoot, config, chantier) {
   } catch (error) {
     uncommittedError = error.message
   }
+  const index = needsIndex(chantier) ? chantierIndex(projectRoot, config) : null
   return closeProblems({
     chantier,
-    reviewFacts: reviewFacts(projectRoot, config, chantier),
+    reviewFacts: reviewFacts(projectRoot, config, chantier, index),
     uncommittedCode,
     uncommittedError,
     revueUncommitted,
     checksFailure: runChecksOnce(projectRoot, config).failure,
-    index: needsIndex(chantier) ? chantierIndex(projectRoot, config) : null,
+    index,
+    childReviews: childReviewsOf(projectRoot, chantier, index),
+    defaultBranch: index ? defaultBranchOf(projectRoot) : null,
   })
 }
 

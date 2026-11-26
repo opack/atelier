@@ -27,7 +27,7 @@ function chantiersHere(projectRoot, config) {
   return readdirSync(chantiersRoot).flatMap((name) => {
     const id = chantierIdFromDirectoryName(name)
     const specPath = join(chantiersRoot, name, 'spec.md')
-    return id && existsSync(specPath) ? [{ id, data: parseFrontMatter(readFileSync(specPath, 'utf8')).data }] : []
+    return id && existsSync(specPath) ? [{ id, directory: name, data: parseFrontMatter(readFileSync(specPath, 'utf8')).data }] : []
   })
 }
 
@@ -63,7 +63,7 @@ export function chantierIndex(projectRoot, config) {
   const headers = new Map(distinctTrees.map((tree, index) => [tree, specs[index] && parseFrontMatter(specs[index].content.toString('utf8')).data]))
   const branchHeaders = directories
     .filter((directory) => headers.get(directory.tree))
-    .map(({ id, branch, tree }) => ({ id, branch, data: headers.get(tree) }))
+    .map(({ id, branch, directory, tree }) => ({ id, branch, directory, data: headers.get(tree) }))
   return buildChantierIndex(chantiersHere(projectRoot, config), branchHeaders)
 }
 
@@ -77,12 +77,12 @@ export function needsIndex(chantier) {
 }
 
 // Relations of the chantier, with the status of the related chantiers in the current tree; null
-// when it has none and is not an EPIC (the index is then not built).
-export function relationsSummary(projectRoot, config, chantier) {
+// when it has none and is not an EPIC (the index is then not built). `index` reuses one already built.
+export function relationsSummary(projectRoot, config, chantier, index = null) {
   if (!chantier?.spec || !needsIndex(chantier)) {
     return null
   }
-  const index = chantierIndex(projectRoot, config)
+  index ??= chantierIndex(projectRoot, config)
   const { parent, dependsOn, origin, replaces } = parseRelations(chantier.spec.data)
   const describe = (ids) => ids.map((id) => describeRelation(index, id))
   return {

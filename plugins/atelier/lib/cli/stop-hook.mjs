@@ -12,7 +12,7 @@ import { readBypass } from './write-guard.mjs'
 
 // ---------- Stop hook ----------
 
-// Stop hook: the decision itself is decideStop (lib/core.mjs). A failure does not block the
+// Stop hook: the decision itself is decideStop (lib/stop-hook.mjs). A failure does not block the
 // agent, but the user is told that the end-of-turn checks did not run.
 export function hookGate() {
   const input = readStandardInput()
@@ -39,7 +39,7 @@ function gate(projectRoot) {
     changedFiles: uncommittedFiles(projectRoot),
     tree: workingTreeId(projectRoot),
     changedTests: testDrivenPhase(chantier) === 'implementing'
-      ? testFilesChangedSince(projectRoot, config, chantier.spec.data.tests_commit)
+      ? testFilesChangedSince(projectRoot, config, chantier.spec.data.tests_commit, chantier)
       : [],
     state: readGateState(projectRoot),
     runChecks: () => runChecks(projectRoot, config),
