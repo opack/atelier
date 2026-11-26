@@ -10,6 +10,8 @@ created_at: 2026-11-26
 signed_by: Opack
 signed_at: 2026-11-26
 slice_tdd: no
+reviewed_commit: bbd7e133278ba9061db268898cebb52c75f03712
+slice: 1
 ---
 
 # REF-36 Supprimer la façade lib/core.mjs
