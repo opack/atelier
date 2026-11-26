@@ -78,28 +78,11 @@ function nameProblems(source) {
   return problems
 }
 
-// core.mjs may hold only re-exports (`export { … } from '…'`, on one line or several), comments
-// and blank lines.
-function facadeProblems(text) {
-  const withoutReexports = text.replace(/^export\s*\{[^}]*\}\s*from\s*'[^']*'[ \t]*;?[ \t]*$/gm, '')
-  const withoutComments = withoutReexports.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^[ \t]*\/\/.*$/gm, '')
-  return withoutComments.split('\n').map((line) => line.trim()).filter(Boolean)
-    .map((line) => `core.mjs contient autre chose qu'un réexport : « ${line} »`)
-}
-
 // Relative modules a source imports (with or without `from`) or re-exports from, as written.
 // Dynamic import() calls are not import statements: they are left out of the rules.
 function importedSpecifiers(text) {
   const statements = /^(?:import\s*['"](\.{1,2}\/[^'"]+)['"]|(?:import|export)\b[^'"]*?\bfrom\s*['"](\.{1,2}\/[^'"]+)['"])/gm
   return [...text.matchAll(statements)].map((match) => match[1] ?? match[2])
-}
-
-// files: [{ path, text }], paths relative to the plugin (posix). No file but the façade's readers of
-// old branches may import lib/core.mjs: neither a test nor a module of lib/.
-function coreImportProblems(files) {
-  return files.flatMap(({ path, text }) => importedSpecifiers(text)
-    .filter((specifier) => posix.normalize(posix.join(posix.dirname(path), specifier)) === 'lib/core.mjs')
-    .map(() => `${path} importe lib/core.mjs`))
 }
 
 // modules: Map of path relative to lib/ (posix) → text. Checks the import rules of REF-29 §3.
@@ -110,7 +93,7 @@ function importProblems(modules) {
   }
   const problems = []
   for (const [path, targets] of graph) {
-    const isPure = !path.includes('/') && path !== 'cli.mjs' && path !== 'core.mjs'
+    const isPure = !path.includes('/') && path !== 'cli.mjs'
     for (const target of targets) {
       if (path === 'common.mjs') problems.push(`common.mjs importe ${target}`)
       else if (isPure && target.startsWith('cli/')) problems.push(`le module pur ${path} importe ${target}`)
@@ -142,12 +125,7 @@ describe('architecture de lib/ et de test/', () => {
   it('ce dépôt respecte toutes les règles [REF-29 CA-4]', () => {
     assert.deepEqual(oversizedFiles([...libFiles, ...testFiles]), [])
     assert.deepEqual(namedTestFiles.flatMap(({ path, text }) => nameProblems(text).map((problem) => `${path} : ${problem}`)), [])
-    assert.deepEqual(facadeProblems(readFileSync(join(pluginDirectory, 'lib/core.mjs'), 'utf8')), [])
     assert.deepEqual(importProblems(new Map(libFiles.map(({ path, text }) => [path.replace(/^lib\//, ''), text]))), [])
-  })
-
-  it('aucun test ni module de lib/ n’importe la façade [REF-29 CA-5]', () => {
-    assert.deepEqual(coreImportProblems([...libFiles, ...testFiles]), [])
   })
 
   it('un fichier de plus de 400 lignes est signalé [REF-29 CA-4]', () => {
@@ -173,13 +151,6 @@ describe('architecture de lib/ et de test/', () => {
     assert.deepEqual(nameProblems("it(\"sans critère\", () => {})"), [])
   })
 
-  it('une façade qui contient autre chose que des réexports est signalée [REF-29 CA-4]', () => {
-    const facade = "// Façade\n\nexport { a, b } from './a.mjs'\nexport {\n  c,\n} from './cli/c.mjs'\n"
-    assert.deepEqual(facadeProblems(facade), [])
-    assert.equal(facadeProblems(`${facade}export function d() { return 1 }\n`).length, 1)
-    assert.equal(facadeProblems(`import { a } from './a.mjs'\n${facade}`).length, 1)
-  })
-
   it('common.mjs qui importe un module de lib/ est signalé [REF-29 CA-4]', () => {
     const problems = importProblems(new Map([
       ['common.mjs', "import { a } from './spec.mjs'\n"],
@@ -197,16 +168,6 @@ describe('architecture de lib/ et de test/', () => {
       ['common.mjs', 'export const a = 1\n'],
     ]))
     assert.deepEqual(problems, ['le module pur spec.mjs importe cli/common.mjs', 'le module pur docs.mjs importe cli/docs.mjs'])
-  })
-
-  it('un test ou un module de lib/ qui importe la façade est signalé [REF-29 CA-5]', () => {
-    const problems = coreImportProblems([
-      { path: 'test/spec.test.mjs', text: "import { checkSpec } from '../lib/core.mjs'\n" },
-      { path: 'lib/cli.mjs', text: "import {\n  main,\n} from './core.mjs'\n" },
-      { path: 'lib/core.mjs', text: "export { checkSpec } from './spec.mjs'\n" },
-      { path: 'test/tdd.test.mjs', text: "import { testDrivenPhase } from '../lib/tdd.mjs'\n" },
-    ])
-    assert.deepEqual(problems, ['test/spec.test.mjs importe lib/core.mjs', 'lib/cli.mjs importe lib/core.mjs'])
   })
 
   it('un cycle d’import est signalé [REF-29 CA-4]', () => {
