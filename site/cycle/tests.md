@@ -2,7 +2,7 @@
 
 **Objectif** : écrire la spécification **exécutable** du chantier avant le code, pour que l’agent puisse ensuite se vérifier lui-même.
 
-Cette étape ne s’applique qu’aux chantiers où vous avez choisi `tdd: yes`.
+Cette étape s’applique quand la tranche en cours est en TDD : déclarée `TDD : oui` dans le [plan](./conception) (recopié dans `slice_tdd`), ou à défaut `tdd: yes` du chantier. Une tranche `TDD : oui` d’un chantier `tdd: no` passe donc aussi par les tests d’abord. Une tranche `TDD : non` saute la phase « tests d’abord » : ses tests s’écrivent avec le code ([Implémentation](./implementation)).
 
 ## Pourquoi les tests d’abord ?
 
@@ -20,9 +20,11 @@ Cette page couvre les étapes 1 à 3.
 
 ## Par tranche
 
+Le TDD se décide tranche par tranche : atelier recopie la déclaration de la tranche en cours dans la spec (`slice_tdd`), à l’écriture du plan pour la tranche 1, puis à la validation de la revue de chaque tranche. Ce champ n’est écrit que par les commandes.
+
 Pour un chantier découpé en tranches, on n’écrit pas d’un coup les tests de tous les critères : seulement ceux des **CA de la tranche en cours** (le plan dit lesquels). Les tests des tranches suivantes s’écrivent après la revue de celle-ci, avec ce qu’elle a appris. Le cycle tests → implémentation → [revue](./revue) se répète pour chaque tranche.
 
-Les tests des tranches précédentes restent figés : on **ajoute** des tests, on ne modifie ni ne supprime les leurs. Comme ils vivent souvent dans le même fichier, la règle est vérifiée **au gel**, ligne par ligne : `atelier freeze-tests` refuse si une ligne de test présente au début de la tranche a été modifiée ou supprimée (fichier supprimé ou renommé compris ; espaces et fins de ligne ignorés), en listant les fichiers. Le contrôle ne voit pas une assertion ajoutée au milieu d’un test existant : le relecteur, si.
+Les tests des tranches précédentes restent figés : on **ajoute** des tests, on ne modifie ni ne supprime les leurs. Comme ils vivent souvent dans le même fichier, la règle est vérifiée **au gel**, ligne par ligne : `atelier freeze-tests` refuse si une ligne de test présente au début de la tranche a été modifiée ou supprimée (fichier supprimé ou renommé compris ; espaces et fins de ligne ignorés), en listant les fichiers. Le contrôle ne voit pas une assertion ajoutée au milieu d’un test existant : le relecteur, si. Pendant une tranche `TDD : non`, et pendant la revue du chantier qui suit une telle tranche, il n’y a pas de gel : les tests des tranches précédentes ne sont alors protégés que par la revue.
 
 ## Avec atelier
 
@@ -89,8 +91,8 @@ Ce qui est permis à la réouverture :
 
 Un test d’une **tranche précédente** se rouvre de la même façon, pendant la phase « tests d’abord » de la tranche en cours (à partir de la tranche 2) : le gel quitté est alors le début de la tranche. Si c’est la spec qui change, on l’[amende](./amendement) d’abord. Il n’y a pas d’option pour passer outre au moment du gel.
 
-La réouverture est refusée pour une spec non signée, pour un chantier sans TDD (il n’a pas de tests figés), pour des tests pas encore figés (phase « tests d’abord » de la tranche 1), et deux fois de suite avant le regel (« tests déjà rouverts »).
+La réouverture est refusée pour une spec non signée, pour un chantier sans TDD ou une tranche `TDD : non` (pas de tests figés), pour des tests pas encore figés (phase « tests d’abord » de la tranche 1), et deux fois de suite avant le regel (« tests déjà rouverts »).
 
 ## Et si le TDD s’avère inadapté ?
 
-L’agent vous propose alors de changer la décision : `atelier set-tdd no <raison>`. Tracé aussi, et la spec est commitée aussitôt. C’est votre décision, pas celle de l’agent : tant que la spec est en brouillon, le champ `tdd` se modifie librement ; une fois signée, seule cette commande peut le changer, et elle l’inscrit dans les amendements.
+L’agent vous propose alors de changer la décision : `atelier set-tdd yes|no <raison>`. Tracé aussi, et la spec est commitée aussitôt. Dans un chantier en tranches, elle ne change que la tranche courante (l’agent corrige aussi `plan.md`, avec une entrée dans `decisions.md`) ; elle est refusée si les tests de la tranche sont figés, et `no` l’est pendant une réouverture. C’est votre décision, pas celle de l’agent : tant que la spec est en brouillon, le champ `tdd` se modifie librement ; une fois signée, seule cette commande peut le changer, et elle l’inscrit dans les amendements.

@@ -2,8 +2,9 @@
 // Pure functions: no access to the disk, git or the environment.
 
 import { isReviewExempt } from './close.mjs'
+import { hasIntegrationBranch } from './integration.mjs'
 import { sliceLabel, sliceState } from './slices.mjs'
-import { testDrivenPhase } from './tdd.mjs'
+import { declaredSliceTdd, numberedSlice, testDrivenPhase } from './tdd.mjs'
 
 // ---------- Next step ----------
 
@@ -44,6 +45,11 @@ export function nextStep(chantier, review = 'none', children = [], codeCommitted
     if (!children.some((child) => child.status === 'done')) {
       return 'Tous les enfants sont clos, aucun n’est done : la vision n’a pas été réalisée. Abandonner l’EPIC : atelier set-status abandoned'
     }
+    if (hasIntegrationBranch(chantier.spec.data) && review !== 'current') {
+      return review === 'stale'
+        ? 'Tous les enfants sont clos, mais l’EPIC a changé depuis la revue d’ensemble (code ou spec) : la refaire : /atelier:review'
+        : 'Tous les enfants sont clos : revue d’ensemble de l’EPIC (cohérence entre lots, CA globaux, résolutions de conflits) : /atelier:review'
+    }
     return 'Tous les enfants sont clos : clôturer l’EPIC (bilan prévu / réalisé) : /atelier:close'
   }
   const { model, slice, sliceCount } = sliceState(chantier)
@@ -68,6 +74,11 @@ export function codeCommittedMatters(chantier, review) {
   return review === 'none' && testDrivenPhase(chantier) !== 'writing-tests' && sliceState(chantier).slice !== 'chantier'
 }
 
+// Whether the current numbered slice of a chantier with several slices is declared without TDD.
+function sliceWithoutTdd(chantier) {
+  return numberedSlice(chantier) !== null && declaredSliceTdd(chantier.spec.data.slice_tdd) === 'no'
+}
+
 // Next step of the current phase (tests, build, review, close), for a slice or the chantier.
 // `implemented`: code was committed in the slice and no review covers it.
 function phaseStep(chantier, review = 'none', implemented = false) {
@@ -77,7 +88,7 @@ function phaseStep(chantier, review = 'none', implemented = false) {
   }
   const build = phase === 'implementing'
     ? 'Implémenter jusqu’à ce que tous les tests passent, sans modifier les tests, puis commiter : /atelier:build'
-    : 'Implémenter (sans TDD pour ce chantier), puis commiter : /atelier:build'
+    : `Implémenter (sans TDD pour ${sliceWithoutTdd(chantier) ? 'cette tranche' : 'ce chantier'}), puis commiter : /atelier:build`
   const resume = '(ou reprendre /atelier:build si elle n’est pas finie)'
   if (isReviewExempt(chantier)) {
     return implemented ? `Implémentation commitée : clôturer : /atelier:close ${resume}` : `${build} ; ensuite clôturer : /atelier:close`

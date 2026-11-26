@@ -1,6 +1,6 @@
 {
   "name": "atelier",
-  "version": "0.5.0",
+  "version": "0.8.0",
   "description": "Process IA artisanal : chantiers identifiés, spec signée avant le code, tests d'abord, revue indépendante et bilan versionné.",
   "author": {
     "name": "opack"
@@ -13,5 +13,115 @@
     "tdd",
     "review",
     "governance"
-  ]
+  ],
+  "userConfig": {
+    "implementer_model": {
+      "type": "string",
+      "title": "Modèle d'implementer",
+      "description": "Modèle du sous-agent implementer, implémentation (/atelier:build). Un argument de la commande (ex. « opus ») l'emporte pour un appel. « recommandé (…) » suit la valeur recommandée par la version installée.",
+      "default": "recommandé (sonnet)",
+      "options": [
+        "recommandé (sonnet)",
+        "sonnet",
+        "opus",
+        "haiku",
+        "fable"
+      ]
+    },
+    "implementer_effort": {
+      "type": "string",
+      "title": "Effort d'implementer",
+      "description": "Effort du sous-agent implementer, implémentation (/atelier:build). Un argument de la commande (ex. « high ») l'emporte pour un appel. « recommandé (…) » suit la valeur recommandée par la version installée.",
+      "default": "recommandé (medium)",
+      "options": [
+        "recommandé (medium)",
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ]
+    },
+    "overfit_checker_model": {
+      "type": "string",
+      "title": "Modèle d'overfit-checker",
+      "description": "Modèle du sous-agent overfit-checker, contrôle de surapprentissage (/atelier:build). Réglable seulement par cette option : l'argument de /atelier:build ne vaut que pour implementer. « recommandé (…) » suit la valeur recommandée par la version installée.",
+      "default": "recommandé (opus)",
+      "options": [
+        "recommandé (opus)",
+        "sonnet",
+        "opus",
+        "haiku",
+        "fable"
+      ]
+    },
+    "overfit_checker_effort": {
+      "type": "string",
+      "title": "Effort d'overfit-checker",
+      "description": "Effort du sous-agent overfit-checker, contrôle de surapprentissage (/atelier:build). Réglable seulement par cette option : l'argument de /atelier:build ne vaut que pour implementer. « recommandé (…) » suit la valeur recommandée par la version installée.",
+      "default": "recommandé (medium)",
+      "options": [
+        "recommandé (medium)",
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ]
+    },
+    "reviewer_model": {
+      "type": "string",
+      "title": "Modèle de reviewer",
+      "description": "Modèle du sous-agent reviewer, revue de code (/atelier:review). Un argument de la commande (ex. « opus ») l'emporte pour un appel. « recommandé (…) » suit la valeur recommandée par la version installée.",
+      "default": "recommandé (opus)",
+      "options": [
+        "recommandé (opus)",
+        "sonnet",
+        "opus",
+        "haiku",
+        "fable"
+      ]
+    },
+    "reviewer_effort": {
+      "type": "string",
+      "title": "Effort de reviewer",
+      "description": "Effort du sous-agent reviewer, revue de code (/atelier:review). Un argument de la commande (ex. « high ») l'emporte pour un appel. « recommandé (…) » suit la valeur recommandée par la version installée.",
+      "default": "recommandé (high)",
+      "options": [
+        "recommandé (high)",
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ]
+    },
+    "spec_critic_model": {
+      "type": "string",
+      "title": "Modèle de spec-critic",
+      "description": "Modèle du sous-agent spec-critic, relecture de spec (/atelier:sign). Un argument de la commande (ex. « opus ») l'emporte pour un appel. « recommandé (…) » suit la valeur recommandée par la version installée.",
+      "default": "recommandé (opus)",
+      "options": [
+        "recommandé (opus)",
+        "sonnet",
+        "opus",
+        "haiku",
+        "fable"
+      ]
+    },
+    "spec_critic_effort": {
+      "type": "string",
+      "title": "Effort de spec-critic",
+      "description": "Effort du sous-agent spec-critic, relecture de spec (/atelier:sign). Un argument de la commande (ex. « high ») l'emporte pour un appel. « recommandé (…) » suit la valeur recommandée par la version installée.",
+      "default": "recommandé (high)",
+      "options": [
+        "recommandé (high)",
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ]
+    }
+  }
 }

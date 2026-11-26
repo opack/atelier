@@ -7,15 +7,75 @@ import { ENTRY_START, parseAmendments } from './spec.mjs'
 
 // ---------- Test-driven phases ----------
 
-// 'none'          : the chantier does not follow TDD (`tdd: no`, decided by the human).
-// 'writing-tests' : TDD, tests are being written; implementation code is forbidden.
-// 'implementing'  : TDD, tests are committed and frozen; only implementation code may change.
-export function testDrivenPhase(chantier) {
+// TDD that applies to the current slice: `slice_tdd` (written by the atelier command from the
+// plan) when set, otherwise the `tdd` of the chantier.
+export function effectiveTdd(chantier) {
   const data = chantier?.spec?.data ?? {}
-  if (data.tdd !== 'yes') {
+  return declaredSliceTdd(data.slice_tdd) ?? data.tdd
+}
+
+// A slice TDD value read without case: 'yes' | 'no', or null when empty or unknown.
+export function declaredSliceTdd(value) {
+  const normalized = String(value ?? '').trim().toLowerCase()
+  return ['yes', 'no'].includes(normalized) ? normalized : null
+}
+
+// The current slice when it is a numbered slice of a chantier with several slices, else null.
+export function numberedSlice(chantier) {
+  const { model, slice } = sliceState(chantier)
+  return model === 'sliced' && typeof slice === 'number' ? slice : null
+}
+
+// Whether a reopening of the tests is pending: the last « tests rouverts » entry of the spec is
+// not followed by a « tests regelés » entry.
+function reopeningPending(chantier) {
+  return isRefreeze(parseAmendments(chantier?.spec?.body ?? '').entries)
+}
+
+// Refusal of freeze-tests and reopen-tests in a slice without TDD (phase « none » in a numbered
+// slice of a chantier with several slices), or null.
+function sliceWithoutTddRefusal(chantier) {
+  const slice = numberedSlice(chantier)
+  if (slice === null || testDrivenPhase(chantier) !== 'none') {
+    return null
+  }
+  return `la tranche ${slice} est sans TDD : pas de tests à figer ni à rouvrir, ils s’écrivent avec le code (/atelier:build).`
+}
+
+// Why `atelier freeze-tests` cannot start in the current phase, or null.
+export function freezeTestsPhaseRefusal(chantier) {
+  const withoutTdd = sliceWithoutTddRefusal(chantier)
+  if (withoutTdd) {
+    return withoutTdd
+  }
+  return testDrivenPhase(chantier) === 'writing-tests' ? null : 'ce chantier n’est pas en phase « tests d’abord ».'
+}
+
+// Refusal of freeze-tests when the last commit holds no test file.
+export const FREEZE_WITHOUT_TEST_MESSAGE = 'Le dernier commit ne contient aucun fichier de test. Commite les tests (et seulement les tests) avant de les figer. Une tranche qui n’a rien à tester se déclare « TDD : non » au plan ; en cours de tranche : atelier set-tdd no <raison>.'
+
+// 'none'          : no « tests first » for the current slice: the chantier or the slice does not
+//                   follow TDD (decided by the human), or the review of the whole chantier.
+// 'writing-tests' : TDD, tests are being written; implementation code is forbidden.
+// 'implementing'  : tests are committed and frozen; only implementation code may change.
+// Tests frozen under TDD (of the chantier or of the slice, or during the review of the whole
+// chantier) stay frozen whatever the plan says; a chantier switched to `tdd: no` after the
+// freeze, without slice TDD, has no frozen tests.
+// During the review of the whole chantier, tests are only written after a reopening, still
+// pending.
+export function testDrivenPhase(chantier) {
+  const { model, slice } = sliceState(chantier)
+  if (model === 'none') {
     return 'none'
   }
-  return data.tests_commit ? 'implementing' : 'writing-tests'
+  const data = chantier?.spec?.data ?? {}
+  if (data.tests_commit && (data.tdd === 'yes' || effectiveTdd(chantier) === 'yes' || slice === 'chantier')) {
+    return 'implementing'
+  }
+  if (slice === 'chantier') {
+    return isRefreeze(parseAmendments(chantier.spec.body ?? '').entries) ? 'writing-tests' : 'none'
+  }
+  return effectiveTdd(chantier) === 'yes' ? 'writing-tests' : 'none'
 }
 
 // Fixed labels of the entries written by the atelier command.
@@ -36,23 +96,30 @@ export function isRefreeze(entries) {
   return lastReopen >= 0 && lastReopen > lastIndexOf('tests regelés')
 }
 
-// Why `atelier reopen-tests` is refused for this chantier, or null.
-export function reopenTestsRefusal(chantier) {
+// Why `atelier reopen-tests` is refused for this chantier, or null. `frozenBefore` is true when
+// a slice of the chantier froze tests (a `tests_commit` in the history of the spec): during the
+// review of the whole chantier, it allows a reopening even if the chantier is not in TDD.
+export function reopenTestsRefusal(chantier, { frozenBefore = false } = {}) {
   const data = chantier?.spec?.data ?? {}
   if (specStatus(chantier?.spec) !== 'signed') {
     return `La spec de ${chantier?.id ?? 'ce chantier'} n’est pas signée (statut : ${specStatus(chantier?.spec)}) : ses tests ne se rouvrent pas.`
   }
-  if (data.tdd !== 'yes') {
+  const withoutTdd = sliceWithoutTddRefusal(chantier)
+  if (withoutTdd) {
+    return `${withoutTdd.charAt(0).toUpperCase()}${withoutTdd.slice(1)}`
+  }
+  const { slice } = sliceState(chantier)
+  const tddFrozen = slice === 'chantier' ? data.tdd === 'yes' || frozenBefore : testDrivenPhase(chantier) !== 'none'
+  if (!tddFrozen) {
     return `${chantier?.id ?? 'Ce chantier'} ne suit pas le TDD (tdd: ${data.tdd || '?'}) : il n’a pas de tests figés à rouvrir. Ajoute ou modifie les tests avec le code (/atelier:build).`
   }
   if (!data.tests_commit) {
-    // « Tests d'abord » of a slice N > 1: the tests of the previous slices are frozen.
-    // After a reopening (slice N > 1 or the whole-chantier review), the tests are already reopened.
-    const { slice } = sliceState(chantier)
-    if (data.slice_base && isRefreeze(parseAmendments(chantier.spec.body ?? '').entries)) {
+    // « Tests d'abord » of a slice N > 1 or the review of the whole chantier: the tests of the
+    // previous slices are frozen. After a reopening, the tests are already reopened.
+    if (data.slice_base && reopeningPending(chantier)) {
       return `tests déjà rouverts pour ${chantier.id} : modifie-les, commite-les puis fige-les (atelier freeze-tests).`
     }
-    if (typeof slice !== 'number' || slice < 2 || !data.slice_base) {
+    if (!(slice === 'chantier' || (typeof slice === 'number' && slice >= 2)) || !data.slice_base) {
       return `Les tests de ${chantier.id} ne sont pas figés : ils s’écrivent encore, rien à rouvrir (/atelier:write-tests).`
     }
   }
@@ -136,10 +203,38 @@ export function freezeTestsValues(chantier, commit) {
   return { tests_commit: commit, ...(firstOfCycle ? { slice: '1' } : {}) }
 }
 
-// Why `atelier set-tdd <value>` is refused for this chantier, or null.
+// Why `atelier set-tdd <value>` is refused for this chantier, or null. In a numbered slice of a
+// chantier with several slices, it changes the TDD of that slice only: refused once its tests are
+// frozen (the slice stays in TDD), and `no` refused while a reopening of the tests is pending.
 export function setTddRefusal(chantier, value) {
   if (value === 'yes' && (chantier?.spec?.data?.type ?? '').toUpperCase() === 'EPIC') {
     return `${chantier.id} est un EPIC : il n’implémente rien, il reste en « tdd: no ».`
   }
+  const slice = numberedSlice(chantier)
+  if (slice === null || chantier.spec.data.status !== 'signed') {
+    return null
+  }
+  if (testDrivenPhase(chantier) === 'implementing') {
+    return `les tests de la tranche ${slice} sont figés (${chantier.spec.data.tests_commit}) : elle reste en TDD. Pour corriger ses tests, rouvre-les (atelier reopen-tests <raison>).`
+  }
+  if (value === 'no' && reopeningPending(chantier)) {
+    return `des tests rouverts attendent d’être regelés (atelier freeze-tests) : la tranche ${slice} ne peut pas passer sans TDD avant.`
+  }
   return null
+}
+
+// What `atelier set-tdd <value> <reason>` writes on `date`: the `tdd` of the chantier, or the
+// `slice_tdd` of the current numbered slice of a chantier with several slices once signed. The
+// amendment entry is null for a spec that is not signed.
+export function setTddUpdate(chantier, value, date, reason = '') {
+  const signed = chantier.spec.data.status === 'signed'
+  const slice = signed ? numberedSlice(chantier) : null
+  const change = value === 'yes' ? 'activé' : 'désactivé'
+  const suffix = reason ? ` : ${reason}` : ''
+  if (slice !== null) {
+    return { values: { slice_tdd: value }, entry: `${date} : TDD de la tranche ${slice} : ${change}${suffix}` }
+  }
+  // A slice TDD written outside a numbered slice (a plan with a single slice) follows the chantier.
+  const sliceTdd = String(chantier.spec.data.slice_tdd ?? '').trim() ? { slice_tdd: value } : {}
+  return { values: { tdd: value, ...sliceTdd }, entry: signed ? `${date} : TDD ${change}${suffix}` : null }
 }
