@@ -60,8 +60,8 @@ Question si manquant : qu'est-ce qui pourrait changer pour l'utilisateur malgré
 - CA-4 : Étant donné une tranche de plan `… — AC couverts : AC-1, AC-2 — TDD : oui`, quand on lit le plan, alors la tranche couvre `AC-1` et `AC-2` ; la forme `CA couverts : CA-1` reste lue à l'identique.
 - CA-5 : Étant donné un nom de test qui se termine par `[FEAT-40 AC-3]`, quand le test d'architecture s'applique, alors il est accepté ; `[FEAT-4 CA-3]` et `[TEC-5 V-1]` (ancienne forme des vérifications de TEC) le restent ; un `AC-3` hors de l'étiquette finale est refusé comme un `CA-3`.
 - CA-6 : Étant donné les templates, skills, agents, `CLAUDE.md`, `README.md` et le site (hors mention de l'ancienne forme dans le glossaire), quand on y cherche `CA-\d` ou « CA couverts », alors on ne trouve rien.
-- CA-8 : Étant donné le site construit, quand on ouvre la Référence, alors la section « Nomenclature des identifiants » liste chaque préfixe de cette spec avec ce qu'il désigne, et le glossaire y renvoie depuis ses entrées « CA (critère d'acceptation) » et « Point de relecture ».
-- CA-7 : `npm test` vert, sans qu'aucune ligne d'un fichier de test existant ait changé ; `claude plugin validate .` et `claude plugin validate ./plugins/atelier` passent ; `npm run build` dans `site/` passe.
+- CA-7 : Étant donné le site construit, quand on ouvre la Référence, alors la section « Nomenclature des identifiants » liste chaque préfixe de cette spec avec ce qu'il désigne, et le glossaire y renvoie depuis ses entrées « CA (critère d'acceptation) » et « Point de relecture ».
+- CA-8 : `npm test` vert, sans qu'aucune ligne d'un fichier de test existant ait changé ; `claude plugin validate .` et `claude plugin validate ./plugins/atelier` passent ; `npm run build` dans `site/` passe.
 
 ## 6. Retour arrière
 <!-- Comment annuler si ça casse en production. Optionnel pour une petite tâche. -->
