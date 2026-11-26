@@ -1,7 +1,7 @@
 # Bilan : FEAT-21 EPIC en branche d'intégration
 
 ## 1. Résumé
-Un EPIC peut déclarer `integration_branch: yes` : sa branche `epic/<ID>-<slug>` devient la base de ses enfants, qui en partent, y sont revus et fusionnés par commit de fusion, puis une revue d'ensemble précède une seule fusion dans la branche par défaut. Sans l'option, rien ne change. Livré en 4 tranches TDD (option et base, base dans git, clôture, skills et site) et une revue du chantier ; 498 tests verts.
+Un EPIC peut déclarer `integration_branch: yes` : sa branche `epic/<ID>-<slug>` devient la base de ses enfants, qui en partent, y sont revus et fusionnés par commit de fusion, puis une revue d'ensemble précède une seule fusion dans la branche par défaut. Sans l'option, rien ne change. Livré en 4 tranches TDD (option et base, base dans git, clôture, skills et site) et une revue du chantier ; 498 tests verts, plugin en 0.8.0.
 
 ## 2. Livré vs spécifié
 | Critère | Statut | Test |
@@ -56,7 +56,7 @@ Un EPIC peut déclarer `integration_branch: yes` : sa branche `epic/<ID>-<slug>`
 - Relire le cadre pointeur d'EPIC-14 maintenant que l'option existe.
 
 ## 7. Verdict de revue
-Revues de tranche : tranche 1 (1 revue, aucun point), tranche 2 (2 revues), tranche 3 (2 revues), tranche 4 (4 revues) ; revue du chantier (2 revues). Vérifications de surapprentissage : OD1 à OD6 (tranches 1 à 3) et OB1, OB2, OD7 à OD13 (tranche 4), voir `decisions.md`.
+Revues de tranche : tranche 1 (1 revue, aucun point), tranche 2 (2 revues), tranche 3 (2 revues), tranche 4 (4 revues) ; revue du chantier (3 revues, la dernière pour la version). Vérifications de surapprentissage : OD1 à OD6 (tranches 1 à 3) et OB1, OB2, OD7 à OD13 (tranche 4), voir `decisions.md`.
 
 | Point | Traitement |
 |---|---|
