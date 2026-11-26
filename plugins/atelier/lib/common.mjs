@@ -20,6 +20,11 @@ export const DEFAULT_CONFIG = {
   testPaths: ['*.test.*', '*.spec.*', '*.snap', '**/__tests__/**', '**/__snapshots__/**', 'test/**', 'tests/**', 'e2e/**'],
 }
 
+// Escapes a text so that a RegExp built from it matches it literally.
+export function escapeRegExp(text) {
+  return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 // ---------- Front matter ----------
 
 export function parseFrontMatter(text) {
