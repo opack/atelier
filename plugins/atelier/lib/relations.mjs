@@ -182,7 +182,7 @@ export function openChildren(index, id) {
 function openChildProblem(child, delivery) {
   return child.status
     ? `Enfant ${child.id} encore ouvert ici (statut : ${child.status}) : une fois livré, ${delivery}.`
-    : `Enfant ${child.id} pas fusionné dans cette branche (vit sur ${child.branches.join(', ')}) : une fois ${child.id} livré, ${delivery} ; ou supprime sa branche s’il est abandonné.`
+    : `Enfant ${child.id} pas fusionné dans cette branche (vit sur ${child.branches.join(', ')}) : ${delivery} une fois ${child.id} livré, ou supprime sa branche s’il est abandonné.`
 }
 
 // Why the relations prevent closing (`done`) a chantier, as a list. `id` is the chantier's
