@@ -9,7 +9,8 @@ import { checkSpec } from '../spec.mjs'
 import { effectiveTdd, testDrivenPhase } from '../tdd.mjs'
 import { findProjectRoot, isAncestorOfHead, loadConfig } from './common.mjs'
 import { activeChantier } from './identifiers.mjs'
-import { formatRelations, relationsSummary } from './relations.mjs'
+import { chantierBaseOf } from './integration.mjs'
+import { chantierIndex, formatRelations, needsIndex, relationsSummary } from './relations.mjs'
 import { reviewSummary } from './review.mjs'
 import { sliceCodeFiles, slicePosition } from './slices.mjs'
 import { readBypass } from './write-guard.mjs'
@@ -25,9 +26,14 @@ export function commandStatus(options) {
   }
   const { branch, chantier, source } = activeChantier(projectRoot, config)
   const bypass = readBypass(projectRoot, branch)
-  const review = reviewSummary(projectRoot, config, chantier)
-  const relations = relationsSummary(projectRoot, config, chantier)
-  const codeCommitted = codeCommittedFact(projectRoot, config, chantier, review.reviewState)
+  const index = chantier?.spec && needsIndex(chantier) ? chantierIndex(projectRoot, config) : null
+  const review = reviewSummary(projectRoot, config, chantier, index)
+  const relations = relationsSummary(projectRoot, config, chantier, index)
+  const base = chantier?.spec ? chantierBaseOf(projectRoot, config, chantier, index) : null
+  if (base?.warning) {
+    console.error(base.warning)
+  }
+  const codeCommitted = codeCommittedFact(projectRoot, config, chantier, review.reviewState, index)
   const summary = {
     installed: true,
     branch,
@@ -45,6 +51,8 @@ export function commandStatus(options) {
           ...review,
           codeCommitted,
           relations,
+          baseBranch: base?.branch ?? null,
+          baseEpic: base?.epic ?? null,
           files: chantier.files,
           specProblems: chantier.spec ? checkSpec(readFileSync(join(chantier.directory, 'spec.md'), 'utf8')) : [],
         }
@@ -109,16 +117,16 @@ function formatStatus(summary, sliceModel) {
 
 // Whether code was committed in the current slice, for the next step (see nextStep): in a slice
 // in TDD (effective TDD, see effectiveTdd), since the freeze of its tests, test files excluded;
-// otherwise since `slice_base` or the merge base with the default branch, tests included. null
+// otherwise since `slice_base` or the merge base with the chantier's base, tests included. null
 // when it cannot change the next step, or cannot be computed (no base, git error, start of the
 // slice no longer an ancestor of HEAD).
-function codeCommittedFact(projectRoot, config, chantier, review) {
+function codeCommittedFact(projectRoot, config, chantier, review, index = null) {
   if (!codeCommittedMatters(chantier, review)) return null
   try {
     const testDriven = effectiveTdd(chantier) === 'yes'
     const start = (testDriven ? chantier.spec.data.tests_commit : chantier.spec.data.slice_base) || null
     if (start && !isAncestorOfHead(projectRoot, start)) return null
-    const files = sliceCodeFiles(projectRoot, config, start, testDriven)
+    const files = sliceCodeFiles(projectRoot, config, chantier, start, testDriven, index)
     return files === null ? null : files.length > 0
   } catch {
     return null
@@ -132,14 +140,15 @@ export function hookSessionStart() {
     return
   }
   const { branch, chantier, source } = activeChantier(projectRoot, config)
-  const review = reviewSummary(projectRoot, config, chantier)
-  const relations = relationsSummary(projectRoot, config, chantier)
+  const index = chantier?.spec && needsIndex(chantier) ? chantierIndex(projectRoot, config) : null
+  const review = reviewSummary(projectRoot, config, chantier, index)
+  const relations = relationsSummary(projectRoot, config, chantier, index)
   const summary = {
     branch,
     chantierSource: source,
     chantier: chantier ? { id: chantier.id, title: chantier.spec?.data.title, type: chantier.spec?.data.type, status: chantier.spec?.data.status, files: chantier.files, ...(chantier.spec ? slicePosition(chantier) : {}), ...review, relations } : null,
     bypass: readBypass(projectRoot, branch),
-    nextStep: nextStep(chantier, review.reviewState, relations?.children, codeCommittedFact(projectRoot, config, chantier, review.reviewState)),
+    nextStep: nextStep(chantier, review.reviewState, relations?.children, codeCommittedFact(projectRoot, config, chantier, review.reviewState, index)),
   }
   const statusText = summary.chantier
     ? formatStatus({ ...summary, chantier: { ...summary.chantier, specProblems: [] } }, sliceState(chantier).model)

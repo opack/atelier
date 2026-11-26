@@ -39,7 +39,7 @@ function gate(projectRoot) {
     changedFiles: uncommittedFiles(projectRoot),
     tree: workingTreeId(projectRoot),
     changedTests: testDrivenPhase(chantier) === 'implementing'
-      ? testFilesChangedSince(projectRoot, config, chantier.spec.data.tests_commit)
+      ? testFilesChangedSince(projectRoot, config, chantier.spec.data.tests_commit, chantier)
       : [],
     state: readGateState(projectRoot),
     runChecks: () => runChecks(projectRoot, config),

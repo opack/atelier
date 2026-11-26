@@ -2,6 +2,7 @@
 // Pure functions: no access to the disk, git or the environment.
 
 import { matchesAny, specStatus } from './common.mjs'
+import { INTEGRATION_FIELD } from './integration.mjs'
 import { parseAmendments } from './spec.mjs'
 import { testDrivenPhase } from './tdd.mjs'
 
@@ -13,8 +14,8 @@ export const COMMAND_SPEC_FIELDS = ['status', 'signed_by', 'signed_at', 'done_at
 
 // Fields that cannot change through the edit tool once the spec is no longer a draft, besides
 // the command fields: `tdd` changes through `atelier set-tdd`; `id` and `type` are bound to the
-// branch, the directory and the next step.
-const FROZEN_AFTER_SIGNATURE_FIELDS = ['tdd', 'id', 'type']
+// branch, the directory and the next step; `integration_branch` is the base of the EPIC's children.
+const FROZEN_AFTER_SIGNATURE_FIELDS = ['tdd', 'id', 'type', INTEGRATION_FIELD]
 
 // Why a write to a spec file is refused, or null. `existingSpec` and `proposedSpec` are the
 // parsed spec before and after the write (null when absent or unknown); `committedSpec` is the
@@ -48,6 +49,9 @@ function specWriteRefusal(toolName, existingSpec, proposedSpec, committedSpec, c
   const frozenChanges = FROZEN_AFTER_SIGNATURE_FIELDS.filter((field) => valueOf(before, field) !== valueOf(after, field))
   if (frozenChanges.includes('tdd')) {
     return `atelier : la spec n’est plus en brouillon (statut : ${status}) ; « tdd » ne change plus que par « atelier set-tdd <yes|no> <raison> », tracé en amendement.`
+  }
+  if (frozenChanges.includes(INTEGRATION_FIELD)) {
+    return `atelier : la spec n’est plus en brouillon (statut : ${status}) ; « ${INTEGRATION_FIELD} » ne change plus après la signature (les enfants de l’EPIC en dépendent). Si c’est vraiment nécessaire, abandonne cet EPIC et ouvre-en un nouveau.`
   }
   if (frozenChanges.length) {
     return `atelier : la spec n’est plus en brouillon (statut : ${status}) ; ${frozenChanges.map((field) => `« ${field} »`).join(' et ')} ne change(nt) plus (liés à la branche et au dossier du chantier). Si c’est vraiment nécessaire, abandonne ce chantier et ouvre-en un nouveau.`

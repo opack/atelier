@@ -2,7 +2,8 @@
 // Pure functions: no access to the disk, git or the environment.
 
 import { specStatus } from './common.mjs'
-import { relationCloseProblems } from './relations.mjs'
+import { chantierBase, hasIntegrationBranch, integrationDeliveries } from './integration.mjs'
+import { parseRelations, relationCloseProblems } from './relations.mjs'
 import { parseReviewPoints, reviewPointProblems } from './review-points.mjs'
 import { reviewProblems } from './review.mjs'
 import { sliceLabel, sliceState } from './slices.mjs'
@@ -12,11 +13,32 @@ import { testDrivenPhase } from './tdd.mjs'
 
 // An EPIC (no code) and a SPIKE without TDD (throwaway code, never merged) are closed without a
 // review. A SPIKE in TDD follows the whole process, review included, unless it was led under the
-// model before slices (legacy), which closed a SPIKE without review.
+// model before slices (legacy), which closed a SPIKE without review. An EPIC with an integration
+// branch has a review of the whole assembly, like a chantier with a single slice.
 export function isReviewExempt(chantier) {
-  const type = (chantier?.spec?.data?.type ?? '').toUpperCase()
+  const data = chantier?.spec?.data
+  const type = (data?.type ?? '').toUpperCase()
+  if (type === 'EPIC') {
+    return !hasIntegrationBranch(data)
+  }
   const { model } = sliceState(chantier)
-  return type === 'EPIC' || model === 'none' || (type === 'SPIKE' && model === 'legacy')
+  return model === 'none' || (type === 'SPIKE' && model === 'legacy')
+}
+
+// Problems of the reviews of the children closed in the integration branch of an EPIC: each one
+// subject to review must have its reviewed commit in the history of HEAD, which a rebase of the
+// integration branch or a squash merge of the child breaks. `childReviews` = [{ id, reviewedCommit,
+// inHistory }], children exempt from review left out.
+export function childReviewProblems(childReviews) {
+  return childReviews.flatMap(({ id, reviewedCommit, inHistory }) => {
+    if (!reviewedCommit) {
+      return [`Enfant ${id} done sans revue enregistrée (reviewed_commit absent) : il doit être revu avant sa fusion dans la branche d’intégration.`]
+    }
+    if (!inHistory) {
+      return [`Enfant ${id} : son commit revu ${reviewedCommit.slice(0, 7)} n’est plus dans l’historique de cette branche (rebase de la branche d’intégration, ou enfant fusionné par squash) : rétablis l’historique (reflog, branche distante) et fusionne les enfants par un commit de fusion.`]
+    }
+    return []
+  })
 }
 
 // Close problems of the slice cycle: a slice still in progress, a slice added to the plan after
@@ -48,7 +70,9 @@ function sliceCloseProblems(chantier) {
 // `uncommittedError` is the git error met while listing uncommitted files, if any.
 // `revueUncommitted` is true when revue.md has uncommitted changes; the points of `chantier.revue`
 // (working copy) must all be treated, a point postponed to a slice included.
-export function closeProblems({ chantier, reviewFacts, uncommittedCode, uncommittedError, revueUncommitted = false, checksFailure, index = null }) {
+// `childReviews` (see childReviewProblems) only for an EPIC with an integration branch;
+// `defaultBranch` is the name of the default branch, or null when unknown.
+export function closeProblems({ chantier, reviewFacts, uncommittedCode, uncommittedError, revueUncommitted = false, checksFailure, index = null, childReviews = [], defaultBranch = null }) {
   if (specStatus(chantier?.spec) !== 'signed') {
     return [`La spec de ${chantier?.id ?? 'ce chantier'} n’est pas signée (statut : ${specStatus(chantier?.spec)}).`]
   }
@@ -62,8 +86,16 @@ export function closeProblems({ chantier, reviewFacts, uncommittedCode, uncommit
     problems.push(...reviewPointProblems(parseReviewPoints(chantier.revue), { atClose: true }).map((problem) => `revue.md : ${problem}`))
   }
   if (index) {
-    problems.push(...relationCloseProblems(chantier.id, chantier.spec.data, index))
+    const data = chantier.spec.data
+    const relations = parseRelations(data)
+    const base = chantierBase(index, relations.parent[0] ?? null, null)
+    problems.push(...relationCloseProblems(chantier.id, data, index, {
+      branch: base.epic ? base.branch : null,
+      deliveries: integrationDeliveries(index, relations.dependsOn, defaultBranch),
+      ownBranch: hasIntegrationBranch(data),
+    }))
   }
+  problems.push(...childReviewProblems(childReviews))
   if (uncommittedError) {
     problems.push(`Impossible de lister les fichiers non commités (${uncommittedError}).`)
   } else if (uncommittedCode.length) {
