@@ -216,3 +216,26 @@ describe('tests brought by a merge of the integration branch', () => {
     assert.equal(result.status, 0, result.output)
   })
 })
+
+describe('tests changed since the freeze, with the integration branch merged', () => {
+  it('un test commun modifié par un frère n’est pas cité ; retouché par l’enfant, il l’est [FEAT-21 CA-15]', () => {
+    const directory = makeRepository('main')
+    git(directory, 'switch', '-q', '-c', EPIC_BRANCH)
+    writeChantier(directory, { id: 'EPIC-1', relations: { integration_branch: 'yes' }, files: epicPlan })
+    commitFiles(directory, { 'test/shared.test.mjs': 'ligne a\nligne b\n' }, 'docs(chantiers): [EPIC-1] spec')
+    const branch = 'feat/FEAT-2-x'
+    git(directory, 'switch', '-q', '-c', branch, EPIC_BRANCH)
+    writeChantier(directory, { id: 'FEAT-2', tdd: 'yes', relations: { rel_parent: 'EPIC-1' }, files: { 'plan.md': twoSlices } })
+    commitFiles(directory, { 'test/one.test.mjs': 'un\n' }, 'test(one): [FEAT-2] add failing tests for CA-1')
+    atelierOk(directory, 'freeze-tests')
+    git(directory, 'add', '-A')
+    commit(directory, 'docs(chantiers): [FEAT-2] freeze tests')
+    deliverSibling(directory, 'FIX-5', { 'test/shared.test.mjs': 'ligne a\nligne b modifiée par le frère\n' }, branch)
+    git(directory, 'merge', '-q', '--no-edit', EPIC_BRANCH)
+    assert.doesNotMatch(atelierOk(directory, 'tests-changed'), /shared\.test\.mjs/)
+
+    commitFiles(directory, { 'test/shared.test.mjs': 'ligne a\nligne b modifiée par l’enfant\n' }, 'test(shared): [FEAT-2] touch')
+    const changed = atelierRun(directory, 'tests-changed')
+    assert.match(changed.output, /shared\.test\.mjs/)
+  })
+})

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { chantierBase } from '../lib/integration.mjs'
+import { integrationRefChoice } from '../lib/integration.mjs'
 import { buildChantierIndex } from '../lib/relations.mjs'
 import { checkSpec } from '../lib/spec.mjs'
 import { git, commit, makeRepository, atelier, atelierRun, specText, writeChantier, makeChantiersRepository } from './helpers.mjs'
@@ -137,5 +138,30 @@ describe('base shown by the commands', () => {
     const { status, output } = atelierRun(directory, 'base')
     assert.notEqual(status, 0)
     assert.match(output, /--parent/)
+  })
+})
+
+describe('base of an EPIC with an integration branch, shown by status', () => {
+  it('sur sa propre branche, un EPIC à l’option a pour base celle de son parent, pas sa branche [FEAT-21 CA-5]', () => {
+    const directory = makeChantiersRepository({ main: [], branches: { 'epic/EPIC-1-x': [{ id: 'EPIC-1', relations: { integration_branch: 'yes' } }] }, checkout: 'epic/EPIC-1-x' })
+    const chantier = JSON.parse(atelier(directory, 'status', '--json')).chantier
+    assert.equal(chantier.baseBranch, 'main')
+    assert.equal(chantier.baseEpic, null)
+  })
+})
+
+describe('git reference of an integration branch', () => {
+  const branch = 'epic/EPIC-1-x'
+  it('la plus avancée quand l’une contient l’autre, une erreur nommant la branche sinon [FEAT-21 CA-6]', () => {
+    assert.deepEqual(integrationRefChoice({ branch, local: true, remote: false }), { ref: 'local' })
+    assert.deepEqual(integrationRefChoice({ branch, local: false, remote: true }), { ref: 'remote' })
+    assert.deepEqual(integrationRefChoice({ branch, local: true, remote: true, localInRemote: true, remoteInLocal: false }), { ref: 'remote' })
+    assert.deepEqual(integrationRefChoice({ branch, local: true, remote: true, localInRemote: false, remoteInLocal: true }), { ref: 'local' })
+    const diverged = integrationRefChoice({ branch, local: true, remote: true, localInRemote: false, remoteInLocal: false })
+    assert.match(diverged.error ?? '', /epic\/EPIC-1-x/)
+    assert.match(diverged.error ?? '', /synchronise/)
+    const missing = integrationRefChoice({ branch, local: false, remote: false })
+    assert.match(missing.error ?? '', /epic\/EPIC-1-x/)
+    assert.match(missing.error ?? '', /récupère|pousse/)
   })
 })
