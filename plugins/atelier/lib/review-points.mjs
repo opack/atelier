@@ -217,21 +217,21 @@ export function reviewPointProblems(parsed, { atClose = false } = {}) {
     // Twice in one section, whatever the marker: the last one would hide the other.
     const inSection = new Map()
     for (const { title, line } of section.nearTables) {
-      problems.push(`Titre « ### ${title} » (${where(line)}) : ni « ${POINT_TABLES[0]} » ni « ${POINT_TABLES[1]} », ses points ne sont pas lus. Corriger le titre.`)
+      problems.push(`Titre « ### ${title} » (${where(line)}) : ni « ${REVIEW.tables.blocking} » ni « ${REVIEW.tables.discuss} », ses points ne sont pas lus. Corriger le titre.`)
     }
     for (const { point, line } of section.strays) {
-      problems.push(`${point} (${where(line)}) : point hors d’un tableau « ### ${POINT_TABLES[0]} » ou « ### ${POINT_TABLES[1]} », il n’est pas lu.`)
+      problems.push(`${point} (${where(line)}) : point hors d’un tableau « ### ${REVIEW.tables.blocking} » ou « ### ${REVIEW.tables.discuss} », il n’est pas lu.`)
     }
     for (const row of section.rows) {
       if (!row.id) {
         const hint = row.headerLike ? ` ; si c’est l’en-tête du tableau, il n’est pas reconnu : colonnes attendues ${POINT_COLUMNS.join(', ')}` : ''
-        problems.push(`« ${row.point} » (${where(row.line)}) : la cellule Point n’a pas la forme « RB1. Intitulé »${hint}.`)
+        problems.push(`« ${row.point} » (${where(row.line)}) : la cellule ${REVIEW.columns.point} n’a pas la forme « RB1. Intitulé »${hint}.`)
         continue
       }
       if (row.cellCountMismatch) {
         problems.push(`${row.id} (${where(row.line)}) : nombre de cellules différent de l’en-tête ; un | dans une cellule s’écrit \\|.`)
       }
-      const expectedTable = row.id.startsWith('RB') ? POINT_TABLES[0] : POINT_TABLES[1]
+      const expectedTable = row.id.startsWith('RB') ? REVIEW.tables.blocking : REVIEW.tables.discuss
       if (row.table !== expectedTable) {
         problems.push(`${row.id} (${where(row.line)}) : rangé dans « ${row.table} », il va dans « ${expectedTable} ».`)
       }
@@ -265,7 +265,7 @@ export function reviewPointProblems(parsed, { atClose = false } = {}) {
     const target = requalifiedTarget(row.treatment)
     if (!isTreatment(row.treatment)) {
       const found = row.treatment.trim() ? `traitement « ${row.treatment.trim()} » non reconnu` : 'pas de traitement'
-      problems.push(`${id}. ${row.title} (${where}) : ${found} ; la colonne Traitement commence par l’un de ces mots : ${TREATMENTS.join(', ')}.`)
+      problems.push(`${id}. ${row.title} (${where}) : ${found} ; la colonne ${REVIEW.columns.treatment} commence par l’un de ces mots : ${TREATMENTS.join(', ')}.`)
     } else if (target !== undefined) {
       const takenUp = target && occurrences.some((later) =>
         later.sectionIndex >= row.sectionIndex && later.row.id === target && later.row.marker === `${FORMER_PREFIX}${id}`)
