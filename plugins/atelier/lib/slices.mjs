@@ -127,7 +127,7 @@ export function checkPlanValues(chantier) {
 const REOPENING_ENTRY = new RegExp(`^(${escapeRegExp(VOCABULARY.amendmentEntries.reopened)}|${escapeRegExp(VOCABULARY.amendmentEntries.refrozen)})`)
 
 // Whether the amendments of the spec record a reopening or a refreeze of the tests.
-function hasReopeningEntry(chantier) {
+export function hasReopeningEntry(chantier) {
   return parseAmendments(chantier?.spec?.body ?? '').entries
     .some((entry) => REOPENING_ENTRY.test(entry.replace(ENTRY_START, '')))
 }
@@ -137,6 +137,9 @@ export function planSliceCount(planText) {
   return planSlices(planText).reduce((count, slice) => Math.max(count, slice.number), 0)
 }
 
+// A chantier may carry `facts` ({ sliceCount, reopened, refreezing }, see versionFacts in
+// list.mjs) in place of the texts of its plan and spec. Only sliceState (sliceCount, reopened)
+// and testDrivenPhase (refreezing) read them; the other rules still need the texts.
 // Where the chantier stands in its slices. `model`:
 // 'none'   : SPIKE without TDD, outside the slice cycle;
 // 'legacy' : signed before slices existed (no `slice`, but a freeze, a review or a reopening);
@@ -152,12 +155,12 @@ export function sliceState(chantier) {
   }
   const written = String(data.slice ?? '').trim()
   if (!written) {
-    if (data.tests_commit || data.reviewed_commit || hasReopeningEntry(chantier)) {
+    if (data.tests_commit || data.reviewed_commit || (chantier?.facts?.reopened ?? hasReopeningEntry(chantier))) {
       return flat('legacy')
     }
   }
   const slice = written === 'chantier' ? 'chantier' : Number(written || 1)
-  const sliceCount = planSliceCount(chantier?.plan)
+  const sliceCount = chantier?.facts?.sliceCount ?? planSliceCount(chantier?.plan)
   if (sliceCount <= 1 && slice === 1) {
     return flat('single')
   }

@@ -33,3 +33,18 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Contexte : relecture des tests de CA-7 et CA-8.
 - Décidé : les libellés utilisent l'apostrophe typographique (« tests d’abord »), comme le reste du code ; un `rel_parent` en minuscules désigne le même parent.
 - Reporté : les clauses de CA-8 qui passent par la commande (« y compris avec `--type EPIC` », « y compris sans `--all` ») se testent en tranche 2, avec `atelier list` ; ces tests porteront l'étiquette CA-8.
+
+## 2026-11-26 : tranche 1, les faits extraits passent aux règles existantes par un champ `facts`
+- Contexte : l'étape doit réutiliser `sliceState` et `testDrivenPhase`, qui lisent les textes du plan et de la spec, que l'index ne garde pas.
+- Écarté : recopier ces règles dans `list.mjs` (deux copies divergeraient) ; reconstruire un faux texte de plan ou de spec (fragile).
+- Conséquence : `sliceState` lit `facts.sliceCount` et `facts.reopened`, `testDrivenPhase` lit `facts.refreezing`, s'ils sont présents ; sans `facts`, comportement inchangé. La règle « à planifier » est partagée avec `nextStep` (`needsPlan`, OD3), l'enfant d'un EPIC se lit par `parseRelations` (OD1).
+
+## 2026-11-26 : tranche 1, libellés d'étape
+- Le préfixe de tranche s'applique aux étapes tests, implémentation et revue enregistrée d'une tranche numérotée d'un chantier découpé, pas à la revue du chantier.
+- Un EPIC en branche d'intégration n'a pas d'étape « revue d'ensemble » : la table de la spec ne la prévoit pas, `atelier status` la donne.
+- Les libellés sont en dur dans `list.mjs`, comme les textes de `next-step.mjs` : ce ne sont pas des termes des documents.
+
+## 2026-11-26 : OD4 reporté à la tranche 2
+- Contexte : le vérificateur de surapprentissage relève trois cas non couverts par les tests figés de la tranche 1 : ancien modèle avec plan découpé et tests rouverts, tranche numérotée avec revue enregistrée, type en minuscules dans l'en-tête.
+- Écarté : rouvrir les tests de la tranche 1, pour trois cas que le code traite déjà bien (vérifié à la main par le vérificateur).
+- Conséquence : ces cas s'ajoutent aux tests de la tranche 2, étiquetés CA-7.
