@@ -40,7 +40,7 @@ Hors périmètre :
 - Réécrire les specs, plans, bilans, revues et commits des chantiers existants.
 - Modifier une ligne d'un test existant (les étiquettes `[… CA-n]` restent).
 - Le tableau de nomenclature complet du site : il vient avec le chantier des suites (`F1`).
-- Exiger des critères numérotés dans les sections « Vérification » (TEC) et « Critère de fin » (REF) dans `check-spec` : c'est CA-6 d'EPIC-17 (lot 3), qui reprendra la forme `AC-n`. Ici, seuls les templates `spec-tec.md` et `spec-ref.md` demandent déjà des `AC-n`.
+- Exiger des critères numérotés dans les sections « Vérification » (TEC) et « Critère de fin » (REF) dans `check-spec` : c'est CA-6 d'EPIC-17 (lot 3), qui reprendra la forme `AC-n`. Ce chantier se limite à faire demander des `AC-n` par les templates `spec-tec.md` et `spec-ref.md`.
 - Les critères de ce chantier restent en `CA-n` : ses tests doivent respecter le test d'architecture actuel, qui ne connaît pas encore `AC`.
 
 ## 4. Impacts indirects
