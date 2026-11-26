@@ -18,7 +18,6 @@ Plugin Claude Code (et sa marketplace) qui outille un process de développement 
 - Node ≥ 20, ESM, **aucune dépendance** : le plugin doit fonctionner partout sans `npm install`.
 - Nouvelle logique dans le module de son domaine, sous forme de fonctions pures testées (`lib/<domaine>.mjs`) ; les lectures, écritures et affichages vont dans `lib/cli/<domaine>.mjs`.
 - `lib/common.mjs` n'importe aucun module de `lib/`, un module pur n'importe jamais `lib/cli/`, aucun cycle d'import : `test/architecture.test.mjs` le vérifie.
-- Les tests importent par noms les modules de domaine.
 - Textes destinés à l'utilisateur en français ; code et commentaires en anglais.
 - Les skills ne posent de questions que sur ce qui manque dans les documents.
 - Toute évolution du comportement d'un hook : test dans `plugins/atelier/test/`.
