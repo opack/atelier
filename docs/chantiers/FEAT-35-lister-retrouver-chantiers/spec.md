@@ -29,12 +29,12 @@ L'utilisateur passe par Claude : deux skills, `/atelier:list` et `/atelier:open`
 
 ### `/atelier:list [demande]`
 
-Le skill récupère d'abord le remote (`git fetch --quiet`, échec signalé sans bloquer : la liste se fait alors avec les branches distantes telles qu'elles sont), traduit la demande en langage naturel (« les FIX en cours », « les enfants d'EPIC-17 », « tout, triés par statut ») en arguments de `atelier list`, lance la commande et présente le résultat tel quel. Une demande qu'aucun filtre ne sait traduire (par auteur, par date, par dépendance) : le skill dit ce qu'il ne peut pas filtrer et ne l'approche pas par un autre filtre (SD7).
+Le skill récupère d'abord le remote s'il y en a un (`git fetch --prune --quiet`, avec `GIT_TERMINAL_PROMPT=0` pour ne jamais attendre d'identifiants ; échec signalé sans bloquer : la liste se fait alors avec les branches distantes telles qu'elles sont ; sans remote, ni fetch ni message) (SD12), traduit la demande en langage naturel (« les FIX en cours », « les enfants d'EPIC-17 », « tout, triés par statut ») en arguments de `atelier list`, lance la commande et présente le résultat tel quel. Une demande qu'aucun filtre ne sait traduire (par auteur, par date, par dépendance) : le skill dit ce qu'il ne peut pas filtrer et ne l'approche pas par un autre filtre (SD7).
 
 ### `atelier list [texte…] [--status <s,…>] [--type <T,…>] [--parent <ID>] [--all] [--sort id|status|type] [--json]`
 
 Un chantier par ligne : identifiant, type, titre, statut, étape, emplacement (« ici » pour l'arbre courant, sinon le nom de la branche lue) et parent s'il en a un.
-- **Défaut « ouverts »** : sans `--status`, seuls les chantiers ni `done` ni `abandoned` sont listés ; `--all` ajoute les clos. Un `--status` explicite remplace ce défaut : `--status done` liste les chantiers clos sans `--all` (SB5).
+- **Défaut « ouverts »** : sans `--status`, seuls les chantiers ni `done` ni `abandoned` sont listés ; `--all` ajoute les clos. Un `--status` explicite remplace ce défaut : `--status done` liste les chantiers clos sans `--all` (SB5) ; `--all` avec `--status` est sans effet.
 - **Filtres**, cumulables : ET entre filtres différents, OU entre les valeurs d'un même filtre séparées par des virgules. `--type` et `--status` ne tiennent pas compte de la casse. `--parent <ID>` garde les chantiers dont le `rel_parent` de la version affichée vaut cet identifiant (SD9). Le texte libre (un ou plusieurs mots) garde les chantiers dont l'identifiant ou le titre contient **chaque** mot, sans tenir compte de la casse ni des accents ; c'est une recherche de texte (`FIX-1` trouve aussi FIX-12).
 - **Tri** : par défaut, numérique sur l'identifiant (FEAT-4 avant FEAT-30). `--sort status` groupe dans l'ordre draft, signed, done, abandoned ; `--sort type` dans l'ordre FEAT, FIX, REF, TEC, SPIKE, EPIC ; ordre numérique dans chaque groupe (SD4).
 - **Arguments refusés** (message d'usage, échec) : option inconnue, option répétée, option sans valeur, valeur inconnue de `--status`, `--type` ou `--sort` (le message liste les valeurs admises) (SD6).
@@ -44,15 +44,15 @@ Un chantier par ligne : identifiant, type, titre, statut, étape, emplacement (�
 ### La version affichée (SB2, SB3)
 
 Un chantier peut exister dans l'arbre courant et sur plusieurs branches, avec des en-têtes différents. La version lue est la première qui s'applique :
-1. si la branche courante porte l'identifiant du chantier (en tête d'un segment de son nom, comme pour `next-id`) : l'arbre courant, copie de travail comprise ;
+1. si la branche courante porte l'identifiant du chantier (en tête d'un segment de son nom, comme pour `next-id`) et que le chantier est dans l'arbre courant : l'arbre courant, copie de travail comprise ;
 2. si le chantier est `done` ou `abandoned` dans l'arbre courant : l'arbre courant (un statut ne recule jamais : clos ici, il est clos) ;
-3. si des branches portent son identifiant : celle, locale ou distante, dont le dernier commit est le plus récent (date de commit) ; à égalité, la locale ;
+3. si des branches portent son identifiant : celle, locale ou distante, dont le dernier commit est le plus récent (date de commit, `%(committerdate:unix)`) ; à égalité, la locale ;
 4. si le chantier est dans l'arbre courant : l'arbre courant ;
 5. sinon, parmi les autres branches, celle dont le dernier commit est le plus récent.
 
 ### L'étape (SB4)
 
-Elle se déduit de la version affichée seule (en-tête, corps de la spec, `plan.md`, liste des fichiers du dossier) et, pour un EPIC, des autres chantiers de la liste, sans aucune commande git par chantier. Elle réutilise les règles de `atelier status` (`sliceState`, `sliceLabel`, `testDrivenPhase`, `isReviewExempt`). Comme elle ne lit pas le code commité, elle ne distingue pas « implémentation en cours » de « implémentation commitée, revue à faire » : la prochaine étape exacte reste donnée par `atelier status` sur la branche du chantier.
+Elle se déduit de la version affichée seule (en-tête, corps de la spec, `plan.md`, liste des fichiers du dossier) et, pour un EPIC, de ses enfants, sans aucune commande git par chantier. Elle réutilise les règles de `atelier status` (`sliceState`, `sliceLabel`, `testDrivenPhase`) et suit l'ordre de `nextStep` (SD13). Comme elle ne lit pas le code commité, elle ne distingue pas « implémentation en cours » de « implémentation commitée, revue à faire » : la prochaine étape exacte reste donnée par `atelier status` sur la branche du chantier.
 
 | Cas (premier qui s'applique) | `step` | `stepLabel` |
 |---|---|---|
@@ -60,15 +60,16 @@ Elle se déduit de la version affichée seule (en-tête, corps de la spec, `plan
 | statut `done` | `done` | clos |
 | statut `draft` ou absent | `draft` | brouillon |
 | FEAT, REF ou EPIC signé sans `plan.md` | `plan` | à planifier |
-| EPIC signé avec `plan.md`, aucun enfant | `epic-children` | aucun enfant ouvert |
+| EPIC signé avec `plan.md`, aucun enfant | `epic-children` | aucun enfant |
 | EPIC signé, des enfants non clos | `epic-children` | N enfant(s) ouvert(s) |
-| EPIC signé, tous ses enfants clos | `epic-close` | enfants clos : à clôturer |
+| EPIC signé, enfants tous clos, au moins un `done` | `epic-close` | enfants clos : à clôturer |
+| EPIC signé, enfants tous clos, aucun `done` | `epic-abandon` | enfants clos, aucun livré : à abandonner |
+| TDD, tests pas encore figés (`tests_commit` vide), y compris tests rouverts | `tests` | tests d'abord |
 | tranche du chantier (`slice: chantier`), revue non enregistrée | `chantier-review` | revue du chantier |
 | `reviewed_commit` renseigné (chantier à tranche unique, ancien modèle, ou revue du chantier faite) | `reviewed` | revue enregistrée |
-| TDD, tests pas encore figés | `tests` | tests d'abord |
 | sinon (TDD figé, sans TDD, SPIKE sans TDD) | `build` | implémentation |
 
-Pour un chantier découpé (`sliceState` : modèle `sliced`) sur une tranche numérotée, le libellé est préfixé de `sliceLabel` : « Tranche 2/3 : implémentation », « Tranche 4 (absente du plan) : tests d'abord ». Les enfants d'un EPIC sont les chantiers dont la version affichée a `rel_parent` égal à son identifiant ; « clos » veut dire `done` ou `abandoned` dans cette version.
+Pour un chantier découpé (`sliceState` : modèle `sliced`) sur une tranche numérotée, le libellé est préfixé de `sliceLabel` : « Tranche 2/3 : implémentation », « Tranche 4 (absente du plan) : tests d'abord ». Les enfants d'un EPIC se cherchent dans **tous** les chantiers connus (l'index entier, avant filtres et défaut « ouverts ») : ce sont ceux dont la version affichée a `rel_parent` égal à son identifiant ; « clos » veut dire `done` ou `abandoned` dans cette version. Le libellé d'un EPIC ne dépend donc pas des filtres (SB6).
 
 ### `/atelier:open <ID>` et `atelier open <ID>`
 
@@ -123,8 +124,8 @@ Questions si manquant : chaque critère peut-il devenir un test ? Que se passe-t
 - [ ] CA-4 : Étant donné les titres « Calibrer les relectures » et « Rélecture du plan », quand on lance `atelier list relecture`, alors les deux sont listés ; avec `atelier list relecture plan`, seul le second.
 - [ ] CA-5 : Étant donné des chantiers de tous statuts et types, quand on lance `atelier list --all --sort status`, alors les groupes se suivent dans l'ordre draft, signed, done, abandoned, et dans chaque groupe par numéro ; avec `--sort type`, dans l'ordre FEAT, FIX, REF, TEC, SPIKE, EPIC.
 - [ ] CA-6 : Étant donné `atelier list` lancé avec une option inconnue, une option répétée, une option sans valeur, ou une valeur inconnue de `--status`, `--type` ou `--sort`, alors la commande échoue avec un message qui nomme l'argument fautif et, pour une valeur inconnue, liste les valeurs admises.
-- [ ] CA-7 : Étant donné chaque ligne de la table de l'étape (§2), quand on liste un chantier dans ce cas, alors son `step` et son `stepLabel` sont ceux de la table ; et un chantier découpé en 3 tranches, sur la tranche 2, en TDD avec tests figés, a le libellé « Tranche 2/3 : implémentation » ; sur une tranche 4 absente du plan, sans tests figés, « Tranche 4 (absente du plan) : tests d'abord ».
-- [ ] CA-8 : Étant donné un EPIC signé avec `plan.md`, quand ses enfants (selon leur version affichée) sont deux ouverts et un clos, alors son libellé est « 2 enfant(s) ouvert(s) » ; tous clos, « enfants clos : à clôturer » ; aucun, « aucun enfant ouvert ».
+- [ ] CA-7 : Étant donné chaque ligne de la table de l'étape (§2), quand on liste un chantier dans ce cas, alors son `step` et son `stepLabel` sont ceux de la table, dans l'ordre de la table (un chantier en `slice: chantier` dont les tests sont rouverts est en « tests d'abord ») ; et un chantier découpé en 3 tranches, sur la tranche 2, en TDD avec tests figés, a le libellé « Tranche 2/3 : implémentation » ; sur une tranche 4 absente du plan, sans tests figés, « Tranche 4 (absente du plan) : tests d'abord ».
+- [ ] CA-8 : Étant donné un EPIC signé avec `plan.md`, quand ses enfants (selon leur version affichée) sont deux ouverts et un clos, alors son libellé est « 2 enfant(s) ouvert(s) », y compris avec `atelier list --type EPIC` ; tous clos dont un `done`, « enfants clos : à clôturer », y compris sans `--all` ; tous `abandoned`, « enfants clos, aucun livré : à abandonner » ; aucun, « aucun enfant ».
 - [ ] CA-9 : Étant donné `main` comme branche courante, FEAT-40 absent de l'arbre courant et signé sur `feat/FEAT-40-x`, et FEAT-41 en brouillon dans l'arbre courant et signé sur `feat/FEAT-41-y`, quand on lance `atelier list`, alors FEAT-40 et FEAT-41 sont listés signés, avec leur branche comme emplacement.
 - [ ] CA-10 : Étant donné la branche courante `feat/FEAT-42-z` où FEAT-42 est signé (copie de travail), et `origin/feat/FEAT-42-z` où il est en brouillon avec un commit plus récent, quand on lance `atelier list`, alors FEAT-42 est listé signé, emplacement « ici ».
 - [ ] CA-11 : Étant donné FEAT-43 `done` dans l'arbre courant et `signed` sur une branche locale `feat/FEAT-43-w` restée en arrière, quand on lance `atelier list --all` depuis `main`, alors FEAT-43 est listé `done`, emplacement « ici » ; sans `--all`, il n'est pas listé.
@@ -143,6 +144,7 @@ Questions si manquant : chaque critère peut-il devenir un test ? Que se passe-t
 Questions si manquant : qui peut lire / écrire quoi, et où l'autorisation est-elle vérifiée côté serveur ? Quel volume réaliste ? Comment l'utilise-t-on au clavier et au lecteur d'écran ? -->
 - Sécurité / autorisation : l'explorateur est lancé sans shell, le chemin en argument séparé : un nom de dossier ne peut pas injecter de commande. Les commandes ne font que lire (hors `git fetch` du skill).
 - Performance : trois appels git au plus pour l'index, quel que soit le nombre de chantiers et de branches, aucun appel par chantier. Ordre de grandeur visé : moins d'une seconde pour 1 000 chantiers et 50 branches, mesuré à la main sur un dépôt généré et noté dans le bilan (SD11).
+- Vérification manuelle des skills, notée dans le bilan (SD14) : `/atelier:list` traduit « les FIX en cours » en `--type FIX`, « les enfants d'EPIC-17 » en `--parent EPIC-17`, et refuse explicitement « les chantiers de Didier » ; `/atelier:open FIX-18` ouvre le dossier en local et donne son chemin en session cloud.
 - Accessibilité : sortie texte en colonnes lisible sans couleur ; `--json` pour tout autre usage.
 - Données personnelles : N/A, aucune donnée personnelle lue ni produite.
 - Compatibilité : Node ≥ 20, aucune dépendance ; macOS, Windows et Linux pour `open`. En session cloud, `open` se replie sur l'affichage du chemin.
