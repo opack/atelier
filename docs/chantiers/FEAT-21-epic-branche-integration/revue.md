@@ -106,3 +106,20 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD6. Virgule manquante dans commandes.md, description de review sans la revue d'ensemble | site/reference/commandes.md:27 | corrigé (3137c2b) |
 
 - Bilan de la revue : CA-11, CA-12 et le test de l'amendement (CA-8) conformes ; 4 points de consignes corrigés, sur accord de Didier.
+
+## Revue 2 : tranche 4 : 2026-11-26
+- Commit revu : f032cf2
+- Base : 677544d (slice_base)
+- Corrections depuis la revue 1 : 3137c2b (RD3, RD4, RD5, RD6), f032cf2 (traitements consignés)
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD7. Synchronisation de la branche d'intégration par `git pull`, qui rebase avec `pull.rebase=true` | plugins/atelier/skills/new/SKILL.md:38 | corrigé (e6f6ae4) : fusion `[<ID>] merge <remote>/<branche>` puis push dans new, review, close et le message de integrationRefChoice |
+
+- Bilan de la revue : RD3 à RD6 réglés ; RD7 corrigé sur accord de Didier.
