@@ -48,3 +48,8 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Contexte : le vérificateur de surapprentissage relève trois cas non couverts par les tests figés de la tranche 1 : ancien modèle avec plan découpé et tests rouverts, tranche numérotée avec revue enregistrée, type en minuscules dans l'en-tête.
 - Écarté : rouvrir les tests de la tranche 1, pour trois cas que le code traite déjà bien (vérifié à la main par le vérificateur).
 - Conséquence : ces cas s'ajoutent aux tests de la tranche 2, étiquetés CA-7.
+
+## 2026-11-26 : le type d'un chantier se lit dans son en-tête, pour la colonne comme pour l'étape
+- Contexte : remarque de la revue 1 de la tranche 1 : l'étape se calcule sur le `type` de l'en-tête (comme `nextStep`) ; une colonne type déduite de l'identifiant afficherait « EPIC » avec une étape qui n'en est pas une.
+- Écarté : deux sources (en-tête pour l'étape, identifiant pour la colonne), parce qu'elles peuvent se contredire.
+- Conséquence : en tranche 2, la colonne type, le filtre `--type` et l'étape lisent le type de l'en-tête, et le préfixe de l'identifiant seulement s'il manque.
