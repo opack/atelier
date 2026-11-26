@@ -177,17 +177,23 @@ export function openChildren(index, id) {
   return childrenOf(index, id).map((entry) => describeRelation(index, entry.id)).filter((child) => !child.closed)
 }
 
-function openChildProblem(child) {
+// `delivery` says how a delivered chantier reaches this branch: the default branch merged into it,
+// or, for the children of an EPIC with an integration branch, their own merge into it.
+function openChildProblem(child, delivery) {
   return child.status
-    ? `Enfant ${child.id} encore ouvert ici (statut : ${child.status}) : une fois livré, fusionne la branche par défaut dans celle-ci.`
-    : `Enfant ${child.id} pas fusionné dans cette branche (vit sur ${child.branches.join(', ')}) : fusionne la branche par défaut dans celle-ci une fois ${child.id} livré, ou supprime sa branche s’il est abandonné.`
+    ? `Enfant ${child.id} encore ouvert ici (statut : ${child.status}) : une fois livré, ${delivery}.`
+    : `Enfant ${child.id} pas fusionné dans cette branche (vit sur ${child.branches.join(', ')}) : une fois ${child.id} livré, ${delivery} ; ou supprime sa branche s’il est abandonné.`
 }
 
 // Why the relations prevent closing (`done`) a chantier, as a list. `id` is the chantier's
 // identifier (from its branch and directory), `data` its spec header, `index` comes from
-// buildChantierIndex. Statuses are judged in the current tree only.
-export function relationCloseProblems(id, data, index) {
+// buildChantierIndex. Statuses are judged in the current tree only. `integration` = {
+// branch (integration branch the chantier is based on, or null), deliveries (dependencies done only
+// in the integration branch of their EPIC: Map id → { branch, epic }), ownBranch (true for an EPIC
+// with an integration branch: its children are merged into it) }.
+export function relationCloseProblems(id, data, index, { branch = null, deliveries = new Map(), ownBranch = false } = {}) {
   const problems = []
+  const mergeHint = branch ? `fusionne la branche d’intégration ${branch} dans celle-ci` : 'fusionne la branche par défaut dans celle-ci'
   for (const dependency of parseRelations(data).dependsOn.map((target) => describeRelation(index, target))) {
     const { status, branches } = dependency
     const dependencyId = dependency.id
@@ -197,16 +203,20 @@ export function relationCloseProblems(id, data, index) {
     if (status === 'abandoned') {
       problems.push(`Dépendance ${dependencyId} abandonnée (statut : abandoned) : retire la relation (/atelier:amend) ou dépends du chantier qui la remplace.`)
     } else if (status) {
-      problems.push(`Dépendance ${dependencyId} pas livrée (statut : ${status}) : attends sa clôture, puis fusionne la branche par défaut dans celle-ci.`)
+      problems.push(`Dépendance ${dependencyId} pas livrée (statut : ${status}) : attends sa clôture, puis ${mergeHint}.`)
+    } else if (!branch && deliveries.has(dependencyId)) {
+      const delivery = deliveries.get(dependencyId)
+      problems.push(`Dépendance ${dependencyId} livrée seulement dans la branche d’intégration ${delivery.branch} : attends la clôture de ${delivery.epic}, qui la fusionnera dans la branche par défaut, puis fusionne la branche par défaut dans celle-ci.`)
     } else if (branches.length) {
-      problems.push(`Dépendance ${dependencyId} pas fusionnée dans cette branche (présente seulement sur ${branches.join(', ')}) : fusionne la branche par défaut dans celle-ci une fois ${dependencyId} livrée.`)
+      problems.push(`Dépendance ${dependencyId} pas fusionnée dans cette branche (présente seulement sur ${branches.join(', ')}) : ${mergeHint} une fois ${dependencyId} livrée.`)
     } else {
       problems.push(`Dépendance ${dependencyId} introuvable dans les branches du projet.`)
     }
   }
   if ((data.type ?? '').toUpperCase() === 'EPIC') {
     const open = openChildren(index, id)
-    problems.push(...open.map(openChildProblem))
+    const delivery = ownBranch ? 'fusionne-le dans cette branche par un commit de fusion' : 'fusionne la branche par défaut dans celle-ci'
+    problems.push(...open.map((child) => openChildProblem(child, delivery)))
     const children = childrenOf(index, id)
     if (!open.length && !children.some((entry) => statusHere(entry) === 'done')) {
       problems.push(children.length

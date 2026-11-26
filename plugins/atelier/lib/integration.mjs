@@ -85,3 +85,22 @@ export function integrationRefChoice({ branch, local, remote, localInRemote = fa
   }
   return { error: `la branche d’intégration ${branch} et sa branche distante ont divergé : synchronise-la (git pull, puis git push) avant de continuer.` }
 }
+
+// Dependencies among `ids` that are not in the current tree and are `done` only in the integration
+// branch of their EPIC, not yet in the default branch `defaultBranch` (local or remote-tracking):
+// Map id → { branch, epic }. They reach the default branch with the EPIC.
+export function integrationDeliveries(index, ids, defaultBranch = null) {
+  const onBranch = (name, target) => name === target || name.endsWith(`/${target}`)
+  const deliveries = new Map()
+  for (const id of ids) {
+    const entry = index.get(id)
+    if (!entry || entry.here) continue
+    const base = chantierBase(index, parseRelations(headerOf(entry)).parent[0] ?? null, null)
+    if (!base.epic) continue
+    const doneOn = (target) => entry.branches.some(({ branch, data }) => onBranch(branch, target) && data?.status === 'done')
+    if (doneOn(base.branch) && !(defaultBranch && doneOn(defaultBranch))) {
+      deliveries.set(id, { branch: base.branch, epic: base.epic })
+    }
+  }
+  return deliveries
+}

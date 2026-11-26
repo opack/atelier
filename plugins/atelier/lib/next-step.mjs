@@ -2,6 +2,7 @@
 // Pure functions: no access to the disk, git or the environment.
 
 import { isReviewExempt } from './close.mjs'
+import { hasIntegrationBranch } from './integration.mjs'
 import { sliceLabel, sliceState } from './slices.mjs'
 import { declaredSliceTdd, numberedSlice, testDrivenPhase } from './tdd.mjs'
 
@@ -43,6 +44,11 @@ export function nextStep(chantier, review = 'none', children = [], codeCommitted
     }
     if (!children.some((child) => child.status === 'done')) {
       return 'Tous les enfants sont clos, aucun n’est done : la vision n’a pas été réalisée. Abandonner l’EPIC : atelier set-status abandoned'
+    }
+    if (hasIntegrationBranch(chantier.spec.data) && review !== 'current') {
+      return review === 'stale'
+        ? 'Tous les enfants sont clos, mais l’EPIC a changé depuis la revue d’ensemble (code ou spec) : la refaire : /atelier:review'
+        : 'Tous les enfants sont clos : revue d’ensemble de l’EPIC (cohérence entre lots, CA globaux, résolutions de conflits) : /atelier:review'
     }
     return 'Tous les enfants sont clos : clôturer l’EPIC (bilan prévu / réalisé) : /atelier:close'
   }

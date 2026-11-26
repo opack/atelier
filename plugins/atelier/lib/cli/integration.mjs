@@ -8,7 +8,8 @@ import { chantierIndex } from './relations.mjs'
 
 // ---------- Base of a chantier ----------
 
-function defaultBranchOf(projectRoot) {
+// Short name of the default branch, or null when unknown.
+export function defaultBranchOf(projectRoot) {
   const base = defaultBaseRef(projectRoot)
   return base ? defaultBranchName(projectRoot, base) : null
 }
