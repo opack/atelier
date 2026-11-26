@@ -13,6 +13,7 @@ slice: chantier
 slice_base: 051c560e52b83ac4cdc4c3d6a5d3715016d026e1
 slice_tdd: 
 last_slice: 4
+reviewed_commit: c93b31208bc5ef7d4cc73b11907b576d08bba4cf
 ---
 
 # FEAT-21 EPIC en branche d'intégration
