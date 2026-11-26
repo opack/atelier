@@ -20,3 +20,20 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD1. Règle « Les tests importent par noms les modules de domaine » vidée de son sens sans « jamais `lib/core.mjs` », et vérifiée par aucun test | `CLAUDE.md:21` | corrigé (544caf7) : puce retirée, choix de Didier |
 
 - Bilan de la revue : CA-1, CA-2, CA-3 vérifiés ; 498 → 495 tests, seuls les 3 tests de la façade retirés (noms comparés sur deux worktrees) ; périmètre de la spec complet (aucune mention de `core.mjs` dans skills, agents, hooks, templates, README, site) ; aucune règle d'architecture utile perdue.
+
+## Revue 2 : 2026-11-26
+- Commit revu : 30d7124
+- Base : 971c3a6
+- Corrections depuis la revue 1 : 544caf7
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+- Bilan de la revue : RD1 réglé, rien d'autre n'a bougé ; 495 tests verts, CA-1 tient toujours.
