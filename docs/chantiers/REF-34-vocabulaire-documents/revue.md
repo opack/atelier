@@ -22,3 +22,23 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD3. Test d'`escapeRegExp` rangé dans `vocabulary.test.mjs` | plugins/atelier/test/vocabulary.test.mjs:81 | corrigé (fd19c72 : limite documentée dans decisions.md) |
 
 - Bilan de la revue : aucun bloquant ; comportement identique vérifié (sources des regex et messages au caractère près), 504 tests verts.
+
+## Revue 2 : tranche 1 : 2026-11-26
+- Commit revu : f94f0f2
+- Base : 971c3a6
+- Corrections depuis la revue 1 : bd093a2, 1fb64f9, fd19c72
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD4. « oui » / « non » en dur dans la CLI, absents du plan | plugins/atelier/lib/cli/next-step.mjs:88 ; plugins/atelier/lib/cli/slices.mjs:98 | corrigé (b1a2ab2, fichiers ajoutés au plan) |
+| RD5. Citations « TDD : oui » / « TDD : non » en dur dans les messages | plugins/atelier/lib/slices.mjs:91, :93 ; plugins/atelier/lib/tdd.mjs:56 | corrigé (b1a2ab2) |
+| RD6. Comparaison du « oui » et `\b` supposant un terme ASCII en minuscules | plugins/atelier/lib/slices.mjs:15, :53 | corrigé (b1a2ab2 : comparaison en minuscules ; limite du `\b` consignée dans decisions.md pour EPIC-14) |
+
+- Bilan de la revue : correction de RD2 vérifiée à comportement identique (regex exécutées) ; trois suites de RD2, corrigées.
+- Idée : les identifiants `CA-n`, `RB`, `RD` relèvent aussi de la grammaire ; laissés neutres et hors périmètre (decisions.md).

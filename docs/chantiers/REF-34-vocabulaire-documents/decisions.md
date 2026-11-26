@@ -44,3 +44,8 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Contexte : revue 1 de la tranche 1 ; ce test relève du domaine `common`.
 - Écarté : l'ajouter à `common.test.mjs`, parce que la décision du 2026-11-25 interdit de toucher un fichier de test existant pendant le chantier (preuve de CA-1).
 - Conséquence : le déplacer vers `common.test.mjs` est une suite possible après le chantier.
+
+## 2026-11-26 : limites laissées à EPIC-14 (RD6 et idée de la revue 2 de la tranche 1)
+- Contexte : avec « oui » / « non » dans le vocabulaire, le `\b` final de `TDD_SEGMENT` ne trouve pas de frontière après une lettre accentuée en fin de terme (« sí ») ; les identifiants `CA-n`, `RB`, `RD` sont eux aussi de la grammaire.
+- Écarté : passer à `(?![\p{L}\p{N}_])` avec le drapeau `u`, parce que cela change des cas limites (« ouié »), interdit à un REF ; vocabulariser les identifiants, parce qu'ils sont neutres et que le chantier s'étirerait à chaque revue (limite tracée avec Didier).
+- Conséquence : à reprendre dans le premier chantier multilingue d'EPIC-14 (la pseudo-langue le révélera).

@@ -14,6 +14,7 @@
 - `plugins/atelier/lib/tdd.mjs` : libellés « tests rouverts » / « tests regelés » (écriture et relecture).
 - `plugins/atelier/lib/slices.mjs` : titre « Tranches », relecture des entrées de gel (modèle `legacy`).
 - `plugins/atelier/lib/write-guard.mjs` : citations de « Amendements » dans 4 messages.
+- `plugins/atelier/lib/cli/next-step.mjs`, `plugins/atelier/lib/cli/slices.mjs` : libellés « TDD », « oui », « non » affichés (RD4, revue 2 de la tranche 1).
 - `plugins/atelier/lib/review-points.mjs` : tableaux, colonnes, mots-clés, marqueurs, « Aucun », « Tour », `isPostponedToSlice`, `requalifiedTarget`, citations des messages.
 - `plugins/atelier/test/vocabulary.test.mjs` (nouveau) : CA-3.
 - `plugins/atelier/test/architecture-vocabulary.test.mjs` (nouveau) : CA-2, avec son lecteur de code (chaînes, gabarits, expressions régulières, commentaires) et ses exemples fabriqués.
