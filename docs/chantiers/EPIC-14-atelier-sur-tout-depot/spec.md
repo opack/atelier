@@ -4,6 +4,7 @@ type: EPIC
 title: Travailler avec atelier sur n'importe quel dépôt
 status: draft
 tdd: no              # un EPIC n'implémente rien : toujours no
+integration_branch: no
 created_at: 2026-11-21
 signed_by:
 signed_at:
@@ -30,7 +31,7 @@ On reconnaît que c'est fini quand un chantier complet (de `/atelier:new` à `/a
 ## 2. Pourquoi
 <!-- Le problème, le besoin, l'enjeu. Ce qui arrive si on ne fait rien. Pourquoi un ensemble de chantiers plutôt qu'un seul. -->
 - atelier n'a qu'une racine, celle du projet : `.claude/atelier.json`, `docs/chantiers/`, `docs/decisions/`, `.atelier/`, la section Process du `CLAUDE.md` et la déclaration du plugin dans `.claude/settings.json` sont tous écrits dans le dépôt du projet. Sans `.claude/atelier.json`, `loadConfig` rend `null` et tous les hooks se taisent : atelier est inutilisable sur un dépôt qu'on ne peut pas modifier.
-- Le chantier actif est déduit d'une convention : nom de branche `<type>/<ID>-<slug>`, puis commits `[<ID>]` propres à la branche (TEC-6). Un dépôt client impose ses propres conventions (`feature/JIRA-123`, format de commit vérifié) ou n'en a aucune : atelier n'y reconnaît alors aucun chantier.
+- Le chantier actif est déduit d'une convention : nom de branche `<type>/<ID>-<slug>`, puis commits `[<ID>]` propres à la branche (TEC-6, lus en `--first-parent` depuis FEAT-21). Un dépôt client impose ses propres conventions (`feature/JIRA-123`, format de commit vérifié) ou n'en a aucune : atelier n'y reconnaît alors aucun chantier.
 - Une copie de travail ne peut porter qu'un chantier à la fois, et rien ne permet de choisir entre plusieurs chantiers menés sur une même branche (`dev` dans un projet sans branches de fonctionnalité).
 - atelier ne parle qu'une langue, le français : templates, titres de sections lus par le code, messages des hooks et de la CLI, skills. Un projet client en anglais ne peut pas recevoir de documents en français, et un utilisateur francophone ne veut pas pour autant échanger en anglais.
 - Si on ne fait rien : en mission, on travaille sans le cadre, ou on pollue le dépôt du client.
@@ -64,9 +65,11 @@ Règles associées :
 - Le pointeur est un état local, **jamais versionné** (ni dans le projet, ni dans le compagnon) : versionné, il suivrait les fusions et créerait un conflit à chaque PR. La vérité partagée est l'en-tête `branch:` de la spec.
 - `branch:` est écrit par la CLI (`/atelier:new`, `atelier use`), comme `tests_commit` : la garde de spec l'accepte sans amendement.
 - Un chantier clos (`done`, `abandoned`) n'est jamais actif : `atelier use` le refuse, la résolution l'ignore. Le modifier, c'est ouvrir un nouveau chantier (`rel_origin`) ; le consulter ne demande pas qu'il soit actif.
-- Le nom de branche `<type>/<ID>-<slug>` et les commits `[<ID>]` deviennent de **simples conventions**, recommandées dans un projet atelier, facultatives ailleurs. atelier ne les lit plus pour trouver le chantier actif (fin de la déduction de TEC-6), sans lecture de compatibilité : les chantiers ouverts sans `branch:` se rattachent par un `atelier use <ID>`, que le hook de démarrage de session indique.
+- Le nom de branche `<type>/<ID>-<slug>` et les commits `[<ID>]` deviennent de **simples conventions**, recommandées dans un projet atelier, facultatives ailleurs. atelier ne les lit plus pour trouver le chantier actif (fin de la déduction de TEC-6 et de sa variante `--first-parent` de FEAT-21 : code et tests retirés), sans lecture de compatibilité : les chantiers ouverts sans `branch:` se rattachent par un `atelier use <ID>`, que le hook de démarrage de session indique.
 - Deux chantiers ne sont pas menés en même temps dans la même copie de travail avec du code non commité des deux : on commite, puis `atelier use`.
 - FEAT-4 : la clôture d'un EPIC, qui reposait sur une branche `epic/<ID>-<slug>` lue par son nom, passe par le pointeur ou par `branch:`.
+- FEAT-21 : sur la branche d'intégration d'un EPIC, c'est l'EPIC qui est actif (la garde y refuse le code) ; il le devient par `branch:` dans sa spec, écrit par `/atelier:plan` quand il pousse cette branche. Le nom `epic/<ID>-<slug>` reste une convention qu'atelier crée lui-même pour calculer la base d'un enfant : il n'est jamais lu pour trouver le chantier actif.
+- FEAT-35 : la version affichée d'un chantier par `atelier list` cesse de reposer sur le nom des branches (ses règles « la branche porte l'identifiant du chantier ») et s'appuie sur `branch:` ; dans un compagnon, l'index des chantiers lit le compagnon, pas les branches du projet.
 
 **Dépôt compagnon.**
 - Un dépôt git par mission, ailleurs sur le disque, qui contient la configuration d'atelier, les chantiers, les décisions et l'état local (`.atelier/`, ignoré dans le compagnon). Plusieurs compagnons peuvent être rangés dans un même dossier parent : rien ne l'impose ni ne l'empêche.
@@ -87,6 +90,8 @@ Règles associées :
 - Prérequis : le vocabulaire lu par le code est centralisé en un seul endroit par REF-34 (lot 5 de l'EPIC-17), avant le premier enfant « langues ». REF-34 ne rend pas ce vocabulaire injectable : c'est le premier enfant « langues » qui le fait, et qui le prouve par la pseudo-langue (CA-9).
 
 **Contraintes communes.** Node ≥ 20, aucune dépendance ; logique pure dans `lib/<domaine>.mjs`, entrées / sorties dans `lib/cli/<domaine>.mjs` (rangement de REF-29) ; toute évolution de hook a son test ; code et commentaires en anglais.
+
+**Pas de branche d'intégration** (`integration_branch: no`) : chaque enfant a de la valeur livré seul dans la branche par défaut (le pointeur dès maintenant, les langues indépendamment du compagnon).
 
 ## 5. Hors périmètre
 <!-- Ce que l'EPIC ne couvre pas, même si on pourrait l'y attendre. -->
