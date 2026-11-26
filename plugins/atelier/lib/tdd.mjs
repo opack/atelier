@@ -53,7 +53,7 @@ export function freezeTestsPhaseRefusal(chantier) {
 }
 
 // Refusal of freeze-tests when the last commit holds no test file.
-export const FREEZE_WITHOUT_TEST_MESSAGE = 'Le dernier commit ne contient aucun fichier de test. Commite les tests (et seulement les tests) avant de les figer. Une tranche qui n’a rien à tester se déclare « TDD : non » au plan ; en cours de tranche : atelier set-tdd no <raison>.'
+export const FREEZE_WITHOUT_TEST_MESSAGE = `Le dernier commit ne contient aucun fichier de test. Commite les tests (et seulement les tests) avant de les figer. Une tranche qui n’a rien à tester se déclare « ${VOCABULARY.plan.tdd} : ${VOCABULARY.plan.no} » au plan ; en cours de tranche : atelier set-tdd no <raison>.`
 
 // 'none'          : no « tests first » for the current slice: the chantier or the slice does not
 //                   follow TDD (decided by the human), or the review of the whole chantier.

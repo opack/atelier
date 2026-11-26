@@ -6,6 +6,7 @@ import { codeLogArguments, matchesAny } from '../common.mjs'
 import { reviewCodeFiles } from '../review.mjs'
 import { checkPlanValues, planProblems, sliceState } from '../slices.mjs'
 import { declaredSliceTdd } from '../tdd.mjs'
+import { VOCABULARY } from '../vocabulary.mjs'
 import { findProjectRoot, git, gitObjectExists, gitPaths, isAncestor, requireConfig } from './common.mjs'
 import { defaultBaseRef, defaultBranchName, requireActiveChantier } from './identifiers.mjs'
 import { baseRefOf, integrationBranchOf, integrationRefsOf } from './integration.mjs'
@@ -95,7 +96,7 @@ export function commandCheckPlan([planPath]) {
   const values = checkPlanValues(withPlan)
   if (values.slice_tdd) {
     updateSpec(projectRoot, config, values)
-    console.log(`Plan sans problème. TDD de la tranche 1 : ${values.slice_tdd === 'yes' ? 'oui' : 'non'} (slice_tdd écrit dans la spec). Commite la spec avec le plan.`)
+    console.log(`Plan sans problème. TDD de la tranche 1 : ${values.slice_tdd === 'yes' ? VOCABULARY.plan.yes : VOCABULARY.plan.no} (slice_tdd écrit dans la spec). Commite la spec avec le plan.`)
     return
   }
   console.log('Plan sans problème.')

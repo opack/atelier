@@ -6,6 +6,7 @@ import { toProjectRelativePath } from '../common.mjs'
 import { codeCommittedMatters, nextStep } from '../next-step.mjs'
 import { sliceLabel, sliceState } from '../slices.mjs'
 import { checkSpec } from '../spec.mjs'
+import { VOCABULARY } from '../vocabulary.mjs'
 import { effectiveTdd, testDrivenPhase } from '../tdd.mjs'
 import { findProjectRoot, isAncestorOfHead, loadConfig } from './common.mjs'
 import { activeChantier } from './identifiers.mjs'
@@ -85,7 +86,7 @@ function formatStatus(summary, sliceModel) {
     const { slice, sliceCount } = summary.chantier
     const { sliceTdd } = summary.chantier
     if (sliceTdd) {
-      const tddLabel = `TDD : ${sliceTdd === 'yes' ? 'oui' : 'non'}`
+      const tddLabel = `${VOCABULARY.plan.tdd} : ${sliceTdd === 'yes' ? VOCABULARY.plan.yes : VOCABULARY.plan.no}`
       if (typeof slice === 'number') {
         lines.push(`${sliceLabel(slice, sliceCount)} : ${tddLabel}`)
       } else if (sliceModel === 'single') {

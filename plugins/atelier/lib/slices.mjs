@@ -50,7 +50,7 @@ function sliceAttributes(text) {
   const tddSegment = segments
     .map((segment) => TDD_SEGMENT.exec(segment.trim()))
     .find(Boolean)
-  const tdd = tddSegment ? (tddSegment[1].toLowerCase() === VOCABULARY.plan.yes ? 'yes' : 'no') : null
+  const tdd = tddSegment ? (tddSegment[1].toLowerCase() === VOCABULARY.plan.yes.toLowerCase() ? 'yes' : 'no') : null
   return { criteria, tdd }
 }
 
@@ -88,9 +88,9 @@ export function planProblems(chantier) {
     }
     seen.add(number)
     if (tdd === null) {
-      problems.push(`Tranche ${number} : TDD non déclaré (« TDD : oui » ou « TDD : non »).`)
+      problems.push(`Tranche ${number} : TDD non déclaré (« ${VOCABULARY.plan.tdd} : ${VOCABULARY.plan.yes} » ou « ${VOCABULARY.plan.tdd} : ${VOCABULARY.plan.no} »).`)
     } else if (tdd === 'yes' && !criteria.length) {
-      problems.push(`Tranche ${number} : « TDD : oui » sans CA couvert ; une tranche qui n’a rien à tester se déclare « TDD : non ».`)
+      problems.push(`Tranche ${number} : « ${VOCABULARY.plan.tdd} : ${VOCABULARY.plan.yes} » sans CA couvert ; une tranche qui n’a rien à tester se déclare « ${VOCABULARY.plan.tdd} : ${VOCABULARY.plan.no} ».`)
     }
     for (const id of criteria.filter((criterion) => !specIds.includes(criterion))) {
       problems.push(`${id} : cité par la tranche ${number}, absent de la spec.`)
