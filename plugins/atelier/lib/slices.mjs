@@ -1,9 +1,13 @@
 // Slices of a chantier: their count in the plan and the slice in progress.
 // Pure functions: no access to the disk, git or the environment.
 
+import { escapeRegExp } from './common.mjs'
 import { ENTRY_START, parseAmendments } from './spec.mjs'
+import { VOCABULARY } from './vocabulary.mjs'
 
 // ---------- Slices ----------
+
+const SLICES_HEADING = new RegExp(`^##\\s+${escapeRegExp(VOCABULARY.slices)}\\s*$`)
 
 // Slices of a plan: the first-level numbered entries of its « Tranches » section (HTML comments
 // and indented sub-lists ignored), in order. Each slice gives its number, the CA listed in its
@@ -11,7 +15,7 @@ import { ENTRY_START, parseAmendments } from './spec.mjs'
 // 'yes' | 'no', or null when the entry does not declare one.
 export function planSlices(planText) {
   const lines = (planText ?? '').replace(/\r\n/g, '\n').replace(/<!--[\s\S]*?-->/g, '').split('\n')
-  const start = lines.findIndex((line) => /^##\s+Tranches\s*$/.test(line))
+  const start = lines.findIndex((line) => SLICES_HEADING.test(line))
   if (start < 0) {
     return []
   }
@@ -63,7 +67,7 @@ export function planProblems(chantier) {
   const specIds = specCriteria(chantier?.spec?.body)
   const problems = []
   if (!slices.length) {
-    problems.push('Aucune tranche : la section « ## Tranches » du plan doit numéroter ses tranches (1., 2., …).')
+    problems.push(`Aucune tranche : la section « ## ${VOCABULARY.slices} » du plan doit numéroter ses tranches (1., 2., …).`)
   }
   const numbers = [...new Set(slices.map((slice) => slice.number))].sort((a, b) => a - b)
   const missing = numbers.length ? Array.from({ length: numbers.at(-1) }, (_, index) => index + 1).filter((number) => !numbers.includes(number)) : []
@@ -113,10 +117,12 @@ export function checkPlanValues(chantier) {
   return tdd ? { slice_tdd: tdd } : {}
 }
 
+const REOPENING_ENTRY = new RegExp(`^(${escapeRegExp(VOCABULARY.amendmentEntries.reopened)}|${escapeRegExp(VOCABULARY.amendmentEntries.refrozen)})`)
+
 // Whether the amendments of the spec record a reopening or a refreeze of the tests.
 function hasReopeningEntry(chantier) {
   return parseAmendments(chantier?.spec?.body ?? '').entries
-    .some((entry) => /^(tests rouverts|tests regelés)/.test(entry.replace(ENTRY_START, '')))
+    .some((entry) => REOPENING_ENTRY.test(entry.replace(ENTRY_START, '')))
 }
 
 // Number of slices of a plan: the highest slice number read by planSlices; 0 without slices.

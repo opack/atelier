@@ -28,3 +28,14 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Contexte : CA-1 exige des tests identiques hormis ceux ajoutés.
 - Écarté : ajouter le test de CA-2 dans `architecture.test.mjs` et partager son `readLiteral`, parce que déplacer du code de test compliquerait la preuve, et que le lecteur de code de CA-2 doit de toute façon gérer expressions régulières et commentaires.
 - Conséquence : `test/architecture-vocabulary.test.mjs` et `test/vocabulary.test.mjs` ; `check-tests.mjs` vérifie qu'aucune ligne des fichiers de test existants n'est retirée.
+
+## 2026-11-26 : REF-34 démarre avant les lots 3 et 4 d'EPIC-17
+- Contexte : FIX-20, FEAT-27 et FEAT-21, qui touchaient les mêmes modules, sont fusionnés ; les lots 3 et 4 ne sont pas ouverts.
+- Écarté : attendre les lots 3 et 4, parce que rien ne bloque et que le lot 3 n'aura qu'à ajouter les sections de critères TEC et REF au vocabulaire.
+- Conséquence : accord de Didier le 2026-11-26, consigné dans le decisions.md d'EPIC-17 (PR #30). Base de non-régression : fusion de main 5ef9b80, 498 tests.
+
+## 2026-11-26 : tranche 1, clés et forme du vocabulaire
+- Contexte : le plan ne fixait pas les noms des clés de section.
+- Décision : clés anglaises en camelCase (`acceptanceCriteria`, `whyNow`, `answerCriteria`…), `why` propre à chaque type ; `criteria.<TYPE>` porte le nom de la clé de section, pas le texte ; `review.markers.formerly` vaut `ex-` pour reconstruire `(ex-RBn)` à l'identique en tranche 2.
+- Écarté : garder une liste `REQUIRED_SECTIONS` écrite dans `spec.mjs`, parce qu'elle recopierait les termes ; elle est dérivée de `sections.<TYPE>` (ordre d'insertion conservé).
+- Conséquence : expressions régulières construites une fois au niveau du module (`AMENDMENTS_HEADING`, `SLICES_HEADING`, `REOPENING_ENTRY`).
