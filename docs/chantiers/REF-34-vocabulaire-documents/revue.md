@@ -59,3 +59,20 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD7. Import de `vocabulary.mjs` hors de l'ordre alphabétique | plugins/atelier/lib/cli/next-step.mjs:9 | corrigé (a6787dc, sans relance : déplacement d'une ligne, verdict du reviewer) |
 
 - Bilan de la revue : b1a2ab2 vérifié à comportement identique ; plus aucune citation « TDD : oui\|non » en dur hors commentaires.
+
+## Revue 1 : tranche 2 : 2026-11-26
+- Commit revu : 8c4a126
+- Base : 95739d9
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD8. Noms de colonnes « Point » et « Traitement » restés en dur dans deux messages | plugins/atelier/lib/review-points.mjs:228, :268 | corrigé (e8bded8) |
+| RD9. Tableaux désignés par leur position dans `POINT_TABLES` | plugins/atelier/lib/review-points.mjs:220, :223, :234 | corrigé (e8bded8) |
+
+- Bilan de la revue : comportement identique vérifié par exécution comparée ancien / nouveau module sur les 24 `revue.md` du dépôt et 6 documents fabriqués (14 messages déclenchés).
