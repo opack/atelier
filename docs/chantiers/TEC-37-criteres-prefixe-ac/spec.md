@@ -31,7 +31,7 @@ Décision de Didier du 2026-11-26 (fil « Ne plus oublier les suites des chantie
 <!-- Fichiers, services, environnements concernés. Hors périmètre. Optionnel pour une petite tâche. -->
 
 - Lecture des deux formes, sans distinction de casse comme aujourd'hui : critères d'une spec (`lib/slices.mjs`, `specCriteria`), section obligatoire de critères (`lib/spec.mjs`, `checkSpec`), segment de couverture d'une tranche du plan (`CA couverts :` et `AC couverts :`, `lib/slices.mjs`), règle d'étiquette finale des tests (`test/architecture.test.mjs` : `[<ID> AC-n]`, `[<ID> CA-n]`, `[<ID> V-n]`).
-- Écriture en `AC-n` : templates `spec-feat.md`, `spec-fix.md`, `spec-epic.md`, `plan.md`, `plan-epic.md` ; skills `new`, `plan`, `amend`, `write-tests` et les autres qui citent un critère ; agent `reviewer` ; messages de la CLI (« aucun critère numéroté (AC-1, AC-2…) ») ; `CLAUDE.md` et `README.md` ; pages du site qui décrivent les critères (glossaire, cycle, fondations, référence).
+- Écriture en `AC-n` : templates `spec-feat.md`, `spec-fix.md`, `spec-tec.md`, `spec-ref.md`, `spec-epic.md`, `plan.md`, `plan-epic.md` ; skills `new`, `plan`, `amend`, `write-tests` et les autres qui citent un critère ; agent `reviewer` ; messages de la CLI (« aucun critère numéroté (AC-1, AC-2…) ») ; `CLAUDE.md` et `README.md` ; pages du site qui décrivent les critères (glossaire, cycle, fondations, référence).
 - Un chantier garde la forme de sa spec signée : FEAT-21, FEAT-35, REF-34 et EPIC-14, déjà rédigés en `CA-n`, continuent en `CA-n`, tests compris. Le skill `write-tests` étiquette avec le préfixe des critères de la spec.
 - Le glossaire du site signale `CA-n` comme ancienne forme, toujours lue.
 - Version mineure du plugin (les specs et plans écrits changent de forme).
@@ -40,7 +40,8 @@ Hors périmètre :
 - Réécrire les specs, plans, bilans, revues et commits des chantiers existants.
 - Modifier une ligne d'un test existant (les étiquettes `[… CA-n]` restent).
 - Le tableau de nomenclature complet du site : il vient avec le chantier des suites (`F1`).
-- Le préfixe `V-n` des vérifications de TEC, déjà anglais.
+- Exiger des critères numérotés dans les sections « Vérification » (TEC) et « Critère de fin » (REF) dans `check-spec` : c'est CA-6 d'EPIC-17 (lot 3), qui reprendra la forme `AC-n`. Ici, seuls les templates `spec-tec.md` et `spec-ref.md` demandent déjà des `AC-n`.
+- Les critères de ce chantier restent en `CA-n` : ses tests doivent respecter le test d'architecture actuel, qui ne connaît pas encore `AC`.
 
 ## 4. Impacts indirects
 <!-- Comportement visible malgré tout ? Données, déploiement, coûts, autres développeurs. Optionnel pour une petite tâche.
@@ -53,13 +54,13 @@ Question si manquant : qu'est-ce qui pourrait changer pour l'utilisateur malgré
 ## 5. Vérification
 <!-- Comment prouve-t-on que ça marche : CI verte, test de règles, déploiement sur un environnement, mesure avant / après. -->
 
-- V-1 : Étant donné une spec dont les critères sont `- [ ] AC-1 : …` et `- AC-2 : …`, quand on en extrait les critères, alors on obtient `AC-1` et `AC-2` ; la même spec en `CA-n` donne toujours `CA-1` et `CA-2`.
-- V-2 : Étant donné une spec FEAT dont la section de critères ne contient que des `AC-n`, quand on lance `check-spec`, alors aucun « aucun critère numéroté » n'est signalé ; sans aucun critère, le message cite `AC-1, AC-2…`.
-- V-3 : Étant donné une spec qui contient à la fois un `CA-n` et un `AC-n` en tête de critère, quand on lance `check-spec`, alors un problème le signale en citant les deux préfixes.
-- V-4 : Étant donné une tranche de plan `… — AC couverts : AC-1, AC-2 — TDD : oui`, quand on lit le plan, alors la tranche couvre `AC-1` et `AC-2` ; la forme `CA couverts : CA-1` reste lue à l'identique.
-- V-5 : Étant donné un nom de test qui se termine par `[FEAT-40 AC-3]`, quand le test d'architecture s'applique, alors il est accepté ; `[FEAT-4 CA-3]` et `[TEC-5 V-1]` le restent ; un `AC-3` hors de l'étiquette finale est refusé comme un `CA-3`.
-- V-6 : Étant donné les templates, skills, agents, `CLAUDE.md`, `README.md` et le site (hors mention de l'ancienne forme dans le glossaire), quand on y cherche `CA-\d` ou « CA couverts », alors on ne trouve rien.
-- V-7 : `npm test` vert, sans qu'aucune ligne d'un fichier de test existant ait changé ; `claude plugin validate .` et `claude plugin validate ./plugins/atelier` passent ; `npm run build` dans `site/` passe.
+- CA-1 : Étant donné une spec dont les critères sont `- [ ] AC-1 : …` et `- AC-2 : …`, quand on en extrait les critères, alors on obtient `AC-1` et `AC-2` ; la même spec en `CA-n` donne toujours `CA-1` et `CA-2`.
+- CA-2 : Étant donné une spec FEAT dont la section de critères ne contient que des `AC-n`, quand on lance `check-spec`, alors aucun « aucun critère numéroté » n'est signalé ; sans aucun critère, le message cite `AC-1, AC-2…`.
+- CA-3 : Étant donné une spec qui contient à la fois un `CA-n` et un `AC-n` en tête de critère, quand on lance `check-spec`, alors un problème le signale en citant les deux préfixes.
+- CA-4 : Étant donné une tranche de plan `… — AC couverts : AC-1, AC-2 — TDD : oui`, quand on lit le plan, alors la tranche couvre `AC-1` et `AC-2` ; la forme `CA couverts : CA-1` reste lue à l'identique.
+- CA-5 : Étant donné un nom de test qui se termine par `[FEAT-40 AC-3]`, quand le test d'architecture s'applique, alors il est accepté ; `[FEAT-4 CA-3]` et `[TEC-5 V-1]` (ancienne forme des vérifications de TEC) le restent ; un `AC-3` hors de l'étiquette finale est refusé comme un `CA-3`.
+- CA-6 : Étant donné les templates, skills, agents, `CLAUDE.md`, `README.md` et le site (hors mention de l'ancienne forme dans le glossaire), quand on y cherche `CA-\d` ou « CA couverts », alors on ne trouve rien.
+- CA-7 : `npm test` vert, sans qu'aucune ligne d'un fichier de test existant ait changé ; `claude plugin validate .` et `claude plugin validate ./plugins/atelier` passent ; `npm run build` dans `site/` passe.
 
 ## 6. Retour arrière
 <!-- Comment annuler si ça casse en production. Optionnel pour une petite tâche. -->
