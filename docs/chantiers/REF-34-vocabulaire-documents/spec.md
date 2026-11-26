@@ -2,7 +2,7 @@
 id: REF-34
 type: REF
 title: Regrouper le vocabulaire des documents lu par le code
-status: signed
+status: done
 tdd: no
 created_at: 2026-11-25
 signed_by: Opack
@@ -14,6 +14,7 @@ tests_commit:
 slice_tdd: 
 last_slice: 3
 reviewed_commit: da70401a96a86de84d63b6016333e8d238c50bc4
+done_at: 2026-11-26
 ---
 
 # REF-34 Regrouper le vocabulaire des documents lu par le code
