@@ -9,6 +9,7 @@ rel_origin: REF-29
 created_at: 2026-11-26
 signed_by: Opack
 signed_at: 2026-11-26
+slice_tdd: no
 ---
 
 # REF-36 Supprimer la façade lib/core.mjs
