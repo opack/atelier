@@ -123,3 +123,21 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD7. Synchronisation de la branche d'intégration par `git pull`, qui rebase avec `pull.rebase=true` | plugins/atelier/skills/new/SKILL.md:38 | corrigé (e6f6ae4) : fusion `[<ID>] merge <remote>/<branche>` puis push dans new, review, close et le message de integrationRefChoice |
 
 - Bilan de la revue : RD3 à RD6 réglés ; RD7 corrigé sur accord de Didier.
+
+## Revue 3 : tranche 4 : 2026-11-26
+- Commit revu : 73ebe88
+- Base : 677544d (slice_base)
+- Corrections depuis la revue 2 : e6f6ae4 (RD7), 73ebe88 (traitement consigné)
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD8. Message d'erreur de divergence : fusion proposée sans le message `[<ID>]` | plugins/atelier/lib/integration.mjs:86 | corrigé (557c731) : message « [<ID de l'EPIC>] merge origin/<branche> » cité |
+| RD9. Consigne de synchronisation de review citant l'EPIC même pour la branche par défaut | plugins/atelier/skills/review/SKILL.md:29 | corrigé (557c731) : réservée à une branche d'intégration (`baseEpic` renseigné) |
+
+- Bilan de la revue : RD7 réglé ; RD8 et RD9, nés de sa correction, corrigés sur accord de Didier.
