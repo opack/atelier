@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { escapeRegExp } from '../lib/common.mjs'
+import { isTreatment, parseReviewPoints } from '../lib/review-points.mjs'
 import { REQUIRED_SECTIONS } from '../lib/spec.mjs'
 import { VOCABULARY } from '../lib/vocabulary.mjs'
 
@@ -83,4 +84,30 @@ test('escapeRegExp makes a RegExp match its text literally', () => {
   const special = 'a.b*c+d?e^f${g}(h)|i[j]k\\l'
   assert.ok(new RegExp(`^${escapeRegExp(special)}$`).test(special))
   assert.ok(!new RegExp(`^${escapeRegExp('a.b')}$`).test('axb'))
+})
+
+test('isTreatment accepts each of the eight treatment keywords [REF-34 CA-3]', () => {
+  for (const keyword of ['corrigé', 'test ajouté', 'spec amendée', 'exception acceptée', 'écarté', 'reporté', 'requalifié', 'sans objet']) {
+    assert.ok(isTreatment(keyword), keyword)
+  }
+  assert.ok(!isTreatment('en cours'))
+})
+
+test('parseReviewPoints reads a point under « ### Bloquant » and under « ### À discuter » [REF-34 CA-3]', () => {
+  const revue = [
+    '## Revue 1',
+    '### Bloquant',
+    '| Point | Fichier | Traitement |',
+    '|---|---|---|',
+    '| RB1. Premier | a.mjs | corrigé |',
+    '### À discuter',
+    '| Point | Fichier | Traitement |',
+    '|---|---|---|',
+    '| RD2. Second | b.mjs | écarté |',
+  ].join('\n')
+  const rows = parseReviewPoints(revue).sections[0].rows
+  assert.deepEqual(rows.map((row) => [row.id, row.table, row.file, row.treatment]), [
+    ['RB1', 'Bloquant', 'a.mjs', 'corrigé'],
+    ['RD2', 'À discuter', 'b.mjs', 'écarté'],
+  ])
 })

@@ -49,3 +49,8 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Contexte : avec « oui » / « non » dans le vocabulaire, le `\b` final de `TDD_SEGMENT` ne trouve pas de frontière après une lettre accentuée en fin de terme (« sí ») ; les identifiants `CA-n`, `RB`, `RD` sont eux aussi de la grammaire.
 - Écarté : passer à `(?![\p{L}\p{N}_])` avec le drapeau `u`, parce que cela change des cas limites (« ouié »), interdit à un REF ; vocabulariser les identifiants, parce qu'ils sont neutres et que le chantier s'étirerait à chaque revue (limite tracée avec Didier).
 - Conséquence : à reprendre dans le premier chantier multilingue d'EPIC-14 (la pseudo-langue le révélera).
+
+## 2026-11-26 : tranche 2, branchement de `review-points.mjs`
+- Décision : les valeurs internes de `marker` (`repris`, `ex-<ID>`) dérivent de `review.markers` ; la liste des colonnes attendues du message d'en-tête non reconnu est interpolée (énumération de termes, pas une phrase) ; `EMPTY_POINT_PATTERN` garde la casse du vocabulaire (« Aucun ») avec le drapeau `i`, comportement identique.
+- Écarté : exporter `POINT_TABLES`, `POINT_COLUMNS` et `TREATMENTS` pour CA-3, parce que des tests par comportement (`isTreatment`, `parseReviewPoints`) prouvent la même chose sans élargir l'interface.
+- Conséquence : deux tests ajoutés à la fin de `vocabulary.test.mjs` (aucune ligne existante modifiée) ; comportement vérifié identique par comparaison JSON ancien / nouveau module sur trois `revue.md`.
