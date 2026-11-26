@@ -23,13 +23,13 @@ Toute la logique de la liste est pure dans un nouveau domaine `list` : choix de 
 <!-- Une entrée numérotée de premier niveau par tranche, dans l'ordre : atelier y lit le nombre de tranches.
 Chaque tranche : livrable seule, relisible en moins de 15 minutes ; tests, build et revue se font par tranche.
 Une tranche garde son numéro ; on ne retire du plan que des tranches à venir.
-1. <tranche> — CA couverts : CA-1, CA-2 -->
+1. <tranche> — CA couverts : CA-1, CA-2 — TDD : oui|non -->
 
-1. L'étape d'un chantier, en fonction pure : table de la spec dans l'ordre de `nextStep`, préfixe de tranche (`sliceLabel`), enfants d'un EPIC cherchés dans tous les chantiers connus — CA couverts : CA-7, CA-8
-2. `atelier list` sur l'arbre courant : arguments (refus compris), filtres, défaut « ouverts », tri, JSON, liste vide, dossier sans spec — CA couverts : CA-1, CA-2, CA-3, CA-4, CA-5, CA-6, CA-13, CA-14, CA-15
-3. Les autres branches : index enrichi en trois appels git (fichiers, tranches, ancien modèle, type et date des refs) et les cinq règles de la version affichée — CA couverts : CA-9, CA-10, CA-11, CA-12
-4. `atelier path` et `atelier open` : chemin absolu, identifiant normalisé, erreurs (autre branche, inconnu, doublon, usage), explorateur selon la plateforme et repli sur le chemin — CA couverts : CA-16, CA-17, CA-18, CA-19
-5. Skills `/atelier:list` et `/atelier:open`, site, bump mineur ; vérifications manuelles (skills, mesure de performance) notées pour le bilan — CA couverts : CA-20
+1. L'étape d'un chantier, en fonction pure : table de la spec dans l'ordre de `nextStep`, préfixe de tranche (`sliceLabel`), enfants d'un EPIC cherchés dans tous les chantiers connus — CA couverts : CA-7, CA-8 — TDD : oui
+2. `atelier list` sur l'arbre courant : arguments (refus compris), filtres, défaut « ouverts », tri, JSON, liste vide, dossier sans spec — CA couverts : CA-1, CA-2, CA-3, CA-4, CA-5, CA-6, CA-13, CA-14, CA-15 — TDD : oui
+3. Les autres branches : index enrichi en trois appels git (fichiers, tranches, ancien modèle, type et date des refs) et les cinq règles de la version affichée — CA couverts : CA-9, CA-10, CA-11, CA-12 — TDD : oui
+4. `atelier path` et `atelier open` : chemin absolu, identifiant normalisé, erreurs (autre branche, inconnu, doublon, usage), explorateur selon la plateforme et repli sur le chemin — CA couverts : CA-16, CA-17, CA-18, CA-19 — TDD : oui
+5. Skills `/atelier:list` et `/atelier:open`, site, bump mineur ; vérifications manuelles (skills, mesure de performance) notées pour le bilan — CA couverts : CA-20 — TDD : non
 
 ## Risques et points d'attention
 <!-- - risque : parade -->

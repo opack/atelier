@@ -23,3 +23,8 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Contexte : question de Didier sur l'efficacité du comptage des tranches.
 - Écarté : écrire le nombre de tranches dans l'en-tête de la spec, parce que cette valeur dupliquerait le plan et dériverait sans bruit ; le comptage (`planSliceCount`, code Node, aucun token) coûte quelques microsecondes dans l'appel git existant.
 - Conséquence : `planSliceCount` reste la seule source.
+
+## 2026-11-26 : TDD déclaré par tranche : oui pour les tranches 1 à 4, non pour la tranche 5
+- Contexte : FIX-20 (fusionné après l'écriture du plan) exige que chaque tranche déclare son TDD ; `atelier check-plan` refusait le plan.
+- Écarté : « TDD : oui » pour la tranche 5, parce qu'elle ne contient que skills, site et version : CA-20 se vérifie par `npm run build` du site, pas par un test unitaire.
+- Conséquence : la tranche 5 se fait directement en `/atelier:build`.
