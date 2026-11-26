@@ -158,3 +158,21 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | Aucun | | |
 
 - Bilan de la revue : RD8 et RD9 réglés ; rien de nouveau.
+
+## Revue 1 : chantier : 2026-11-26
+- Commit revu : 8881e5b
+- Base : a799fb3 (merge-base avec main)
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD10. Le correctif OD5 (dépendance déjà done dans la branche par défaut) n'a aucun test | plugins/atelier/lib/integration.mjs:101 | test ajouté (d9746c1) : cas CA-10 dans integration-close.test.mjs, qui échoue sans le correctif OD5 |
+| RD11. Deux règles pour la référence de baseBranch : comptage des commits et base de revue | plugins/atelier/skills/review/SKILL.md:24 | corrigé (0c21128) : review §1 et close §1 reprennent la référence de la base de revue |
+
+- Bilan de la revue : CA-1 à CA-15 couverts ; un reste de tranche sans test et une incohérence entre skills, traités sur accord de Didier.
+- Idée (sans traitement) : aucun test ne couvre le parcours set-reviewed puis close-check d'un EPIC à branche d'intégration (vérifié à la main).
