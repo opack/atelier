@@ -70,3 +70,20 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | Aucun | | |
 
 - Bilan de la revue : CA-8, CA-9, CA-10, CA-14 couverts et testés ; OD1, OD2, OD4 faits. Un bloquant : un texte de close-check a changé pour un EPIC sans l'option.
+
+## Revue 2 : tranche 3 : 2026-11-26
+- Commit revu : f716ec2
+- Base : 78826b3 (slice_base)
+- Corrections depuis la revue 1 : d078d02 (RB1), f716ec2 (traitement consigné)
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+- Bilan de la revue : RB1 réglé, texte identique à l'avant-FEAT-21 sans l'option ; rien de nouveau.
