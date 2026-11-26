@@ -83,7 +83,7 @@ export function integrationRefChoice({ branch, local, remote, localInRemote = fa
   if (!remote || remoteInLocal) {
     return { ref: 'local' }
   }
-  return { error: `la branche d’intégration ${branch} et sa branche distante ont divergé : synchronise-la par une fusion, jamais un rebase (sur elle : git merge origin/${branch}, puis git push) avant de continuer.` }
+  return { error: `la branche d’intégration ${branch} et sa branche distante ont divergé : synchronise-la par une fusion, jamais un rebase (sur elle : git merge origin/${branch}, avec le message « [<ID de l’EPIC>] merge origin/${branch} », puis git push) avant de continuer.` }
 }
 
 // Dependencies among `ids` that are not in the current tree and are `done` only in the integration
