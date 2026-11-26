@@ -141,3 +141,20 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD9. Consigne de synchronisation de review citant l'EPIC même pour la branche par défaut | plugins/atelier/skills/review/SKILL.md:29 | corrigé (557c731) : réservée à une branche d'intégration (`baseEpic` renseigné) |
 
 - Bilan de la revue : RD7 réglé ; RD8 et RD9, nés de sa correction, corrigés sur accord de Didier.
+
+## Revue 4 : tranche 4 : 2026-11-26
+- Commit revu : bc79b4c
+- Base : 677544d (slice_base)
+- Corrections depuis la revue 3 : 557c731 (RD8, RD9), bc79b4c (traitements consignés)
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+- Bilan de la revue : RD8 et RD9 réglés ; rien de nouveau.
