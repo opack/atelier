@@ -131,3 +131,21 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD16. Caractère `.` sans effet dans le lookbehind du contrôle d'import | plugins/atelier/test/architecture-vocabulary.test.mjs:150 | corrigé (0e1d38a, sans relance) |
 
 - Bilan de la revue : RB1, RD10 à RD13 vérifiés (variantes essayées, jetons du lecteur identiques sur tout lib/) ; trois suites mineures corrigées sans relance (accord de Didier).
+
+## Revue 1 : chantier : 2026-11-26
+- Commit revu : 6180299
+- Base : 84bff20
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD17. `CLAUDE.md` ne dit pas que les termes des documents viennent de `lib/vocabulary.mjs` | CLAUDE.md:8, :19-20 ; plugins/atelier/test/architecture-vocabulary.test.mjs:241 | corrigé (45e18d7 : module et convention dans CLAUDE.md, message d'aide sur l'échec du test) |
+| RD18. Terme dans l'argument chaîne de `new RegExp` non signalé | plugins/atelier/test/architecture-vocabulary.test.mjs:128-147 | exception acceptée (Didier, 2026-11-26 : option la moins chère, limite consignée dans decisions.md (45e18d7) pour la pseudo-langue d'EPIC-14 ; la correction complète alourdirait le lecteur de code) |
+| RD19. `export` inutile dans le script de preuve | docs/chantiers/REF-34-vocabulaire-documents/check-tests.mjs:25 | corrigé (45e18d7) |
+
+- Bilan de la revue : comportement identique sur 263 comparaisons ancien / nouveau ; fusion 7734e5a sans conflit ni terme nouveau en dur ; site sans objet (aucun comportement ni message changé). Retouches faites sans relance (accord de Didier).
