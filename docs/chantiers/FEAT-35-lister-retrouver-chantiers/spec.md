@@ -3,7 +3,7 @@ id: FEAT-35
 type: FEAT
 title: Lister et retrouver les chantiers
 status: draft
-tdd:                 # yes | no : décision humaine, obligatoire avant signature
+tdd: yes
 created_at: 2026-11-25
 signed_by:
 signed_at:
@@ -34,7 +34,7 @@ Questions si manquant : qu'est-ce qui est hors périmètre ? Quelle est la plus 
 
 **L'étape** se déduit de l'en-tête de la spec et des documents présents dans le dossier du chantier, sans aucune commande git par chantier : brouillon, à planifier, tranche N/M en tests d'abord ou en implémentation, revue du chantier, clos, abandonné. C'est un repère, pas la prochaine étape exacte : celle-ci reste donnée par `atelier status` sur la branche du chantier (elle dépend du code commité, que la liste ne lit pas).
 
-**La version affichée** d'un chantier présent à plusieurs endroits est celle de **sa propre branche** (la branche dont le nom porte son identifiant), sinon celle de l'arbre courant, sinon la première branche trouvée. Un chantier en cours se voit donc avec son état réel, même depuis `main`.
+**La version affichée** d'un chantier présent à plusieurs endroits est celle de **sa propre branche** (la branche dont le nom porte son identifiant ; la branche locale l'emporte sur la branche distante du même nom), sinon celle de l'arbre courant, sinon la première branche trouvée. Un chantier en cours se voit donc avec son état réel, même depuis `main`.
 
 **`atelier path <ID>`** affiche le chemin du dossier du chantier dans l'arbre courant, relatif à la racine du projet. L'identifiant est reconnu sans tenir compte de la casse. Il se combine avec le shell : `cd "$(atelier path FIX-18)"`.
 
@@ -62,7 +62,7 @@ Pour `path` comme pour `open`, un chantier absent de l'arbre courant mais prése
 ## 4. Questions ouvertes
 <!-- Questions à trancher avant ou pendant la conception. Les réponses vont dans decisions.md. Optionnel. -->
 
-- Un chantier présent sur sa branche locale et sur sa branche distante, avec des en-têtes différents : laquelle l'emporte ? Proposition : la locale (c'est là qu'on travaille), à confirmer au plan.
+Aucune.
 
 ## 5. Critères d'acceptation
 <!-- Format : - [ ] CA-1 : Étant donné …, quand …, alors …
@@ -74,7 +74,7 @@ Questions si manquant : chaque critère peut-il devenir un test ? Que se passe-t
 - [ ] CA-3 : Étant donné des chantiers de plusieurs types et statuts, quand on lance `atelier list --type FIX,TEC --status signed`, alors ne sont listés que les FIX et TEC signés ; avec `--parent EPIC-17`, seuls les enfants directs d'EPIC-17 ; avec un texte libre `relecture`, seuls ceux dont l'identifiant ou le titre le contient, sans tenir compte de la casse ni des accents (« Relectures » et « relécture » correspondent).
 - [ ] CA-4 : Étant donné des chantiers de plusieurs statuts, quand on lance `atelier list --sort status`, alors ils sont groupés par statut et, à l'intérieur d'un groupe, triés par numéro ; de même avec `--sort type`. Une valeur de `--sort` inconnue est refusée avec la liste des valeurs admises.
 - [ ] CA-5 : Étant donné un chantier signé dont la spec indique `slice: 2` et dont le plan compte 3 tranches, en TDD avec les tests de la tranche figés, quand on liste, alors son étape est « tranche 2/3 : implémentation » ; une spec en brouillon donne « brouillon », un FEAT signé sans `plan.md` donne « à planifier », un chantier en `slice: chantier` donne « revue du chantier ».
-- [ ] CA-6 : Étant donné FEAT-40 absent de l'arbre courant et présent signé sur la branche `feat/FEAT-40-x`, et FEAT-41 présent en brouillon dans l'arbre courant et signé sur `feat/FEAT-41-y`, quand on lance `atelier list` depuis `main`, alors FEAT-40 est listé avec la branche `feat/FEAT-40-x` comme emplacement, et FEAT-41 est listé signé, avec sa branche comme emplacement.
+- [ ] CA-6 : Étant donné FEAT-40 absent de l'arbre courant et présent signé sur la branche `feat/FEAT-40-x`, FEAT-41 présent en brouillon dans l'arbre courant et signé sur `feat/FEAT-41-y`, et FEAT-42 signé sur la branche locale `feat/FEAT-42-z` mais encore en brouillon sur `origin/feat/FEAT-42-z`, quand on lance `atelier list` depuis `main`, alors FEAT-40 est listé avec la branche `feat/FEAT-40-x` comme emplacement, FEAT-41 est listé signé, avec sa branche comme emplacement, et FEAT-42 est listé signé, avec sa branche locale comme emplacement.
 - [ ] CA-7 : Étant donné des chantiers, quand on lance `atelier list --json` avec des filtres, alors la sortie est un tableau JSON des chantiers sélectionnés, dans le même ordre que l'affichage, chacun avec `id`, `type`, `title`, `status`, `step`, `location`, `parent`.
 - [ ] CA-8 : Étant donné que les filtres écartent tout, ou qu'aucun chantier n'est ouvert alors que des chantiers clos existent, quand on lance `atelier list`, alors une ligne dit qu'aucun chantier ne correspond et, dans le second cas, mentionne `--all` ; `--json` rend `[]`.
 - [ ] CA-9 : Étant donné le chantier FIX-18 dans l'arbre courant, quand on lance `atelier path fix-18`, alors la commande affiche `docs/chantiers/FIX-18-<slug>` (ou le `chantiersDir` configuré) et réussit.
