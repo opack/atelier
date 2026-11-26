@@ -7,6 +7,7 @@ tdd:                 # yes | no : décision humaine, obligatoire avant signature
 created_at: 2026-11-26
 signed_by:
 signed_at:
+rel_depends_on: REF-34
 ---
 
 # TEC-37 Préfixe AC pour les critères d'acceptation
@@ -46,7 +47,7 @@ Hors périmètre :
 Question si manquant : qu'est-ce qui pourrait changer pour l'utilisateur malgré tout ? -->
 
 - Les specs ouvertes après la mise à jour du plugin s'écrivent en `AC-n` ; les anciennes restent valides sans rien faire.
-- Branches en cours (FEAT-21, FEAT-35, REF-34) : REF-34 touche aussi `lib/slices.mjs` et `lib/spec.mjs` pour y brancher le vocabulaire ; il fusionnera `main` au début de sa tranche 1 et reprendra l'expression `CA|AC`. Le préfixe est un code, pas un terme du vocabulaire ; le mot « couverts » du segment de couverture, lui, en est un.
+- REF-34 (dernière tranche en cours) branche le vocabulaire dans `lib/slices.mjs` et `lib/spec.mjs`. TEC-37 dépend de lui : ses tests et son code s'écrivent après la fusion de REF-34 dans `main`, sur les expressions tirées du vocabulaire. Le préfixe (`CA|AC`) est un code, pas un terme du vocabulaire ; le mot « couverts » du segment de couverture, lui, en est un et reste dans le vocabulaire.
 - Une spec qui mélange `CA-n` et `AC-n` est signalée par `check-spec` : deux critères de même numéro sous deux préfixes seraient indiscernables pour un lecteur.
 
 ## 5. Vérification
