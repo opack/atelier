@@ -8,9 +8,9 @@ created_at: 2026-11-23
 rel_depends_on: REF-29
 signed_by: Opack
 signed_at: 2026-11-23
-tests_commit: c55a7c2
-slice: 3
-slice_base: 78826b3c0a14c403df37e02c98a2152269cf8f60
+tests_commit: 
+slice: 4
+slice_base: 677544d8f31f877e695ec6da1552ed6e86024275
 slice_tdd: 
 ---
 
