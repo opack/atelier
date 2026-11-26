@@ -186,6 +186,23 @@ describe('write guard on a spec that is no longer a draft', () => {
     assert.equal(setStatusRefusal(draftChantier, 'draft'), null)
     assert.equal(setStatusRefusal(signedChantier, 'abandoned'), null)
   })
+
+  it('gèle integration_branch après la signature (changé, ajouté, retiré), le laisse libre en brouillon [FEAT-21 CA-3]', () => {
+    const withOption = signedText.replace('type: FEAT', 'type: EPIC').replace('tdd: yes', 'tdd: no\nintegration_branch: yes')
+    const withoutOption = signedText.replace('type: FEAT', 'type: EPIC').replace('tdd: yes', 'tdd: no')
+    const cases = [
+      ['changé', withOption, { old_string: 'integration_branch: yes', new_string: 'integration_branch: no' }],
+      ['ajouté', withoutOption, { old_string: 'tdd: no', new_string: 'tdd: no\nintegration_branch: yes' }],
+      ['retiré', withOption, { old_string: 'tdd: no\nintegration_branch: yes', new_string: 'tdd: no' }],
+    ]
+    for (const [label, text, change] of cases) {
+      const decision = edit([entry, change], { current: text, committed: text })
+      assert.equal(decision.allowed, false, label)
+      assert.match(decision.reason, /« integration_branch »/, label)
+      const draft = text.replace('status: signed', 'status: draft')
+      assert.equal(edit([change], { current: draft, committed: draft }).allowed, true, `${label} en brouillon`)
+    }
+  })
 })
 
 describe('write guard on a spec whose committed version is a draft', () => {
@@ -305,6 +322,24 @@ describe('slice fields written by the command', () => {
       })
       assert.equal(decision.allowed, false, field)
       assert.match(decision.reason, new RegExp(`« ${field} »`), field)
+    }
+  })
+})
+
+describe('slice TDD written by the command', () => {
+  it('le hook refuse que l’agent change ou retire slice_tdd d’une spec signée [FIX-20 CA-8]', () => {
+    const relativePath = 'docs/chantiers/FIX-20-x/spec.md'
+    const signedText = '---\nid: FIX-20\ntype: FIX\ntitle: X\nstatus: signed\ntdd: yes\nslice: 2\nslice_tdd: yes\n---\n# FIX-20\n'
+    for (const newValue of ['slice_tdd: no', 'slice_tdd:']) {
+      const proposed = applyToolEdit(signedText, 'Edit', { old_string: 'slice_tdd: yes', new_string: newValue })
+      const decision = decide({
+        relativePath,
+        existingSpec: parseFrontMatter(signedText),
+        proposedSpec: parseFrontMatter(proposed),
+        committedSpec: parseFrontMatter(signedText),
+      })
+      assert.equal(decision.allowed, false, newValue)
+      assert.match(decision.reason, /« slice_tdd »/, newValue)
     }
   })
 })

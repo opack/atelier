@@ -3,6 +3,8 @@
 import { matchesAny } from '../common.mjs'
 import { parseAmendments } from '../spec.mjs'
 import {
+  FREEZE_WITHOUT_TEST_MESSAGE,
+  freezeTestsPhaseRefusal,
   freezeTestsRefusal,
   freezeTestsValues,
   isRefreeze,
@@ -11,11 +13,12 @@ import {
   reopenTestsEntry,
   reopenTestsRefusal,
   setTddRefusal,
-  testDrivenPhase,
+  setTddUpdate,
   testFilesChangedByChantier,
   withoutSpaces,
 } from '../tdd.mjs'
 import {
+  chantierFilePath,
   findProjectRoot,
   git,
   gitPaths,
@@ -26,6 +29,7 @@ import {
   uncommittedFiles,
 } from './common.mjs'
 import { requireActiveChantier } from './identifiers.mjs'
+import { integrationBranchOf, integrationRefsOf } from './integration.mjs'
 import { codeFilesSince } from './slices.mjs'
 import { appendAmendment, updateSpec } from './spec.mjs'
 
@@ -36,9 +40,11 @@ function uncommittedTestFiles(projectRoot, config) {
 }
 
 // Test files changed by the chantier itself since `base` (its commits and the resolution of its
-// merges): files brought by a merge of the default branch do not count (see codeFilesSince).
-function chantierTestFiles(projectRoot, config, base) {
-  return [...new Set(codeFilesSince(projectRoot, base, 'first-parent'))]
+// merges): files brought by a merge of the default branch, or of the integration branch of the
+// chantier's EPIC, do not count (see codeFilesSince).
+function chantierTestFiles(projectRoot, config, base, chantier, index = null) {
+  const baseRefs = chantier ? integrationRefsOf(integrationBranchOf(projectRoot, config, chantier, index)) : []
+  return [...new Set(codeFilesSince(projectRoot, base, 'first-parent', baseRefs))]
     .filter((file) => matchesAny(file, config.testPaths, config.ignoreCase))
 }
 
@@ -62,10 +68,12 @@ function candidatesDiff(projectRoot, base, candidates) {
 // branch do not explain (see testFilesChangedByChantier): a test file brought or extended by such a
 // merge, conflict included, does not count. When `commit` is no longer an ancestor of HEAD (rebase
 // after the freeze), the chantier's history since the freeze cannot be read: the whole diff counts.
-export function testFilesChangedSince(projectRoot, config, commit) {
+// `chantier` gives the integration branch whose merges do not count either; `index` reuses an index
+// of chantiers already built.
+export function testFilesChangedSince(projectRoot, config, commit, chantier, index = null) {
   let committed
   if (isAncestorOfHead(projectRoot, commit)) {
-    const candidates = chantierTestFiles(projectRoot, config, commit)
+    const candidates = chantierTestFiles(projectRoot, config, commit, chantier, index)
     committed = candidates.length ? committedTestChanges(projectRoot, commit, candidates) : []
   } else {
     committed = gitPaths(projectRoot, ['diff', '--name-only', '-z', commit, '--'])
@@ -103,8 +111,8 @@ function committedTestChanges(projectRoot, commit, candidates) {
 
 // Test files present at `base` whose lines were changed or removed in HEAD, among the test files
 // changed by the chantier itself since `base` (see chantierTestFiles and candidatesDiff).
-function testFilesWithRemovedLines(projectRoot, config, base) {
-  const candidates = chantierTestFiles(projectRoot, config, base)
+function testFilesWithRemovedLines(projectRoot, config, base, chantier) {
+  const candidates = chantierTestFiles(projectRoot, config, base, chantier)
   if (!candidates.length) return []
   const { diff, deleted, binary } = candidatesDiff(projectRoot, base, candidates)
   return [...new Set([...removedTestLines(diff), ...deleted, ...binary])].filter((file) => candidates.includes(file))
@@ -115,9 +123,10 @@ export function commandFreezeTests() {
   const projectRoot = findProjectRoot()
   const config = requireConfig(projectRoot)
   const chantier = requireActiveChantier(projectRoot, config)
-  if (testDrivenPhase(chantier) !== 'writing-tests') {
-    console.error('Ce chantier n’est pas en phase « tests d’abord ».')
-    process.exit(1)
+  const phaseRefusal = freezeTestsPhaseRefusal(chantier)
+  if (phaseRefusal) {
+    console.error(`Gel refusé : ${phaseRefusal}`)
+    process.exit(2)
   }
   const pending = uncommittedTestFiles(projectRoot, config)
   if (pending.length) {
@@ -127,12 +136,12 @@ export function commandFreezeTests() {
   const commit = git(projectRoot, ['rev-parse', '--short', 'HEAD'])
   const lastCommitFiles = gitPaths(projectRoot, ['show', '--name-only', '-z', '--format=', 'HEAD'])
   if (!lastCommitFiles.some((file) => matchesAny(file, config.testPaths, config.ignoreCase))) {
-    console.error('Le dernier commit ne contient aucun fichier de test. Commite les tests (et seulement les tests) avant de les figer.')
+    console.error(FREEZE_WITHOUT_TEST_MESSAGE)
     process.exit(2)
   }
   const sliceBase = chantier.spec.data.slice_base || null
   const sliceBaseIsAncestor = sliceBase ? isAncestorOfHead(projectRoot, sliceBase) : null
-  const removedTestFiles = sliceBase && sliceBaseIsAncestor ? testFilesWithRemovedLines(projectRoot, config, sliceBase) : []
+  const removedTestFiles = sliceBase && sliceBaseIsAncestor ? testFilesWithRemovedLines(projectRoot, config, sliceBase, chantier) : []
   const refusal = freezeTestsRefusal({ chantier, sliceBaseIsAncestor, removedTestFiles })
   if (refusal) {
     console.error(`Gel refusé : ${refusal}`)
@@ -145,6 +154,17 @@ export function commandFreezeTests() {
   console.log(`Tests figés au commit ${commit}. Phase suivante : implémentation, sans modifier les tests (/atelier:build).`)
 }
 
+// Whether a slice of the chantier froze tests: a non-empty `tests_commit` in a committed
+// version of the spec.
+function testsFrozenBefore(projectRoot, chantier) {
+  try {
+    const specPath = chantierFilePath(projectRoot, chantier, 'spec.md')
+    return git(projectRoot, ['log', '--format=%h', '-G', '^tests_commit: *[0-9a-f]', '--', specPath]) !== ''
+  } catch {
+    return false
+  }
+}
+
 export function commandReopenTests(reasonWords) {
   const reason = reasonWords.join(' ').trim()
   if (!reason) {
@@ -154,7 +174,7 @@ export function commandReopenTests(reasonWords) {
   const projectRoot = findProjectRoot()
   const config = requireConfig(projectRoot)
   const chantier = requireActiveChantier(projectRoot, config)
-  const refusal = reopenTestsRefusal(chantier)
+  const refusal = reopenTestsRefusal(chantier, { frozenBefore: testsFrozenBefore(projectRoot, chantier) })
   if (refusal) {
     console.error(`Réouverture refusée : ${refusal}`)
     process.exit(2)
@@ -178,15 +198,15 @@ export function commandSetTdd([value, ...reasonWords]) {
     console.error(`TDD refusé : ${refusal}`)
     process.exit(2)
   }
-  const wasSigned = chantier.spec.data.status === 'signed'
-  const { specPath } = updateSpec(projectRoot, config, { tdd: value })
-  const reason = reasonWords.join(' ').trim()
-  if (wasSigned) {
-    appendAmendment(specPath, `${today()} : TDD ${value === 'yes' ? 'activé' : 'désactivé'}${reason ? ` : ${reason}` : ''}`)
+  const { values, entry } = setTddUpdate(chantier, value, today(), reasonWords.join(' ').trim())
+  const { specPath } = updateSpec(projectRoot, config, values)
+  if (entry) {
+    appendAmendment(specPath, entry)
   }
+  const scope = 'slice_tdd' in values ? 'Tranche' : 'Chantier'
   console.log(value === 'yes'
-    ? 'Chantier en TDD : tests écrits, commités et figés avant l’implémentation.'
-    : 'Chantier sans TDD : pas de phase tests d’abord imposée.')
+    ? `${scope} en TDD : tests écrits, commités et figés avant l’implémentation.`
+    : `${scope} sans TDD : pas de phase tests d’abord imposée.`)
 }
 
 export function commandTestsChanged() {
@@ -198,7 +218,7 @@ export function commandTestsChanged() {
     console.log('Tests pas encore figés.')
     return
   }
-  const changed = testFilesChangedSince(projectRoot, config, commit)
+  const changed = testFilesChangedSince(projectRoot, config, commit, chantier)
   if (changed.length === 0) {
     console.log(`Aucun test modifié depuis le commit ${commit}.`)
     return

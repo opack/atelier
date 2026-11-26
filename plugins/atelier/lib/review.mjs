@@ -3,8 +3,8 @@
 
 import { matchesAny, specStatus } from './common.mjs'
 import { parseReviewPoints, reviewPointProblems } from './review-points.mjs'
-import { sliceState } from './slices.mjs'
-import { testDrivenPhase } from './tdd.mjs'
+import { planSlices, sliceState } from './slices.mjs'
+import { declaredSliceTdd, testDrivenPhase } from './tdd.mjs'
 
 // ---------- Review ----------
 
@@ -97,14 +97,18 @@ export function setReviewedUpdate(chantier, head) {
   const commitHint = (label) => `Commite la spec et revue.md : docs(chantiers): [${chantier.id}] review ${label}`
   if (model === 'sliced' && slice !== 'chantier') {
     if (slice < sliceCount) {
-      const next = chantier.spec.data.tdd === 'yes' ? 'écrire ses tests : /atelier:write-tests' : 'l’implémenter : /atelier:build'
+      // The TDD declared by the plan for the next slice applies; undeclared, the chantier's.
+      const sliceTdd = planSlices(chantier.plan).find((entry) => entry.number === slice + 1)?.tdd ?? ''
+      const next = (declaredSliceTdd(sliceTdd) ?? chantier.spec.data.tdd) === 'yes'
+        ? 'écrire ses tests : /atelier:write-tests'
+        : `l’implémenter${sliceTdd === 'no' ? ' (sans TDD pour cette tranche)' : ''} : /atelier:build`
       return {
-        values: { slice: String(slice + 1), slice_base: head, tests_commit: '' },
+        values: { slice: String(slice + 1), slice_base: head, tests_commit: '', slice_tdd: sliceTdd },
         message: `Tranche ${slice} validée. Tranche ${slice + 1}/${sliceCount} : ${next}. ${commitHint(slice)}`,
       }
     }
     return {
-      values: { slice: 'chantier', last_slice: String(slice), slice_base: head },
+      values: { slice: 'chantier', last_slice: String(slice), slice_base: head, slice_tdd: '' },
       message: `Tranche ${slice} validée, c’était la dernière. Revue du chantier : faire relire l’ensemble : /atelier:review. ${commitHint(slice)}`,
     }
   }

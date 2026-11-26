@@ -227,3 +227,41 @@ describe('calibrated review points in the documentation', () => {
     })
   }
 })
+
+describe('EPIC with an integration branch in the skills, the agent, the template and the site', () => {
+  const repositoryText = (relativePath) => readFileSync(fileURLToPath(new URL(`../../../${relativePath}`, import.meta.url)), 'utf8')
+  const pluginText = (relativePath) => repositoryText(`plugins/atelier/${relativePath}`)
+  const integration = /branche d['’]intégration/
+
+  for (const file of ['skills/review/SKILL.md', 'skills/close/SKILL.md']) {
+    it(`${file} : la règle « chaque commit porte [<ID>] » compte les commits en --first-parent depuis baseBranch [FEAT-21 CA-11]`, () => {
+      const rule = pluginText(file).split('\n').filter((line) => line.includes('[<ID>]') && /chaque commit/.test(line))
+      assert.ok(rule.length > 0, 'règle des commits introuvable')
+      assert.ok(rule.some((line) => line.includes('--first-parent') && line.includes('baseBranch')), rule.join('\n'))
+    })
+  }
+
+  it('review et close lisent la base dans baseBranch ; new part de atelier base --parent ; plan parle de la branche d’intégration [FEAT-21 CA-12]', () => {
+    assert.match(pluginText('skills/review/SKILL.md'), /baseBranch/)
+    assert.match(pluginText('skills/close/SKILL.md'), /baseBranch/)
+    assert.match(pluginText('skills/new/SKILL.md'), /atelier base --parent/)
+    assert.match(pluginText('skills/plan/SKILL.md'), integration)
+  })
+
+  it('close : fusion par commit de fusion dans la branche d’intégration, revue d’ensemble, enfant correctif, fusion de la branche par défaut sans rebase [FEAT-21 CA-12]', () => {
+    const close = pluginText('skills/close/SKILL.md')
+    assert.deepEqual([integration, /commit de fusion/, /revue d['’]ensemble/, /enfant correctif/, /rebase/].filter((pattern) => !pattern.test(close)).map(String), [])
+  })
+
+  it('l’agent reviewer connaît la portée « revue d’ensemble » ; le template spec-epic propose integration_branch [FEAT-21 CA-12]', () => {
+    assert.match(pluginText('agents/reviewer.md'), /revue d['’]ensemble/)
+    assert.match(pluginText('templates/spec-epic.md'), /integration_branch/)
+  })
+
+  const pages = ['fondations/chantier.md', 'fondations/types.md', 'cycle/conception.md', 'cycle/revue.md', 'cycle/cloture.md', 'reference/commandes.md']
+  it('le site décrit l’EPIC à branche d’intégration, et la commande atelier base [FEAT-21 CA-12]', () => {
+    assert.deepEqual(pages.filter((page) => !integration.test(repositoryText(`site/${page}`))), [])
+    assert.match(repositoryText('site/reference/commandes.md'), /atelier base --parent/)
+    assert.match(repositoryText('site/cycle/revue.md'), /revue d['’]ensemble/)
+  })
+})

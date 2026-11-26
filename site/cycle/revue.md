@@ -19,6 +19,12 @@ La revue se fait **par tranche**, juste après son implémentation : un diff de 
 
 Un chantier sans plan, ou à une seule tranche, a une seule revue, sur tout le diff, ligne à ligne : pas de revue du chantier.
 
+La « branche par défaut » du tableau est en fait la **base** du chantier (`baseBranch` dans `atelier status --json`) : pour l’enfant d’un [EPIC à branche d’intégration](../fondations/types#epic-a-branche-d-integration), c’est la branche d’intégration de l’EPIC. Fusionner la branche d’intégration dans un enfant déjà revu ne compte, comme une fusion de la branche par défaut, que par ses résolutions de conflits sur du code.
+
+### Revue d’ensemble d’un EPIC à branche d’intégration
+
+Un EPIC sans l’option n’a pas de revue. Un EPIC à branche d’intégration en a une, obligatoire avant sa clôture : la **revue d’ensemble**, sur tout le diff de la branche d’intégration depuis sa base (en général la branche par défaut). Chaque enfant a été revu seul, contre une base qui bougeait ; la revue d’ensemble relit l’assemblage : cohérence entre lots, atteinte des critères globaux, résolutions de conflits des fusions de la branche par défaut. Elle ne refait pas la revue ligne à ligne de chaque enfant. Un point bloquant se corrige par un **enfant correctif** (`FIX` ou `REF` rattaché à l’EPIC) fusionné dans la branche d’intégration, puis une nouvelle revue d’ensemble ; jamais par du code écrit sur la branche de l’EPIC.
+
 ## 1. Contrôles
 
 - La spec est signée.
@@ -101,9 +107,9 @@ Chaque revue est consignée dans `revue.md`, dans le dossier du chantier : une s
 
 Quand chaque point a un traitement, l’agent vous présente le résultat et vous demande **explicitement** de valider. Sans votre accord, rien n’est écrit : la tranche reste en cours. Après votre « oui », `atelier set-reviewed` :
 
-- **tranche N avant la dernière** : passe à la tranche N+1. Le début de la nouvelle tranche (`slice_base`) est le commit revu ; en TDD, elle repart en phase « tests d’abord » ;
+- **tranche N avant la dernière** : passe à la tranche N+1. Le début de la nouvelle tranche (`slice_base`) est le commit revu ; elle prend le TDD déclaré pour elle au plan (`slice_tdd`, à défaut le `tdd` du chantier) : en TDD, elle repart en phase « tests d’abord », sinon directement en implémentation ;
 - **dernière tranche** : passe à la revue du chantier (`slice: chantier`) ;
-- **revue du chantier**, ou chantier à tranche unique : écrit le hash complet du commit revu (`reviewed_commit`), celui que la clôture vérifie.
+- **revue du chantier**, chantier à tranche unique ou revue d’ensemble d’un EPIC : écrit le hash complet du commit revu (`reviewed_commit`), celui que la clôture vérifie.
 
 Puis la spec et `revue.md` sont commitées (`docs(chantiers): [<ID>] review <tranche>`). Il n’y a pas de commande « tranche suivante » : c’est la validation de la revue qui fait avancer.
 
@@ -116,7 +122,7 @@ La [clôture](./cloture) vérifie que le code clôturé est **celui qui a été 
 - un commit de code depuis le commit revu, **tests compris** ; une fusion de la branche par défaut ne compte que par sa résolution, c’est-à-dire ce qui diffère de la fusion automatique sur un fichier de code (conflit résolu, retouche), pas par le code qu’elle apporte de la branche par défaut ([git 2.36 ou plus](../reference/limites#la-version-de-git)) ;
 - une modification de `.claude/` : on ne doit pas pouvoir affaiblir les contrôles ou les hooks après la revue ;
 - un amendement de la spec : le code a été relu contre une autre version ;
-- un rebase, qui fait disparaître le commit revu de l’historique.
+- un rebase, qui fait disparaître le commit revu de l’historique. Pour un EPIC à branche d’intégration, un rebase de la branche d’intégration ou un enfant fusionné par squash efface les commits revus des enfants : la clôture de l’EPIC le refuse en nommant l’enfant.
 
 Les commits de documentation (chemins libres, dossier du chantier) ne la rendent pas obsolète : le bilan s’écrit après. `/atelier:status` indique si la revue est à jour, et sinon pourquoi.
 

@@ -4,6 +4,7 @@ type: EPIC
 title: {{TITLE}}
 status: draft
 tdd: no              # un EPIC n'implémente rien : toujours no
+integration_branch:  # yes | no (vide : no) : branche d'intégration ; les enfants partent de la branche de l'EPIC et y sont fusionnés par commit de fusion, revue d'ensemble avant une seule fusion dans la branche par défaut ; figée à la signature
 created_at: {{DATE}}
 signed_by:
 signed_at:

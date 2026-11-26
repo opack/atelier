@@ -2,6 +2,7 @@
 // Pure functions: no access to the disk, git or the environment.
 
 import { CHANTIER_TYPES, normalize, parseFrontMatter } from './common.mjs'
+import { integrationOptionProblems } from './integration.mjs'
 
 // ---------- Spec completeness and amendments ----------
 
@@ -98,6 +99,7 @@ export function checkSpec(text) {
   if (type === 'EPIC' && data.tdd === 'yes') {
     problems.push('En-tête : un EPIC n’implémente rien, il est toujours en « tdd: no ».')
   }
+  problems.push(...integrationOptionProblems(data))
   const required = REQUIRED_SECTIONS[type]
   if (!required) {
     problems.push(`En-tête : type « ${data.type ?? ''} » inconnu (attendu : ${CHANTIER_TYPES.join(', ')}).`)

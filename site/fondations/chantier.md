@@ -76,5 +76,6 @@ rel_depends_on: FEAT-41, TEC-42
 - **Une dépendance abandonnée bloque** la clôture comme une dépendance ouverte : on retire la relation par amendement, ou on dépend du chantier qui la remplace.
 - **Rattachement après coup** : ajouter `rel_parent` à une spec signée passe par un amendement. Un chantier déjà clos ne se rattache pas : l’EPIC le cite dans son contexte.
 - `atelier status` affiche les relations du chantier courant et, pour un EPIC, ses enfants calculés.
+- **Base d’un chantier** : la branche dont il part et contre laquelle il est revu. C’est la branche par défaut, sauf pour l’enfant d’un [EPIC à branche d’intégration](./types#epic-a-branche-d-integration) : sa base est la branche d’intégration de l’EPIC ancêtre le plus proche qui déclare `integration_branch: yes`. `atelier status --json` l’expose (`baseBranch`, et l’EPIC qui l’impose dans `baseEpic`).
 
 Supprimer le plugin ne fait rien perdre : tout est lisible dans git.
