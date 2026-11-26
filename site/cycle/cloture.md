@@ -12,7 +12,7 @@ La clôture ne relit pas et ne corrige pas le code : c’est le rôle de la [rev
 
 ## 1. Préalable : une revue à jour
 
-La revue doit être enregistrée et à jour (`/atelier:status` le dit). Pour un chantier à plusieurs tranches, c’est la **revue du chantier**, après la dernière tranche : une tranche encore en cours, ou ajoutée au plan après la dernière revue de tranche, bloque la clôture. Sinon, retour à `/atelier:review`. Exception : un `SPIKE` sans TDD, dont le code n’est jamais fusionné.
+La revue doit être enregistrée et à jour (`/atelier:status` le dit). Pour un chantier à plusieurs tranches, c’est la **revue du chantier**, après la dernière tranche : une tranche encore en cours, ou ajoutée au plan après la dernière revue de tranche, bloque la clôture. Sinon, retour à `/atelier:review`. Exceptions : un `SPIKE` sans TDD, dont le code n’est jamais fusionné, et un EPIC sans l’option de branche d’intégration, qui n’a pas de code. Un [EPIC à branche d’intégration](../fondations/types#epic-a-branche-d-integration) exige sa **revue d’ensemble** à jour, et que les revues de ses enfants soient encore dans l’historique de la branche d’intégration (aucun squash, aucun rebase) ; la clôture nomme l’enfant fautif.
 
 ## 2. Bilan
 
@@ -43,6 +43,7 @@ Après votre verdict, juste avant de passer le chantier en `done`, `atelier clos
 - aucun changement de code non commité ;
 - en TDD, les tests sont figés ;
 - chaque point de `revue.md` a un traitement, aucun n’est encore `reporté (tranche N)`, aucun n’est mal formé (mêmes contrôles qu’à la [revue](./revue#_4-consigner-valider-passer-a-la-suite)), et `revue.md` est commité ;
+- les dépendances (`rel_depends_on`) sont `done` dans la branche courante : pour l’enfant d’un EPIC à branche d’intégration, le message dit de fusionner la branche d’intégration ; un chantier hors de l’EPIC qui dépend d’un enfant livré seulement dans la branche d’intégration attend la clôture de l’EPIC ;
 - les contrôles de `.claude/atelier.json` sont verts.
 
 Un `SPIKE` ignore tout ce qui touche à la revue ; le reste s’applique. En cas d’échec : la liste des problèmes, et retour à `/atelier:review`.
@@ -54,3 +55,7 @@ Un chantier clos rebloque le code sur sa branche : toute modification ultérieur
 ## 5. PR
 
 atelier propose la PR : titre `[<ID>] <titre>`, résumé du bilan, liens vers la spec, la revue et le bilan. Il ne la crée que si vous le demandez.
+
+Sa cible est la base du chantier (`baseBranch`). L’enfant d’un EPIC à branche d’intégration vise la branche d’intégration, et sa PR se fusionne par un **commit de fusion**, ni squash ni rebase : ils effaceraient le commit revu. L’EPIC à branche d’intégration se termine par une seule PR qui fusionne la branche d’intégration dans sa base (en général la branche par défaut ; la branche d’intégration du parent pour un sous-EPIC).
+
+Pendant l’EPIC, la branche par défaut avance : on la fusionne dans la branche d’intégration (`git merge`, commit `[<ID de l’EPIC>] merge <branche par défaut>`), **jamais de rebase**. Une fusion sans conflit sur du code laisse la revue d’ensemble à jour ; ses résolutions de conflits la périment, puisque c’est elle qui doit les relire.
