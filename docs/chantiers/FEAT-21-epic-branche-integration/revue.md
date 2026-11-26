@@ -87,3 +87,22 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | Aucun | | |
 
 - Bilan de la revue : RB1 réglé, texte identique à l'avant-FEAT-21 sans l'option ; rien de nouveau.
+
+## Revue 1 : tranche 4 : 2026-11-26
+- Commit revu : dcebf49
+- Base : 677544d (slice_base)
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD3. Débrayage pour résoudre un conflit sur la branche de l'EPIC, sans commande ni levée | plugins/atelier/skills/close/SKILL.md:17 | corrigé (3137c2b) : /atelier:off, trailer Atelier-Bypass, bypass off aussitôt (skill close et site) |
+| RD4. Revue d'ensemble : traitements « test ajouté » et « corrigé » non adaptés à l'EPIC | plugins/atelier/skills/review/SKILL.md:50 | corrigé (3137c2b) : test manquant par enfant correctif, consigne `corrigé (<ID de l'enfant>, fusion <commit>)` |
+| RD5. Branche d'intégration supposée présente et à jour en local dans new, close et la règle des commits | plugins/atelier/skills/new/SKILL.md:38 | corrigé (3137c2b) : fetch, référence la plus avancée ou arrêt si divergence ; branche d'EPIC à l'option jamais recréée ; référence distante si absente en local |
+| RD6. Virgule manquante dans commandes.md, description de review sans la revue d'ensemble | site/reference/commandes.md:27 | corrigé (3137c2b) |
+
+- Bilan de la revue : CA-11, CA-12 et le test de l'amendement (CA-8) conformes ; 4 points de consignes corrigés, sur accord de Didier.
