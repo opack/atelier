@@ -76,3 +76,20 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD9. Tableaux désignés par leur position dans `POINT_TABLES` | plugins/atelier/lib/review-points.mjs:220, :223, :234 | corrigé (e8bded8) |
 
 - Bilan de la revue : comportement identique vérifié par exécution comparée ancien / nouveau module sur les 24 `revue.md` du dépôt et 6 documents fabriqués (14 messages déclenchés).
+
+## Revue 2 : tranche 2 : 2026-11-26
+- Commit revu : 9deb562
+- Base : 95739d9
+- Corrections depuis la revue 1 : e8bded8
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+- Bilan de la revue : e8bded8 vérifié à comportement identique (messages au caractère près, `expectedTable`).
