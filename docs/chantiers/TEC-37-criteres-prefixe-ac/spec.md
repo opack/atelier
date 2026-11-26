@@ -2,11 +2,11 @@
 id: TEC-37
 type: TEC
 title: Préfixe AC pour les critères d'acceptation
-status: draft
+status: signed
 tdd: yes
 created_at: 2026-11-26
-signed_by:
-signed_at:
+signed_by: Opack
+signed_at: 2026-11-26
 rel_depends_on: REF-34, FEAT-35
 ---
 
