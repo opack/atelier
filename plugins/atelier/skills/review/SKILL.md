@@ -1,5 +1,5 @@
 ---
-description: Revue indépendante du chantier actif — revue de la tranche en cours, puis revue du chantier après la dernière tranche — contrôles, relecture par le sous-agent reviewer, traitement de chaque point RB/RD (correction, test, amendement, exception acceptée, écarté, reporté ou requalifié), autant de revues que nécessaire, validation de l'utilisateur, puis passage à la tranche suivante ou enregistrement du commit revu.
+description: Revue indépendante du chantier actif — revue de la tranche en cours, puis revue du chantier après la dernière tranche, ou revue d'ensemble d'un EPIC à branche d'intégration — contrôles, relecture par le sous-agent reviewer, traitement de chaque point RB/RD (correction, test, amendement, exception acceptée, écarté, reporté ou requalifié), autant de revues que nécessaire, validation de l'utilisateur, puis passage à la tranche suivante ou enregistrement du commit revu.
 argument-hint: "[modèle] [effort]"
 ---
 
@@ -20,7 +20,7 @@ Chaque passage du sous-agent reviewer est une **revue** ; après correction des 
 - `atelier status --json` : il faut une spec **signée**. Pour un `SPIKE` sans TDD (code jetable, non fusionné), la revue est facultative : demande à l'utilisateur s'il la veut. Un `SPIKE` en TDD suit le process complet : revues obligatoires.
 - `atelier checks` : tous les contrôles doivent être verts. Sinon, arrête-toi : retour à `/atelier:build`.
 - En TDD (`testDrivenPhase` ≠ `none`) : les tests doivent être figés (`implementing`), et `atelier tests-changed` ne doit signaler aucun test modifié depuis leur gel. Sinon, arrête-toi et explique-le à l'utilisateur.
-- Le travail doit être commité (`git status --porcelain` sans code modifié), chaque commit du chantier portant `[<ID>]` : compte les commits du chantier avec `git log --first-parent <baseBranch>..HEAD` (`baseBranch` de `atelier status --json`), pour l'EPIC comme pour l'enfant, afin que les commits apportés par une fusion (enfants frères, enfants fusionnés, branche par défaut) ne comptent pas. Sur la branche d'un EPIC à branche d'intégration, les commits de fusion de ses enfants (leurs PR) en sont dispensés, et une fusion de la branche par défaut ou de la branche d'intégration s'écrit `[<ID>] merge <branche>`.
+- Le travail doit être commité (`git status --porcelain` sans code modifié), chaque commit du chantier portant `[<ID>]` : compte les commits du chantier avec `git log --first-parent <baseBranch>..HEAD` (`baseBranch` de `atelier status --json` ; `<remote>/<baseBranch>` si la branche n'existe pas en local), pour l'EPIC comme pour l'enfant, afin que les commits apportés par une fusion (enfants frères, enfants fusionnés, branche par défaut) ne comptent pas. Sur la branche d'un EPIC à branche d'intégration, les commits de fusion de ses enfants (leurs PR) en sont dispensés, et une fusion de la branche par défaut ou de la branche d'intégration s'écrit `[<ID>] merge <branche>`.
 
 ## 2. Relecture indépendante
 
@@ -47,8 +47,8 @@ Présente ses points classés **bloquant** (`RB`) / **à discuter** (`RD`), avec
 ## 3. Traiter chaque point
 
 Désigne chaque point par son identifiant (« je corrige RB2, on écarte RD3 »). Pour chaque point, propose un traitement et laisse l'utilisateur décider ; le traitement consigné commence par le mot-clé entre parenthèses :
-- **correction du code** (`corrigé`, avec le commit) ; dans une revue d'ensemble, jamais sur la branche de l'EPIC (la garde d'écriture le refuse) : par un **enfant correctif** (`FIX` ou `REF`, `rel_parent` vers l'EPIC, ouvert par `/atelier:new`) fusionné dans la branche d'intégration, puis une nouvelle revue d'ensemble ; sinon en lançant `/atelier:build`, qui la confie à `atelier:implementer` (résumé, accord de l'utilisateur, commit `[<ID>]` qui cite le point : `fix(<scope>): [<ID>] RB2 <description>`) ;
-- **test manquant ou faux** (`test ajouté`) : `/atelier:write-tests <raison>` (en TDD, il rouvre les tests figés) ;
+- **correction du code** (`corrigé`, avec le commit) ; dans une revue d'ensemble, jamais sur la branche de l'EPIC (la garde d'écriture le refuse) : par un **enfant correctif** (`FIX` ou `REF`, `rel_parent` vers l'EPIC, ouvert par `/atelier:new`) fusionné dans la branche d'intégration, puis une nouvelle revue d'ensemble, consigné `corrigé (<ID de l'enfant>, fusion <commit>)` ; sinon en lançant `/atelier:build`, qui la confie à `atelier:implementer` (résumé, accord de l'utilisateur, commit `[<ID>]` qui cite le point : `fix(<scope>): [<ID>] RB2 <description>`) ;
+- **test manquant ou faux** (`test ajouté`) : `/atelier:write-tests <raison>` (en TDD, il rouvre les tests figés) ; dans une revue d'ensemble, par un enfant correctif comme une correction du code ;
 - **spec fausse ou incomplète** (`spec amendée`) : `/atelier:amend` ;
 - **exception** (`exception acceptée`) : acceptée **explicitement** par l'utilisateur, avec qui et pourquoi ;
 - **écarté** (`écarté`) : le point n'est pas fondé (dis pourquoi) ;
