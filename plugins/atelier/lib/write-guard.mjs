@@ -5,6 +5,7 @@ import { matchesAny, specStatus } from './common.mjs'
 import { INTEGRATION_FIELD } from './integration.mjs'
 import { parseAmendments } from './spec.mjs'
 import { testDrivenPhase } from './tdd.mjs'
+import { VOCABULARY } from './vocabulary.mjs'
 
 // ---------- Write guard ----------
 
@@ -27,7 +28,7 @@ function specWriteRefusal(toolName, existingSpec, proposedSpec, committedSpec, c
   }
   const guarded = specStatus(existingSpec) !== 'draft' || (committedSpec && specStatus(committedSpec) !== 'draft')
   if (toolName === 'Write' && guarded) {
-    return 'atelier : cette spec n’est plus en brouillon, elle ne se réécrit pas. Modifie-la avec des éditions ciblées et ajoute une entrée datée dans la section « Amendements » (/atelier:amend).'
+    return `atelier : cette spec n’est plus en brouillon, elle ne se réécrit pas. Modifie-la avec des éditions ciblées et ajoute une entrée datée dans la section « ${VOCABULARY.amendments} » (/atelier:amend).`
   }
   if (!proposedSpec) {
     // An edit that cannot be replayed exactly cannot be checked: refuse rather than trust it.
@@ -65,17 +66,17 @@ function amendmentRefusal(referenceSpec, proposedSpec) {
   const reference = parseAmendments(referenceSpec.body ?? '')
   const proposed = parseAmendments(proposedSpec.body ?? '')
   if (proposed.sectionCount > 1) {
-    return 'atelier : la spec aurait plusieurs sections « ## Amendements ». Garde une seule section et ajoute les entrées à sa fin.'
+    return `atelier : la spec aurait plusieurs sections « ## ${VOCABULARY.amendments} ». Garde une seule section et ajoute les entrées à sa fin.`
   }
   const isPrefix = reference.entries.every((entry, index) => proposed.entries[index] === entry)
   if (!isPrefix) {
-    return 'atelier : les entrées existantes de la section « Amendements » ne se modifient ni ne se suppriment, et une nouvelle entrée s’ajoute à la fin de la section.'
+    return `atelier : les entrées existantes de la section « ${VOCABULARY.amendments} » ne se modifient ni ne se suppriment, et une nouvelle entrée s’ajoute à la fin de la section.`
   }
   const excluded = new Set([...COMMAND_SPEC_FIELDS, ...FROZEN_AFTER_SIGNATURE_FIELDS])
   const fields = new Set([...Object.keys(referenceSpec.data), ...Object.keys(proposedSpec.data)].filter((field) => !excluded.has(field)))
   const headerChanged = [...fields].some((field) => (referenceSpec.data[field] ?? '') !== (proposedSpec.data[field] ?? ''))
   if ((headerChanged || reference.rest !== proposed.rest) && proposed.entries.length <= reference.entries.length) {
-    return 'atelier : cette spec est signée ; toute modification doit être tracée. Ajoute d’abord, à la fin de la section « ## Amendements », une entrée « - AAAA-MM-JJ : quoi, pourquoi », puis modifie la spec (/atelier:amend). La comparaison se fait avec la version commitée : une modification non commitée sans entrée, même faite par l’utilisateur, bloque les éditions jusqu’à son commit ou l’ajout d’une entrée.'
+    return `atelier : cette spec est signée ; toute modification doit être tracée. Ajoute d’abord, à la fin de la section « ## ${VOCABULARY.amendments} », une entrée « - AAAA-MM-JJ : quoi, pourquoi », puis modifie la spec (/atelier:amend). La comparaison se fait avec la version commitée : une modification non commitée sans entrée, même faite par l’utilisateur, bloque les éditions jusqu’à son commit ou l’ajout d’une entrée.`
   }
   return null
 }

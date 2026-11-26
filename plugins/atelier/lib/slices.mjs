@@ -1,9 +1,20 @@
 // Slices of a chantier: their count in the plan and the slice in progress.
 // Pure functions: no access to the disk, git or the environment.
 
+import { escapeRegExp } from './common.mjs'
 import { ENTRY_START, parseAmendments } from './spec.mjs'
+import { VOCABULARY } from './vocabulary.mjs'
 
 // ---------- Slices ----------
+
+const SLICES_HEADING = new RegExp(`^##\\s+${escapeRegExp(VOCABULARY.slices)}\\s*$`)
+
+// Segment prefixes of a slice entry; spaces inside the coverage label match any whitespace run.
+const COVERAGE_SEGMENT = new RegExp(`^${escapeRegExp(VOCABULARY.plan.coverage).replace(/ +/g, '\\s+')}\\s*:`, 'i')
+const TDD_SEGMENT = new RegExp(
+  `^${escapeRegExp(VOCABULARY.plan.tdd)}\\s*:\\s*(${escapeRegExp(VOCABULARY.plan.yes)}|${escapeRegExp(VOCABULARY.plan.no)})\\b`,
+  'i',
+)
 
 // Slices of a plan: the first-level numbered entries of its « Tranches » section (HTML comments
 // and indented sub-lists ignored), in order. Each slice gives its number, the CA listed in its
@@ -11,7 +22,7 @@ import { ENTRY_START, parseAmendments } from './spec.mjs'
 // 'yes' | 'no', or null when the entry does not declare one.
 export function planSlices(planText) {
   const lines = (planText ?? '').replace(/\r\n/g, '\n').replace(/<!--[\s\S]*?-->/g, '').split('\n')
-  const start = lines.findIndex((line) => /^##\s+Tranches\s*$/.test(line))
+  const start = lines.findIndex((line) => SLICES_HEADING.test(line))
   if (start < 0) {
     return []
   }
@@ -32,14 +43,14 @@ export function planSlices(planText) {
 // identifiers normalised to upper case, any text after « oui » / « non » ignored.
 function sliceAttributes(text) {
   const segments = text.split(/\s+[—–]\s+/)
-  const coverage = segments.find((segment) => /^CA\s+couverts\s*:/i.test(segment.trim()))
+  const coverage = segments.find((segment) => COVERAGE_SEGMENT.test(segment.trim()))
   const criteria = [
     ...new Set((coverage?.match(/\bCA-\d+\b/gi) ?? []).map((id) => id.toUpperCase())),
   ]
   const tddSegment = segments
-    .map((segment) => /^TDD\s*:\s*(oui|non)\b/i.exec(segment.trim()))
+    .map((segment) => TDD_SEGMENT.exec(segment.trim()))
     .find(Boolean)
-  const tdd = tddSegment ? (tddSegment[1].toLowerCase() === 'oui' ? 'yes' : 'no') : null
+  const tdd = tddSegment ? (tddSegment[1].toLowerCase() === VOCABULARY.plan.yes.toLowerCase() ? 'yes' : 'no') : null
   return { criteria, tdd }
 }
 
@@ -63,7 +74,7 @@ export function planProblems(chantier) {
   const specIds = specCriteria(chantier?.spec?.body)
   const problems = []
   if (!slices.length) {
-    problems.push('Aucune tranche : la section « ## Tranches » du plan doit numéroter ses tranches (1., 2., …).')
+    problems.push(`Aucune tranche : la section « ## ${VOCABULARY.slices} » du plan doit numéroter ses tranches (1., 2., …).`)
   }
   const numbers = [...new Set(slices.map((slice) => slice.number))].sort((a, b) => a - b)
   const missing = numbers.length ? Array.from({ length: numbers.at(-1) }, (_, index) => index + 1).filter((number) => !numbers.includes(number)) : []
@@ -77,9 +88,9 @@ export function planProblems(chantier) {
     }
     seen.add(number)
     if (tdd === null) {
-      problems.push(`Tranche ${number} : TDD non déclaré (« TDD : oui » ou « TDD : non »).`)
+      problems.push(`Tranche ${number} : TDD non déclaré (« ${VOCABULARY.plan.tdd} : ${VOCABULARY.plan.yes} » ou « ${VOCABULARY.plan.tdd} : ${VOCABULARY.plan.no} »).`)
     } else if (tdd === 'yes' && !criteria.length) {
-      problems.push(`Tranche ${number} : « TDD : oui » sans CA couvert ; une tranche qui n’a rien à tester se déclare « TDD : non ».`)
+      problems.push(`Tranche ${number} : « ${VOCABULARY.plan.tdd} : ${VOCABULARY.plan.yes} » sans CA couvert ; une tranche qui n’a rien à tester se déclare « ${VOCABULARY.plan.tdd} : ${VOCABULARY.plan.no} ».`)
     }
     for (const id of criteria.filter((criterion) => !specIds.includes(criterion))) {
       problems.push(`${id} : cité par la tranche ${number}, absent de la spec.`)
@@ -113,10 +124,12 @@ export function checkPlanValues(chantier) {
   return tdd ? { slice_tdd: tdd } : {}
 }
 
+const REOPENING_ENTRY = new RegExp(`^(${escapeRegExp(VOCABULARY.amendmentEntries.reopened)}|${escapeRegExp(VOCABULARY.amendmentEntries.refrozen)})`)
+
 // Whether the amendments of the spec record a reopening or a refreeze of the tests.
 function hasReopeningEntry(chantier) {
   return parseAmendments(chantier?.spec?.body ?? '').entries
-    .some((entry) => /^(tests rouverts|tests regelés)/.test(entry.replace(ENTRY_START, '')))
+    .some((entry) => REOPENING_ENTRY.test(entry.replace(ENTRY_START, '')))
 }
 
 // Number of slices of a plan: the highest slice number read by planSlices; 0 without slices.

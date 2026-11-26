@@ -1,8 +1,9 @@
 // Spec of a chantier: required sections and their completeness, and the amendments section.
 // Pure functions: no access to the disk, git or the environment.
 
-import { CHANTIER_TYPES, normalize, parseFrontMatter } from './common.mjs'
+import { CHANTIER_TYPES, escapeRegExp, normalize, parseFrontMatter } from './common.mjs'
 import { integrationOptionProblems } from './integration.mjs'
+import { VOCABULARY } from './vocabulary.mjs'
 
 // ---------- Spec completeness and amendments ----------
 
@@ -13,20 +14,14 @@ export const TDD_RECOMMENDATION = { FEAT: 'yes', FIX: 'yes', REF: 'yes', TEC: 'n
 
 // Sections required before signature, per chantier type.
 // A section matches when its heading (without its number) starts with the given title.
-export const REQUIRED_SECTIONS = {
-  FEAT: ['Contexte', 'Description', "Critères d'acceptation", 'Non-fonctionnel'],
-  FIX: ['Problème', 'Reproduction', 'Cause probable', 'Solution proposée', 'Critère de non-régression'],
-  REF: ['Périmètre', 'Pourquoi maintenant', 'État actuel', 'Preuve de non-régression', 'Stratégie', 'Critère de fin'],
-  TEC: ['Quoi', 'Pourquoi', 'Vérification'],
-  SPIKE: ['Question', 'Pourquoi', 'Budget', 'Ce qui compte comme réponse'],
-  EPIC: ['Vision', 'Pourquoi', "Critères d'acceptation globaux", 'Cadre', 'Hors périmètre'],
-}
+export const REQUIRED_SECTIONS = Object.fromEntries(
+  Object.entries(VOCABULARY.sections).map(([type, titles]) => [type, Object.values(titles)]),
+)
 
 // Sections that must contain at least one numbered acceptance criterion (CA-1, CA-2...).
-const CRITERIA_SECTIONS = {
-  FEAT: "Critères d'acceptation",
-  FIX: 'Critère de non-régression',
-}
+const CRITERIA_SECTIONS = Object.fromEntries(
+  Object.entries(VOCABULARY.criteria).map(([type, key]) => [type, VOCABULARY.sections[type][key]]),
+)
 
 export function splitSections(body) {
   const sections = []
@@ -127,7 +122,7 @@ export function checkSpec(text) {
   return problems
 }
 
-const AMENDMENTS_HEADING = /^## Amendements[ \t]*$/
+const AMENDMENTS_HEADING = new RegExp(`^## ${escapeRegExp(VOCABULARY.amendments)}[ \\t]*$`)
 
 const SECTION_END = /^#{1,2}\s/
 
@@ -190,7 +185,7 @@ export function appendAmendmentEntry(text, entry) {
   const [range] = amendmentSectionRanges(lines)
   let result
   if (!range) {
-    result = `${lines.join('\n').replace(/\s*$/, '')}\n\n## Amendements\n- ${entry}\n`
+    result = `${lines.join('\n').replace(/\s*$/, '')}\n\n## ${VOCABULARY.amendments}\n- ${entry}\n`
   } else {
     // After the last non-blank line of the section, so that blank lines before the next heading stay.
     let last = range[1] - 1
