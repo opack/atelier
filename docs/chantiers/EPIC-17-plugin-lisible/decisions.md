@@ -38,4 +38,4 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 ## 2026-11-26 : le lot 5 (REF-34, vocabulaire des documents) passe avant les lots 3 et 4
 - Contexte : REF-34 ouvert le 2026-11-25 ; proposition du fil « Rendre atelier multilingue » de le lancer tout de suite. Accord de Didier le 2026-11-26.
 - Écarté : attendre les lots 3 et 4, parce que le lot 3 ajouterait d'abord de nouveaux mots lus en dur (sections de critères des TEC et REF) que REF-34 devrait ensuite déplacer.
-- Conséquence : ordre REF-34, puis lot 3 (qui ajoute ses sections de critères directement au module de vocabulaire), puis lot 4. Le REF de suppression de la façade peut tourner en parallèle : il touche les mêmes commentaires de `spec.mjs`, `tdd.mjs`, `slices.mjs`, `write-guard.mjs` et `review-points.mjs`, et rebase au besoin.
+- Conséquence : ordre REF-34, puis lot 3 (qui ajoute ses sections de critères directement au module de vocabulaire), puis lot 4. Le REF de suppression de la façade (REF-36) tourne en parallèle : il ne partage aucun fichier avec REF-34.
