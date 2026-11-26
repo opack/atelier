@@ -25,39 +25,87 @@ Sans rien faire, retrouver un chantier coûte de plus en plus cher à mesure que
 <!-- Comportement attendu, du point de vue de l'utilisateur. Hors périmètre explicite.
 Questions si manquant : qu'est-ce qui est hors périmètre ? Quelle est la plus petite version utile ? -->
 
-**`atelier list [filtres] [--all] [--sort <clé>] [--json]`** affiche un chantier par ligne : identifiant, type, titre, statut, étape en quelques mots, et où il se trouve (« ici » pour l'arbre courant, sinon le nom de sa branche), avec le parent s'il en a un.
-- Par défaut, seuls les chantiers **ouverts** sont listés (ni `done` ni `abandoned`). `--all` ajoute les chantiers clos. Ce défaut garde la liste courte quel que soit l'âge du projet.
-- Tri par défaut : numérique sur l'identifiant (FEAT-4 avant FEAT-30). `--sort status` et `--sort type` groupent par statut ou par type, dans l'ordre numérique à l'intérieur de chaque groupe.
-- Filtres, cumulables (ET entre filtres différents, OU entre les valeurs d'un même filtre séparées par des virgules) : `--status <s,…>`, `--type <T,…>`, `--parent <ID>`, et un texte libre cherché sans tenir compte de la casse ni des accents dans l'identifiant et le titre.
-- `--json` rend la même sélection en JSON : un tableau d'objets avec les mêmes champs, pour un usage par un outil (l'app de gestion à venir notamment).
-- Aucun chantier à afficher : une ligne le dit, et rappelle `--all` si des chantiers clos ont été écartés.
+L'utilisateur passe par Claude : deux skills, `/atelier:list` et `/atelier:open`, s'appuient sur trois commandes de la CLI `atelier` (`list`, `path`, `open`), qui restent de la plomberie lancée par l'agent, comme les autres commandes (SB1).
 
-**L'étape** se déduit de l'en-tête de la spec et des documents présents dans le dossier du chantier, sans aucune commande git par chantier : brouillon, à planifier, tranche N/M en tests d'abord ou en implémentation, revue du chantier, clos, abandonné. C'est un repère, pas la prochaine étape exacte : celle-ci reste donnée par `atelier status` sur la branche du chantier (elle dépend du code commité, que la liste ne lit pas).
+### `/atelier:list [demande]`
 
-**La version affichée** d'un chantier présent à plusieurs endroits est celle de **sa propre branche** (la branche dont le nom porte son identifiant ; la branche locale l'emporte sur la branche distante du même nom), sinon celle de l'arbre courant, sinon la première branche trouvée. Un chantier en cours se voit donc avec son état réel, même depuis `main`.
+Le skill récupère d'abord le remote (`git fetch --quiet`, échec signalé sans bloquer : la liste se fait alors avec les branches distantes telles qu'elles sont), traduit la demande en langage naturel (« les FIX en cours », « les enfants d'EPIC-17 », « tout, triés par statut ») en arguments de `atelier list`, lance la commande et présente le résultat tel quel. Une demande qu'aucun filtre ne sait traduire (par auteur, par date, par dépendance) : le skill dit ce qu'il ne peut pas filtrer et ne l'approche pas par un autre filtre (SD7).
 
-**`atelier path <ID>`** affiche le chemin du dossier du chantier dans l'arbre courant, relatif à la racine du projet. L'identifiant est reconnu sans tenir compte de la casse. Il se combine avec le shell : `cd "$(atelier path FIX-18)"`.
+### `atelier list [texte…] [--status <s,…>] [--type <T,…>] [--parent <ID>] [--all] [--sort id|status|type] [--json]`
 
-**`atelier open <ID>`** ouvre ce dossier dans l'explorateur de fichiers du système (`open` sur macOS, `explorer` sur Windows, `xdg-open` ailleurs). Si l'ouverture est impossible (aucun explorateur, session sans affichage comme en cloud), la commande affiche le chemin et dit pourquoi elle n'a pas ouvert.
+Un chantier par ligne : identifiant, type, titre, statut, étape, emplacement (« ici » pour l'arbre courant, sinon le nom de la branche lue) et parent s'il en a un.
+- **Défaut « ouverts »** : sans `--status`, seuls les chantiers ni `done` ni `abandoned` sont listés ; `--all` ajoute les clos. Un `--status` explicite remplace ce défaut : `--status done` liste les chantiers clos sans `--all` (SB5).
+- **Filtres**, cumulables : ET entre filtres différents, OU entre les valeurs d'un même filtre séparées par des virgules. `--type` et `--status` ne tiennent pas compte de la casse. `--parent <ID>` garde les chantiers dont le `rel_parent` de la version affichée vaut cet identifiant (SD9). Le texte libre (un ou plusieurs mots) garde les chantiers dont l'identifiant ou le titre contient **chaque** mot, sans tenir compte de la casse ni des accents ; c'est une recherche de texte (`FIX-1` trouve aussi FIX-12).
+- **Tri** : par défaut, numérique sur l'identifiant (FEAT-4 avant FEAT-30). `--sort status` groupe dans l'ordre draft, signed, done, abandoned ; `--sort type` dans l'ordre FEAT, FIX, REF, TEC, SPIKE, EPIC ; ordre numérique dans chaque groupe (SD4).
+- **Arguments refusés** (message d'usage, échec) : option inconnue, option répétée, option sans valeur, valeur inconnue de `--status`, `--type` ou `--sort` (le message liste les valeurs admises) (SD6).
+- **Liste vide** : une ligne dit qu'aucun chantier ne correspond et, si le défaut « ouverts » a écarté des chantiers clos, mentionne `--all`. Code de sortie 0 ; `--json` rend `[]`.
+- **`--json`** : la même sélection, dans le même ordre, en tableau d'objets `{ id, type, title, status, step, stepLabel, location, path, parent }` : `status` vaut `draft` si l'en-tête ne le dit pas ; `step` est un code stable et `stepLabel` le libellé affiché ; `location` vaut `null` (arbre courant) ou le nom court de la branche lue (`feat/FEAT-40-x`, `origin/feat/FEAT-40-x`) ; `path` est le chemin absolu du dossier dans l'arbre courant, `null` s'il n'y est pas ; `parent` vaut l'identifiant ou `null` (SD5).
 
-Pour `path` comme pour `open`, un chantier absent de l'arbre courant mais présent sur une branche donne une erreur qui nomme cette branche (« FEAT-21 n'existe que sur la branche feat/FEAT-21-… : bascule dessus pour l'ouvrir ») ; un identifiant inconnu partout donne une erreur claire.
+### La version affichée (SB2, SB3)
 
-**`/atelier:list [demande]`** : le skill traduit une demande en langage naturel (« les FIX en cours », « tout ce qui dépend d'EPIC-17 ») en arguments de `atelier list`, lance la commande et présente le résultat tel quel, sans commentaire. Pas de skill pour `path` ni `open` : ce sont des commandes de terminal.
+Un chantier peut exister dans l'arbre courant et sur plusieurs branches, avec des en-têtes différents. La version lue est la première qui s'applique :
+1. si la branche courante porte l'identifiant du chantier (en tête d'un segment de son nom, comme pour `next-id`) : l'arbre courant, copie de travail comprise ;
+2. si le chantier est `done` ou `abandoned` dans l'arbre courant : l'arbre courant (un statut ne recule jamais : clos ici, il est clos) ;
+3. si des branches portent son identifiant : celle, locale ou distante, dont le dernier commit est le plus récent (date de commit) ; à égalité, la locale ;
+4. si le chantier est dans l'arbre courant : l'arbre courant ;
+5. sinon, parmi les autres branches, celle dont le dernier commit est le plus récent.
 
-**Hors périmètre** :
-- le rangement des dossiers par centaine (chantier séparé, qui suivra) ;
-- un filtre interactif (sélection au clavier, mise à jour en direct) : ce sera le rôle de l'app de gestion ;
-- la prochaine étape exacte de chaque chantier (voir plus haut) ;
-- ouvrir un fichier précis d'un chantier, ou extraire le dossier d'une autre branche.
+### L'étape (SB4)
+
+Elle se déduit de la version affichée seule (en-tête, corps de la spec, `plan.md`, liste des fichiers du dossier) et, pour un EPIC, des autres chantiers de la liste, sans aucune commande git par chantier. Elle réutilise les règles de `atelier status` (`sliceState`, `sliceLabel`, `testDrivenPhase`, `isReviewExempt`). Comme elle ne lit pas le code commité, elle ne distingue pas « implémentation en cours » de « implémentation commitée, revue à faire » : la prochaine étape exacte reste donnée par `atelier status` sur la branche du chantier.
+
+| Cas (premier qui s'applique) | `step` | `stepLabel` |
+|---|---|---|
+| statut `abandoned` | `abandoned` | abandonné |
+| statut `done` | `done` | clos |
+| statut `draft` ou absent | `draft` | brouillon |
+| FEAT, REF ou EPIC signé sans `plan.md` | `plan` | à planifier |
+| EPIC signé avec `plan.md`, aucun enfant | `epic-children` | aucun enfant ouvert |
+| EPIC signé, des enfants non clos | `epic-children` | N enfant(s) ouvert(s) |
+| EPIC signé, tous ses enfants clos | `epic-close` | enfants clos : à clôturer |
+| tranche du chantier (`slice: chantier`), revue non enregistrée | `chantier-review` | revue du chantier |
+| `reviewed_commit` renseigné (chantier à tranche unique, ancien modèle, ou revue du chantier faite) | `reviewed` | revue enregistrée |
+| TDD, tests pas encore figés | `tests` | tests d'abord |
+| sinon (TDD figé, sans TDD, SPIKE sans TDD) | `build` | implémentation |
+
+Pour un chantier découpé (`sliceState` : modèle `sliced`) sur une tranche numérotée, le libellé est préfixé de `sliceLabel` : « Tranche 2/3 : implémentation », « Tranche 4 (absente du plan) : tests d'abord ». Les enfants d'un EPIC sont les chantiers dont la version affichée a `rel_parent` égal à son identifiant ; « clos » veut dire `done` ou `abandoned` dans cette version.
+
+### `/atelier:open <ID>` et `atelier open <ID>`
+
+Le skill lance `atelier open <ID>`, qui ouvre le dossier du chantier dans l'explorateur de fichiers du système, et rend son chemin à l'utilisateur. L'explorateur est lancé détaché, sans shell, le chemin en argument séparé : `open` sur macOS, `explorer` sur Windows (dont le code de sortie, non fiable, est ignoré), `xdg-open` ailleurs. Il n'est pas lancé, et la commande dit pourquoi en affichant le chemin, quand : sous Linux, ni `DISPLAY` ni `WAYLAND_DISPLAY` n'est défini (session sans affichage, comme en cloud) ; le lancement échoue (commande absente). Dans ces cas, la commande réussit quand même : le chemin est la réponse utile (SD3).
+
+### `atelier path <ID>`
+
+Affiche le chemin **absolu** du dossier du chantier dans l'arbre courant (SD2). Elle sert aux skills (et à Claude pour lire les fichiers d'un chantier). L'identifiant est reconnu sans tenir compte de la casse (`fix-18`).
+
+Pour `path` comme pour `open` :
+- chantier absent de l'arbre courant mais présent sur des branches : erreur qui nomme la branche de la version affichée (« FEAT-40 n'existe que sur la branche feat/FEAT-40-x : bascule dessus pour l'ouvrir ») ;
+- identifiant inconnu partout : erreur qui le dit ;
+- deux dossiers du même identifiant dans l'arbre courant : erreur qui les nomme (SD8) ;
+- argument absent ou qui n'est pas un identifiant : usage et échec.
+
+### Cas particuliers (SD10)
+
+- Projet sans configuration atelier : même message que les autres commandes.
+- Dossier de `chantiersDir` sans `spec.md` : ignoré, comme dans l'index actuel.
+- Pas de remote ou pas de branche : la liste se fait sur l'arbre courant seul.
+
+### Hors périmètre
+
+- Le rangement des dossiers par centaine (chantier séparé, qui suivra).
+- Un filtre interactif (sélection au clavier, mise à jour en direct) : ce sera le rôle de l'app de gestion.
+- La prochaine étape exacte de chaque chantier, le filtre par dépendance, par auteur ou par date.
+- Ouvrir un fichier précis d'un chantier, ou extraire le dossier d'une autre branche.
+- Utiliser `atelier` directement dans un terminal : ce n'est pas un usage documenté.
 
 ## 3. Points techniques identifiés
 <!-- Fichiers / couches concernés, contraintes, dépendances. Optionnel. -->
 
-- `lib/cli/relations.mjs` : `chantierIndex` lit déjà l'arbre courant et les arbres `chantiersDir` de toutes les branches en trois appels git, quel que soit le nombre de branches. La liste s'appuie dessus. Il faut y ajouter la liste des fichiers de chaque dossier (déjà présente dans l'arbre git lu, et lisible sur disque pour l'arbre courant) pour déduire l'étape.
-- `lib/cli/identifiers.mjs` : `findChantierDirectory` trouve déjà un dossier par identifiant ; `path` et `open` s'appuient dessus, pour que le futur rangement par centaine n'ait qu'un endroit à changer.
-- Nouveau domaine `list` : `lib/list.mjs` (sélection, tri, étape, mise en forme : fonctions pures testées) et `lib/cli/list.mjs` (commandes `list`, `path`, `open`) ; entrées dans la table de `lib/cli.mjs`. Le choix de l'explorateur selon la plateforme est une fonction pure ; le lancement se fait dans `lib/cli/`.
-- Nouveau skill `skills/list/SKILL.md`.
-- Site : `site/reference/commandes.md` (les trois commandes et le skill), et toute page qui conseille de parcourir `docs/chantiers/`. Bump mineur de `plugin.json`.
+- `lib/cli/relations.mjs` : `chantierIndex` lit l'arbre courant (disque) et, pour les autres branches, en trois appels git : les refs, l'arbre `chantiersDir` de chaque ref, puis le contenu des dossiers. Aujourd'hui, il ne garde que les en-têtes des specs et efface la différence entre branche locale et distante (`shortRefName`). Il faut en plus (SD1), toujours en trois appels : la date du dernier commit de chaque ref (`%(committerdate)` dans le `for-each-ref` existant), le type de ref (locale ou distante), et pour chaque arbre de chantier distinct la liste de ses fichiers, la spec entière (corps compris, pour le modèle « ancien ») et `plan.md`. Les autres utilisateurs de l'index (relations, `check-spec`) ne doivent pas changer de comportement.
+- `lib/cli/identifiers.mjs` : `findChantierDirectory` compare l'identifiant en respectant la casse ; `path` et `open` normalisent l'identifiant avant (SD8). Le rangement à plat est aussi supposé par `chantiersHere`, `chantierTreesOf` et `collectUsedIdentifiers` : le futur rangement par centaine devra les reprendre tous.
+- Nouveau domaine `list` : `lib/list.mjs` (choix de la version, étape, sélection, tri, mise en forme, analyse des arguments, choix de l'explorateur : fonctions pures testées) et `lib/cli/list.mjs` (commandes `list`, `path`, `open`) ; entrées dans la table de `lib/cli.mjs`.
+- Nouveaux skills `skills/list/SKILL.md` et `skills/open/SKILL.md`.
+- Site : `site/reference/commandes.md` (les deux skills et les trois commandes) et toute page qui conseille de parcourir `docs/chantiers/`. Bump mineur de `plugin.json`.
 
 ## 4. Questions ouvertes
 <!-- Questions à trancher avant ou pendant la conception. Les réponses vont dans decisions.md. Optionnel. -->
@@ -69,25 +117,32 @@ Aucune.
 Chacun testable automatiquement. Penser aux cas limites : vide, doublon, hors-ligne, utilisateur non autorisé, grand volume.
 Questions si manquant : chaque critère peut-il devenir un test ? Que se passe-t-il si la liste est vide, très grande, si l'utilisateur n'a pas le droit, si le réseau tombe ? -->
 
-- [ ] CA-1 : Étant donné des chantiers FEAT-4, FEAT-30 et TEC-2 ouverts, quand on lance `atelier list`, alors ils sont listés dans l'ordre TEC-2, FEAT-4, FEAT-30, chacun avec son identifiant, son type, son titre, son statut et son étape.
-- [ ] CA-2 : Étant donné un chantier `done`, un `abandoned` et un `signed`, quand on lance `atelier list`, alors seul le `signed` est listé ; avec `--all`, les trois le sont.
-- [ ] CA-3 : Étant donné des chantiers de plusieurs types et statuts, quand on lance `atelier list --type FIX,TEC --status signed`, alors ne sont listés que les FIX et TEC signés ; avec `--parent EPIC-17`, seuls les enfants directs d'EPIC-17 ; avec un texte libre `relecture`, seuls ceux dont l'identifiant ou le titre le contient, sans tenir compte de la casse ni des accents (« Relectures » et « relécture » correspondent).
-- [ ] CA-4 : Étant donné des chantiers de plusieurs statuts, quand on lance `atelier list --sort status`, alors ils sont groupés par statut et, à l'intérieur d'un groupe, triés par numéro ; de même avec `--sort type`. Une valeur de `--sort` inconnue est refusée avec la liste des valeurs admises.
-- [ ] CA-5 : Étant donné un chantier signé dont la spec indique `slice: 2` et dont le plan compte 3 tranches, en TDD avec les tests de la tranche figés, quand on liste, alors son étape est « tranche 2/3 : implémentation » ; une spec en brouillon donne « brouillon », un FEAT signé sans `plan.md` donne « à planifier », un chantier en `slice: chantier` donne « revue du chantier ».
-- [ ] CA-6 : Étant donné FEAT-40 absent de l'arbre courant et présent signé sur la branche `feat/FEAT-40-x`, FEAT-41 présent en brouillon dans l'arbre courant et signé sur `feat/FEAT-41-y`, et FEAT-42 signé sur la branche locale `feat/FEAT-42-z` mais encore en brouillon sur `origin/feat/FEAT-42-z`, quand on lance `atelier list` depuis `main`, alors FEAT-40 est listé avec la branche `feat/FEAT-40-x` comme emplacement, FEAT-41 est listé signé, avec sa branche comme emplacement, et FEAT-42 est listé signé, avec sa branche locale comme emplacement.
-- [ ] CA-7 : Étant donné des chantiers, quand on lance `atelier list --json` avec des filtres, alors la sortie est un tableau JSON des chantiers sélectionnés, dans le même ordre que l'affichage, chacun avec `id`, `type`, `title`, `status`, `step`, `location`, `parent`.
-- [ ] CA-8 : Étant donné que les filtres écartent tout, ou qu'aucun chantier n'est ouvert alors que des chantiers clos existent, quand on lance `atelier list`, alors une ligne dit qu'aucun chantier ne correspond et, dans le second cas, mentionne `--all` ; `--json` rend `[]`.
-- [ ] CA-9 : Étant donné le chantier FIX-18 dans l'arbre courant, quand on lance `atelier path fix-18`, alors la commande affiche `docs/chantiers/FIX-18-<slug>` (ou le `chantiersDir` configuré) et réussit.
-- [ ] CA-10 : Étant donné FEAT-40 présent seulement sur la branche `feat/FEAT-40-x`, quand on lance `atelier path FEAT-40` ou `atelier open FEAT-40`, alors la commande échoue avec un message qui nomme cette branche ; pour un identifiant inconnu partout, elle échoue avec un message qui le dit ; sans argument, elle affiche son usage et échoue.
-- [ ] CA-11 : Étant donné les plateformes `darwin`, `win32` et `linux`, quand on demande la commande d'ouverture d'un dossier, alors on obtient respectivement `open`, `explorer` et `xdg-open`.
-- [ ] CA-12 : Étant donné que le lancement de l'explorateur échoue (commande absente), quand on lance `atelier open FIX-18`, alors la commande affiche le chemin du dossier et une phrase qui dit qu'elle n'a pas pu l'ouvrir.
-- [ ] CA-13 : Étant donné le site, quand on lance `npm run build` dans `site/`, alors il réussit, et la page des commandes décrit `atelier list`, `atelier path`, `atelier open` et `/atelier:list`.
+- [ ] CA-1 : Étant donné des chantiers FEAT-4, FEAT-30 et TEC-2 ouverts, quand on lance `atelier list`, alors ils sont listés dans l'ordre TEC-2, FEAT-4, FEAT-30, chacun avec son identifiant, son type, son titre, son statut, son étape et son emplacement.
+- [ ] CA-2 : Étant donné un chantier `done`, un `abandoned` et un `signed`, quand on lance `atelier list`, alors seul le `signed` est listé ; avec `--all`, les trois ; avec `--status done`, seul le `done` ; avec `--status done,signed`, le `done` et le `signed`.
+- [ ] CA-3 : Étant donné des chantiers de plusieurs types et statuts, quand on lance `atelier list --type fix,TEC --status signed`, alors ne sont listés que les FIX et TEC signés ; avec `--parent EPIC-17`, seuls les chantiers ouverts dont la version affichée a `rel_parent: EPIC-17` (un chantier rattaché à EPIC-17 sur une autre version seulement n'est pas listé).
+- [ ] CA-4 : Étant donné les titres « Calibrer les relectures » et « Rélecture du plan », quand on lance `atelier list relecture`, alors les deux sont listés ; avec `atelier list relecture plan`, seul le second.
+- [ ] CA-5 : Étant donné des chantiers de tous statuts et types, quand on lance `atelier list --all --sort status`, alors les groupes se suivent dans l'ordre draft, signed, done, abandoned, et dans chaque groupe par numéro ; avec `--sort type`, dans l'ordre FEAT, FIX, REF, TEC, SPIKE, EPIC.
+- [ ] CA-6 : Étant donné `atelier list` lancé avec une option inconnue, une option répétée, une option sans valeur, ou une valeur inconnue de `--status`, `--type` ou `--sort`, alors la commande échoue avec un message qui nomme l'argument fautif et, pour une valeur inconnue, liste les valeurs admises.
+- [ ] CA-7 : Étant donné chaque ligne de la table de l'étape (§2), quand on liste un chantier dans ce cas, alors son `step` et son `stepLabel` sont ceux de la table ; et un chantier découpé en 3 tranches, sur la tranche 2, en TDD avec tests figés, a le libellé « Tranche 2/3 : implémentation » ; sur une tranche 4 absente du plan, sans tests figés, « Tranche 4 (absente du plan) : tests d'abord ».
+- [ ] CA-8 : Étant donné un EPIC signé avec `plan.md`, quand ses enfants (selon leur version affichée) sont deux ouverts et un clos, alors son libellé est « 2 enfant(s) ouvert(s) » ; tous clos, « enfants clos : à clôturer » ; aucun, « aucun enfant ouvert ».
+- [ ] CA-9 : Étant donné `main` comme branche courante, FEAT-40 absent de l'arbre courant et signé sur `feat/FEAT-40-x`, et FEAT-41 en brouillon dans l'arbre courant et signé sur `feat/FEAT-41-y`, quand on lance `atelier list`, alors FEAT-40 et FEAT-41 sont listés signés, avec leur branche comme emplacement.
+- [ ] CA-10 : Étant donné la branche courante `feat/FEAT-42-z` où FEAT-42 est signé (copie de travail), et `origin/feat/FEAT-42-z` où il est en brouillon avec un commit plus récent, quand on lance `atelier list`, alors FEAT-42 est listé signé, emplacement « ici ».
+- [ ] CA-11 : Étant donné FEAT-43 `done` dans l'arbre courant et `signed` sur une branche locale `feat/FEAT-43-w` restée en arrière, quand on lance `atelier list --all` depuis `main`, alors FEAT-43 est listé `done`, emplacement « ici » ; sans `--all`, il n'est pas listé.
+- [ ] CA-12 : Étant donné FEAT-44 signé en tranche 1 sur la branche locale `feat/FEAT-44-v` et en tranche 2 sur `origin/feat/FEAT-44-v` dont le dernier commit est plus récent, quand on lance `atelier list` depuis `main`, alors FEAT-44 est lu sur `origin/feat/FEAT-44-v` (tranche 2) ; si c'est la branche locale qui a le commit le plus récent, il est lu sur elle.
+- [ ] CA-13 : Étant donné des chantiers, quand on lance `atelier list --json` avec des filtres, alors la sortie est un tableau JSON des chantiers sélectionnés, dans l'ordre de l'affichage, chacun avec `id`, `type`, `title`, `status`, `step`, `stepLabel`, `location` (`null` pour l'arbre courant, sinon le nom de la branche), `path` (absolu, ou `null` hors de l'arbre courant) et `parent` (identifiant ou `null`).
+- [ ] CA-14 : Étant donné que les filtres écartent tout, ou qu'aucun chantier n'est ouvert alors que des chantiers clos existent, quand on lance `atelier list`, alors une ligne dit qu'aucun chantier ne correspond et, dans le second cas seulement, mentionne `--all` ; la commande réussit ; `--json` rend `[]`.
+- [ ] CA-15 : Étant donné un projet sans aucune branche autre que la courante, avec un dossier de chantier sans `spec.md`, quand on lance `atelier list`, alors les chantiers de l'arbre courant sont listés et le dossier sans spec est ignoré.
+- [ ] CA-16 : Étant donné le chantier FIX-18 dans l'arbre courant, quand on lance `atelier path fix-18` depuis un sous-dossier du projet, alors la commande affiche le chemin absolu de `docs/chantiers/FIX-18-<slug>` (ou du `chantiersDir` configuré) et réussit.
+- [ ] CA-17 : Étant donné FEAT-40 présent seulement sur la branche `feat/FEAT-40-x`, quand on lance `atelier path FEAT-40` ou `atelier open FEAT-40`, alors la commande échoue avec un message qui nomme cette branche ; pour un identifiant inconnu partout, avec un message qui le dit ; pour deux dossiers du même identifiant, avec un message qui les nomme ; sans argument ou avec un argument qui n'est pas un identifiant, avec l'usage.
+- [ ] CA-18 : Étant donné les plateformes `darwin`, `win32` et `linux` (avec `DISPLAY` ou `WAYLAND_DISPLAY`), quand on demande comment ouvrir un dossier, alors on obtient respectivement `open`, `explorer` (code de sortie ignoré) et `xdg-open` ; sous `linux` sans `DISPLAY` ni `WAYLAND_DISPLAY`, on obtient « ne rien lancer » avec la raison.
+- [ ] CA-19 : Étant donné que l'explorateur n'est pas lancé (pas d'affichage) ou que son lancement échoue (commande absente), quand on lance `atelier open FIX-18`, alors la commande affiche le chemin absolu du dossier et une phrase qui dit pourquoi elle ne l'a pas ouvert, et réussit.
+- [ ] CA-20 : Étant donné le site, quand on lance `npm run build` dans `site/`, alors il réussit, et la page des commandes décrit `/atelier:list`, `/atelier:open`, `atelier list`, `atelier path` et `atelier open`.
 
 ## 6. Non-fonctionnel
 <!-- Une ligne chacun, ou « N/A » + raison.
 Questions si manquant : qui peut lire / écrire quoi, et où l'autorisation est-elle vérifiée côté serveur ? Quel volume réaliste ? Comment l'utilise-t-on au clavier et au lecteur d'écran ? -->
-- Sécurité / autorisation : `open` lance l'explorateur avec le chemin en argument séparé (jamais via un shell), donc un nom de dossier ne peut pas injecter de commande. Les commandes ne font que lire.
-- Performance : le nombre d'appels git ne dépend ni du nombre de chantiers ni du nombre de branches (les trois appels de l'index, aucun appel par chantier). Ordre de grandeur visé : moins d'une seconde pour 1 000 chantiers et 50 branches.
+- Sécurité / autorisation : l'explorateur est lancé sans shell, le chemin en argument séparé : un nom de dossier ne peut pas injecter de commande. Les commandes ne font que lire (hors `git fetch` du skill).
+- Performance : trois appels git au plus pour l'index, quel que soit le nombre de chantiers et de branches, aucun appel par chantier. Ordre de grandeur visé : moins d'une seconde pour 1 000 chantiers et 50 branches, mesuré à la main sur un dépôt généré et noté dans le bilan (SD11).
 - Accessibilité : sortie texte en colonnes lisible sans couleur ; `--json` pour tout autre usage.
 - Données personnelles : N/A, aucune donnée personnelle lue ni produite.
 - Compatibilité : Node ≥ 20, aucune dépendance ; macOS, Windows et Linux pour `open`. En session cloud, `open` se replie sur l'affichage du chemin.
