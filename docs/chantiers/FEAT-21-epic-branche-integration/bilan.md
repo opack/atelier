@@ -73,6 +73,6 @@ Revues de tranche : tranche 1 (1 revue, aucun point), tranche 2 (2 revues), tran
 | RD10. Correctif OD5 sans test | test ajouté (d9746c1) |
 | RD11. Deux règles pour la référence de `baseBranch` | corrigé (0c21128) |
 
-- Verdict :
-- Validé par :
-- Date :
+- Verdict : accepté
+- Validé par : Didier
+- Date : 2026-11-26

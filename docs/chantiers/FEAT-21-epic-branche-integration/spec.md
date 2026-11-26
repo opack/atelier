@@ -2,7 +2,7 @@
 id: FEAT-21
 type: FEAT
 title: EPIC en branche d'intégration
-status: signed
+status: done
 tdd: yes
 created_at: 2026-11-23
 rel_depends_on: REF-29
@@ -14,6 +14,7 @@ slice_base: 051c560e52b83ac4cdc4c3d6a5d3715016d026e1
 slice_tdd: 
 last_slice: 4
 reviewed_commit: f3ec4dd4eebc90d5cc5f571dd003b71dbed87ae3
+done_at: 2026-11-26
 ---
 
 # FEAT-21 EPIC en branche d'intégration
