@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { readFileSync, readdirSync } from 'node:fs'
 import { dirname, join, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { escapeRegExp } from '../lib/common.mjs'
 import { VOCABULARY } from '../lib/vocabulary.mjs'
 
 // Vocabulary rule of lib/ (REF-34): the French terms of the documents live in lib/vocabulary.mjs only.
@@ -18,7 +19,7 @@ const SPACE = '[\\s\\u00a0\\u202f]*'
 
 // source → tokens { type: 'comment' | 'string' | 'template' | 'regex' | 'code', text }. `template` is a
 // static part of a template literal; the code of its ${…} expressions is read like any other code.
-export function readSource(source) {
+function readSource(source) {
   const tokens = []
   let i = 0
   let previous = null // last significant token: { kind: 'word' | 'punct' | 'value', text }
@@ -37,6 +38,7 @@ export function readSource(source) {
       else if (source[i] === '$' && source[i + 1] === '{') {
         push('template', source.slice(start, i))
         i += 2
+        previous = { kind: 'punct', text: '{' }
         readCode(true)
         start = i
       } else i++
@@ -104,7 +106,7 @@ export function readSource(source) {
 }
 
 // VOCABULARY → every string value, except the `criteria` values (they are keys, not terms).
-export function vocabularyTerms(vocabulary = VOCABULARY) {
+function vocabularyTerms(vocabulary = VOCABULARY) {
   const terms = new Set()
   const walk = (value, key) => {
     if (key === 'criteria') return
@@ -115,35 +117,37 @@ export function vocabularyTerms(vocabulary = VOCABULARY) {
   return [...terms]
 }
 
-const escapeRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 // Whole term: word boundaries only where the term starts or ends with a word character ("ex-").
 function termPattern(term, prefix = '', suffix = '', flags = 'u') {
   const before = WORD.test(term[0]) ? '(?<![\\p{L}\\p{N}_])' : ''
   const after = WORD.test(term.at(-1)) ? '(?![\\p{L}\\p{N}_])' : ''
-  return new RegExp(`${prefix}${before}${escapeRegex(term)}${after}${suffix}`, flags)
+  return new RegExp(`${prefix}${before}${escapeRegExp(term)}${after}${suffix}`, flags)
 }
 
 // source → problems: a term of the vocabulary written in grammar position outside lib/vocabulary.mjs.
-export function vocabularyProblems(source, terms = vocabularyTerms()) {
+function vocabularyProblems(source, terms = vocabularyTerms()) {
   const problems = []
   for (const { type, text } of readSource(source)) {
     if (type === 'string' || type === 'template') {
       const content = text.replace(/\\(['"`\\])/g, '$1')
+      const lines = content.replace(/\\n/g, '\n') // `\n` written in the source counts as a line break
       for (const term of terms) {
         if (content === term && !COMMON_WORDS.has(term)) problems.push(`« ${term} » est le contenu entier d'une chaîne`)
+        else if (termPattern(term, '(?:^|\\n)#{2,3} ').test(lines)) problems.push(`« ${term} » est un titre dans une chaîne`)
         else if (termPattern(term, `«${SPACE}(?:#{2,3} )?`, `${SPACE}»`).test(content)) problems.push(`« ${term} » est cité entre « » dans une chaîne`)
       }
     } else if (type === 'regex') {
-      for (const term of terms) if (termPattern(term).test(text)) problems.push(`« ${term} » figure dans l'expression régulière /${text}/`)
+      const plain = text.replace(/\\[A-Za-z]/g, ' ') // escape sequences (\b, \s, \n…) are not letters of a term
+      for (const term of terms) if (termPattern(term).test(plain)) problems.push(`« ${term} » figure dans l'expression régulière /${text}/`)
     }
   }
   return problems
 }
 
 // vocabulary.mjs text → problems: the module must import nothing.
-export function vocabularyImportProblems(source) {
+function vocabularyImportProblems(source) {
   const code = readSource(source).filter(({ type }) => type === 'code').map(({ text }) => text).join(' ')
-  return /(?<![\w$])import(?![\w$])|(?<![\w$])export\s*(?:\*|\{[^}]*\})\s*from(?![\w$])/.test(code) ? ['lib/vocabulary.mjs importe un module'] : []
+  return /(?<![\w$.])import(?![\w$])(?!\s*\.\s*meta)|(?<![\w$])export\s*(?:\*(?:\s*as\s*[\w$]+)?|\{[^}]*\})\s*from(?![\w$])/.test(code) ? ['lib/vocabulary.mjs importe un module'] : []
 }
 
 function mjsFiles(directory) {
@@ -189,6 +193,10 @@ describe('vocabulaire des documents dans lib/', () => {
     assert.equal(flagged('const a = /^## Amendements$/m').length, 1)
     assert.equal(flagged('const a = text.match(/(?:reporté|écarté)/)').length, 2)
     assert.equal(flagged('return /Tranches/.test(x)').length, 1)
+    assert.equal(flagged('const a = /\\bTranches\\b/').length, 1)
+    assert.equal(flagged('const a = /^##\\sAmendements$/m').length, 1)
+    assert.equal(flagged('const a = /\\nAmendements/').length, 1)
+    assert.equal(flagged('const a = `${b} ${/Tranches/.test(x)}`').length, 1)
   })
 
   it('signale un terme cité entre « » dans une chaîne ou un gabarit [REF-34 CA-2]', () => {
@@ -196,6 +204,14 @@ describe('vocabulaire des documents dans lib/', () => {
     assert.equal(flagged('const a = `la section « Amendements » de ${x}`').length, 1)
     assert.equal(flagged("const a = 'la section « ## Amendements » manque'").length, 1)
     assert.equal(flagged("const a = 'la section « ### Tranches » manque'").length, 1)
+  })
+
+  it('signale un terme en titre « ## » ou « ### » dans une chaîne ou un gabarit [REF-34 CA-2]', () => {
+    assert.equal(flagged('const a = `${x}\n\n## Amendements\n`').length, 1)
+    assert.equal(flagged("const a = `${x}\\n\\n## Amendements\\n`").length, 1)
+    assert.equal(flagged("const a = '## Tranches'").length, 1)
+    assert.equal(flagged("const a = 'x\\n### Tranches'").length, 1)
+    assert.deepEqual(flagged("const a = '## Tranchesx et # Tranches'"), [])
   })
 
   it('ne signale ni les mots d\'une phrase, ni les mots courants entiers, ni les commentaires [REF-34 CA-2]', () => {
@@ -211,6 +227,8 @@ describe('vocabulaire des documents dans lib/', () => {
   it('échoue si lib/vocabulary.mjs importe un module [REF-34 CA-2]', () => {
     assert.equal(vocabularyImportProblems("import { x } from './common.mjs'\nexport const A = 1").length, 1)
     assert.equal(vocabularyImportProblems("export { x } from './common.mjs'").length, 1)
+    assert.equal(vocabularyImportProblems("export * as ns from './common.mjs'").length, 1)
+    assert.deepEqual(vocabularyImportProblems('const a = import.meta.url'), [])
     assert.equal(vocabularyImportProblems("const a = await import('./x.mjs')").length, 1)
     assert.deepEqual(vocabularyImportProblems("// import x\nexport const A = 'import'"), [])
   })
