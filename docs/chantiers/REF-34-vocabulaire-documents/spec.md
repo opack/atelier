@@ -21,7 +21,8 @@ Les termes français que le code de `plugins/atelier/lib/` lit ou écrit dans le
 
 - spec : titres de section exigés par type et sections de critères (`REQUIRED_SECTIONS`, `CRITERIA_SECTIONS` dans `lib/spec.mjs`) ; titre de la section « Amendements » (lecture et création) ;
 - amendements écrits et relus par le code : « tests rouverts » et « tests regelés » (`lib/tdd.mjs`, relus aussi par `lib/slices.mjs`) ;
-- plan : titre de la section « Tranches » (`lib/slices.mjs`) ;
+- plan : titre de la section « Tranches », et dans chaque tranche les segments « CA couverts : » et « TDD : oui|non » (`lib/slices.mjs`) ;
+- la mention « gel quitté » des entrées « tests rouverts » écrites par `lib/tdd.mjs` ;
 - revue (`lib/review-points.mjs`) : titres des tableaux « Bloquant » et « À discuter », et leurs formes normalisées en minuscules ; anciennes sections « Tour » ; colonnes « Point », « Fichier », « Traitement » ; mots-clés de traitement (« corrigé », « écarté »…) ; marqueurs de point « (repris) » et « (ex-RBn) » ; ligne vide « Aucun » ; formes « reporté (tranche N) » et « requalifié (RBn) » ;
 - les citations de ces termes dans les messages (`lib/write-guard.mjs`, `lib/review-points.mjs`, et tout autre module de `lib/` ou `lib/cli/`) : un terme **cité** comme élément du document (« la section « ## Amendements » », la liste des mots-clés de traitement) est tiré du vocabulaire. Le texte du message ne change pas.
 
@@ -42,7 +43,7 @@ EPIC-14 (atelier sur n'importe quel dépôt) doit permettre des documents dans u
 <!-- Ce qui existe, ce qu'on veut obtenir. -->
 
 - **Actuel** : les termes sont dispersés dans `lib/spec.mjs`, `lib/tdd.mjs`, `lib/slices.mjs`, `lib/review-points.mjs` (tableaux, expressions régulières) et cités en dur dans les messages de `lib/write-guard.mjs` et `lib/review-points.mjs`.
-- **Cible** : un module pur `lib/vocabulary.mjs`, sans import, exporte `VOCABULARY`, le vocabulaire français sous des clés canoniques en anglais : `sections.<TYPE>` (une clé par section exigée), `criteria.<TYPE>`, `amendments`, `amendmentEntries.reopened`, `amendmentEntries.refrozen`, `slices`, `review.tables.blocking`, `review.tables.discuss`, `review.legacyRound`, `review.columns.point`, `review.columns.file`, `review.columns.treatment`, `review.treatments.<clé>` (huit clés), `review.postponedSlice`, `review.markers.resumed`, `review.markers.formerly`, `review.empty`. Les autres modules le lisent au lieu d'écrire les termes. Les exports existants (`REQUIRED_SECTIONS`, etc.) restent disponibles et donnent les mêmes valeurs. Domaine du module et de son test : `vocabulary`.
+- **Cible** : un module pur `lib/vocabulary.mjs`, sans import, exporte `VOCABULARY`, le vocabulaire français sous des clés canoniques en anglais : `sections.<TYPE>` (une clé par section exigée), `criteria.<TYPE>`, `amendments`, `amendmentEntries.reopened`, `amendmentEntries.refrozen`, `amendmentEntries.leftFreeze`, `slices`, `plan.coverage`, `plan.tdd`, `plan.yes`, `plan.no`, `review.tables.blocking`, `review.tables.discuss`, `review.legacyRound`, `review.columns.point`, `review.columns.file`, `review.columns.treatment`, `review.treatments.<clé>` (huit clés), `review.postponedSlice`, `review.markers.resumed`, `review.markers.formerly`, `review.empty`. Les autres modules le lisent au lieu d'écrire les termes. Les exports existants (`REQUIRED_SECTIONS`, etc.) restent disponibles et donnent les mêmes valeurs. Domaine du module et de son test : `vocabulary`.
 
 ## 4. Preuve de non-régression
 <!-- Tests existants qui couvrent la zone ; tests de caractérisation à ajouter AVANT de toucher au code ; vérifications manuelles restantes.
@@ -79,3 +80,4 @@ Laissé en l'état : les textes des messages et les mots employés dans leurs ph
 ## Amendements
 <!-- Après signature : une entrée datée par modification de la spec. -->
 - 2026-11-25 : clé `review.postponedSlice` (« tranche ») ajoutée à la liste du §3, pourquoi : la regex de « reporté (tranche N) » contient ce mot, et CA-3 fige exactement les clés du §3 (oubli relevé à la conception).
+- 2026-11-26 : clés `plan.coverage` (« CA couverts »), `plan.tdd` (« TDD »), `plan.yes` (« oui »), `plan.no` (« non ») et `amendmentEntries.leftFreeze` (« gel quitté ») ajoutées au §1 et au §3, pourquoi : `slices.mjs` lit ces termes dans les tranches du plan et `tdd.mjs` écrit « gel quitté » ; un plan dans une autre langue perdrait en silence les CA et le TDD de chaque tranche (RD2, revue 1 de la tranche 1).
