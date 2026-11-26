@@ -38,6 +38,6 @@ Revue 1 (bd8032c, base 971c3a6) : aucun bloquant, RD1. Revue 2 (30d7124, relance
 |---|---|
 | RD1. Règle « Les tests importent par noms les modules de domaine » vidée de son sens | corrigé (544caf7) : puce retirée, choix de Didier |
 
-- Verdict :
-- Validé par :
-- Date :
+- Verdict : accepté
+- Validé par : Didier
+- Date : 2026-11-26

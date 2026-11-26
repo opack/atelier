@@ -2,7 +2,7 @@
 id: REF-36
 type: REF
 title: Supprimer la façade lib/core.mjs
-status: signed
+status: done
 tdd: no              # suppression de code mort : la suite existante est la preuve
 rel_parent: EPIC-17
 rel_origin: REF-29
@@ -12,6 +12,7 @@ signed_at: 2026-11-26
 slice_tdd: no
 reviewed_commit: bbd7e133278ba9061db268898cebb52c75f03712
 slice: 1
+done_at: 2026-11-26
 ---
 
 # REF-36 Supprimer la façade lib/core.mjs
