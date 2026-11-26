@@ -141,6 +141,22 @@ describe('dependencies and the integration branch', () => {
     assert.notEqual(result.status, 0, result.output)
     assertLine(result.output, [/FEAT-2/, /epic\/EPIC-1-x/, /clôture de l’EPIC|clôture de EPIC-1/])
   })
+
+  it('dépendance déjà livrée dans la branche par défaut, encore présente sur la branche d’intégration : pas d’attente de la clôture de l’EPIC [FEAT-21 CA-10]', () => {
+    const directory = epicRepository()
+    closedChild(directory)
+    git(directory, 'switch', '-q', '-c', 'tec/TEC-6-x', 'main')
+    writeChantier(directory, { id: 'TEC-6', relations: { rel_depends_on: 'FEAT-2' } })
+    commitFiles(directory, { 'src/six.mjs': 'export const six = 6\n' }, 'chore(six): [TEC-6] code')
+    setHeader(directory, 'TEC-6', { reviewed_commit: headOf(directory) })
+    git(directory, 'switch', '-q', 'main')
+    git(directory, 'merge', '-q', '--no-ff', '--no-edit', EPIC_BRANCH)
+    git(directory, 'switch', '-q', 'tec/TEC-6-x')
+    const result = closeCheck(directory)
+    assert.notEqual(result.status, 0, result.output)
+    assertLine(result.output, [/FEAT-2/, /branche par défaut/])
+    assert.doesNotMatch(result.output, /clôture de l’EPIC|clôture de EPIC-1/)
+  })
 })
 
 describe('next step of an EPIC with an integration branch', () => {
