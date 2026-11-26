@@ -39,3 +39,8 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Décision : clés anglaises en camelCase (`acceptanceCriteria`, `whyNow`, `answerCriteria`…), `why` propre à chaque type ; `criteria.<TYPE>` porte le nom de la clé de section, pas le texte ; `review.markers.formerly` vaut `ex-` pour reconstruire `(ex-RBn)` à l'identique en tranche 2.
 - Écarté : garder une liste `REQUIRED_SECTIONS` écrite dans `spec.mjs`, parce qu'elle recopierait les termes ; elle est dérivée de `sections.<TYPE>` (ordre d'insertion conservé).
 - Conséquence : expressions régulières construites une fois au niveau du module (`AMENDMENTS_HEADING`, `SLICES_HEADING`, `REOPENING_ENTRY`).
+
+## 2026-11-26 : le test d'`escapeRegExp` reste dans `vocabulary.test.mjs` (RD3)
+- Contexte : revue 1 de la tranche 1 ; ce test relève du domaine `common`.
+- Écarté : l'ajouter à `common.test.mjs`, parce que la décision du 2026-11-25 interdit de toucher un fichier de test existant pendant le chantier (preuve de CA-1).
+- Conséquence : le déplacer vers `common.test.mjs` est une suite possible après le chantier.
