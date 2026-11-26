@@ -22,7 +22,7 @@ const baseText = (name) => git('show', `${BASE_COMMIT}:${TESTS}/${name}`)
 
 // Differences between the test files of the base and those of `directory`: every base file must be
 // there and identical (no line removed or changed).
-export function differences(directory) {
+function differences(directory) {
   const problems = []
   for (const name of baseFiles()) {
     let current

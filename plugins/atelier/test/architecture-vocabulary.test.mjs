@@ -238,7 +238,7 @@ describe('vocabulaire des documents dans lib/', () => {
     const problems = mjsFiles(libDirectory)
       .filter((path) => relative(libDirectory, path).split(sep).join('/') !== 'vocabulary.mjs')
       .flatMap((path) => flagged(readFileSync(path, 'utf8')).map((problem) => `${relative(libDirectory, path)} : ${problem}`))
-    assert.deepEqual(problems, [])
+    assert.deepEqual(problems, [], 'tirer ces termes de VOCABULARY (lib/vocabulary.mjs) au lieu de les écrire en dur')
     assert.deepEqual(vocabularyImportProblems(readFileSync(join(libDirectory, 'vocabulary.mjs'), 'utf8')), [])
   })
 })
