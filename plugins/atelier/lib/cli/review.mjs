@@ -28,7 +28,7 @@ import { testFilesChangedSince } from './tdd.mjs'
 
 // ---------- Review facts and set-reviewed ----------
 
-// What git says about the review recorded in the spec (see reviewProblems in lib/core.mjs).
+// What git says about the review recorded in the spec (see reviewProblems in lib/review.mjs).
 // Any git error makes the review stale rather than failing. Code brought by a merge of the default
 // branch or of the integration branch of the chantier's EPIC does not count, only the resolution of
 // the merge does. `index` reuses an index of chantiers already built.
