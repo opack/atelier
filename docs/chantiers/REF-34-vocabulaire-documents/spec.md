@@ -8,10 +8,11 @@ created_at: 2026-11-25
 signed_by: Opack
 signed_at: 2026-11-25
 rel_parent: EPIC-17
-slice: 3
-slice_base: a1402fc4c949c5a5635a3e273dd95e7cb6894c1f
+slice: chantier
+slice_base: 2e7f3f871395468038bb87b84bd44ca652a9db4f
 tests_commit: 
 slice_tdd: 
+last_slice: 3
 ---
 
 # REF-34 Regrouper le vocabulaire des documents lu par le code
