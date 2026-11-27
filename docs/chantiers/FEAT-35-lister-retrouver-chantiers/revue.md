@@ -58,3 +58,20 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD8. Second lecteur de l'arbre courant à côté de `chantiersHere` | plugins/atelier/lib/cli/list.mjs:16 | reporté (tranche 3) |
 
 - Bilan de la revue : aucun bloquant ; RD8 sera traité en tranche 3, où la liste lira `chantierIndex` enrichi.
+
+## Revue 2 : tranche 2 : 2026-11-27
+- Commit revu : 22523d4
+- Base : 20d9306
+- Corrections depuis la revue 1 : 841f4c4
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD9. La cellule de RD5 annonçait un test pas encore écrit | docs/chantiers/FEAT-35-lister-retrouver-chantiers/revue.md:55 | corrigé (b0d7bd3) |
+
+- Bilan de la revue : RD5 à RD7 réglés sans régression ; RD8 reporté en tranche 3.
