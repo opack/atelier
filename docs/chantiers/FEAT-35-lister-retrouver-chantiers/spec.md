@@ -8,9 +8,9 @@ created_at: 2026-11-25
 signed_by: Opack
 signed_at: 2026-11-26
 slice_tdd: yes
-tests_commit: 80ae7eb
-slice: 2
-slice_base: 20d930629e922f3523654014af5b77aa675b1f7c
+tests_commit: 
+slice: 3
+slice_base: 6bcfa74260fd64b57c84642552d3ca3499982204
 ---
 
 # FEAT-35 Lister et retrouver les chantiers
