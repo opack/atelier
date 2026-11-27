@@ -14,7 +14,7 @@ import {
   hasRelations,
   parseRelations,
 } from '../relations.mjs'
-import { gitRaw } from './common.mjs'
+import { gitOutput, gitRaw } from './common.mjs'
 import { currentBranch } from './identifiers.mjs'
 
 // ---------- Chantier index and relation summary ----------
@@ -60,10 +60,11 @@ function catFileBatch(projectRoot, requests) {
 // version are kept (header, slice count, files...), not the texts. A branch entry carries
 // `date` (unix time of the last commit) and `local` (a local branch, not a remote-tracking one).
 // `current` (the current branch) can be passed by a caller that already has it. Outside a git
-// repository (no current branch) there is no ref: only the current tree is indexed.
+// repository there is no ref: only the current tree is indexed. Inside a repository the refs are
+// read even without a current branch (orphan branch before its first commit).
 export function chantierIndex(projectRoot, config, current = null) {
   current ??= currentBranch(projectRoot)
-  const refsOutput = current === null
+  const refsOutput = gitOutput(projectRoot, ['rev-parse', '--git-dir']) === null
     ? ''
     : gitRaw(projectRoot, ['for-each-ref', '--format=%(refname)%00%(symref)%00%(committerdate:unix)', 'refs/heads', 'refs/remotes'])
   const refs = refsOutput
