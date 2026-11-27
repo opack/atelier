@@ -39,3 +39,22 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD4. Ligne vide entre le commentaire de `nextStep` et sa fonction | plugins/atelier/lib/next-step.mjs:21 | corrigé (20d9306) |
 
 - Bilan de la revue : RD1 à RD3 réglés, sans changement de comportement. Idées hors diff : `write-guard.mjs:122` recopie encore `['done', 'abandoned']` ; `tdd.mjs:193` réécrit encore `reopeningPending` à la main.
+
+## Revue 1 : tranche 2 : 2026-11-27
+- Commit revu : 759c9c3
+- Base : 20d9306
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD5. Un texte libre entre guillemets est cherché comme une seule expression | plugins/atelier/lib/list.mjs:125 | corrigé (841f4c4) ; test ajouté avec ceux de la tranche 3 (CA-4) |
+| RD6. Version affichée (type, statut par défaut) écrite dans la couche cli, `specStatus` recopié | plugins/atelier/lib/cli/list.mjs:29 | corrigé (841f4c4) |
+| RD7. Garde confuse et branche morte dans `currentTreeVersions` | plugins/atelier/lib/cli/list.mjs:24 | corrigé (841f4c4) |
+| RD8. Second lecteur de l'arbre courant à côté de `chantiersHere` | plugins/atelier/lib/cli/list.mjs:16 | reporté (tranche 3) |
+
+- Bilan de la revue : aucun bloquant ; RD8 sera traité en tranche 3, où la liste lira `chantierIndex` enrichi.

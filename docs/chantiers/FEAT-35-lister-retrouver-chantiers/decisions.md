@@ -69,3 +69,7 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Colonne parent : le texte affiche `parent EPIC-17` ; en JSON, `parent` vaut `rel_parent` en majuscules (« , » entre plusieurs valeurs), sinon `null`.
 - OD5 (deux dossiers du même identifiant : lignes incohérentes) reporté à la tranche 3, qui refait le choix de version : une seule version par identifiant, doublon signalé.
 - OD8 (combinaisons non couvertes : défaut « ouverts » avec `--type`, mention `--all` quand les filtres écartent aussi les clos, détail de la ligne de FEAT-30) : tests non rouverts, le code les traite ; à surveiller à la revue de la tranche 3.
+
+## 2026-11-27 : RD8 reporté en tranche 3 : un seul lecteur des chantiers
+- Contexte : la tranche 2 lit l'arbre courant par `currentTreeVersions`, à côté de `chantiersHere` ; la décision du 2026-11-26 veut un seul lecteur (`chantierIndex` enrichi).
+- Conséquence : en tranche 3, `chantiersHere` et `chantierIndex` sont enrichis des faits de chaque version, `commandList` lit l'index, `currentTreeVersions` disparaît. Le test de RD5 (texte entre guillemets découpé en mots) s'ajoute aux tests de la tranche 3, étiqueté CA-4.
