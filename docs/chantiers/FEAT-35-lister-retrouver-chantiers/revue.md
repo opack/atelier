@@ -124,6 +124,6 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 ### À discuter
 | Point | Fichier | Traitement |
 |---|---|---|
-| RD14. Branche courante `null` comparée à `refs/heads/null` dans le filtre des refs | plugins/atelier/lib/cli/relations.mjs:73 | |
+| RD14. Branche courante `null` comparée à `refs/heads/null` dans le filtre des refs | plugins/atelier/lib/cli/relations.mjs:73 | corrigé (8fc79b3) ; test prévu en tranche 4 |
 
 - Bilan de la revue : RD13 réglé (dépôt normal, HEAD détaché, branche orpheline, hors dépôt vérifiés). Écarté du traitement de RD14 : le repli de `currentBranch` sur `symbolic-ref`, qui changerait le contrat d'une fonction partagée pour un cas que la méthode ne produit pas.
