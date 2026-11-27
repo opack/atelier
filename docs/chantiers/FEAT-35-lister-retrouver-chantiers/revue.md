@@ -55,7 +55,7 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD5. Un texte libre entre guillemets est cherché comme une seule expression | plugins/atelier/lib/list.mjs:125 | corrigé (841f4c4) ; test prévu en tranche 3 (CA-4, voir decisions.md) |
 | RD6. Version affichée (type, statut par défaut) écrite dans la couche cli, `specStatus` recopié | plugins/atelier/lib/cli/list.mjs:29 | corrigé (841f4c4) |
 | RD7. Garde confuse et branche morte dans `currentTreeVersions` | plugins/atelier/lib/cli/list.mjs:24 | corrigé (841f4c4) |
-| RD8. Second lecteur de l'arbre courant à côté de `chantiersHere` | plugins/atelier/lib/cli/list.mjs:16 | reporté (tranche 3) |
+| RD8. Second lecteur de l'arbre courant à côté de `chantiersHere` | plugins/atelier/lib/cli/list.mjs:16 | corrigé (126c525), reporté de la tranche 2 |
 
 - Bilan de la revue : aucun bloquant ; RD8 sera traité en tranche 3, où la liste lira `chantierIndex` enrichi.
 
@@ -88,7 +88,6 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 ### À discuter
 | Point | Fichier | Traitement |
 |---|---|---|
-| RD8 (repris). Second lecteur de l'arbre courant à côté de `chantiersHere` | plugins/atelier/lib/cli/list.mjs:16 | corrigé (126c525), reporté de la tranche 2 |
 | RD10. `catch` muet sur la lecture des refs, au-delà du seul cas hors dépôt | plugins/atelier/lib/cli/relations.mjs:65 | corrigé (c3e7584) |
 | RD11. Le lecteur partagé de l'index dépend du domaine `list` (`versionFacts`) | plugins/atelier/lib/cli/relations.mjs:8 | corrigé (c3e7584) |
 | RD12. Le test des doublons appelle `cp`, absent sous Windows | plugins/atelier/test/list-versions.test.mjs:222 | test ajouté (2b04c5e, tests rouverts puis regelés) |
