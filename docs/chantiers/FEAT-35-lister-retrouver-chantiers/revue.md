@@ -36,6 +36,6 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 ### À discuter
 | Point | Fichier | Traitement |
 |---|---|---|
-| RD4. Ligne vide entre le commentaire de `nextStep` et sa fonction | plugins/atelier/lib/next-step.mjs:21 | |
+| RD4. Ligne vide entre le commentaire de `nextStep` et sa fonction | plugins/atelier/lib/next-step.mjs:21 | corrigé (20d9306) |
 
 - Bilan de la revue : RD1 à RD3 réglés, sans changement de comportement. Idées hors diff : `write-guard.mjs:122` recopie encore `['done', 'abandoned']` ; `tdd.mjs:193` réécrit encore `reopeningPending` à la main.
