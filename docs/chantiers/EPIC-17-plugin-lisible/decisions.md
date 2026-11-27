@@ -39,3 +39,10 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Contexte : REF-34 ouvert le 2026-11-25 ; proposition du fil « Rendre atelier multilingue » de le lancer tout de suite. Accord de Didier le 2026-11-26.
 - Écarté : attendre les lots 3 et 4, parce que le lot 3 ajouterait d'abord de nouveaux mots lus en dur (sections de critères des TEC et REF) que REF-34 devrait ensuite déplacer.
 - Conséquence : ordre REF-34, puis lot 3 (qui ajoute ses sections de critères directement au module de vocabulaire), puis lot 4. Le REF de suppression de la façade (REF-36) tourne en parallèle : il ne partage aucun fichier avec REF-34.
+
+## 2026-11-27 : un REF passe en anglais tous les identifiants du code, après TEC-39 et avant les lots 3 et 4
+- Contexte : fil de TEC-39 (noms de fichiers et de dossiers des chantiers en anglais). Les identifiants JS de `lib/` et `test/` mêlent encore le français (`chantier`, `revue`, `bilan`, `tranche` : environ 1000 occurrences dans 54 fichiers). Accord de Didier le 2026-11-27.
+- Décision : un REF enfant d'EPIC-17 (`rel_parent: EPIC-17`) les renomme (`chantier` → `workItem`, `revue` → `review`, `bilan` → `report`, `tranche` → `slice`) et ajoute au test d'architecture une règle qui refuse ces mots dans les identifiants. Les textes affichés ne changent pas : ils relèvent du vocabulaire (REF-34) et de la langue de l'utilisateur (EPIC-14).
+- Écarté : le faire dans TEC-39, parce qu'un renommage interne de cette taille noierait la revue d'un chantier qui change déjà des noms visibles. Écarté aussi : le laisser à EPIC-14, parce que ses chantiers naîtraient sur des identifiants qu'il faudrait renommer ensuite.
+- Ordre : TEC-37 (préfixe AC), TEC-39, ce REF, puis les lots 3 et 4, puis la clôture d'EPIC-17, avant le lot 1 d'EPIC-14. Les trois migrations de nomenclature s'enchaînent sans autre chantier sur `lib/` ni `test/` entre elles : chacune touche presque tous les fichiers. Les lots 3 et 4 naissent ensuite dans la nomenclature définitive, sans réouverture de tests pour renommer.
+- Conséquence : la confrontation prévu / réalisé du bilan d'EPIC-17 compte ce REF avec REF-34 et REF-36.
