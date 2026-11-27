@@ -107,7 +107,7 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 ### À discuter
 | Point | Fichier | Traitement |
 |---|---|---|
-| RD13. Sur une branche sans commit, les autres branches ne sont plus lues | plugins/atelier/lib/cli/relations.mjs:64 | corrigé (e310977) ; test prévu en tranche 4 |
+| RD13. Sur une branche sans commit, les autres branches ne sont plus lues | plugins/atelier/lib/cli/relations.mjs:64 | corrigé (e310977) ; test ajouté en tranche 4 (2b1c040) |
 
 - Bilan de la revue : RD10, RD11 et RD12 réglés ; HEAD détaché vérifié, comportement inchangé.
 
@@ -124,6 +124,24 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 ### À discuter
 | Point | Fichier | Traitement |
 |---|---|---|
-| RD14. Branche courante `null` comparée à `refs/heads/null` dans le filtre des refs | plugins/atelier/lib/cli/relations.mjs:73 | corrigé (8fc79b3) ; test prévu en tranche 4 |
+| RD14. Branche courante `null` comparée à `refs/heads/null` dans le filtre des refs | plugins/atelier/lib/cli/relations.mjs:73 | corrigé (8fc79b3) ; test ajouté en tranche 4 (2b1c040) |
 
 - Bilan de la revue : RD13 réglé (dépôt normal, HEAD détaché, branche orpheline, hors dépôt vérifiés). Écarté du traitement de RD14 : le repli de `currentBranch` sur `symbolic-ref`, qui changerait le contrat d'une fonction partagée pour un cas que la méthode ne produit pas.
+
+## Revue 1 : tranche 4 : 2026-11-27
+- Commit revu : e4713fd
+- Base : 8fc79b3
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD15. Chemin absolu d'un dossier calculé à deux endroits | plugins/atelier/lib/cli/list-open.mjs:33 | corrigé (a46084e) |
+| RD16. Sous Windows, `explorer` cherché par son nom, d'abord dans le dossier courant | plugins/atelier/lib/list-open.mjs:29 | reporté (« Dette et suites » du bilan : exécutables système par chemin absolu sous Windows, `git` et `explorer`) |
+| RD17. `bin/atelier` n'affiche plus la pile d'appels des erreurs inattendues | plugins/atelier/bin/atelier:4 | exception acceptée (Didier, 2026-11-28 : message propre pour les erreurs voulues, erreur interne toujours bruyante, code 1 ; un type d'erreur dédié coûterait plus qu'il ne rapporte) |
+
+- Bilan de la revue : aucun bloquant ; lancement de l'explorateur sûr (sans shell, chemin absolu en argument séparé), aucun processus ne retient node ; tests de RD13 et RD14 présents.

@@ -108,3 +108,8 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - OD19 corrigé : `main` rend la promesse de la commande ; `bin/atelier` affiche le message d'une promesse rejetée et sort en 1.
 - OD16 (path et open lisent toutes les branches même quand le chantier est ici) : non corrigé ; `atelier path` entre dans la mesure de performance du bilan.
 - OD18 (tests de CA-17 permissifs sur le libellé et sur le choix de la branche nommée) : non rouverts, à reprendre à une prochaine réouverture.
+
+## 2026-11-28 : RD17, les erreurs non rattrapées affichent leur message sans pile d'appels
+- Contexte : `bin/atelier` attend maintenant la promesse des commandes (OD19) et affiche le message d'une erreur, code 1, pour toutes les commandes.
+- Écarté : un type d'erreur « destinée à l'utilisateur » pour garder la pile des erreurs internes, concept de plus pour un gain faible.
+- Conséquence : exception acceptée par Didier ; une erreur interne reste bruyante, sans `fichier:ligne`.
