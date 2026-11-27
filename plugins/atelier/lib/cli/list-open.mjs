@@ -1,7 +1,6 @@
 // path and open commands: the absolute path of a chantier directory, and its opening in the file explorer.
 
 import { spawn } from 'node:child_process'
-import { join, resolve } from 'node:path'
 import { shownVersions } from '../list-versions.mjs'
 import { explorerFor, locateError, openUsage, parseOpenArgument } from '../list-open.mjs'
 import { findProjectRoot, requireConfig } from './common.mjs'
@@ -30,7 +29,7 @@ function resolveDirectory(command, argumentList) {
   if (error) {
     fail(error)
   }
-  return resolve(join(projectRoot, config.chantiersDir, directories[0]))
+  return entry.herePath
 }
 
 export function commandPath(argumentList) {

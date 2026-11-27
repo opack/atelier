@@ -2,7 +2,7 @@
 
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import { parseCatFileBatch, parseFrontMatter, parseTreeEntries, shortRefName } from '../common.mjs'
 import { versionFacts } from '../chantier-facts.mjs'
 import { chantierIdFromDirectoryName } from '../identifiers.mjs'
@@ -23,7 +23,7 @@ import { currentBranch } from './identifiers.mjs'
 // data (spec header), facts (see versionFacts), path (absolute) }], sorted by directory name.
 // Directories without spec.md are ignored.
 function chantiersHere(projectRoot, config) {
-  const chantiersRoot = join(projectRoot, config.chantiersDir)
+  const chantiersRoot = resolve(projectRoot, config.chantiersDir)
   if (!existsSync(chantiersRoot)) {
     return []
   }
