@@ -107,6 +107,6 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 ### À discuter
 | Point | Fichier | Traitement |
 |---|---|---|
-| RD13. Sur une branche sans commit, les autres branches ne sont plus lues | plugins/atelier/lib/cli/relations.mjs:64 | |
+| RD13. Sur une branche sans commit, les autres branches ne sont plus lues | plugins/atelier/lib/cli/relations.mjs:64 | corrigé (e310977) ; test prévu en tranche 4 |
 
 - Bilan de la revue : RD10, RD11 et RD12 réglés ; HEAD détaché vérifié, comportement inchangé.

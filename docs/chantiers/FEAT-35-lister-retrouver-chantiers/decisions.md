@@ -90,3 +90,7 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - OD11 (les autres consommateurs de l'index lisent aussi plans et fichiers) : non corrigé ; la mesure de performance du bilan inclura `atelier status`.
 - OD12 (test : une branche du chantier plus ancienne bat une branche sans son identifiant plus récente) : à ajouter aux tests de la tranche 4, étiqueté CA-9.
 - OD14 : le skill `/atelier:list` (tranche 5) ne mélange pas sortie d'erreur et sortie standard ; doublons sur les branches non signalés, suite au bilan.
+
+## 2026-11-27 : RD13, les branches se lisent dès qu'on est dans un dépôt
+- Contexte : la correction de RD10 sautait la lecture des refs quand la branche courante est illisible, ce qui arrive aussi sur une branche sans commit.
+- Conséquence : `chantierIndex` teste la présence du dépôt (`rev-parse --git-dir`), un appel git de plus. Tests à ajouter en tranche 4 : branche orpheline (RD13), hors dépôt git (OD9), branche du chantier plus ancienne contre branche sans son identifiant plus récente (OD12, CA-9).
