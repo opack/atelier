@@ -70,7 +70,7 @@ export function chantierIndex(projectRoot, config, current = null) {
   const refs = refsOutput
     .split('\n')
     .map((line) => line.split('\0'))
-    .filter(([ref, symref]) => ref && !symref && ref !== `refs/heads/${current}`)
+    .filter(([ref, symref]) => ref && !symref && (current === null || ref !== `refs/heads/${current}`))
     .map(([ref, , date]) => ({ ref, date: Number(date) || 0 }))
   const chantiersTrees = catFileBatch(projectRoot, refs.map(({ ref }) => `${ref}:${config.chantiersDir}`))
   const directories = refs.flatMap(({ ref, date }, index) => {
