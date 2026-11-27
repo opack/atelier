@@ -110,3 +110,20 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD13. Sur une branche sans commit, les autres branches ne sont plus lues | plugins/atelier/lib/cli/relations.mjs:64 | corrigé (e310977) ; test prévu en tranche 4 |
 
 - Bilan de la revue : RD10, RD11 et RD12 réglés ; HEAD détaché vérifié, comportement inchangé.
+
+## Revue 3 : tranche 3 : 2026-11-27
+- Commit revu : 8576eec
+- Base : 6bcfa74
+- Corrections depuis la revue 2 : e310977
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD14. Branche courante `null` comparée à `refs/heads/null` dans le filtre des refs | plugins/atelier/lib/cli/relations.mjs:73 | |
+
+- Bilan de la revue : RD13 réglé (dépôt normal, HEAD détaché, branche orpheline, hors dépôt vérifiés). Écarté du traitement de RD14 : le repli de `currentBranch` sur `symbolic-ref`, qui changerait le contrat d'une fonction partagée pour un cas que la méthode ne produit pas.
