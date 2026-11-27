@@ -8,7 +8,7 @@ created_at: 2026-11-25
 signed_by: Opack
 signed_at: 2026-11-26
 slice_tdd: yes
-tests_commit: 
+tests_commit: 2b1c040
 slice: 4
 slice_base: 8fc79b3356990e4d0779ec5f7449ff648a9042dc
 ---

@@ -94,3 +94,9 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 ## 2026-11-27 : RD13, les branches se lisent dès qu'on est dans un dépôt
 - Contexte : la correction de RD10 sautait la lecture des refs quand la branche courante est illisible, ce qui arrive aussi sur une branche sans commit.
 - Conséquence : `chantierIndex` teste la présence du dépôt (`rev-parse --git-dir`), un appel git de plus. Tests à ajouter en tranche 4 : branche orpheline (RD13), hors dépôt git (OD9), branche du chantier plus ancienne contre branche sans son identifiant plus récente (OD12, CA-9).
+
+## 2026-11-27 : tests de la tranche 4 (validés par Didier)
+- Choix de l'explorateur : fonction pure `explorerFor(plateforme, environnement)` dans `lib/list-open.mjs`, qui rend `{ command, ignoreExitCode }` ou `{ command: null, reason }` ; un `DISPLAY` vide compte comme absent ; hors macOS, Windows et Linux : `xdg-open`.
+- Les tests de CA-19 (repli sur le chemin) ne tournent que sous Linux : ailleurs, un `open` réussi ouvrirait une fenêtre pendant `npm test` ; CA-18 teste le choix pour toutes les plateformes.
+- `commitOnDay` ajouté à `helpers.mjs` ; `list-versions.test.mjs`, figé, garde sa copie locale.
+- Tests reportés des revues de la tranche 3, ajoutés ici et déjà verts : hors dépôt git (OD9), branche qui porte l'identifiant contre branche plus récente (OD12), branche sans commit et branche nommée `null` (RD13, RD14).
