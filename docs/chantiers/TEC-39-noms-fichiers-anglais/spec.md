@@ -8,6 +8,7 @@ created_at: 2026-11-27
 signed_by: Opack
 signed_at: 2026-11-27
 rel_depends_on: TEC-37, FEAT-35
+slice_tdd: yes
 ---
 
 # TEC-39 Noms de fichiers et de dossiers des chantiers en anglais
