@@ -145,3 +145,20 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD17. `bin/atelier` n'affiche plus la pile d'appels des erreurs inattendues | plugins/atelier/bin/atelier:4 | exception acceptée (Didier, 2026-11-28 : message propre pour les erreurs voulues, erreur interne toujours bruyante, code 1 ; un type d'erreur dédié coûterait plus qu'il ne rapporte) |
 
 - Bilan de la revue : aucun bloquant ; lancement de l'explorateur sûr (sans shell, chemin absolu en argument séparé), aucun processus ne retient node ; tests de RD13 et RD14 présents.
+
+## Revue 2 : tranche 4 : 2026-11-28
+- Commit revu : d1958e0
+- Base : 8fc79b3
+- Corrections depuis la revue 1 : a46084e
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+- Bilan de la revue : RD15 réglé, sans effet sur les autres consommateurs de l'index ; `list --json` rend aussi un chemin absolu quand `CLAUDE_PROJECT_DIR` est relatif.
