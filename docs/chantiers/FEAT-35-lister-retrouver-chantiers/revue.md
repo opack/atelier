@@ -52,7 +52,7 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 ### À discuter
 | Point | Fichier | Traitement |
 |---|---|---|
-| RD5. Un texte libre entre guillemets est cherché comme une seule expression | plugins/atelier/lib/list.mjs:125 | corrigé (841f4c4) ; test ajouté avec ceux de la tranche 3 (CA-4) |
+| RD5. Un texte libre entre guillemets est cherché comme une seule expression | plugins/atelier/lib/list.mjs:125 | corrigé (841f4c4) ; test prévu en tranche 3 (CA-4, voir decisions.md) |
 | RD6. Version affichée (type, statut par défaut) écrite dans la couche cli, `specStatus` recopié | plugins/atelier/lib/cli/list.mjs:29 | corrigé (841f4c4) |
 | RD7. Garde confuse et branche morte dans `currentTreeVersions` | plugins/atelier/lib/cli/list.mjs:24 | corrigé (841f4c4) |
 | RD8. Second lecteur de l'arbre courant à côté de `chantiersHere` | plugins/atelier/lib/cli/list.mjs:16 | reporté (tranche 3) |
