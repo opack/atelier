@@ -18,7 +18,6 @@ export function needsPlan(type, files) {
 // `children` are the direct children of an EPIC, as { id, closed } (see describeRelation).
 // `codeCommitted` is true when code was committed since the start of the current slice (since
 // the freeze of its tests in TDD), false when not, null when unknown (see codeCommittedMatters).
-
 export function nextStep(chantier, review = 'none', children = [], codeCommitted = null) {
   if (!chantier) {
     return 'Aucun chantier actif sur cette branche. Ouvrir un chantier : /atelier:new'
