@@ -73,3 +73,9 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 ## 2026-11-27 : RD8 reporté en tranche 3 : un seul lecteur des chantiers
 - Contexte : la tranche 2 lit l'arbre courant par `currentTreeVersions`, à côté de `chantiersHere` ; la décision du 2026-11-26 veut un seul lecteur (`chantierIndex` enrichi).
 - Conséquence : en tranche 3, `chantiersHere` et `chantierIndex` sont enrichis des faits de chaque version, `commandList` lit l'index, `currentTreeVersions` disparaît. Le test de RD5 (texte entre guillemets découpé en mots) s'ajoute aux tests de la tranche 3, étiqueté CA-4.
+
+## 2026-11-27 : tests de la tranche 3 (validés par Didier)
+- Un seul fichier, `list-versions.test.mjs` ; dates de commit fixées (`GIT_COMMITTER_DATE`).
+- Chantier ici et sur une branche qui l'emporte : `path` reste le chemin de l'arbre courant, `location` la branche.
+- Doublon d'identifiant dans l'arbre courant (OD5) : une seule entrée, JSON propre, avertissement qui nomme les deux dossiers sur la sortie d'erreur ; la version gardée n'est pas fixée.
+- Quatre tests passent dès l'écriture (CA-10, CA-11, clause de CA-3, RD5) : ils protègent les règles que la lecture des branches ne doit pas casser.
