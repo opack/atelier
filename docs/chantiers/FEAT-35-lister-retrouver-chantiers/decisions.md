@@ -61,3 +61,11 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - La liste vide ne mentionne `--all` que si le défaut « ouverts » a écarté des chantiers clos (aucun chantier du tout : pas de mention).
 - Reporté en tranche 3 : la clause de CA-3 « rattaché à EPIC-17 sur une autre version seulement » (elle a besoin des branches), étiquetée CA-3.
 - Les deux cas d'OD4 sur l'étape (ancien modèle à tranches, tranche numérotée revue) sont ajoutés à la fin de `list-step.test.mjs` ; ils passaient déjà.
+
+## 2026-11-27 : tranche 2, implémentation et surapprentissage
+- Les étapes se calculent sur toutes les versions connues, avant tout filtre ; le choix de version entre branches (tranche 3) se branchera dans `currentTreeVersions` (`lib/cli/list.mjs`), seule source de versions.
+- Le type est calculé une fois (`chantierType`) et injecté dans l'en-tête passé à `versionFacts` : colonne, filtre, tri et étape lisent la même valeur. Un type d'en-tête inconnu se replie sur le préfixe de l'identifiant (OD7).
+- Une option à valeur refuse une valeur absente, vide, qui commence par `--` ou qui ne donne rien une fois découpée (`--status ,`, OD6).
+- Colonne parent : le texte affiche `parent EPIC-17` ; en JSON, `parent` vaut `rel_parent` en majuscules (« , » entre plusieurs valeurs), sinon `null`.
+- OD5 (deux dossiers du même identifiant : lignes incohérentes) reporté à la tranche 3, qui refait le choix de version : une seule version par identifiant, doublon signalé.
+- OD8 (combinaisons non couvertes : défaut « ouverts » avec `--type`, mention `--all` quand les filtres écartent aussi les clos, détail de la ligne de FEAT-30) : tests non rouverts, le code les traite ; à surveiller à la revue de la tranche 3.

@@ -1,6 +1,7 @@
 // Listing of the chantiers: the step of each one, computed from the shown version alone.
 // Pure functions: no access to the disk, git or the environment.
 
+import { CHANTIER_TYPES, normalize } from './common.mjs'
 import { needsPlan } from './next-step.mjs'
 import { CLOSED_STATUSES, parseRelations } from './relations.mjs'
 import { hasReopeningEntry, planSliceCount, sliceLabel, sliceState } from './slices.mjs'
@@ -88,4 +89,144 @@ function epicStep(version, versions) {
     return { step: 'epic-close', stepLabel: 'enfants clos : à clôturer' }
   }
   return { step: 'epic-abandon', stepLabel: 'enfants clos, aucun livré : à abandonner' }
+}
+
+// ---------- Arguments ----------
+
+export const LIST_STATUSES = ['draft', 'signed', 'done', 'abandoned']
+export const LIST_SORTS = ['id', 'status', 'type']
+const VALUE_OPTIONS = ['--status', '--type', '--parent', '--sort']
+const FLAG_OPTIONS = ['--all', '--json']
+const USAGE = 'Usage : atelier list [texte…] [--status <s,…>] [--type <T,…>] [--parent <ID>] [--all] [--sort id|status|type] [--json]'
+
+function refused(message) {
+  return { error: `${message}\n${USAGE}` }
+}
+
+function listValues(text) {
+  return text.split(',').map((value) => value.trim()).filter(Boolean)
+}
+
+function unknownValues(option, values, admitted) {
+  const unknown = values.filter((value) => !admitted.includes(value))
+  return unknown.length
+    ? refused(`Valeur inconnue pour ${option} : ${unknown.join(', ')}. Valeurs admises : ${admitted.join(', ')}.`)
+    : null
+}
+
+// Parses the arguments of `atelier list` into { words, statuses, types, parent, all, sort, json },
+// or { error } (French message naming the faulty argument and, for a value, the admitted ones).
+export function parseListArguments(argumentList) {
+  const seen = new Set()
+  const values = {}
+  const words = []
+  for (let index = 0; index < argumentList.length; index++) {
+    const argument = argumentList[index]
+    if (!argument.startsWith('--')) {
+      words.push(argument)
+      continue
+    }
+    if (![...VALUE_OPTIONS, ...FLAG_OPTIONS].includes(argument)) {
+      return refused(`Option inconnue : ${argument}.`)
+    }
+    if (seen.has(argument)) {
+      return refused(`Option répétée : ${argument}.`)
+    }
+    seen.add(argument)
+    if (VALUE_OPTIONS.includes(argument)) {
+      const value = argumentList[index + 1]
+      if (value === undefined || value.startsWith('--') || !listValues(value).length) {
+        return refused(`L’option ${argument} attend une valeur.`)
+      }
+      values[argument] = value
+      index++
+    }
+  }
+  const statuses = listValues(values['--status'] ?? '').map((value) => value.toLowerCase())
+  const types = listValues(values['--type'] ?? '').map((value) => value.toUpperCase())
+  const sort = values['--sort'] ?? 'id'
+  const parent = values['--parent']?.trim().toUpperCase() ?? null
+  const problem = unknownValues('--status', statuses, LIST_STATUSES)
+    ?? unknownValues('--type', types, CHANTIER_TYPES)
+    ?? unknownValues('--sort', [sort], LIST_SORTS)
+  if (problem) {
+    return problem
+  }
+  return { words, statuses, types, parent, all: seen.has('--all'), sort, json: seen.has('--json') }
+}
+
+// ---------- Selection and sort ----------
+
+// Type of a chantier: its header in upper case when it is a known type, else the prefix of its identifier.
+export function chantierType(id, data) {
+  const declared = (data?.type || '').toUpperCase()
+  return CHANTIER_TYPES.includes(declared) ? declared : id.split('-')[0].toUpperCase()
+}
+
+// Entries { id, type, title, status, parent, ... } of the known chantiers, from `{ id, data }`.
+export function listEntry({ id, data }) {
+  return {
+    id,
+    type: chantierType(id, data),
+    title: data.title ?? '',
+    status: data.status || 'draft',
+    parent: parseRelations(data).parent,
+  }
+}
+
+function matches(entry, { words, statuses, types, parent }, openOnly) {
+  if (statuses.length ? !statuses.includes(entry.status) : openOnly && CLOSED_STATUSES.includes(entry.status)) {
+    return false
+  }
+  if (types.length && !types.includes(entry.type)) {
+    return false
+  }
+  if (parent && !entry.parent.includes(parent)) {
+    return false
+  }
+  const haystack = normalize(`${entry.id} ${entry.title}`)
+  return words.every((word) => haystack.includes(normalize(word)))
+}
+
+const number = (id) => Number(id.split('-')[1])
+
+function compare(sort) {
+  const rank = (entry) => (sort === 'status' ? LIST_STATUSES.indexOf(entry.status) : CHANTIER_TYPES.indexOf(entry.type))
+  return (a, b) => (sort === 'id' ? 0 : rank(a) - rank(b)) || number(a.id) - number(b.id) || a.id.localeCompare(b.id)
+}
+
+// Selected entries, sorted, and whether the default « open » filter dropped closed chantiers that
+// would otherwise match (`hiddenClosed`).
+export function selectChantiers(entries, options) {
+  const openOnly = !options.all
+  const selected = entries.filter((entry) => matches(entry, options, openOnly)).sort(compare(options.sort))
+  const hiddenClosed = openOnly && !options.statuses.length && entries.some((entry) => matches(entry, options, false) && CLOSED_STATUSES.includes(entry.status))
+  return { selected, hiddenClosed }
+}
+
+// ---------- Output ----------
+
+// JSON object of a listed chantier; `location` is null for the current tree, `path` absolute.
+export function listItem(entry, { step, stepLabel }, { location = null, path = null } = {}) {
+  return {
+    id: entry.id,
+    type: entry.type,
+    title: entry.title,
+    status: entry.status,
+    step,
+    stepLabel,
+    location,
+    path,
+    parent: entry.parent.join(', ') || null,
+  }
+}
+
+// One line per chantier, columns aligned; or the empty-list message.
+export function formatList(items, { hiddenClosed = false } = {}) {
+  if (!items.length) {
+    return `Aucun chantier ne correspond${hiddenClosed ? ' (les chantiers clos sont masqués : ajoute --all)' : ''}.`
+  }
+  const rows = items.map((item) => [item.id, item.type, item.title, item.status, item.stepLabel, item.location ?? 'ici', item.parent ? `parent ${item.parent}` : ''])
+  const widths = rows[0].map((_, column) => Math.max(...rows.map((row) => row[column].length)))
+  return rows.map((row) => row.map((cell, column) => cell.padEnd(widths[column])).join('  ').trimEnd()).join('\n')
 }
