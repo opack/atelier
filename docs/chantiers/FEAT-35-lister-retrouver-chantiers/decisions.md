@@ -100,3 +100,11 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Les tests de CA-19 (repli sur le chemin) ne tournent que sous Linux : ailleurs, un `open` réussi ouvrirait une fenêtre pendant `npm test` ; CA-18 teste le choix pour toutes les plateformes.
 - `commitOnDay` ajouté à `helpers.mjs` ; `list-versions.test.mjs`, figé, garde sa copie locale.
 - Tests reportés des revues de la tranche 3, ajoutés ici et déjà verts : hors dépôt git (OD9), branche qui porte l'identifiant contre branche plus récente (OD12), branche sans commit et branche nommée `null` (RD13, RD14).
+
+## 2026-11-27 : tranche 4, implémentation et surapprentissage
+- `path` et `open` cherchent le dossier par l'index (`chantierIndex`, identifiants par `chantierIdFromDirectoryName`, égalité exacte : FIX-18 ne trouve pas FIX-180) ; `findChantierDirectory` n'est pas modifié. Le message « autre branche » nomme la branche de la version affichée (`shownVersions`).
+- OD15 corrigé : `open` attend la fin de l'explorateur au plus 1,5 s ; un code ≠ 0 donne le repli (chemin et code), sauf pour `explorer` (code ignoré) ; au-delà du délai, le dossier est considéré ouvert. Une fin par signal compte comme ouvert. Test (faux `xdg-open` en échec) en tranche 5.
+- OD17 corrigé : l'argument doit être un identifiant entier d'un type connu, sinon l'usage. `FIX-018` n'est pas ramené à `FIX-18` : l'argument est lu comme les noms de dossier (numéro tel quel), sinon un dossier `FIX-018-x` deviendrait introuvable.
+- OD19 corrigé : `main` rend la promesse de la commande ; `bin/atelier` affiche le message d'une promesse rejetée et sort en 1.
+- OD16 (path et open lisent toutes les branches même quand le chantier est ici) : non corrigé ; `atelier path` entre dans la mesure de performance du bilan.
+- OD18 (tests de CA-17 permissifs sur le libellé et sur le choix de la branche nommée) : non rouverts, à reprendre à une prochaine réouverture.
