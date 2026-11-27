@@ -138,7 +138,7 @@ export function planSliceCount(planText) {
 }
 
 // A chantier may carry `facts` ({ sliceCount, reopened, refreezing }, see versionFacts in
-// list.mjs) in place of the texts of its plan and spec. Only sliceState (sliceCount, reopened)
+// chantier-facts.mjs) in place of the texts of its plan and spec. Only sliceState (sliceCount, reopened)
 // and testDrivenPhase (refreezing) read them; the other rules still need the texts.
 // Where the chantier stands in its slices. `model`:
 // 'none'   : SPIKE without TDD, outside the slice cycle;

@@ -4,26 +4,11 @@
 import { CHANTIER_TYPES, normalize, specStatus } from './common.mjs'
 import { needsPlan } from './next-step.mjs'
 import { CLOSED_STATUSES, parseRelations } from './relations.mjs'
-import { hasReopeningEntry, planSliceCount, sliceLabel, sliceState } from './slices.mjs'
-import { parseAmendments } from './spec.mjs'
-import { isRefreeze, testDrivenPhase } from './tdd.mjs'
+import { sliceLabel, sliceState } from './slices.mjs'
+import { testDrivenPhase } from './tdd.mjs'
 
-// ---------- Facts of a version ----------
-
-// Facts read from a version of a chantier (header, spec body, plan.md, files of its directory);
-// the texts are dropped, only the facts stay: the header, the number of slices of the plan,
-// whether the spec records a reopening or a refreeze of the tests (`reopened`, what marks the
-// model before slices), whether a reopening is pending (`refreezing`) and the files.
-export function versionFacts({ data, specBody, planText, files }) {
-  const body = specBody ?? ''
-  return {
-    data: data ?? {},
-    sliceCount: planSliceCount(planText),
-    reopened: hasReopeningEntry({ spec: { body } }),
-    refreezing: isRefreeze(parseAmendments(body).entries),
-    files: files ?? [],
-  }
-}
+// Kept here for the consumers of the listing; the definition is shared with the index.
+export { versionFacts } from './chantier-facts.mjs'
 
 // ---------- Step ----------
 

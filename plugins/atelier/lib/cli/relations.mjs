@@ -4,8 +4,8 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { parseCatFileBatch, parseFrontMatter, parseTreeEntries, shortRefName } from '../common.mjs'
+import { versionFacts } from '../chantier-facts.mjs'
 import { chantierIdFromDirectoryName } from '../identifiers.mjs'
-import { versionFacts } from '../list.mjs'
 import {
   buildChantierIndex,
   chantierTreesOf,
@@ -60,15 +60,12 @@ function catFileBatch(projectRoot, requests) {
 // version are kept (header, slice count, files...), not the texts. A branch entry carries
 // `date` (unix time of the last commit) and `local` (a local branch, not a remote-tracking one).
 // `current` (the current branch) can be passed by a caller that already has it. Outside a git
-// repository, or when the refs cannot be read, there is no ref: only the current tree is indexed.
+// repository (no current branch) there is no ref: only the current tree is indexed.
 export function chantierIndex(projectRoot, config, current = null) {
-  let refsOutput = ''
-  try {
-    current ??= currentBranch(projectRoot)
-    refsOutput = gitRaw(projectRoot, ['for-each-ref', '--format=%(refname)%00%(symref)%00%(committerdate:unix)', 'refs/heads', 'refs/remotes'])
-  } catch {
-    refsOutput = ''
-  }
+  current ??= currentBranch(projectRoot)
+  const refsOutput = current === null
+    ? ''
+    : gitRaw(projectRoot, ['for-each-ref', '--format=%(refname)%00%(symref)%00%(committerdate:unix)', 'refs/heads', 'refs/remotes'])
   const refs = refsOutput
     .split('\n')
     .map((line) => line.split('\0'))
