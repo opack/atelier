@@ -24,6 +24,8 @@ Format `<TYPE>-<numéro>` : `FEAT-412`, `FIX-431`, `TEC-437`.
 
 Le type de chantier est indépendant du préfixe de commit : un chantier `TEC` peut produire des commits `fix(ci)` ou `feat(envelopes)`.
 
+Pour parcourir les chantiers du projet sans fouiller `docs/chantiers/`, `/atelier:list` les liste (arbre courant et autres branches) avec leur statut et leur étape, et `/atelier:open <ID>` ouvre le dossier d’un chantier de l’arbre courant.
+
 ## Le chantier actif
 
 atelier déduit le chantier en cours **du nom de la branche** (`<type>/<ID>-<slug>`).

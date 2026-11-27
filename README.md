@@ -81,6 +81,8 @@ Identifiants : `<TYPE>-<numéro>`, avec un compteur unique par projet (qui conti
 | `/atelier:status` | Où en est le chantier (tranche en cours comprise) et quelle est la prochaine étape. |
 | `/atelier:review` | Revue indépendante de la tranche par un sous-agent, traitement de chaque point, autant de revues que nécessaire, puis ta validation, qui fait passer à la tranche suivante ; après la dernière, revue transversale du chantier et enregistrement du commit revu (`revue.md`). |
 | `/atelier:close` | Vérifie que toutes les tranches ont été revues et que le code clôturé est celui qui a été relu, puis `bilan.md`, ton verdict, proposition de PR. |
+| `/atelier:list [demande]` | Liste les chantiers (arbre courant et autres branches) avec statut et étape, filtrés selon ta demande (« les FIX en cours », « les enfants d'EPIC-17 »). |
+| `/atelier:open <ID>` | Ouvre le dossier d'un chantier dans l'explorateur de fichiers et donne son chemin. |
 | `/atelier:off <raison>` | Débrayage d'urgence de production : autorise le code sans spec, tracé. |
 
 ## Le cycle TDD, quand il est pertinent

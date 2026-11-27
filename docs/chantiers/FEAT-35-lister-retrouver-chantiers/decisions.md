@@ -113,3 +113,10 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Contexte : `bin/atelier` attend maintenant la promesse des commandes (OD19) et affiche le message d'une erreur, code 1, pour toutes les commandes.
 - Écarté : un type d'erreur « destinée à l'utilisateur » pour garder la pile des erreurs internes, concept de plus pour un gain faible.
 - Conséquence : exception acceptée par Didier ; une erreur interne reste bruyante, sans `fichier:ligne`.
+
+## 2026-11-28 : tranche 5, skills, site et vérifications à la main
+- `/atelier:list` : une demande non traduisible est refusée en disant ce qui ne se filtre pas, sans filtre approché (SD7) ; la proposition d'un « filtre voisin » écrite d'abord par implementer est retirée.
+- Pages du site qui évoquent `docs/chantiers/` sans conseiller de le parcourir (installation, trace, limites…) : laissées telles quelles.
+- Test d'OD15 (faux `xdg-open` en échec ou en succès) : `test/list-open-exit.test.mjs`, sous Linux seulement.
+- Mesure de performance (SD11, OD11, OD16), dépôt généré de 1 000 chantiers (moitié avec plan) et 51 branches dont 49 modifient un chantier : `atelier list` 0,31 s, `list --all` 0,31 s, `atelier path` 0,29 s, `atelier status` hors chantier 0,05 s ; sur ce dépôt (≈40 chantiers), `list` 0,07 s et `status` 0,08 s. Budget d'une seconde tenu : OD11 et OD16 restent sans correction.
+- Vérification des skills (SD14), par `claude -p --plugin-dir` sur le dépôt généré : « les chantiers de Didier » est refusé explicitement (filtre par auteur impossible), « les FIX en cours » donne la liste des FIX ouverts. `/atelier:open` en session cloud : vérifié au niveau de la commande (chemin et raison) ; l'ouverture réelle en local reste à constater par Didier.
