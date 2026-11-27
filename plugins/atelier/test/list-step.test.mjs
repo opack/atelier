@@ -140,3 +140,13 @@ describe('step of an EPIC: its children among all the known chantiers', () => {
     assert.deepEqual(steps.get('FEAT-42'), { step: 'plan', stepLabel: 'à planifier' })
   })
 })
+
+describe('step of a chantier: cases added after the review of slice 1', () => {
+  it('ancien modèle : plan à tranches, pas de slice, tests rouverts : « tests d’abord » sans préfixe [FEAT-35 CA-7]', () => {
+    assertStep(version('FEAT-50', signed({ tdd: 'yes' }), { plan: threeSlices, body: reopenedBody }), 'tests', 'tests d’abord')
+  })
+
+  it('tranche numérotée dont la revue est enregistrée : préfixe de tranche [FEAT-35 CA-7]', () => {
+    assertStep(version('FEAT-51', signed({ tdd: 'yes', slice: '2', tests_commit: 'abc1234', reviewed_commit: 'def5678' }), { plan: threeSlices }), 'reviewed', 'Tranche 2/3 : revue enregistrée')
+  })
+})

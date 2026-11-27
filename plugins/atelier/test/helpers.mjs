@@ -243,3 +243,14 @@ export {
   planOf, threeSlices, slicedChantier, makeSlicedRepository, commitFiles, headOf, commitSpec, setHeader, specFileText, atelierOk, atSliceTwo, implementedSlice,
   revueOf,
 }
+
+// `atelier list --json <arguments>`: the listed chantiers, and their identifiers in order.
+function listed(directory, ...cliArguments) {
+  return JSON.parse(atelierOk(directory, 'list', '--json', ...cliArguments))
+}
+
+function listedIds(directory, ...cliArguments) {
+  return listed(directory, ...cliArguments).map((chantier) => chantier.id)
+}
+
+export { listed, listedIds }
