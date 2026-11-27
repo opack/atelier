@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
-import { readFileSync, realpathSync, writeFileSync } from 'node:fs'
+import { cpSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, it } from 'node:test'
 import { setFrontMatterValues } from '../lib/common.mjs'
@@ -219,7 +219,7 @@ describe('cases deferred from the review of slice 2', () => {
     const directory = makeRepository('main')
     writeChantier(directory, { id: 'FEAT-1' })
     const duplicate = join(directory, 'docs', 'chantiers', 'FEAT-1-autre')
-    execFileSync('cp', ['-r', chantierDirectoryOf(directory, 'FEAT-1'), duplicate])
+    cpSync(chantierDirectoryOf(directory, 'FEAT-1'), duplicate, { recursive: true })
     commitAt(directory, 1)
     const result = spawnSync(process.execPath, [atelierBin, 'list', '--json'], { cwd: directory, encoding: 'utf8', env: { ...process.env, CLAUDE_PROJECT_DIR: directory } })
     assert.equal(result.status, 0, result.stderr)
