@@ -93,3 +93,20 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD12. Le test des doublons appelle `cp`, absent sous Windows | plugins/atelier/test/list-versions.test.mjs:222 | test ajouté (2b04c5e, tests rouverts puis regelés) |
 
 - Bilan de la revue : aucun bloquant ; les consommateurs actuels de l'index gardent leur comportement (seul écart : dossier retenu en cas de doublon, désormais déterministe).
+
+## Revue 2 : tranche 3 : 2026-11-27
+- Commit revu : b52871b
+- Base : 6bcfa74
+- Corrections depuis la revue 1 : c3e7584, 2b04c5e
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD13. Sur une branche sans commit, les autres branches ne sont plus lues | plugins/atelier/lib/cli/relations.mjs:64 | |
+
+- Bilan de la revue : RD10, RD11 et RD12 réglés ; HEAD détaché vérifié, comportement inchangé.
