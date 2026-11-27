@@ -8,7 +8,7 @@ created_at: 2026-11-25
 signed_by: Opack
 signed_at: 2026-11-26
 slice_tdd: yes
-tests_commit: 
+tests_commit: 2b04c5e
 slice: 3
 slice_base: 6bcfa74260fd64b57c84642552d3ca3499982204
 ---
@@ -161,3 +161,4 @@ Dépôts jetables construits par les tests : chantiers dans l'arbre courant et s
 ## Amendements
 <!-- Après signature : une entrée datée par modification de la spec (date, quoi, pourquoi). -->
 - 2026-11-27 : tests rouverts (gel quitté : 862826e) : RD12 : le test des doublons appelle cp, absent sous Windows ; remplacé par cpSync de node:fs
+- 2026-11-27 : tests regelés : 2b04c5e
