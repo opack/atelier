@@ -1,7 +1,7 @@
 // Listing of the chantiers: the step of each one, computed from the shown version alone.
 // Pure functions: no access to the disk, git or the environment.
 
-import { CHANTIER_TYPES, normalize } from './common.mjs'
+import { CHANTIER_TYPES, normalize, specStatus } from './common.mjs'
 import { needsPlan } from './next-step.mjs'
 import { CLOSED_STATUSES, parseRelations } from './relations.mjs'
 import { hasReopeningEntry, planSliceCount, sliceLabel, sliceState } from './slices.mjs'
@@ -123,7 +123,7 @@ export function parseListArguments(argumentList) {
   for (let index = 0; index < argumentList.length; index++) {
     const argument = argumentList[index]
     if (!argument.startsWith('--')) {
-      words.push(argument)
+      words.push(...argument.split(/\s+/).filter(Boolean))
       continue
     }
     if (![...VALUE_OPTIONS, ...FLAG_OPTIONS].includes(argument)) {
@@ -163,13 +163,19 @@ export function chantierType(id, data) {
   return CHANTIER_TYPES.includes(declared) ? declared : id.split('-')[0].toUpperCase()
 }
 
-// Entries { id, type, title, status, parent, ... } of the known chantiers, from `{ id, data }`.
+// Header of the shown version: type normalized (chantierType), absent status read as draft.
+export function shownHeader(id, data) {
+  return { ...data, type: chantierType(id, data), status: specStatus({ data }) }
+}
+
+// Entries { id, type, title, status, parent, ... } of the known chantiers, from `{ id, data }`
+// where `data` is a header already passed through shownHeader.
 export function listEntry({ id, data }) {
   return {
     id,
-    type: chantierType(id, data),
+    type: data.type,
     title: data.title ?? '',
-    status: data.status || 'draft',
+    status: data.status,
     parent: parseRelations(data).parent,
   }
 }

@@ -4,7 +4,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { parseFrontMatter } from '../common.mjs'
 import { chantierIdFromDirectoryName } from '../identifiers.mjs'
-import { chantierSteps, chantierType, formatList, listEntry, listItem, parseListArguments, selectChantiers, versionFacts } from '../list.mjs'
+import { chantierSteps, formatList, listEntry, listItem, parseListArguments, selectChantiers, shownHeader, versionFacts } from '../list.mjs'
 import { findProjectRoot, requireConfig } from './common.mjs'
 
 function readIfExists(path) {
@@ -21,12 +21,15 @@ function currentTreeVersions(projectRoot, config) {
   return readdirSync(chantiersRoot).flatMap((name) => {
     const id = chantierIdFromDirectoryName(name)
     const directory = join(chantiersRoot, name)
-    const specText = id && readIfExists(join(directory, 'spec.md'))
-    if (specText === null || specText === false || !id) {
+    if (!id) {
+      return []
+    }
+    const specText = readIfExists(join(directory, 'spec.md'))
+    if (specText === null) {
       return []
     }
     const { data, body } = parseFrontMatter(specText)
-    const shown = { ...data, type: chantierType(id, data), status: data.status || 'draft' }
+    const shown = shownHeader(id, data)
     const facts = versionFacts({ data: shown, specBody: body, planText: readIfExists(join(directory, 'plan.md')), files: readdirSync(directory) })
     return [{ id, ...facts, location: null, path: directory }]
   })
