@@ -41,21 +41,30 @@ export function chantierTreesOf(content, idLength = 20) {
 }
 
 // Index of the known chantiers, by identifier: { id, directory (name of its directory, in the
-// current tree first, or null), here (header in the current tree, or null), branches
-// ([{ branch, data }] in the other branches) }. `here` is [{ id, directory, data }] and
-// `branchHeaders` [{ branch, id, directory, data }]; `directory` may be missing.
+// current tree first, or null), here (header in the current tree, or null), hereFacts and herePath
+// (facts and absolute path of its directory in the current tree), hereDirectories (names of its
+// directories in the current tree: several when the identifier is duplicated, the last one is
+// kept), branches ([{ branch, data, ... }] in the other branches, with whatever else the reader
+// recorded: facts, date, local) }. `here` is [{ id, directory, data, facts, path }] and
+// `branchHeaders` [{ branch, id, directory, data, ... }]; `directory` may be missing.
 export function buildChantierIndex(here, branchHeaders) {
   const index = new Map()
   const entry = (id) => {
     if (!index.has(id)) {
-      index.set(id, { id, directory: null, here: null, branches: [] })
+      index.set(id, { id, directory: null, here: null, hereFacts: null, herePath: null, hereDirectories: [], branches: [] })
     }
     return index.get(id)
   }
-  here.forEach(({ id, directory, data }) => Object.assign(entry(id), { here: data, directory: directory ?? null }))
-  branchHeaders.forEach(({ branch, id, directory, data }) => {
+  here.forEach(({ id, directory, data, facts, path }) => {
     const known = entry(id)
-    known.branches.push({ branch, data })
+    Object.assign(known, { here: data, directory: directory ?? null, hereFacts: facts ?? null, herePath: path ?? null })
+    if (directory) {
+      known.hereDirectories.push(directory)
+    }
+  })
+  branchHeaders.forEach(({ id, directory, ...version }) => {
+    const known = entry(id)
+    known.branches.push(version)
     known.directory ??= directory ?? null
   })
   return index

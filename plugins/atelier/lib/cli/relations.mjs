@@ -3,8 +3,9 @@
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { parseCatFileBatch, parseFrontMatter, shortRefName } from '../common.mjs'
+import { parseCatFileBatch, parseFrontMatter, parseTreeEntries, shortRefName } from '../common.mjs'
 import { chantierIdFromDirectoryName } from '../identifiers.mjs'
+import { versionFacts } from '../list.mjs'
 import {
   buildChantierIndex,
   chantierTreesOf,
@@ -18,16 +19,25 @@ import { currentBranch } from './identifiers.mjs'
 
 // ---------- Chantier index and relation summary ----------
 
-// Spec headers of the chantiers in the current tree (from disk, uncommitted changes included).
+// Chantiers of the current tree, read from disk (uncommitted changes included): [{ id, directory,
+// data (spec header), facts (see versionFacts), path (absolute) }], sorted by directory name.
+// Directories without spec.md are ignored.
 function chantiersHere(projectRoot, config) {
   const chantiersRoot = join(projectRoot, config.chantiersDir)
   if (!existsSync(chantiersRoot)) {
     return []
   }
-  return readdirSync(chantiersRoot).flatMap((name) => {
+  return readdirSync(chantiersRoot).sort().flatMap((name) => {
     const id = chantierIdFromDirectoryName(name)
-    const specPath = join(chantiersRoot, name, 'spec.md')
-    return id && existsSync(specPath) ? [{ id, directory: name, data: parseFrontMatter(readFileSync(specPath, 'utf8')).data }] : []
+    const path = join(chantiersRoot, name)
+    const specPath = join(path, 'spec.md')
+    if (!id || !existsSync(specPath)) {
+      return []
+    }
+    const { data, body } = parseFrontMatter(readFileSync(specPath, 'utf8'))
+    const planPath = join(path, 'plan.md')
+    const planText = existsSync(planPath) ? readFileSync(planPath, 'utf8') : null
+    return [{ id, directory: name, data, path, facts: versionFacts({ data, specBody: body, planText, files: readdirSync(path) }) }]
   })
 }
 
@@ -44,26 +54,46 @@ function catFileBatch(projectRoot, requests) {
 }
 
 // Every chantier known in the current tree and in the other branches (local and remote), read
-// with three git calls whatever the number of branches: the refs, the chantiers tree of each ref,
-// then the spec of each distinct chantier directory (branches mostly share the same ones).
-export function chantierIndex(projectRoot, config) {
-  const current = currentBranch(projectRoot)
-  const refs = gitRaw(projectRoot, ['for-each-ref', '--format=%(refname)%00%(symref)', 'refs/heads', 'refs/remotes'])
+// with three git calls whatever the number of branches: the refs (with the date of their last
+// commit), the chantiers tree of each ref, then, for each distinct chantier directory (branches
+// mostly share the same ones), its file list, its spec and its plan. Only the facts of each
+// version are kept (header, slice count, files...), not the texts. A branch entry carries
+// `date` (unix time of the last commit) and `local` (a local branch, not a remote-tracking one).
+// `current` (the current branch) can be passed by a caller that already has it. Outside a git
+// repository, or when the refs cannot be read, there is no ref: only the current tree is indexed.
+export function chantierIndex(projectRoot, config, current = null) {
+  let refsOutput = ''
+  try {
+    current ??= currentBranch(projectRoot)
+    refsOutput = gitRaw(projectRoot, ['for-each-ref', '--format=%(refname)%00%(symref)%00%(committerdate:unix)', 'refs/heads', 'refs/remotes'])
+  } catch {
+    refsOutput = ''
+  }
+  const refs = refsOutput
     .split('\n')
     .map((line) => line.split('\0'))
     .filter(([ref, symref]) => ref && !symref && ref !== `refs/heads/${current}`)
-    .map(([ref]) => ref)
-  const chantiersTrees = catFileBatch(projectRoot, refs.map((ref) => `${ref}:${config.chantiersDir}`))
-  const directories = refs.flatMap((ref, index) => {
+    .map(([ref, , date]) => ({ ref, date: Number(date) || 0 }))
+  const chantiersTrees = catFileBatch(projectRoot, refs.map(({ ref }) => `${ref}:${config.chantiersDir}`))
+  const directories = refs.flatMap(({ ref, date }, index) => {
     const tree = chantiersTrees[index]
-    return tree?.type === 'tree' ? chantierTreesOf(tree.content, tree.id.length / 2).map((entry) => ({ ...entry, branch: shortRefName(ref) })) : []
+    const version = { branch: shortRefName(ref), date, local: ref.startsWith('refs/heads/') }
+    return tree?.type === 'tree' ? chantierTreesOf(tree.content, tree.id.length / 2).map((entry) => ({ ...entry, ...version })) : []
   })
   const distinctTrees = [...new Set(directories.map((directory) => directory.tree))]
-  const specs = catFileBatch(projectRoot, distinctTrees.map((tree) => `${tree}:spec.md`))
-  const headers = new Map(distinctTrees.map((tree, index) => [tree, specs[index] && parseFrontMatter(specs[index].content.toString('utf8')).data]))
+  const objects = catFileBatch(projectRoot, distinctTrees.flatMap((tree) => [tree, `${tree}:spec.md`, `${tree}:plan.md`]))
+  const facts = new Map(distinctTrees.map((tree, index) => {
+    const [listing, spec, plan] = objects.slice(index * 3, index * 3 + 3)
+    if (!spec) {
+      return [tree, null]
+    }
+    const { data, body } = parseFrontMatter(spec.content.toString('utf8'))
+    const files = parseTreeEntries(listing.content, listing.id.length / 2).map((entry) => entry.name)
+    return [tree, versionFacts({ data, specBody: body, planText: plan?.content.toString('utf8') ?? null, files })]
+  }))
   const branchHeaders = directories
-    .filter((directory) => headers.get(directory.tree))
-    .map(({ id, branch, directory, tree }) => ({ id, branch, directory, data: headers.get(tree) }))
+    .filter((directory) => facts.get(directory.tree))
+    .map(({ id, branch, date, local, directory, tree }) => ({ id, branch, date, local, directory, data: facts.get(tree).data, facts: facts.get(tree) }))
   return buildChantierIndex(chantiersHere(projectRoot, config), branchHeaders)
 }
 

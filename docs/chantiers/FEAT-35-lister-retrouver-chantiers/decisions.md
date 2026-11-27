@@ -79,3 +79,14 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Chantier ici et sur une branche qui l'emporte : `path` reste le chemin de l'arbre courant, `location` la branche.
 - Doublon d'identifiant dans l'arbre courant (OD5) : une seule entrée, JSON propre, avertissement qui nomme les deux dossiers sur la sortie d'erreur ; la version gardée n'est pas fixée.
 - Quatre tests passent dès l'écriture (CA-10, CA-11, clause de CA-3, RD5) : ils protègent les règles que la lecture des branches ne doit pas casser.
+
+## 2026-11-27 : tranche 3, implémentation et surapprentissage
+- `shortRefName` distinguait déjà `feat/x` (locale) et `origin/feat/x` (distante) : inchangé. Le type de ref est un champ `local` à part, qui départage à égalité de date ; ensuite l'ordre des noms, pour un choix indépendant de l'ordre des refs.
+- Le choix de version est une fonction pure (`lib/list-versions.mjs`, `chooseVersion`, `shownVersions`) ; `chantierIndex` garde pour chaque version ses faits (`versionFacts`), sa date et son type de ref ; les consommateurs actuels lisent toujours `{ branch, data }` et `here`.
+- `chantiersHere` trie les noms de dossier : en cas de doublon, le dossier retenu est déterministe (le dernier dans l'ordre lexical). L'avertissement de doublon n'est émis que par `atelier list`, sur la sortie d'erreur.
+- OD9 corrigé : hors d'un dépôt git, l'échec de la lecture des refs vaut « aucune branche » (SD10) ; le test s'ajoute aux tests de la tranche 4.
+- OD13 corrigé : `chantierIndex` accepte la branche courante en paramètre optionnel ; `atelier list` ne la lit qu'une fois.
+- OD10 (pendant un rebase, HEAD détaché, la copie de travail perd face à la branche du chantier) : non corrigé, limite à noter au bilan.
+- OD11 (les autres consommateurs de l'index lisent aussi plans et fichiers) : non corrigé ; la mesure de performance du bilan inclura `atelier status`.
+- OD12 (test : une branche du chantier plus ancienne bat une branche sans son identifiant plus récente) : à ajouter aux tests de la tranche 4, étiqueté CA-9.
+- OD14 : le skill `/atelier:list` (tranche 5) ne mélange pas sortie d'erreur et sortie standard ; doublons sur les branches non signalés, suite au bilan.

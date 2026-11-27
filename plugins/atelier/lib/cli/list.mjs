@@ -1,38 +1,18 @@
 // list command: the chantiers of the project, one per line (or as JSON).
 
-import { existsSync, readFileSync, readdirSync } from 'node:fs'
-import { join } from 'node:path'
-import { parseFrontMatter } from '../common.mjs'
-import { chantierIdFromDirectoryName } from '../identifiers.mjs'
-import { chantierSteps, formatList, listEntry, listItem, parseListArguments, selectChantiers, shownHeader, versionFacts } from '../list.mjs'
+import { chantierSteps, formatList, listEntry, listItem, parseListArguments, selectChantiers } from '../list.mjs'
+import { shownVersions } from '../list-versions.mjs'
 import { findProjectRoot, requireConfig } from './common.mjs'
+import { currentBranch } from './identifiers.mjs'
+import { chantierIndex } from './relations.mjs'
 
-function readIfExists(path) {
-  return existsSync(path) ? readFileSync(path, 'utf8') : null
-}
-
-// Shown versions of the chantiers of the current tree (working copy included): the facts of each
-// one plus its location (null: current tree) and path. Directories without spec.md are ignored.
-function currentTreeVersions(projectRoot, config) {
-  const chantiersRoot = join(projectRoot, config.chantiersDir)
-  if (!existsSync(chantiersRoot)) {
-    return []
+// One chantier with several directories in the current tree is listed once; the warning names them.
+function warnDuplicates(index) {
+  for (const { id, hereDirectories } of index.values()) {
+    if (hereDirectories.length > 1) {
+      console.error(`Attention : ${id} a plusieurs dossiers dans l’arbre courant (${hereDirectories.join(', ')}) ; un seul est listé.`)
+    }
   }
-  return readdirSync(chantiersRoot).flatMap((name) => {
-    const id = chantierIdFromDirectoryName(name)
-    const directory = join(chantiersRoot, name)
-    if (!id) {
-      return []
-    }
-    const specText = readIfExists(join(directory, 'spec.md'))
-    if (specText === null) {
-      return []
-    }
-    const { data, body } = parseFrontMatter(specText)
-    const shown = shownHeader(id, data)
-    const facts = versionFacts({ data: shown, specBody: body, planText: readIfExists(join(directory, 'plan.md')), files: readdirSync(directory) })
-    return [{ id, ...facts, location: null, path: directory }]
-  })
 }
 
 export function commandList(argumentList) {
@@ -44,7 +24,10 @@ export function commandList(argumentList) {
   const projectRoot = findProjectRoot()
   const config = requireConfig(projectRoot)
   // Steps are computed on all the known versions, before any filter (an EPIC looks at its children).
-  const versions = currentTreeVersions(projectRoot, config)
+  const branch = currentBranch(projectRoot)
+  const index = chantierIndex(projectRoot, config, branch)
+  warnDuplicates(index)
+  const versions = shownVersions(index, branch)
   const steps = chantierSteps(versions)
   const byId = new Map(versions.map((version) => [version.id, version]))
   const { selected, hiddenClosed } = selectChantiers(versions.map((version) => listEntry(version)), options)
