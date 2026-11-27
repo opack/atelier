@@ -53,3 +53,11 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Contexte : remarque de la revue 1 de la tranche 1 : l'étape se calcule sur le `type` de l'en-tête (comme `nextStep`) ; une colonne type déduite de l'identifiant afficherait « EPIC » avec une étape qui n'en est pas une.
 - Écarté : deux sources (en-tête pour l'étape, identifiant pour la colonne), parce qu'elles peuvent se contredire.
 - Conséquence : en tranche 2, la colonne type, le filtre `--type` et l'étape lisent le type de l'en-tête, et le préfixe de l'identifiant seulement s'il manque.
+
+## 2026-11-27 : tests de la tranche 2 (validés par Didier)
+- Le statut s'affiche par son code (`signed`, `done`…) dans la sortie texte.
+- Le type affiché est en majuscules, lu dans l'en-tête, sinon dans le préfixe de l'identifiant ; colonne, `--type` et étape lisent cette même source.
+- `--parent` ne tient pas compte de la casse.
+- La liste vide ne mentionne `--all` que si le défaut « ouverts » a écarté des chantiers clos (aucun chantier du tout : pas de mention).
+- Reporté en tranche 3 : la clause de CA-3 « rattaché à EPIC-17 sur une autre version seulement » (elle a besoin des branches), étiquetée CA-3.
+- Les deux cas d'OD4 sur l'étape (ancien modèle à tranches, tranche numérotée revue) sont ajoutés à la fin de `list-step.test.mjs` ; ils passaient déjà.
