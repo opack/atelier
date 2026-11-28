@@ -2,7 +2,7 @@
 id: FEAT-35
 type: FEAT
 title: Lister et retrouver les chantiers
-status: signed
+status: done
 tdd: yes
 created_at: 2026-11-25
 signed_by: Opack
@@ -13,6 +13,7 @@ slice: chantier
 slice_base: f5a2716c259c95d13b6ecfbc0f6aa63ebdcdc040
 last_slice: 5
 reviewed_commit: db05734e60fba95b3a20071805774e3d91523873
+done_at: 2026-11-28
 ---
 
 # FEAT-35 Lister et retrouver les chantiers
