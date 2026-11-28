@@ -119,6 +119,6 @@ Revues : tranche 1 (2 revues), tranche 2 (2), tranche 3 (3), tranche 4 (2), tran
 | RD34 | corrigé (c00272f) |
 | RD35 | reporté (« Dette et suites » du bilan : TEC-39 passe en 0.10.0, rubrique « depuis 0.9 ») |
 
-- Verdict :
-- Validé par :
-- Date :
+- Verdict : accepté
+- Validé par : Didier
+- Date : 2026-11-28
