@@ -7,10 +7,11 @@ tdd: yes
 created_at: 2026-11-25
 signed_by: Opack
 signed_at: 2026-11-26
-slice_tdd: no
+slice_tdd: 
 tests_commit: 
-slice: 5
-slice_base: ee6b2ada433c111e2716608721b4fcf350fa6caf
+slice: chantier
+slice_base: f5a2716c259c95d13b6ecfbc0f6aa63ebdcdc040
+last_slice: 5
 ---
 
 # FEAT-35 Lister et retrouver les chantiers
