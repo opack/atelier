@@ -12,6 +12,8 @@ import { CRITERION_ID, FINAL_TAG } from '../lib/criteria.mjs'
 
 const pluginDirectory = join(dirname(fileURLToPath(import.meta.url)), '..')
 const MAX_LINES = 400
+// Criterion prefixes retired by TEC-37: a test name that still cites one is refused.
+const RETIRED_CRITERION_ID = /\b(?:CA|V)-\d+\b/
 const CHANTIER_ID = new RegExp(`\\b(?:${CHANTIER_TYPES.join('|')})-\\d+\\b`)
 
 function mjsFiles(directory) {
@@ -73,6 +75,7 @@ function nameProblems(source) {
     else if (kind === 'test' && CRITERION_ID.test(name.replace(FINAL_TAG, ''))) {
       problems.push(`critère hors de l'étiquette finale [<ID> AC-n] : « ${name} »`)
     }
+    else if (kind === 'test' && RETIRED_CRITERION_ID.test(name)) problems.push(`ancien préfixe de critère (CA-n, V-n) : « ${name} »`)
   }
   return problems
 }
@@ -148,6 +151,15 @@ describe('architecture de lib/ et de test/', () => {
     assert.deepEqual(nameProblems("it('lance node [FIX-25 AC-1]', () => {})"), [])
     assert.deepEqual(nameProblems("it('lance node [FIX-25 AC-1, AC-2, AC-3]', () => {})"), [])
     assert.deepEqual(nameProblems("it(\"sans critère\", () => {})"), [])
+  })
+
+  it('une étiquette finale en AC-n est acceptée, une ancienne forme est refusée [TEC-37 AC-4]', () => {
+    assert.deepEqual(nameProblems("it('lance node [FEAT-40 AC-3]', () => {})"), [])
+    assert.deepEqual(nameProblems("it('lance node [FEAT-40 AC-3, AC-4]', () => {})"), [])
+    assert.equal(nameProblems("it('lance node [FEAT-4 CA-3]', () => {})").length, 1)
+    assert.equal(nameProblems("it('lance node [TEC-5 V-1]', () => {})").length, 1)
+    assert.equal(nameProblems("it('lance node [FEAT-40 CA-1, AC-2]', () => {})").length, 1, 'mélange')
+    assert.equal(nameProblems("it('AC-3 : lance node', () => {})").length, 1, 'AC-3 hors de l’étiquette finale')
   })
 
   it('common.mjs qui importe un module de lib/ est signalé [REF-29 AC-4]', () => {
