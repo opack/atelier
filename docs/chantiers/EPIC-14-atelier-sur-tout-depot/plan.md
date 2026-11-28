@@ -6,19 +6,19 @@ la confrontation prévu / réalisé dans bilan.md. -->
 ## Approche
 <!-- 2 à 5 lignes : comment la vision se découpe et dans quel ordre on la réalise, et pourquoi. -->
 
-D'abord le pointeur de chantier actif : il a de la valeur seul, dans tout projet atelier, et retire les heuristiques de TEC-6 et FEAT-21 dont le compagnon ne peut pas dépendre. Puis le compagnon, en deux lots : les conventions de branche et de commit déclarées (utiles aussi dans un projet atelier), puis le dépôt compagnon lui-même. Les langues forment une piste indépendante, qui part de REF-34 (EPIC-17). Aucun lot ne démarre avant la fin d'EPIC-17, qui touche les mêmes modules de `lib/`. Le site (CA-10) est mis à jour par chaque lot, dans sa PR.
+D'abord le pointeur de chantier actif : il a de la valeur seul, dans tout projet atelier, et retire les heuristiques de TEC-6 et FEAT-21 dont le compagnon ne peut pas dépendre. Puis le compagnon, en deux lots : les conventions de branche et de commit déclarées (utiles aussi dans un projet atelier), puis le dépôt compagnon lui-même. Les langues forment une piste indépendante, qui part de REF-34 (EPIC-17). Aucun lot ne démarre avant la fin d'EPIC-17, qui touche les mêmes modules de `lib/`. Le site (AC-10) est mis à jour par chaque lot, dans sa PR.
 
 ## Lots
 <!-- Un lot = un chantier enfant à ouvrir (/atelier:new, avec rel_parent: EPIC-14), livrable seul. -->
 
-| Ordre | Lot | Type envisagé | Dépendances pressenties | CA globaux couverts |
+| Ordre | Lot | Type envisagé | Dépendances pressenties | AC globaux couverts |
 |---|---|---|---|---|
-| 1 | Chantier actif par pointeur : table `branche → chantier` dans `.atelier/`, `atelier use`, en-tête `branch:`, repli sur un candidat unique, retrait des détections par nom de branche et par commits (TEC-6, `--first-parent` de FEAT-21), reprise des règles de version de FEAT-35, migration des chantiers ouverts | FEAT | fin d'EPIC-17 | CA-1, CA-2, CA-3, CA-10 |
-| 2 | Conventions de branche et de commit déclarées dans la configuration : `/atelier:new` (rester sur la branche courante ou format déclaré), reviewer, messages de commit et de fusion des skills | FEAT | lot 1 | CA-4 (conventions), CA-10 |
-| 3 | Dépôt compagnon : `codeRoot` / `atelierRoot`, registre utilisateur par URL de remote normalisée, garde des specs hors du projet, variante compagnon de `/atelier:init`, exclusions par `.git/info/exclude`, lectures des chantiers dans le compagnon, commits par chemins, sens de `done` | FEAT | lots 1 et 2 | CA-4, CA-5, CA-6, CA-10 |
-| 4 | Langue du projet : réglage dans la configuration (`fr` par défaut), dictionnaire injectable, templates anglais, preuve par pseudo-langue | FEAT | REF-34 (EPIC-17) | CA-7 (documents), CA-9, CA-10 |
-| 5 | Langue de l'utilisateur : réglage personnel non commité, catalogue des messages des hooks et de la CLI citant le dictionnaire du projet | FEAT | lot 4 | CA-7 (messages), CA-8, CA-10 |
-| 6 | Skills et agents réécrits en anglais pivot : documents dans la langue du projet, échanges dans celle de l'utilisateur | FEAT | lot 5 | CA-7 (échanges), CA-10 |
+| 1 | Chantier actif par pointeur : table `branche → chantier` dans `.atelier/`, `atelier use`, en-tête `branch:`, repli sur un candidat unique, retrait des détections par nom de branche et par commits (TEC-6, `--first-parent` de FEAT-21), reprise des règles de version de FEAT-35, migration des chantiers ouverts | FEAT | fin d'EPIC-17 | AC-1, AC-2, AC-3, AC-10 |
+| 2 | Conventions de branche et de commit déclarées dans la configuration : `/atelier:new` (rester sur la branche courante ou format déclaré), reviewer, messages de commit et de fusion des skills | FEAT | lot 1 | AC-4 (conventions), AC-10 |
+| 3 | Dépôt compagnon : `codeRoot` / `atelierRoot`, registre utilisateur par URL de remote normalisée, garde des specs hors du projet, variante compagnon de `/atelier:init`, exclusions par `.git/info/exclude`, lectures des chantiers dans le compagnon, commits par chemins, sens de `done` | FEAT | lots 1 et 2 | AC-4, AC-5, AC-6, AC-10 |
+| 4 | Langue du projet : réglage dans la configuration (`fr` par défaut), dictionnaire injectable, templates anglais, preuve par pseudo-langue | FEAT | REF-34 (EPIC-17) | AC-7 (documents), AC-9, AC-10 |
+| 5 | Langue de l'utilisateur : réglage personnel non commité, catalogue des messages des hooks et de la CLI citant le dictionnaire du projet | FEAT | lot 4 | AC-7 (messages), AC-8, AC-10 |
+| 6 | Skills et agents réécrits en anglais pivot : documents dans la langue du projet, échanges dans celle de l'utilisateur | FEAT | lot 5 | AC-7 (échanges), AC-10 |
 
 ## Risques et points d'attention
 <!-- - risque : parade -->

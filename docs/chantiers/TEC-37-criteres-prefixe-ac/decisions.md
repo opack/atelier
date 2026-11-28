@@ -48,3 +48,13 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Contexte : une section de critères qui ne cite qu'un « voir AC-2 de FEAT-3 » n'est pas signalée, alors que `specCriteria` n'en tire aucun critère.
 - Écarté : aligner sur `CRITERION_ITEM` ici, parce que c'est un changement de comportement antérieur au chantier, hors d'AC-2.
 - Conséquence : suite à noter au bilan.
+
+## 2026-11-28 : les mentions historiques de la spec d'EPIC-17 sont reformulées, AC-5 n'est pas amendé
+- Contexte : la spec d'EPIC-17 décrit l'état d'avant REF-16 (« TEC-5 et TEC-6 chacun un `V-2` », « 17 tests `V-x` », « aucun `V-x` ne subsiste ») ; le remplacement `CA-n` → `AC-n` n'en a pas de traduction, et AC-5 refuse toute forme `V-n`.
+- Écarté : amender AC-5 pour exclure ces lignes, parce qu'une exception au test durerait plus longtemps que l'histoire qu'elle protège ; écarté aussi `V-2` → `AC-2`, parce que ce serait faux historiquement.
+- Conséquence : ces lignes parlent de « vérification numéro 2 », « tests de vérification », sans l'ancienne forme ; le sens ne change pas, l'entrée d'amendement d'EPIC-17 le dit.
+
+## 2026-11-28 : OD5 à OD8 corrigés, OD9 signalé
+- Contexte : contrôle de surapprentissage de la tranche 2.
+- Conséquence : AC-1 d'EPIC-17 dit « aucun identifiant de vérification ne subsiste » (OD5) ; son §4 dit que les tests de vérification deviennent des tests étiquetés par critère (OD6) ; le lot 3 de son plan renvoie à TEC-37 pour les templates (OD7) ; l'entrée précédente perd son étiquette « D1 », hors nomenclature (OD8).
+- OD9 : le test d'AC-5 ne voit ni `CA-x` ni « CA globaux », et ne vérifie pas la conservation des numéros ; la migration les traite quand même. Signalé à Didier, accepté tel quel le 2026-11-28 : test figé non renforcé.

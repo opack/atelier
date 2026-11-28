@@ -46,3 +46,8 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Écarté : le faire dans TEC-39, parce qu'un renommage interne de cette taille noierait la revue d'un chantier qui change déjà des noms visibles. Écarté aussi : le laisser à EPIC-14, parce que ses chantiers naîtraient sur des identifiants qu'il faudrait renommer ensuite.
 - Ordre : TEC-37 (préfixe AC), TEC-39, ce REF, puis les lots 3 et 4, puis la clôture d'EPIC-17, avant le lot 1 d'EPIC-14. Les trois migrations de nomenclature s'enchaînent sans autre chantier sur `lib/` ni `test/` entre elles : chacune touche presque tous les fichiers. Les lots 3 et 4 naissent ensuite dans la nomenclature définitive, sans réouverture de tests pour renommer.
 - Conséquence : la confrontation prévu / réalisé du bilan d'EPIC-17 compte ce REF avec REF-34 et REF-36.
+
+## 2026-11-28 : TEC-37 passe les critères en `AC-n` et livre la partie templates de CA-6
+- Contexte : TEC-37 remplace `CA-n` et `V-n` par `AC-n` dans tout le dépôt ; la spec et le plan de cet EPIC sont migrés (entrée datée dans leurs « Amendements »), ce journal garde ses `CA-n`.
+- Décision : les templates `spec-tec.md` (section Vérification) et `spec-ref.md` (section Critère de fin) demandent des critères `AC-n` dès TEC-37 (tranche 3), soit la partie templates de CA-6, désormais AC-6 de la spec.
+- Conséquence : le lot 3 ne garde de CA-6 que l'exigence de `check-spec` pour TEC et REF, en `AC-n`.
