@@ -43,6 +43,8 @@ atelier détecte vos commandes de contrôle, crée `docs/chantiers/` et `docs/de
 
 atelier choisit le prochain identifiant (`FEAT-27`), crée la branche `feat/FEAT-27-total-enveloppes` et le dossier du chantier, puis construit la spec avec vous. Il **ne pose des questions que sur ce qui manque**, et vous demande toujours : **ce chantier se fait-il en TDD ?**
 
+Pour retrouver un chantier existant (le vôtre, celui d’un coéquipier sur une autre branche), `/atelier:list` les liste avec leur statut et leur étape ; `/atelier:open <ID>` ouvre le dossier d’un chantier de l’arbre courant.
+
 ## 4. Signer
 
 ```text

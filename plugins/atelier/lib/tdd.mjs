@@ -74,7 +74,7 @@ export function testDrivenPhase(chantier) {
     return 'implementing'
   }
   if (slice === 'chantier') {
-    return isRefreeze(parseAmendments(chantier.spec.body ?? '').entries) ? 'writing-tests' : 'none'
+    return (chantier.facts?.refreezing ?? reopeningPending(chantier)) ? 'writing-tests' : 'none'
   }
   return effectiveTdd(chantier) === 'yes' ? 'writing-tests' : 'none'
 }
