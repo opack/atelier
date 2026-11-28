@@ -1,4 +1,5 @@
-// Listing of the chantiers: the step of each one, computed from the shown version alone.
+// Listing of the chantiers: the arguments, the selection (filters), the sort, the step of each
+// one (computed from the shown version alone) and the output of the list.
 // Pure functions: no access to the disk, git or the environment.
 
 import { CHANTIER_TYPES, normalize, specStatus } from './common.mjs'
@@ -7,7 +8,8 @@ import { CLOSED_STATUSES, parseRelations } from './relations.mjs'
 import { sliceLabel, sliceState } from './slices.mjs'
 import { testDrivenPhase } from './tdd.mjs'
 
-// Kept here for the consumers of the listing; the definition is shared with the index.
+// Re-exported because the frozen tests of slice 1 import it from here; defined in
+// chantier-facts.mjs, shared with the index.
 export { versionFacts } from './chantier-facts.mjs'
 
 // ---------- Step ----------
@@ -78,8 +80,8 @@ function epicStep(version, versions) {
 
 // ---------- Arguments ----------
 
-export const LIST_STATUSES = ['draft', 'signed', 'done', 'abandoned']
-export const LIST_SORTS = ['id', 'status', 'type']
+const LIST_STATUSES = ['draft', 'signed', 'done', 'abandoned']
+const LIST_SORTS = ['id', 'status', 'type']
 const VALUE_OPTIONS = ['--status', '--type', '--parent', '--sort']
 const FLAG_OPTIONS = ['--all', '--json']
 const USAGE = 'Usage : atelier list [texte…] [--status <s,…>] [--type <T,…>] [--parent <ID>] [--all] [--sort id|status|type] [--json]'
@@ -143,7 +145,7 @@ export function parseListArguments(argumentList) {
 // ---------- Selection and sort ----------
 
 // Type of a chantier: its header in upper case when it is a known type, else the prefix of its identifier.
-export function chantierType(id, data) {
+function chantierType(id, data) {
   const declared = (data?.type || '').toUpperCase()
   return CHANTIER_TYPES.includes(declared) ? declared : id.split('-')[0].toUpperCase()
 }

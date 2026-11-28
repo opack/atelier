@@ -20,7 +20,7 @@ function mostRecent(branches) {
 // 5. otherwise the most recent of the other branches.
 // Returns { facts, location (null: current tree, else the short name of the branch) }, or null
 // for an entry without any version.
-export function chooseVersion(entry, currentBranch) {
+function chooseVersion(entry, currentBranch) {
   const here = entry.here ? { facts: entry.hereFacts, location: null } : null
   const onBranch = (branch) => ({ facts: branch.facts, location: branch.branch })
   if (here && branchNameIdentifiers(currentBranch ?? '').includes(entry.id)) {

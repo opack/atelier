@@ -54,9 +54,10 @@ function catFileBatch(projectRoot, requests) {
 }
 
 // Every chantier known in the current tree and in the other branches (local and remote), read
-// with three git calls whatever the number of branches: the refs (with the date of their last
-// commit), the chantiers tree of each ref, then, for each distinct chantier directory (branches
-// mostly share the same ones), its file list, its spec and its plan. Only the facts of each
+// with a constant number of git calls whatever the number of branches: a repository check, the
+// refs (with the date of their last commit), the chantiers tree of each ref, then, for each
+// distinct chantier directory (branches mostly share the same ones), its file list, its spec
+// and its plan. Only the facts of each
 // version are kept (header, slice count, files...), not the texts. A branch entry carries
 // `date` (unix time of the last commit) and `local` (a local branch, not a remote-tracking one).
 // `current` (the current branch) can be passed by a caller that already has it. Outside a git
