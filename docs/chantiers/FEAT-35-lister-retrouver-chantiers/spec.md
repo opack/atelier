@@ -12,6 +12,7 @@ tests_commit:
 slice: chantier
 slice_base: f5a2716c259c95d13b6ecfbc0f6aa63ebdcdc040
 last_slice: 5
+reviewed_commit: db05734e60fba95b3a20071805774e3d91523873
 ---
 
 # FEAT-35 Lister et retrouver les chantiers
