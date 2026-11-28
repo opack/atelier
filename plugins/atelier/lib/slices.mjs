@@ -2,7 +2,7 @@
 // Pure functions: no access to the disk, git or the environment.
 
 import { escapeRegExp } from './common.mjs'
-import { CRITERION_ID_GLOBAL, CRITERION_ITEM } from './criteria.mjs'
+import { criterionIds, listedCriteria } from './criteria.mjs'
 import { ENTRY_START, parseAmendments } from './spec.mjs'
 import { VOCABULARY } from './vocabulary.mjs'
 
@@ -45,9 +45,7 @@ export function planSlices(planText) {
 function sliceAttributes(text) {
   const segments = text.split(/\s+[—–]\s+/)
   const coverage = segments.find((segment) => COVERAGE_SEGMENT.test(segment.trim()))
-  const criteria = [
-    ...new Set((coverage?.match(CRITERION_ID_GLOBAL) ?? []).map((id) => id.toUpperCase())),
-  ]
+  const criteria = [...new Set(criterionIds(coverage))]
   const tddSegment = segments
     .map((segment) => TDD_SEGMENT.exec(segment.trim()))
     .find(Boolean)
@@ -59,7 +57,7 @@ function sliceAttributes(text) {
 // (`- [ ] AC-1 :` or `- AC-1 :`, any list marker, any case), HTML comments ignored.
 function specCriteria(body) {
   const text = (body ?? '').replace(/\r\n/g, '\n').replace(/<!--[\s\S]*?-->/g, '')
-  return [...new Set([...text.matchAll(CRITERION_ITEM)].map((match) => match[1].toUpperCase()))]
+  return [...new Set(listedCriteria(text))]
 }
 
 // Problems of the plan of a chantier, checked by `atelier check-plan` before the plan is
