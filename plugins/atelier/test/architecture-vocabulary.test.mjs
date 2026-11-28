@@ -162,7 +162,7 @@ const terms = vocabularyTerms()
 const flagged = (source) => vocabularyProblems(source, terms)
 
 describe('vocabulaire des documents dans lib/', () => {
-  it('lit les commentaires, chaînes, gabarits et expressions régulières [REF-34 CA-2]', () => {
+  it('lit les commentaires, chaînes, gabarits et expressions régulières [REF-34 AC-2]', () => {
     const tokens = readSource("const a = 'x' // c1\n/* c2 */ const b = `p${ \"in\" + `q${1}` }r` ; const c = /[/]'/g; const d = 6 / 2 / 1; return /e/")
     const of = (type) => tokens.filter((token) => token.type === type).map(({ text }) => text)
     assert.deepEqual(of('comment'), ['// c1', '/* c2 */'])
@@ -171,25 +171,25 @@ describe('vocabulaire des documents dans lib/', () => {
     assert.deepEqual(of('regex'), ["[/]'", 'e'])
   })
 
-  it('calcule la liste des termes depuis VOCABULARY, sans les clés de criteria [REF-34 CA-2]', () => {
+  it('calcule la liste des termes depuis VOCABULARY, sans les clés de criteria [REF-34 AC-2]', () => {
     const list = vocabularyTerms({ a: 'Un', criteria: { FEAT: 'cleSeule' }, b: { c: 'Deux' } })
     assert.deepEqual(list, ['Un', 'Deux'])
     assert.ok(vocabularyTerms().includes('Amendements'))
     assert.ok(!vocabularyTerms().includes('acceptanceCriteria'))
   })
 
-  it('signale un terme qui est le contenu entier d\'une chaîne [REF-34 CA-2]', () => {
+  it('signale un terme qui est le contenu entier d\'une chaîne [REF-34 AC-2]', () => {
     assert.equal(flagged("const a = 'Amendements'").length, 1)
     assert.equal(flagged('const a = "Critères d\'acceptation"').length, 1)
     assert.equal(flagged("const a = 'Pourquoi maintenant'").length, 1)
   })
 
-  it('signale un terme qui est la partie statique d\'un gabarit [REF-34 CA-2]', () => {
+  it('signale un terme qui est la partie statique d\'un gabarit [REF-34 AC-2]', () => {
     assert.equal(flagged('const a = `Amendements`').length, 1)
     assert.equal(flagged('const a = `${x}${`Tranches`}`').length, 1)
   })
 
-  it('signale un terme dans une expression régulière [REF-34 CA-2]', () => {
+  it('signale un terme dans une expression régulière [REF-34 AC-2]', () => {
     assert.equal(flagged('const a = /^## Amendements$/m').length, 1)
     assert.equal(flagged('const a = text.match(/(?:reporté|écarté)/)').length, 2)
     assert.equal(flagged('return /Tranches/.test(x)').length, 1)
@@ -200,14 +200,14 @@ describe('vocabulaire des documents dans lib/', () => {
     assert.equal(flagged('const a = `${b} ${/Tranches/.test(x)}`').length, 1)
   })
 
-  it('signale un terme cité entre « » dans une chaîne ou un gabarit [REF-34 CA-2]', () => {
+  it('signale un terme cité entre « » dans une chaîne ou un gabarit [REF-34 AC-2]', () => {
     assert.equal(flagged("const a = 'la section « Amendements » manque'").length, 1)
     assert.equal(flagged('const a = `la section « Amendements » de ${x}`').length, 1)
     assert.equal(flagged("const a = 'la section « ## Amendements » manque'").length, 1)
     assert.equal(flagged("const a = 'la section « ### Tranches » manque'").length, 1)
   })
 
-  it('signale un terme en titre « ## » ou « ### » dans une chaîne ou un gabarit [REF-34 CA-2]', () => {
+  it('signale un terme en titre « ## » ou « ### » dans une chaîne ou un gabarit [REF-34 AC-2]', () => {
     assert.equal(flagged('const a = `${x}\n\n## Amendements\n`').length, 1)
     assert.equal(flagged("const a = `${x}\\n\\n## Amendements\\n`").length, 1)
     assert.equal(flagged("const a = '## Tranches'").length, 1)
@@ -215,7 +215,7 @@ describe('vocabulaire des documents dans lib/', () => {
     assert.deepEqual(flagged("const a = '## Tranchesx et # Tranches'"), [])
   })
 
-  it('ne signale ni les mots d\'une phrase, ni les mots courants entiers, ni les commentaires [REF-34 CA-2]', () => {
+  it('ne signale ni les mots d\'une phrase, ni les mots courants entiers, ni les commentaires [REF-34 AC-2]', () => {
     assert.deepEqual(flagged("const a = 'reporté à une tranche'"), [])
     assert.deepEqual(flagged("const a = 'Aucun tour en retard'"), [])
     assert.deepEqual(flagged("const a = 'Description'"), [])
@@ -225,7 +225,7 @@ describe('vocabulaire des documents dans lib/', () => {
     assert.deepEqual(flagged('const a = 6 / 2 + x / Amendements'), [])
   })
 
-  it('échoue si lib/vocabulary.mjs importe un module [REF-34 CA-2]', () => {
+  it('échoue si lib/vocabulary.mjs importe un module [REF-34 AC-2]', () => {
     assert.equal(vocabularyImportProblems("import { x } from './common.mjs'\nexport const A = 1").length, 1)
     assert.equal(vocabularyImportProblems("export { x } from './common.mjs'").length, 1)
     assert.equal(vocabularyImportProblems("export * as ns from './common.mjs'").length, 1)
@@ -234,7 +234,7 @@ describe('vocabulaire des documents dans lib/', () => {
     assert.deepEqual(vocabularyImportProblems("// import x\nexport const A = 'import'"), [])
   })
 
-  it('ne trouve aucun terme du vocabulaire en position de grammaire dans lib/ et lib/cli/ [REF-34 CA-2]', () => {
+  it('ne trouve aucun terme du vocabulaire en position de grammaire dans lib/ et lib/cli/ [REF-34 AC-2]', () => {
     const problems = mjsFiles(libDirectory)
       .filter((path) => relative(libDirectory, path).split(sep).join('/') !== 'vocabulary.mjs')
       .flatMap((path) => flagged(readFileSync(path, 'utf8')).map((problem) => `${relative(libDirectory, path)} : ${problem}`))

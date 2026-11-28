@@ -14,14 +14,14 @@ describe('effective TDD of the current slice (slice_tdd)', () => {
   const base = 'a'.repeat(40)
   const reviewed = { reviewedCommit: base, found: true, isAncestor: true, codeFilesSince: [], amendmentsChanged: false }
 
-  it('une tranche « TDD : non » d’un chantier TDD n’a pas de phase « tests d’abord » : site et tests s’écrivent [FIX-20 CA-2]', () => {
+  it('une tranche « TDD : non » d’un chantier TDD n’a pas de phase « tests d’abord » : site et tests s’écrivent [FIX-20 AC-2]', () => {
     const chantier = slicedChantier({ slice: '2', slice_base: base, slice_tdd: 'no' })
     assert.equal(testDrivenPhase(chantier), 'none')
     assert.equal(decide({ chantier, relativePath: 'site/cycle/tests.md' }).allowed, true)
     assert.equal(decide({ chantier, relativePath: 'plugins/atelier/test/core.test.mjs' }).allowed, true)
   })
 
-  it('une tranche « TDD : oui » d’un chantier sans TDD commence par les tests ; un SPIKE sans TDD reste hors du cycle [FIX-20 CA-3]', () => {
+  it('une tranche « TDD : oui » d’un chantier sans TDD commence par les tests ; un SPIKE sans TDD reste hors du cycle [FIX-20 AC-3]', () => {
     const fix = slicedChantier({ slice: '1', slice_tdd: 'yes' }, { type: 'FIX', tdd: 'no' })
     assert.equal(testDrivenPhase(fix), 'writing-tests')
     assert.equal(decide({ chantier: fix, relativePath: 'src/budget.ts' }).allowed, false)
@@ -29,7 +29,7 @@ describe('effective TDD of the current slice (slice_tdd)', () => {
     assert.equal(testDrivenPhase(spike), 'none')
   })
 
-  it('sans slice_tdd, la phase suit le tdd du chantier et tests_commit, comme avant [FIX-20 CA-4]', () => {
+  it('sans slice_tdd, la phase suit le tdd du chantier et tests_commit, comme avant [FIX-20 AC-4]', () => {
     const cases = [
       ['tranche non déclarée, TDD', slicedChantier({ slice: '2', slice_base: base }), 'writing-tests'],
       ['tranche non déclarée, tests figés', slicedChantier({ slice: '2', slice_base: base, tests_commit: 'abc1234' }), 'implementing'],
@@ -45,7 +45,7 @@ describe('effective TDD of the current slice (slice_tdd)', () => {
     assert.equal(sliceState(slicedChantier({ tests_commit: 'abc1234' }, { plan: null })).model, 'legacy')
   })
 
-  it('sans slice_tdd, l’enregistrement d’une revue et la clôture restent ceux d’avant [FIX-20 CA-4]', () => {
+  it('sans slice_tdd, l’enregistrement d’une revue et la clôture restent ceux d’avant [FIX-20 AC-4]', () => {
     const sliceOne = slicedChantier({ slice: '1', tests_commit: 'abc1234' }, { plan: planOf([1, 2]) })
     const update = setReviewedUpdate(sliceOne, base)
     assert.equal(update.values.slice, '2')
@@ -59,7 +59,7 @@ describe('effective TDD of the current slice (slice_tdd)', () => {
     assert.ok(problems.some((problem) => /pas figés/.test(problem)), problems.join('\n'))
   })
 
-  it('des tests figés restent figés, quoi que dise le TDD de la tranche [FIX-20 CA-5]', () => {
+  it('des tests figés restent figés, quoi que dise le TDD de la tranche [FIX-20 AC-5]', () => {
     const frozenNo = slicedChantier({ slice: '2', slice_base: base, tests_commit: 'abc1234', slice_tdd: 'no' })
     assert.equal(testDrivenPhase(frozenNo), 'implementing')
     assert.equal(decide({ chantier: frozenNo, relativePath: 'test/one.test.mjs' }).allowed, false)
@@ -67,7 +67,7 @@ describe('effective TDD of the current slice (slice_tdd)', () => {
     assert.equal(testDrivenPhase(frozenInNonTddChantier), 'implementing')
   })
 
-  it('après une dernière tranche « TDD : non », la revue du chantier ne réclame pas de tests figés [FIX-20 CA-7]', () => {
+  it('après une dernière tranche « TDD : non », la revue du chantier ne réclame pas de tests figés [FIX-20 AC-7]', () => {
     const chantier = slicedChantier({ slice: 'chantier', last_slice: '3', slice_base: base })
     assert.equal(testDrivenPhase(chantier), 'none')
     assert.match(nextStep(chantier, 'none'), /^Revue du chantier : faire relire l.ensemble : \/atelier:review/)
@@ -82,7 +82,7 @@ describe('effective TDD of the current slice (slice_tdd)', () => {
 // Plan of three slices: the second « TDD : <second> » (no declaration when null), the others in TDD.
 function planWithSecond(second) {
   const tdd = second === null ? '' : ` — TDD : ${second}`
-  return `# Plan : FEAT-20\n\n## Tranches\n1. Un — CA couverts : CA-1 — TDD : oui\n2. Deux — CA couverts : aucun${tdd}\n3. Trois — CA couverts : CA-3 — TDD : oui\n`
+  return `# Plan : FEAT-20\n\n## Tranches\n1. Un — AC couverts : AC-1 — TDD : oui\n2. Deux — AC couverts : aucun${tdd}\n3. Trois — AC couverts : AC-3 — TDD : oui\n`
 }
 
 const amendments = (directory) => parseAmendments(specFileText(directory, 'FEAT-20')).entries
@@ -91,7 +91,7 @@ const phaseOf = (directory) => JSON.parse(atelierOk(directory, 'status', '--json
 describe('slice TDD across transitions and commands', () => {
   const base = 'a'.repeat(40)
 
-  it('la revue de la tranche 1 écrit le TDD de la tranche 2 et renvoie vers la bonne étape [FIX-20 CA-6]', () => {
+  it('la revue de la tranche 1 écrit le TDD de la tranche 2 et renvoie vers la bonne étape [FIX-20 AC-6]', () => {
     const reviewed = (second) => setReviewedUpdate(slicedChantier({ slice: '1', tests_commit: 'abc1234' }, { plan: planWithSecond(second) }), base)
     const withoutTdd = reviewed('non')
     assert.equal(withoutTdd.values.slice, '2')
@@ -107,7 +107,7 @@ describe('slice TDD across transitions and commands', () => {
     assert.match(undeclared.message, /\/atelier:write-tests/)
   })
 
-  it('en tranche sans TDD, la prochaine étape le dit et renvoie vers /atelier:build puis la revue [FIX-20 CA-6]', () => {
+  it('en tranche sans TDD, la prochaine étape le dit et renvoie vers /atelier:build puis la revue [FIX-20 AC-6]', () => {
     const chantier = slicedChantier({ slice: '2', slice_base: base, slice_tdd: 'no' }, { plan: planWithSecond('non') })
     const step = nextStep(chantier, 'none')
     assert.match(step, /^Tranche 2\/3 : /)
@@ -116,7 +116,7 @@ describe('slice TDD across transitions and commands', () => {
     assert.match(step, /\/atelier:review/)
   })
 
-  it('set-tdd no en tranche 2 écrit slice_tdd et un amendement de tranche, sans toucher au tdd du chantier [FIX-20 CA-9]', () => {
+  it('set-tdd no en tranche 2 écrit slice_tdd et un amendement de tranche, sans toucher au tdd du chantier [FIX-20 AC-9]', () => {
     for (const before of [null, 'yes']) {
       const { directory } = atSliceTwo()
       if (before) setHeader(directory, 'FEAT-20', { slice_tdd: before })
@@ -128,7 +128,7 @@ describe('slice TDD across transitions and commands', () => {
     }
   })
 
-  it('set-tdd est refusé si les tests de la tranche sont figés, ou si une réouverture est en attente [FIX-20 CA-9]', () => {
+  it('set-tdd est refusé si les tests de la tranche sont figés, ou si une réouverture est en attente [FIX-20 AC-9]', () => {
     const frozen = atSliceTwo().directory
     commitFiles(frozen, { 'test/two.test.mjs': 'test 2\n' }, 'test: two')
     atelierOk(frozen, 'freeze-tests')
@@ -147,7 +147,7 @@ describe('slice TDD across transitions and commands', () => {
     assert.equal(specData(reopened, 'FEAT-20').slice_tdd ?? '', '')
   })
 
-  it('un chantier repassé en tdd: no après le gel, sans TDD de tranche, n’a plus de tests figés [FIX-20 CA-4]', () => {
+  it('un chantier repassé en tdd: no après le gel, sans TDD de tranche, n’a plus de tests figés [FIX-20 AC-4]', () => {
     for (const chantier of [
       slicedChantier({ slice: '1', tests_commit: 'abc1234' }, { plan: null, tdd: 'no' }),
       slicedChantier({ tests_commit: 'abc1234' }, { plan: null, tdd: 'no' }),
@@ -157,7 +157,7 @@ describe('slice TDD across transitions and commands', () => {
     }
   })
 
-  it('slice_tdd se lit sans casse ; une valeur inconnue retombe sur le tdd du chantier [FIX-20 CA-4]', () => {
+  it('slice_tdd se lit sans casse ; une valeur inconnue retombe sur le tdd du chantier [FIX-20 AC-4]', () => {
     assert.equal(testDrivenPhase(slicedChantier({ slice: '2', slice_base: base, slice_tdd: 'YES' }, { tdd: 'no' })), 'writing-tests')
     assert.equal(testDrivenPhase(slicedChantier({ slice: '2', slice_base: base, slice_tdd: 'No' })), 'none')
     for (const unknown of ['oui', 'true', 'nn']) {
@@ -166,7 +166,7 @@ describe('slice TDD across transitions and commands', () => {
     }
   })
 
-  it('en tranche sans TDD, freeze-tests et reopen-tests sont refusés et renvoient vers /atelier:build [FIX-20 CA-10]', () => {
+  it('en tranche sans TDD, freeze-tests et reopen-tests sont refusés et renvoient vers /atelier:build [FIX-20 AC-10]', () => {
     const pure = reopenTestsRefusal(slicedChantier({ slice: '2', slice_base: base, slice_tdd: 'no' }))
     assert.match(pure ?? '', /tranche 2 est sans TDD/)
     assert.match(pure ?? '', /\/atelier:build/)
@@ -182,7 +182,7 @@ describe('slice TDD across transitions and commands', () => {
     assert.equal(specData(directory, 'FEAT-20').tests_commit ?? '', '')
   })
 
-  it('en tranche TDD, un gel sans test dans le dernier commit indique comment déclarer la tranche sans TDD [FIX-20 CA-10]', () => {
+  it('en tranche TDD, un gel sans test dans le dernier commit indique comment déclarer la tranche sans TDD [FIX-20 AC-10]', () => {
     const { directory } = atSliceTwo()
     commitFiles(directory, { 'site/page.md': 'texte\n' }, 'docs: page')
     const { status, output } = atelierRun(directory, 'freeze-tests')
@@ -192,7 +192,7 @@ describe('slice TDD across transitions and commands', () => {
     assert.match(output, /atelier set-tdd no <raison>/)
   })
 
-  it('en revue d’ensemble après une dernière tranche sans TDD, les tests se rouvrent puis se regèlent ; set-reviewed avait vidé slice_tdd [FIX-20 CA-15]', () => {
+  it('en revue d’ensemble après une dernière tranche sans TDD, les tests se rouvrent puis se regèlent ; set-reviewed avait vidé slice_tdd [FIX-20 AC-15]', () => {
     const last = setReviewedUpdate(slicedChantier({ slice: '3', slice_base: base, slice_tdd: 'no' }, { plan: planWithSecond('oui') }), base)
     assert.equal(last.values.slice, 'chantier')
     assert.equal(last.values.slice_tdd, '')
@@ -214,13 +214,13 @@ describe('slice TDD across transitions and commands', () => {
 describe('slice TDD of a chantier without TDD, and of a plan with a single slice', () => {
   const base = 'a'.repeat(40)
 
-  it('en revue d’ensemble d’un chantier tdd: no, des tests figés par une tranche TDD restent figés [FIX-20 CA-15]', () => {
+  it('en revue d’ensemble d’un chantier tdd: no, des tests figés par une tranche TDD restent figés [FIX-20 AC-15]', () => {
     const chantier = slicedChantier({ slice: 'chantier', last_slice: '3', slice_base: base, tests_commit: 'abc1234' }, { tdd: 'no' })
     assert.equal(testDrivenPhase(chantier), 'implementing')
     assert.equal(decide({ chantier, relativePath: 'test/one.test.mjs' }).allowed, false)
   })
 
-  it('en revue d’ensemble d’un chantier tdd: no, reopen-tests est accepté si une tranche a figé des tests, refusé sinon [FIX-20 CA-15]', () => {
+  it('en revue d’ensemble d’un chantier tdd: no, reopen-tests est accepté si une tranche a figé des tests, refusé sinon [FIX-20 AC-15]', () => {
     const frozen = atSliceTwo({ tdd: 'no' }).directory
     setHeader(frozen, 'FEAT-20', { slice: '3', slice_tdd: 'yes', tests_commit: 'abc1234' })
     setHeader(frozen, 'FEAT-20', { slice: 'chantier', last_slice: '3', slice_tdd: '', tests_commit: '' })
@@ -235,7 +235,7 @@ describe('slice TDD of a chantier without TDD, and of a plan with a single slice
     assert.match(refused.output, /ne suit pas le TDD/)
   })
 
-  it('dans un plan à une seule tranche, set-tdd change aussi slice_tdd [FIX-20 CA-12]', () => {
+  it('dans un plan à une seule tranche, set-tdd change aussi slice_tdd [FIX-20 AC-12]', () => {
     const { directory } = atSliceTwo({ plan: planOf([1]) })
     setHeader(directory, 'FEAT-20', { slice: '1', slice_base: '', slice_tdd: 'yes' })
     atelierOk(directory, 'set-tdd', 'no', 'rien', 'à', 'tester')
@@ -247,7 +247,7 @@ describe('slice TDD of a chantier without TDD, and of a plan with a single slice
 })
 
 describe('first slice without TDD, before any review', () => {
-  it('une tranche 1 « TDD : non » (ni slice écrit ni gel) reste en tranches, puis set-reviewed passe à la tranche 2 [FIX-20 CA-6]', () => {
+  it('une tranche 1 « TDD : non » (ni slice écrit ni gel) reste en tranches, puis set-reviewed passe à la tranche 2 [FIX-20 AC-6]', () => {
     const sliceOne = slicedChantier({ slice_tdd: 'no' }, { plan: planOf([1, 2]) })
     assert.deepEqual(sliceState(sliceOne), { model: 'sliced', slice: 1, sliceCount: 2 })
     assert.equal(testDrivenPhase(sliceOne), 'none')

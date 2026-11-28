@@ -61,7 +61,7 @@ describe('review state', () => {
 })
 
 describe('review and next slice', () => {
-  it('la revue validée de la tranche 2 sur 3 passe à la tranche 3 [FEAT-7 CA-14]', () => {
+  it('la revue validée de la tranche 2 sur 3 passe à la tranche 3 [FEAT-7 AC-14]', () => {
     const { directory } = implementedSlice({ slice: 2 })
     const head = headOf(directory)
     const output = atelierOk(directory, 'set-reviewed')
@@ -75,7 +75,7 @@ describe('review and next slice', () => {
   })
 
   for (const [label, plan] of [['tranche 3 sur 3', threeSlices], ['tranche 3 retirée d’un plan à 2', planOf([1, 2])]]) {
-    it(`la revue validée de la dernière tranche passe à la revue du chantier (${label}) [FEAT-7 CA-15]`, () => {
+    it(`la revue validée de la dernière tranche passe à la revue du chantier (${label}) [FEAT-7 AC-15]`, () => {
       const { directory, testsCommit } = implementedSlice({ slice: 3, plan })
       const head = headOf(directory)
       const output = atelierOk(directory, 'set-reviewed')
@@ -90,12 +90,12 @@ describe('review and next slice', () => {
     })
   }
 
-  it('status signale une tranche en cours absente du plan [FEAT-7 CA-15]', () => {
+  it('status signale une tranche en cours absente du plan [FEAT-7 AC-15]', () => {
     const { directory } = implementedSlice({ slice: 3, plan: planOf([1, 2]) })
     assert.match(atelierOk(directory, 'status'), /tranche 3 absente du plan/i)
   })
 
-  it('en revue du chantier, set-reviewed écrit reviewed_commit sans toucher à slice [FEAT-7 CA-16]', () => {
+  it('en revue du chantier, set-reviewed écrit reviewed_commit sans toucher à slice [FEAT-7 AC-16]', () => {
     const { directory } = implementedSlice({ slice: 'chantier', extra: { last_slice: '3' } })
     const head = headOf(directory)
     atelierOk(directory, 'set-reviewed')
@@ -104,7 +104,7 @@ describe('review and next slice', () => {
     assert.equal(data.slice, 'chantier')
   })
 
-  it('un chantier à tranche unique enregistre reviewed_commit comme aujourd’hui [FEAT-7 CA-16]', () => {
+  it('un chantier à tranche unique enregistre reviewed_commit comme aujourd’hui [FEAT-7 AC-16]', () => {
     for (const plan of [null, planOf([1])]) {
       const directory = makeSlicedRepository({ tdd: 'no', plan })
       commitFiles(directory, { 'src/a.mjs': 'code\n' }, 'feat: a')
@@ -114,7 +114,7 @@ describe('review and next slice', () => {
     }
   })
 
-  it('sans TDD, la revue de la tranche 1 sur 2 passe à la tranche 2 ; prochaine étape /atelier:build [FEAT-7 CA-18]', () => {
+  it('sans TDD, la revue de la tranche 1 sur 2 passe à la tranche 2 ; prochaine étape /atelier:build [FEAT-7 AC-18]', () => {
     const directory = makeSlicedRepository({ tdd: 'no', plan: planOf([1, 2]) })
     commitFiles(directory, { 'src/a.mjs': 'code\n' }, 'feat: a')
     const head = headOf(directory)
@@ -126,7 +126,7 @@ describe('review and next slice', () => {
     assert.match(JSON.parse(atelierOk(directory, 'status', '--json')).nextStep, /\/atelier:build/)
   })
 
-  it('les refus actuels de set-reviewed ne changent pas de tranche [FEAT-7 CA-19]', () => {
+  it('les refus actuels de set-reviewed ne changent pas de tranche [FEAT-7 AC-19]', () => {
     const uncommitted = implementedSlice({ slice: 2 }).directory
     writeFileSync(join(uncommitted, 'src', 'pending.mjs'), 'code\n')
     const testsChanged = implementedSlice({ slice: 2 }).directory
@@ -140,7 +140,7 @@ describe('review and next slice', () => {
     }
   })
 
-  it('refuse de passer une tranche sans commit de code depuis son début [FEAT-7 CA-20]', () => {
+  it('refuse de passer une tranche sans commit de code depuis son début [FEAT-7 AC-20]', () => {
     const sliceTwo = makeSlicedRepository({ tdd: 'no' })
     commitFiles(sliceTwo, { 'src/one.mjs': 'code\n' }, 'feat: one')
     setHeader(sliceTwo, 'FEAT-20', { slice: '2', slice_base: headOf(sliceTwo) })
@@ -154,7 +154,7 @@ describe('review and next slice', () => {
     }
   })
 
-  it('en TDD, une tranche dont seuls les tests ont été commités est vide [FEAT-7 CA-20]', () => {
+  it('en TDD, une tranche dont seuls les tests ont été commités est vide [FEAT-7 AC-20]', () => {
     const directory = makeSlicedRepository({ tdd: 'yes' })
     commitFiles(directory, { 'src/one.mjs': 'code\n' }, 'feat: one')
     const base = headOf(directory)

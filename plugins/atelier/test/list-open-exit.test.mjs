@@ -31,7 +31,7 @@ describe('atelier open: exit code of the explorer', linuxOnly, () => {
   const directory = makeChantiersRepository({ main: [{ id: 'FIX-18' }] })
   const paths = [realpathSync(chantierDirectoryOf(directory, 'FIX-18')), chantierDirectoryOf(directory, 'FIX-18')]
 
-  it('code non nul : repli avec le chemin et le code, succès [FEAT-35 CA-19]', () => {
+  it('code non nul : repli avec le chemin et le code, succès [FEAT-35 AC-19]', () => {
     const result = openWithExit(directory, 3)
     assert.equal(result.status, 0, result.output)
     assert.ok(paths.some((path) => result.output.includes(path)), result.output)

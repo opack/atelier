@@ -20,7 +20,7 @@ describe('atelier list: one line per chantier, numeric order', () => {
     ],
   })
 
-  it('TEC-2, FEAT-4, FEAT-30 dans cet ordre, chacun avec identifiant, type, titre, statut, étape et emplacement [FEAT-35 CA-1]', () => {
+  it('TEC-2, FEAT-4, FEAT-30 dans cet ordre, chacun avec identifiant, type, titre, statut, étape et emplacement [FEAT-35 AC-1]', () => {
     const output = atelierOk(directory, 'list')
     const lines = ['TEC-2', 'FEAT-4', 'FEAT-30'].map((id) => lineOf(output, id))
     const positions = lines.map((line) => output.indexOf(line))
@@ -35,7 +35,7 @@ describe('atelier list: one line per chantier, numeric order', () => {
     assert.match(feat30, /Calibrer les relectures/)
   })
 
-  it('le même ordre numérique en JSON [FEAT-35 CA-1]', () => {
+  it('le même ordre numérique en JSON [FEAT-35 AC-1]', () => {
     assert.deepEqual(listedIds(directory), ['TEC-2', 'FEAT-4', 'FEAT-30'])
   })
 })
@@ -50,18 +50,18 @@ describe('atelier list: open chantiers by default, --all, --status', () => {
     ],
   })
 
-  it('sans option, seuls les chantiers ni done ni abandoned ; --all ajoute les clos [FEAT-35 CA-2]', () => {
+  it('sans option, seuls les chantiers ni done ni abandoned ; --all ajoute les clos [FEAT-35 AC-2]', () => {
     assert.deepEqual(listedIds(directory), ['FEAT-3', 'FEAT-4'])
     assert.deepEqual(listedIds(directory, '--all'), ['FEAT-1', 'FEAT-2', 'FEAT-3', 'FEAT-4'])
   })
 
-  it('un --status explicite remplace le défaut, sans --all ; --all avec --status est sans effet [FEAT-35 CA-2]', () => {
+  it('un --status explicite remplace le défaut, sans --all ; --all avec --status est sans effet [FEAT-35 AC-2]', () => {
     assert.deepEqual(listedIds(directory, '--status', 'done'), ['FEAT-1'])
     assert.deepEqual(listedIds(directory, '--status', 'done,signed'), ['FEAT-1', 'FEAT-3'])
     assert.deepEqual(listedIds(directory, '--status', 'done', '--all'), ['FEAT-1'])
   })
 
-  it('--status ne tient pas compte de la casse [FEAT-35 CA-2]', () => {
+  it('--status ne tient pas compte de la casse [FEAT-35 AC-2]', () => {
     assert.deepEqual(listedIds(directory, '--status', 'DONE,Abandoned'), ['FEAT-1', 'FEAT-2'])
   })
 })
@@ -83,17 +83,17 @@ describe('atelier list: filters by type and by parent', () => {
     ],
   })
 
-  it('--type fix,TEC --status signed : les FIX et TEC signés seulement, casse ignorée [FEAT-35 CA-3]', () => {
+  it('--type fix,TEC --status signed : les FIX et TEC signés seulement, casse ignorée [FEAT-35 AC-3]', () => {
     assert.deepEqual(listedIds(directory, '--type', 'fix,TEC', '--status', 'signed'), ['FIX-1', 'TEC-3'])
   })
 
-  it('les filtres se cumulent : ET entre filtres, OU entre valeurs d’un filtre [FEAT-35 CA-3]', () => {
+  it('les filtres se cumulent : ET entre filtres, OU entre valeurs d’un filtre [FEAT-35 AC-3]', () => {
     assert.deepEqual(listedIds(directory, '--type', 'FIX'), ['FIX-1', 'FIX-2', 'FIX-22'])
     assert.deepEqual(listedIds(directory, '--type', 'FIX', '--status', 'draft'), ['FIX-2', 'FIX-22'])
     assert.deepEqual(listedIds(directory, '--type', 'FEAT,REF', '--status', 'signed,done'), ['FEAT-5', 'REF-6', 'FEAT-20', 'FEAT-21', 'FEAT-23'])
   })
 
-  it('--parent EPIC-17 : les chantiers ouverts dont rel_parent vaut EPIC-17, casse ignorée [FEAT-35 CA-3]', () => {
+  it('--parent EPIC-17 : les chantiers ouverts dont rel_parent vaut EPIC-17, casse ignorée [FEAT-35 AC-3]', () => {
     assert.deepEqual(listedIds(directory, '--parent', 'EPIC-17'), ['FEAT-20', 'FIX-22'])
     assert.deepEqual(listedIds(directory, '--parent', 'epic-17'), ['FEAT-20', 'FIX-22'])
     assert.deepEqual(listedIds(directory, '--parent', 'EPIC-17', '--all'), ['FEAT-20', 'FEAT-21', 'FIX-22'])
@@ -113,21 +113,21 @@ describe('atelier list: free text on identifier and title', () => {
     ],
   })
 
-  it('« relecture » trouve « relectures » et « Rélecture », sans casse ni accents [FEAT-35 CA-4]', () => {
+  it('« relecture » trouve « relectures » et « Rélecture », sans casse ni accents [FEAT-35 AC-4]', () => {
     assert.deepEqual(listedIds(directory, 'relecture'), ['FEAT-1', 'FEAT-2'])
     assert.deepEqual(listedIds(directory, 'RELECTURE'), ['FEAT-1', 'FEAT-2'])
   })
 
-  it('plusieurs mots : chacun doit être trouvé [FEAT-35 CA-4]', () => {
+  it('plusieurs mots : chacun doit être trouvé [FEAT-35 AC-4]', () => {
     assert.deepEqual(listedIds(directory, 'relecture', 'plan'), ['FEAT-2'])
     assert.deepEqual(listedIds(directory, 'relecture', 'gel'), [])
   })
 
-  it('recherche de texte dans l’identifiant : fix-1 trouve FIX-11 et FIX-12, pas FIX-21 [FEAT-35 CA-4]', () => {
+  it('recherche de texte dans l’identifiant : fix-1 trouve FIX-11 et FIX-12, pas FIX-21 [FEAT-35 AC-4]', () => {
     assert.deepEqual(listedIds(directory, 'fix-1'), ['FIX-11', 'FIX-12'])
   })
 
-  it('le texte se cumule avec les autres filtres [FEAT-35 CA-4]', () => {
+  it('le texte se cumule avec les autres filtres [FEAT-35 AC-4]', () => {
     assert.deepEqual(listedIds(directory, 'plan', '--type', 'FIX'), ['FIX-21'])
   })
 })
@@ -147,24 +147,24 @@ describe('atelier list: sort by status or by type', () => {
     ],
   })
 
-  it('--sort status : draft, signed, done, abandoned, par numéro dans chaque groupe [FEAT-35 CA-5]', () => {
+  it('--sort status : draft, signed, done, abandoned, par numéro dans chaque groupe [FEAT-35 AC-5]', () => {
     assert.deepEqual(listedIds(directory, '--all', '--sort', 'status'),
       ['FIX-2', 'FEAT-5', 'TEC-3', 'SPIKE-6', 'FEAT-10', 'FEAT-1', 'EPIC-7', 'REF-4', 'FIX-8'])
   })
 
-  it('--sort type : FEAT, FIX, REF, TEC, SPIKE, EPIC, par numéro dans chaque groupe [FEAT-35 CA-5]', () => {
+  it('--sort type : FEAT, FIX, REF, TEC, SPIKE, EPIC, par numéro dans chaque groupe [FEAT-35 AC-5]', () => {
     assert.deepEqual(listedIds(directory, '--all', '--sort', 'type'),
       ['FEAT-1', 'FEAT-5', 'FEAT-10', 'FIX-2', 'FIX-8', 'REF-4', 'TEC-3', 'SPIKE-6', 'EPIC-7'])
   })
 
-  it('--sort id est l’ordre par défaut, numérique [FEAT-35 CA-5]', () => {
+  it('--sort id est l’ordre par défaut, numérique [FEAT-35 AC-5]', () => {
     assert.deepEqual(listedIds(directory, '--all', '--sort', 'id'), listedIds(directory, '--all'))
     assert.deepEqual(listedIds(directory, '--all'), ['FEAT-1', 'FIX-2', 'TEC-3', 'REF-4', 'FEAT-5', 'SPIKE-6', 'EPIC-7', 'FIX-8', 'FEAT-10'])
   })
 })
 
 describe('atelier list: the step of an EPIC does not depend on the filters', () => {
-  it('« 2 enfant(s) ouvert(s) » y compris avec --type EPIC, qui écarte les enfants [FEAT-35 CA-8]', () => {
+  it('« 2 enfant(s) ouvert(s) » y compris avec --type EPIC, qui écarte les enfants [FEAT-35 AC-8]', () => {
     const directory = makeChantiersRepository({
       main: [
         { id: 'EPIC-40', files: epicPlan },
@@ -179,7 +179,7 @@ describe('atelier list: the step of an EPIC does not depend on the filters', () 
     assert.equal(epic.stepLabel, '2 enfant(s) ouvert(s)')
   })
 
-  it('« enfants clos : à clôturer » y compris sans --all, qui écarte les enfants clos [FEAT-35 CA-8]', () => {
+  it('« enfants clos : à clôturer » y compris sans --all, qui écarte les enfants clos [FEAT-35 AC-8]', () => {
     const directory = makeChantiersRepository({
       main: [
         { id: 'EPIC-40', files: epicPlan },

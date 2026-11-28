@@ -54,7 +54,7 @@ describe('close decision', () => {
 })
 
 describe('dependencies checked at close', () => {
-  it('refuse la clôture tant qu’une dépendance n’est pas done dans l’arbre courant, en la nommant avec son statut [FEAT-4 CA-3]', () => {
+  it('refuse la clôture tant qu’une dépendance n’est pas done dans l’arbre courant, en la nommant avec son statut [FEAT-4 AC-3]', () => {
     const directory = makeChantiersRepository({
       main: [{ id: 'TEC-8' }, { id: 'TEC-12', status: 'abandoned' }],
       branches: {
@@ -71,7 +71,7 @@ describe('dependencies checked at close', () => {
     assert.equal(specData(directory, 'SPIKE-13').status, 'signed')
   })
 
-  it('laisse clore quand toutes les dépendances sont done dans l’arbre courant [FEAT-4 CA-4]', () => {
+  it('laisse clore quand toutes les dépendances sont done dans l’arbre courant [FEAT-4 AC-4]', () => {
     const directory = makeChantiersRepository({
       main: [{ id: 'TEC-10', status: 'done' }],
       branches: { 'spike/SPIKE-13-x': [{ id: 'SPIKE-13', relations: { rel_depends_on: 'TEC-10' } }] },
@@ -90,7 +90,7 @@ describe('closing an EPIC', () => {
     checkout: 'epic/EPIC-5-x',
   })
 
-  it('refuse avec la liste des enfants ouverts, sans exiger de revue [FEAT-4 CA-9]', () => {
+  it('refuse avec la liste des enfants ouverts, sans exiger de revue [FEAT-4 AC-9]', () => {
     const directory = epicOn(
       [{ id: 'FEAT-6', status: 'done', relations: { rel_parent: 'EPIC-5' } }, { id: 'TEC-18', relations: { rel_parent: 'EPIC-5' } }],
       { 'feat/FEAT-7-x': [{ id: 'FEAT-7', status: 'done', relations: { rel_parent: 'EPIC-5' } }] },
@@ -103,7 +103,7 @@ describe('closing an EPIC', () => {
     assert.equal(specData(directory, 'EPIC-5').status, 'signed')
   })
 
-  it('refuse sans enfant done (aucun enfant, ou tous abandonnés) [FEAT-4 CA-9]', () => {
+  it('refuse sans enfant done (aucun enfant, ou tous abandonnés) [FEAT-4 AC-9]', () => {
     for (const main of [[], [{ id: 'FEAT-6', status: 'abandoned', relations: { rel_parent: 'EPIC-5' } }, { id: 'FEAT-17', status: 'abandoned', relations: { rel_parent: 'EPIC-5' } }]]) {
       const directory = epicOn(main)
       const { status, output } = atelierRun(directory, 'set-status', 'done')
@@ -113,7 +113,7 @@ describe('closing an EPIC', () => {
     }
   })
 
-  it('permet la clôture quand tous les enfants sont clos et au moins un est done, sans revue enregistrée [FEAT-4 CA-9]', () => {
+  it('permet la clôture quand tous les enfants sont clos et au moins un est done, sans revue enregistrée [FEAT-4 AC-9]', () => {
     const directory = epicOn([
       { id: 'FEAT-6', status: 'done', relations: { rel_parent: 'EPIC-5' } },
       { id: 'FEAT-17', status: 'abandoned', relations: { rel_parent: 'EPIC-5' } },
@@ -123,7 +123,7 @@ describe('closing an EPIC', () => {
     assert.equal(specData(directory, 'EPIC-5').status, 'done')
   })
 
-  it('un EPIC enfant ouvert bloque la clôture de son EPIC parent [FEAT-4 CA-9]', () => {
+  it('un EPIC enfant ouvert bloque la clôture de son EPIC parent [FEAT-4 AC-9]', () => {
     const directory = makeChantiersRepository({
       main: [
         { id: 'EPIC-21', files: epicPlan },
@@ -138,7 +138,7 @@ describe('closing an EPIC', () => {
     assertLine(output, [/EPIC-20/])
   })
 
-  it('l’abandon reste permis avec des enfants ouverts, qui sont listés [FEAT-4 CA-9]', () => {
+  it('l’abandon reste permis avec des enfants ouverts, qui sont listés [FEAT-4 AC-9]', () => {
     const directory = epicOn([{ id: 'TEC-18', relations: { rel_parent: 'EPIC-5' } }])
     const { status, output } = atelierRun(directory, 'set-status', 'abandoned')
     assert.equal(status, 0, output)
@@ -156,7 +156,7 @@ describe('close of a sliced chantier', () => {
     return directory
   }
 
-  it('refuse la clôture tant qu’une tranche est en cours [FEAT-7 CA-21]', () => {
+  it('refuse la clôture tant qu’une tranche est en cours [FEAT-7 AC-21]', () => {
     for (const slice of ['2', '3']) {
       const { directory } = implementedSlice({ slice, tdd: 'no' })
       const { status, output } = atelierRun(directory, 'close-check')
@@ -165,21 +165,21 @@ describe('close of a sliced chantier', () => {
     }
   })
 
-  it('en revue du chantier sans reviewed_commit, demande la revue du chantier [FEAT-7 CA-21]', () => {
+  it('en revue du chantier sans reviewed_commit, demande la revue du chantier [FEAT-7 AC-21]', () => {
     const { directory } = implementedSlice({ slice: 'chantier', tdd: 'no', extra: { last_slice: '3' } })
     const { status, output } = atelierRun(directory, 'close-check')
     assert.notEqual(status, 0)
     assert.match(output, /revue du chantier/i)
   })
 
-  it('refuse la clôture quand le plan compte une tranche après last_slice [FEAT-7 CA-22]', () => {
+  it('refuse la clôture quand le plan compte une tranche après last_slice [FEAT-7 AC-22]', () => {
     const directory = reviewedChantier({ plan: planOf([1, 2, 3, 4]), header: { slice: 'chantier', last_slice: '3' } })
     const { status, output } = atelierRun(directory, 'close-check')
     assert.notEqual(status, 0)
     assert.match(output, /tranche 4 du plan non revue/i)
   })
 
-  it('clôture possible avec la revue du chantier à jour, et pour un chantier de l’ancien modèle revu [FEAT-7 CA-23]', () => {
+  it('clôture possible avec la revue du chantier à jour, et pour un chantier de l’ancien modèle revu [FEAT-7 AC-23]', () => {
     const sliced = reviewedChantier({ header: { slice: 'chantier', last_slice: '3' } })
     const slicedResult = atelierRun(sliced, 'close-check')
     assert.equal(slicedResult.status, 0, slicedResult.output)
@@ -192,7 +192,7 @@ describe('close of a sliced chantier', () => {
     assert.equal(legacyResult.status, 0, legacyResult.output)
   })
 
-  it('un SPIKE en TDD suit le cycle par tranche et sa clôture exige la revue du chantier [FEAT-7 CA-25]', () => {
+  it('un SPIKE en TDD suit le cycle par tranche et sa clôture exige la revue du chantier [FEAT-7 AC-25]', () => {
     const spike = slicedChantier({ slice: '2', slice_base: 'a'.repeat(40) }, { type: 'SPIKE' })
     assert.equal(sliceState(spike).model, 'sliced')
     assert.match(nextStep(spike), /^Tranche 2\/3 : .*\/atelier:write-tests/)
@@ -202,7 +202,7 @@ describe('close of a sliced chantier', () => {
     assert.match(output, /revue du chantier/i)
   })
 
-  it('un SPIKE en TDD de l’ancien modèle se clôt sans revue exigée [FEAT-7 CA-25]', () => {
+  it('un SPIKE en TDD de l’ancien modèle se clôt sans revue exigée [FEAT-7 AC-25]', () => {
     const directory = makeSlicedRepository({ id: 'SPIKE-20', tdd: 'yes' })
     commitFiles(directory, { 'test/a.test.mjs': 'test\n' }, 'test: a')
     const testsCommit = git(directory, 'rev-parse', '--short', 'HEAD').trim()
@@ -212,7 +212,7 @@ describe('close of a sliced chantier', () => {
     assert.equal(status, 0, output)
   })
 
-  it('un SPIKE sans TDD reste hors tranches : pas de slice, pas de message de tranche, clôture sans revue [FEAT-7 CA-25]', () => {
+  it('un SPIKE sans TDD reste hors tranches : pas de slice, pas de message de tranche, clôture sans revue [FEAT-7 AC-25]', () => {
     const spike = slicedChantier({}, { type: 'SPIKE', tdd: 'no' })
     assert.equal(sliceState(spike).model, 'none')
     assert.doesNotMatch(nextStep(spike), /tranche/i)

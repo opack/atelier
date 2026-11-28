@@ -4,6 +4,7 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { dirname, join, posix, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { CHANTIER_TYPES } from '../lib/common.mjs'
+import { CRITERION_ID, FINAL_TAG } from '../lib/criteria.mjs'
 
 // Structural rules of lib/ and test/ (EPIC-17). The checks are plain functions of source texts, so
 // that each rule can be shown failing on a fabricated example. This file is left out of the name
@@ -12,8 +13,6 @@ import { CHANTIER_TYPES } from '../lib/common.mjs'
 const pluginDirectory = join(dirname(fileURLToPath(import.meta.url)), '..')
 const MAX_LINES = 400
 const CHANTIER_ID = new RegExp(`\\b(?:${CHANTIER_TYPES.join('|')})-\\d+\\b`)
-const CRITERION_ID = /\b(?:CA|V)-\d+\b/
-const FINAL_TAG = new RegExp(`\\s\\[(?:${CHANTIER_TYPES.join('|')})-\\d+ (?:CA|V)-\\d+(?:, (?:CA|V)-\\d+)*\\]$`)
 
 function mjsFiles(directory) {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -72,7 +71,7 @@ function nameProblems(source) {
   for (const { kind, name } of testNames(source)) {
     if (kind === 'describe' && CHANTIER_ID.test(name)) problems.push(`describe nommé d'après un chantier : « ${name} »`)
     else if (kind === 'test' && CRITERION_ID.test(name.replace(FINAL_TAG, ''))) {
-      problems.push(`critère hors de l'étiquette finale [<ID> CA-n] : « ${name} »`)
+      problems.push(`critère hors de l'étiquette finale [<ID> AC-n] : « ${name} »`)
     }
   }
   return problems
@@ -122,36 +121,36 @@ describe('architecture de lib/ et de test/', () => {
   // This file is left out of the name check only: its fabricated examples would trip it.
   const namedTestFiles = testFiles.filter(({ path }) => path !== 'test/architecture.test.mjs')
 
-  it('ce dépôt respecte toutes les règles [REF-29 CA-4]', () => {
+  it('ce dépôt respecte toutes les règles [REF-29 AC-4]', () => {
     assert.deepEqual(oversizedFiles([...libFiles, ...testFiles]), [])
     assert.deepEqual(namedTestFiles.flatMap(({ path, text }) => nameProblems(text).map((problem) => `${path} : ${problem}`)), [])
     assert.deepEqual(importProblems(new Map(libFiles.map(({ path, text }) => [path.replace(/^lib\//, ''), text]))), [])
   })
 
-  it('un fichier de plus de 400 lignes est signalé [REF-29 CA-4]', () => {
+  it('un fichier de plus de 400 lignes est signalé [REF-29 AC-4]', () => {
     const lines = (count) => Array.from({ length: count }, (_, index) => `const a${index} = ${index}`).join('\n') + '\n'
     assert.deepEqual(oversizedFiles([{ path: 'lib/long.mjs', text: lines(401) }, { path: 'lib/ok.mjs', text: lines(400) }]), ['lib/long.mjs'])
   })
 
-  it('un describe qui contient un identifiant de chantier est signalé [REF-29 CA-4]', () => {
+  it('un describe qui contient un identifiant de chantier est signalé [REF-29 AC-4]', () => {
     assert.equal(nameProblems("describe('FIX-25 : lanceur Windows', () => {})").length, 1)
     assert.equal(nameProblems('describe(`REF-29 ${domain}`, () => {})').length, 1)
     assert.deepEqual(nameProblems("describe('lanceur Windows', () => {})"), [])
     assert.deepEqual(nameProblems('describe(title, () => {})'), [], 'une variable est ignorée')
   })
 
-  it('un critère hors de l’étiquette finale est signalé [REF-29 CA-4]', () => {
-    assert.equal(nameProblems("it('CA-1 : lance node', () => {})").length, 1)
-    assert.equal(nameProblems("test('lance node [FIX-25 CA-1] encore', () => {})").length, 1)
-    assert.equal(nameProblems("it('lance node [FIX-25 CA-1,CA-2]', () => {})").length, 1, 'séparateur « , » exigé')
-    assert.equal(nameProblems("it('lance node [FOO-25 CA-1]', () => {})").length, 1, 'type de chantier inconnu')
-    assert.equal(nameProblems('it(`V-2 : ${label}`, () => {})').length, 1)
-    assert.deepEqual(nameProblems("it('lance node [FIX-25 CA-1]', () => {})"), [])
-    assert.deepEqual(nameProblems("it('lance node [FIX-25 CA-1, CA-2, V-3]', () => {})"), [])
+  it('un critère hors de l’étiquette finale est signalé [REF-29 AC-4]', () => {
+    assert.equal(nameProblems("it('AC-1 : lance node', () => {})").length, 1)
+    assert.equal(nameProblems("test('lance node [FIX-25 AC-1] encore', () => {})").length, 1)
+    assert.equal(nameProblems("it('lance node [FIX-25 AC-1,AC-2]', () => {})").length, 1, 'séparateur « , » exigé')
+    assert.equal(nameProblems("it('lance node [FOO-25 AC-1]', () => {})").length, 1, 'type de chantier inconnu')
+    assert.equal(nameProblems('it(`AC-2 : ${label}`, () => {})').length, 1)
+    assert.deepEqual(nameProblems("it('lance node [FIX-25 AC-1]', () => {})"), [])
+    assert.deepEqual(nameProblems("it('lance node [FIX-25 AC-1, AC-2, AC-3]', () => {})"), [])
     assert.deepEqual(nameProblems("it(\"sans critère\", () => {})"), [])
   })
 
-  it('common.mjs qui importe un module de lib/ est signalé [REF-29 CA-4]', () => {
+  it('common.mjs qui importe un module de lib/ est signalé [REF-29 AC-4]', () => {
     const problems = importProblems(new Map([
       ['common.mjs', "import { a } from './spec.mjs'\n"],
       ['spec.mjs', 'export const a = 1\n'],
@@ -159,7 +158,7 @@ describe('architecture de lib/ et de test/', () => {
     assert.deepEqual(problems, ['common.mjs importe spec.mjs'])
   })
 
-  it('un module pur qui importe lib/cli/ est signalé [REF-29 CA-4]', () => {
+  it('un module pur qui importe lib/cli/ est signalé [REF-29 AC-4]', () => {
     const problems = importProblems(new Map([
       ['spec.mjs', "import { git } from './cli/common.mjs'\n"],
       ['docs.mjs', "import './cli/docs.mjs'\n"],
@@ -170,7 +169,7 @@ describe('architecture de lib/ et de test/', () => {
     assert.deepEqual(problems, ['le module pur spec.mjs importe cli/common.mjs', 'le module pur docs.mjs importe cli/docs.mjs'])
   })
 
-  it('un cycle d’import est signalé [REF-29 CA-4]', () => {
+  it('un cycle d’import est signalé [REF-29 AC-4]', () => {
     const problems = importProblems(new Map([
       ['review.mjs', "import { b } from './close.mjs'\n"],
       ['close.mjs', "export {\n  a,\n} from './slices.mjs'\n"],

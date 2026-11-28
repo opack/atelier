@@ -21,7 +21,7 @@ function resolve(agent, options = {}) {
 }
 
 describe('agent settings: defaults and user options', () => {
-  it('sans option ni argument, chaque sous-agent reçoit son défaut, source « recommandé » [FEAT-27 CA-1]', () => {
+  it('sans option ni argument, chaque sous-agent reçoit son défaut, source « recommandé » [FEAT-27 AC-1]', () => {
     for (const [agent, expected] of Object.entries(DEFAULTS)) {
       const result = resolve(agent)
       assert.equal(result.model, expected.model, agent)
@@ -32,7 +32,7 @@ describe('agent settings: defaults and user options', () => {
     }
   })
 
-  it('une option de modèle seule l’emporte sur le défaut, l’effort reste le défaut [FEAT-27 CA-2]', () => {
+  it('une option de modèle seule l’emporte sur le défaut, l’effort reste le défaut [FEAT-27 AC-2]', () => {
     const result = resolve('reviewer', { userModel: 'sonnet' })
     assert.equal(result.model, 'sonnet')
     assert.equal(result.effort, 'high')
@@ -40,7 +40,7 @@ describe('agent settings: defaults and user options', () => {
     assert.deepEqual(result.warnings, [])
   })
 
-  it('une option non réglée (texte ${user_config…} littéral, vide ou absente) compte comme absente, sans avertissement [FEAT-27 CA-3]', () => {
+  it('une option non réglée (texte ${user_config…} littéral, vide ou absente) compte comme absente, sans avertissement [FEAT-27 AC-3]', () => {
     for (const userModel of ['${user_config.reviewer_model}', '', undefined]) {
       const result = resolve('reviewer', { userModel, userEffort: userModel === undefined ? undefined : userModel.replace('model', 'effort') })
       assert.equal(result.model, 'opus', String(userModel))
@@ -50,7 +50,7 @@ describe('agent settings: defaults and user options', () => {
     }
   })
 
-  it('une option « recommandé (…) » compte comme non réglée, quelle que soit la valeur entre parenthèses, même périmée [FEAT-27 CA-3]', () => {
+  it('une option « recommandé (…) » compte comme non réglée, quelle que soit la valeur entre parenthèses, même périmée [FEAT-27 AC-3]', () => {
     for (const [userModel, userEffort] of [['recommandé (opus)', 'recommandé (high)'], ['Recommandé (haiku)', 'RECOMMANDÉ (low)']]) {
       const result = resolve('reviewer', { userModel, userEffort })
       assert.equal(result.model, 'opus', userModel)
@@ -60,7 +60,7 @@ describe('agent settings: defaults and user options', () => {
     }
   })
 
-  it('une option invalide est ignorée au profit du défaut, avec un avertissement qui nomme la valeur et l’option [FEAT-27 CA-6]', () => {
+  it('une option invalide est ignorée au profit du défaut, avec un avertissement qui nomme la valeur et l’option [FEAT-27 AC-6]', () => {
     for (const userModel of ['gpt', 'inherit', 'claude-opus-5-5']) {
       const result = resolve('reviewer', { userModel })
       assert.equal(result.model, 'opus', userModel)
@@ -76,7 +76,7 @@ describe('agent settings: defaults and user options', () => {
     assert.ok(effort.warnings[0].includes('ultra') && effort.warnings[0].includes('implementer_effort'), effort.warnings[0])
   })
 
-  it('les options sont reconnues sans tenir compte de la casse et rendues en minuscules [FEAT-27 CA-8]', () => {
+  it('les options sont reconnues sans tenir compte de la casse et rendues en minuscules [FEAT-27 AC-8]', () => {
     const result = resolve('implementer', { userModel: 'Sonnet', userEffort: 'XHIGH' })
     assert.equal(result.model, 'sonnet')
     assert.equal(result.effort, 'xhigh')
@@ -86,7 +86,7 @@ describe('agent settings: defaults and user options', () => {
 })
 
 describe('agent settings: command argument', () => {
-  it('l’argument l’emporte sur les options et le défaut, modèle et effort indépendamment [FEAT-27 CA-4]', () => {
+  it('l’argument l’emporte sur les options et le défaut, modèle et effort indépendamment [FEAT-27 AC-4]', () => {
     const both = resolve('implementer', { userModel: 'haiku', userEffort: 'low', args: 'opus high' })
     assert.equal(both.model, 'opus')
     assert.equal(both.effort, 'high')
@@ -98,7 +98,7 @@ describe('agent settings: command argument', () => {
     assert.deepEqual(modelOnly.sources, { model: 'argument', effort: 'utilisateur' })
   })
 
-  it('les mots non reconnus sont rendus comme reste, sans avertissement pour implementer [FEAT-27 CA-5]', () => {
+  it('les mots non reconnus sont rendus comme reste, sans avertissement pour implementer [FEAT-27 AC-5]', () => {
     const mixed = resolve('implementer', { args: '2 opus' })
     assert.equal(mixed.model, 'opus')
     assert.equal(mixed.rest, '2')
@@ -116,7 +116,7 @@ describe('agent settings: command argument', () => {
     assert.equal(resolve('implementer', { args: 'opus high' }).rest, '')
   })
 
-  it('deux modèles ou deux efforts différents sont refusés, en nommant les deux valeurs ; une valeur répétée est tolérée [FEAT-27 CA-7]', () => {
+  it('deux modèles ou deux efforts différents sont refusés, en nommant les deux valeurs ; une valeur répétée est tolérée [FEAT-27 AC-7]', () => {
     for (const [args, first, second] of [['opus sonnet', 'opus', 'sonnet'], ['low high', 'low', 'high']]) {
       const result = resolve('reviewer', { args })
       assert.equal(typeof result.refusal, 'string', args)
@@ -128,7 +128,7 @@ describe('agent settings: command argument', () => {
     assert.equal(repeated.sources.model, 'argument')
   })
 
-  it('l’argument est reconnu sans tenir compte de la casse et l’emporte sur une option en majuscules [FEAT-27 CA-8]', () => {
+  it('l’argument est reconnu sans tenir compte de la casse et l’emporte sur une option en majuscules [FEAT-27 AC-8]', () => {
     const result = resolve('reviewer', { userModel: 'Sonnet', args: 'Opus HIGH' })
     assert.equal(result.model, 'opus')
     assert.equal(result.effort, 'high')
@@ -136,7 +136,7 @@ describe('agent settings: command argument', () => {
     assert.equal(result.rest, '')
   })
 
-  it('un reste pour reviewer ou spec-critic est rendu avec un avertissement qui dit qu’il est ignoré, pas pour implementer [FEAT-27 CA-9]', () => {
+  it('un reste pour reviewer ou spec-critic est rendu avec un avertissement qui dit qu’il est ignoré, pas pour implementer [FEAT-27 AC-9]', () => {
     for (const agent of ['reviewer', 'spec-critic']) {
       const result = resolve(agent, { args: 'foo' })
       assert.equal(result.rest, 'foo', agent)
@@ -154,7 +154,7 @@ describe('agent settings: defaults declared in the plugin files', () => {
   // userConfig keys only allow letters, digits and underscores.
   const optionKey = (agent, kind) => `${agent.replaceAll('-', '_')}_${kind}`
 
-  it('le manifeste déclare, par sous-agent, une option de modèle et une d’effort, facultatives, « recommandé (<défaut du code>) » par défaut et en tête d’une liste fermée [FEAT-27 CA-10]', () => {
+  it('le manifeste déclare, par sous-agent, une option de modèle et une d’effort, facultatives, « recommandé (<défaut du code>) » par défaut et en tête d’une liste fermée [FEAT-27 AC-10]', () => {
     const userConfig = JSON.parse(pluginFile('.claude-plugin/plugin.json')).userConfig ?? {}
     for (const [agent, expected] of Object.entries(DEFAULTS)) {
       for (const [kind, allowed] of [['model', ['sonnet', 'opus', 'haiku', 'fable']], ['effort', ['low', 'medium', 'high', 'xhigh', 'max']]]) {
@@ -169,7 +169,7 @@ describe('agent settings: defaults declared in the plugin files', () => {
     }
   })
 
-  it('l’en-tête model / effort de chaque agent est égal au défaut du code [FEAT-27 CA-10]', () => {
+  it('l’en-tête model / effort de chaque agent est égal au défaut du code [FEAT-27 AC-10]', () => {
     for (const [agent, expected] of Object.entries(DEFAULTS)) {
       const { data } = parseFrontMatter(pluginFile(`agents/${agent}.md`))
       assert.equal(data.name, agent)
@@ -178,7 +178,7 @@ describe('agent settings: defaults declared in the plugin files', () => {
     }
   })
 
-  it('le tableau des défauts de modes.md donne, pour chaque sous-agent, le modèle et l’effort du code [FEAT-27 CA-10]', () => {
+  it('le tableau des défauts de modes.md donne, pour chaque sous-agent, le modèle et l’effort du code [FEAT-27 AC-10]', () => {
     const rows = repositoryFile('site/agent/modes.md').split(/\r?\n/).filter((line) => line.trim().startsWith('|'))
     for (const [agent, expected] of Object.entries(DEFAULTS)) {
       const row = rows.find((line) => line.includes(`\`${agent}\``))
@@ -187,7 +187,7 @@ describe('agent settings: defaults declared in the plugin files', () => {
     }
   })
 
-  it('l’agent implementer peut éditer, a une section « Interdit » complète et rend « Arrêt : test à revoir » [FEAT-27 CA-13]', () => {
+  it('l’agent implementer peut éditer, a une section « Interdit » complète et rend « Arrêt : test à revoir » [FEAT-27 AC-13]', () => {
     const { data, body } = parseFrontMatter(pluginFile('agents/implementer.md'))
     for (const tool of ['Read', 'Edit', 'Write', 'Bash']) {
       assert.match(String(data.tools), new RegExp(`\\b${tool}\\b`), tool)
@@ -202,7 +202,7 @@ describe('agent settings: defaults declared in the plugin files', () => {
 })
 
 describe('agent settings: atelier agent-settings command', () => {
-  it('rend en JSON le modèle, l’effort, leurs sources et le reste, option non réglée comprise [FEAT-27 CA-5]', () => {
+  it('rend en JSON le modèle, l’effort, leurs sources et le reste, option non réglée comprise [FEAT-27 AC-5]', () => {
     const directory = makeRepository('main')
     const output = atelier(directory, 'agent-settings', 'implementer', '--user-model', '${user_config.implementer_model}', '--user-effort', '', '--args', '2 opus')
     const result = JSON.parse(output)
@@ -213,7 +213,7 @@ describe('agent settings: atelier agent-settings command', () => {
     assert.deepEqual(result.warnings, [])
   })
 
-  it('sort avec un code non nul et nomme les deux valeurs en cas de refus ; tolère une valeur répétée [FEAT-27 CA-7]', () => {
+  it('sort avec un code non nul et nomme les deux valeurs en cas de refus ; tolère une valeur répétée [FEAT-27 AC-7]', () => {
     const directory = makeRepository('main')
     const refused = atelierRun(directory, 'agent-settings', 'reviewer', '--args', 'opus sonnet')
     assert.notEqual(refused.status, 0)
@@ -239,7 +239,7 @@ describe('agent settings: skills that launch the subagents', () => {
     'Si la commande échoue, affiche son message et arrête-toi',
   ]
 
-  it('sign, review et build résolvent leurs sous-agents par la commande, valeurs entre guillemets simples, et en suivent le résultat [FEAT-27 CA-11]', () => {
+  it('sign, review et build résolvent leurs sous-agents par la commande, valeurs entre guillemets simples, et en suivent le résultat [FEAT-27 AC-11]', () => {
     for (const [name, agents] of [['sign', [['spec-critic', true]]], ['review', [['reviewer', true]]], ['build', [['implementer', true], ['overfit-checker', false]]]]) {
       const text = skill(name)
       for (const [agent, withArguments] of agents) {
@@ -251,13 +251,13 @@ describe('agent settings: skills that launch the subagents', () => {
     }
   })
 
-  it('dans build, overfit-checker est résolu sans l’argument de la commande [FEAT-27 CA-11]', () => {
+  it('dans build, overfit-checker est résolu sans l’argument de la commande [FEAT-27 AC-11]', () => {
     const line = skill('build').split(/\r?\n/).find((candidate) => candidate.includes('atelier agent-settings overfit-checker'))
     assert.ok(line, 'appel pour overfit-checker absent')
     assert.doesNotMatch(line, /--args/)
   })
 
-  it('build confie tout le code à implementer et lance atelier checks après chaque retour [FEAT-27 CA-12]', () => {
+  it('build confie tout le code à implementer et lance atelier checks après chaque retour [FEAT-27 AC-12]', () => {
     const text = skill('build')
     const sections = text.split(/^## /m)
     for (const heading of [/^1\. /, /^2\. /, /^Sans TDD/]) {
@@ -273,7 +273,7 @@ describe('agent settings: skills that launch the subagents', () => {
     }
   })
 
-  it('la commande refuse une option répétée, qui contournerait le refus de deux valeurs [FEAT-27 CA-7]', () => {
+  it('la commande refuse une option répétée, qui contournerait le refus de deux valeurs [FEAT-27 AC-7]', () => {
     const directory = makeRepository('main')
     const repeated = atelierRun(directory, 'agent-settings', 'reviewer', '--args', 'opus sonnet', '--args', '')
     assert.equal(repeated.status, 1, repeated.output)
@@ -287,7 +287,7 @@ describe('agent settings: documentation', () => {
   const tableRow = (text, start) => text.split(/\r?\n/).find((line) => line.startsWith(`| ${start}`))
   const options = Object.keys(DEFAULTS).flatMap((agent) => ['model', 'effort'].map((kind) => `${agent.replaceAll('-', '_')}_${kind}`))
 
-  it('modes.md présente l’ordre de résolution et opusplan [FEAT-27 CA-14]', () => {
+  it('modes.md présente l’ordre de résolution et opusplan [FEAT-27 AC-14]', () => {
     const text = site('agent/modes.md')
     assert.ok(text.includes('/plugin configure atelier'), 'option utilisateur non expliquée')
     assert.match(text, /argument de la commande/)
@@ -295,7 +295,7 @@ describe('agent settings: documentation', () => {
     assert.ok(text.includes('opusplan'), 'opusplan absent')
   })
 
-  it('configuration.md liste les 8 options [FEAT-27 CA-14]', () => {
+  it('configuration.md liste les 8 options [FEAT-27 AC-14]', () => {
     const text = site('reference/configuration.md')
     for (const option of options) {
       assert.ok(text.includes(`\`${option}\``), `option ${option} absente de configuration.md`)
@@ -303,7 +303,7 @@ describe('agent settings: documentation', () => {
     assert.match(text, /\]\(\.\.\/agent\/modes[^)]*\)/, 'pas de renvoi vers les valeurs recommandées de modes.md')
   })
 
-  it('commandes.md donne le modèle et l’effort en argument de build, review et sign, et décrit implementer [FEAT-27 CA-14]', () => {
+  it('commandes.md donne le modèle et l’effort en argument de build, review et sign, et décrit implementer [FEAT-27 AC-14]', () => {
     const text = site('reference/commandes.md')
     for (const command of ['build', 'review', 'sign']) {
       const row = tableRow(text, `\`/atelier:${command}`)
@@ -314,14 +314,14 @@ describe('agent settings: documentation', () => {
     assert.ok(tableRow(text, '`implementer`'), 'ligne implementer absente du tableau des sous-agents')
   })
 
-  it('limites.md dit que les variables d’environnement l’emportent sur la résolution [FEAT-27 CA-14]', () => {
+  it('limites.md dit que les variables d’environnement l’emportent sur la résolution [FEAT-27 AC-14]', () => {
     const text = site('reference/limites.md')
     for (const variable of ['CLAUDE_CODE_EFFORT_LEVEL', 'CLAUDE_CODE_SUBAGENT_MODEL_FORCE']) {
       assert.ok(text.includes(`\`${variable}\``), `${variable} absente de limites.md`)
     }
   })
 
-  it('l’argument-hint de build, review et sign mentionne le modèle et l’effort [FEAT-27 CA-14]', () => {
+  it('l’argument-hint de build, review et sign mentionne le modèle et l’effort [FEAT-27 AC-14]', () => {
     for (const name of ['build', 'review', 'sign']) {
       const hint = parseFrontMatter(read(`../skills/${name}/SKILL.md`)).data['argument-hint'] ?? ''
       assert.match(hint, /modèle/, `${name} : modèle absent de l’argument-hint`)

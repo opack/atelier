@@ -26,7 +26,7 @@ function withoutProjectDirectory(env = process.env) {
 const samePath = (actual, expected) => assert.equal(realpathSync(actual.trim()), realpathSync(expected))
 
 describe('atelier path', () => {
-  it('chemin absolu du dossier, identifiant sans casse, depuis un sous-dossier du projet [FEAT-35 CA-16]', () => {
+  it('chemin absolu du dossier, identifiant sans casse, depuis un sous-dossier du projet [FEAT-35 AC-16]', () => {
     const directory = makeChantiersRepository({ main: [{ id: 'FIX-18' }, { id: 'FIX-180' }] })
     const subdirectory = join(directory, 'src', 'deep')
     mkdirSync(subdirectory, { recursive: true })
@@ -37,7 +37,7 @@ describe('atelier path', () => {
     }
   })
 
-  it('le chantiersDir configuré est respecté [FEAT-35 CA-16]', () => {
+  it('le chantiersDir configuré est respecté [FEAT-35 AC-16]', () => {
     const directory = makeRepository('main')
     writeFileSync(join(directory, '.claude', 'atelier.json'), JSON.stringify({ chantiersDir: 'suivi/chantiers' }))
     mkdirSync(join(directory, 'suivi', 'chantiers', 'FIX-18-gel'), { recursive: true })
@@ -55,19 +55,19 @@ describe('atelier path and atelier open: errors', () => {
   })
 
   for (const command of ['path', 'open']) {
-    it(`${command} : chantier présent seulement sur une branche, le message nomme la branche [FEAT-35 CA-17]`, () => {
+    it(`${command} : chantier présent seulement sur une branche, le message nomme la branche [FEAT-35 AC-17]`, () => {
       const result = run(directory, [command, 'FEAT-40'])
       assert.notEqual(result.status, 0, result.output)
       assert.match(result.output, /feat\/FEAT-40-x/)
     })
 
-    it(`${command} : identifiant inconnu partout, le message le dit [FEAT-35 CA-17]`, () => {
+    it(`${command} : identifiant inconnu partout, le message le dit [FEAT-35 AC-17]`, () => {
       const result = run(directory, [command, 'FEAT-99'])
       assert.notEqual(result.status, 0, result.output)
       assert.match(result.output, /FEAT-99/)
     })
 
-    it(`${command} : sans argument ou avec un argument qui n’est pas un identifiant, l’usage [FEAT-35 CA-17]`, () => {
+    it(`${command} : sans argument ou avec un argument qui n’est pas un identifiant, l’usage [FEAT-35 AC-17]`, () => {
       for (const cliArguments of [[command], [command, 'bonjour'], [command, 'FIX-']]) {
         const result = run(directory, cliArguments)
         assert.notEqual(result.status, 0, result.output)
@@ -76,7 +76,7 @@ describe('atelier path and atelier open: errors', () => {
     })
   }
 
-  it('deux dossiers du même identifiant dans l’arbre courant : échec qui les nomme [FEAT-35 CA-17]', () => {
+  it('deux dossiers du même identifiant dans l’arbre courant : échec qui les nomme [FEAT-35 AC-17]', () => {
     const duplicated = makeChantiersRepository({ main: [{ id: 'FIX-18' }] })
     mkdirSync(join(duplicated, 'docs', 'chantiers', 'FIX-18-autre'))
     writeFileSync(join(duplicated, 'docs', 'chantiers', 'FIX-18-autre', 'spec.md'), '---\nid: FIX-18\ntype: FIX\ntitle: Autre\nstatus: draft\n---\n')
@@ -93,7 +93,7 @@ describe('file explorer per platform', () => {
   // Imported in the tests, so that the other tests of the file run before the module exists.
   const explorerFor = async (...parameters) => (await import('../lib/list-open.mjs')).explorerFor(...parameters)
 
-  it('darwin : open ; win32 : explorer, code de sortie ignoré ; linux avec affichage : xdg-open [FEAT-35 CA-18]', async () => {
+  it('darwin : open ; win32 : explorer, code de sortie ignoré ; linux avec affichage : xdg-open [FEAT-35 AC-18]', async () => {
     assert.deepEqual(await explorerFor('darwin', {}), { command: 'open', ignoreExitCode: false })
     assert.deepEqual(await explorerFor('win32', {}), { command: 'explorer', ignoreExitCode: true })
     assert.deepEqual(await explorerFor('linux', { DISPLAY: ':0' }), { command: 'xdg-open', ignoreExitCode: false })
@@ -101,7 +101,7 @@ describe('file explorer per platform', () => {
     assert.deepEqual(await explorerFor('freebsd', {}), { command: 'xdg-open', ignoreExitCode: false })
   })
 
-  it('linux sans DISPLAY ni WAYLAND_DISPLAY (ou vides) : ne rien lancer, avec la raison [FEAT-35 CA-18]', async () => {
+  it('linux sans DISPLAY ni WAYLAND_DISPLAY (ou vides) : ne rien lancer, avec la raison [FEAT-35 AC-18]', async () => {
     for (const env of [{}, { DISPLAY: '', WAYLAND_DISPLAY: '' }]) {
       const choice = await explorerFor('linux', env)
       assert.equal(choice.command, null)
@@ -114,7 +114,7 @@ describe('atelier open: fallback on the path', { skip: process.platform !== 'lin
   const directory = makeChantiersRepository({ main: [{ id: 'FIX-18' }] })
   const expected = realpathSync(chantierDirectoryOf(directory, 'FIX-18'))
 
-  it('sans affichage : chemin absolu et raison, succès [FEAT-35 CA-19]', () => {
+  it('sans affichage : chemin absolu et raison, succès [FEAT-35 AC-19]', () => {
     const env = { ...process.env, CLAUDE_PROJECT_DIR: directory }
     delete env.DISPLAY
     delete env.WAYLAND_DISPLAY
@@ -124,7 +124,7 @@ describe('atelier open: fallback on the path', { skip: process.platform !== 'lin
     assert.match(result.output, /affichage/i)
   })
 
-  it('explorateur absent : chemin absolu et raison, succès [FEAT-35 CA-19]', () => {
+  it('explorateur absent : chemin absolu et raison, succès [FEAT-35 AC-19]', () => {
     const bin = temporaryDirectory('atelier-feat35-bin-')
     const gitPath = spawnSync('sh', ['-c', 'command -v git'], { encoding: 'utf8' }).stdout.trim()
     symlinkSync(gitPath, join(bin, 'git'))
@@ -138,7 +138,7 @@ describe('atelier open: fallback on the path', { skip: process.platform !== 'lin
 })
 
 describe('atelier list: cases deferred from the reviews of slice 3', () => {
-  it('hors d’un dépôt git : les chantiers de l’arbre courant [FEAT-35 CA-15]', () => {
+  it('hors d’un dépôt git : les chantiers de l’arbre courant [FEAT-35 AC-15]', () => {
     const directory = temporaryDirectory('atelier-feat35-nogit-')
     mkdirSync(join(directory, '.claude'))
     writeFileSync(join(directory, '.claude', 'atelier.json'), JSON.stringify({ chantiersDir: 'docs/chantiers' }))
@@ -146,7 +146,7 @@ describe('atelier list: cases deferred from the reviews of slice 3', () => {
     assert.deepEqual(listed(directory).map((chantier) => [chantier.id, chantier.location]), [['FEAT-1', null]])
   })
 
-  it('la branche qui porte l’identifiant l’emporte sur une branche plus récente qui ne le porte pas [FEAT-35 CA-9]', () => {
+  it('la branche qui porte l’identifiant l’emporte sur une branche plus récente qui ne le porte pas [FEAT-35 AC-9]', () => {
     const directory = makeRepository('main')
     git(directory, 'switch', '-q', '-c', 'feat/FEAT-40-x')
     writeChantier(directory, { id: 'FEAT-40', status: 'signed' })
@@ -160,7 +160,7 @@ describe('atelier list: cases deferred from the reviews of slice 3', () => {
     assert.equal(feat.status, 'signed')
   })
 
-  it('sur une branche sans commit, les autres branches sont lues, y compris une branche nommée null [FEAT-35 CA-9]', () => {
+  it('sur une branche sans commit, les autres branches sont lues, y compris une branche nommée null [FEAT-35 AC-9]', () => {
     const directory = makeRepository('main')
     git(directory, 'switch', '-q', '-c', 'feat/FEAT-1-x')
     writeChantier(directory, { id: 'FEAT-1' })

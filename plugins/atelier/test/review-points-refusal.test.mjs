@@ -19,7 +19,7 @@ describe('refusing open review points in the CLI', () => {
   }
 
   for (const [label, options] of [['revue de tranche', { slice: 2 }], ['revue du chantier', { slice: 'chantier', extra: { last_slice: '3' } }]]) {
-    it(`set-reviewed refuse un point ouvert de la copie de travail de revue.md (${label}), sans rien écrire dans la spec [TEC-15 CA-8]`, () => {
+    it(`set-reviewed refuse un point ouvert de la copie de travail de revue.md (${label}), sans rien écrire dans la spec [TEC-15 AC-8]`, () => {
       const { directory } = implementedSlice(options)
       writeFileSync(revuePath(directory), openPoint)
       const before = specFileText(directory, 'FEAT-20')
@@ -31,7 +31,7 @@ describe('refusing open review points in the CLI', () => {
     })
   }
 
-  it('set-reviewed enregistre la revue quand tous les points de la copie de travail sont traités [TEC-15 CA-8]', () => {
+  it('set-reviewed enregistre la revue quand tous les points de la copie de travail sont traités [TEC-15 AC-8]', () => {
     const { directory } = implementedSlice({ slice: 2 })
     writeFileSync(revuePath(directory), allTreated)
     atelierOk(directory, 'set-reviewed')
@@ -39,7 +39,7 @@ describe('refusing open review points in the CLI', () => {
   })
 
   for (const command of [['close-check'], ['set-status', 'done']]) {
-    it(`${command.join(' ')} refuse la clôture avec un point ouvert dans un revue.md commité [TEC-15 CA-9]`, () => {
+    it(`${command.join(' ')} refuse la clôture avec un point ouvert dans un revue.md commité [TEC-15 AC-9]`, () => {
       const directory = reviewedWithRevue(openPoint)
       const before = specFileText(directory, 'FEAT-20')
       const { status, output } = atelierRun(directory, ...command)
@@ -48,7 +48,7 @@ describe('refusing open review points in the CLI', () => {
       assert.equal(specFileText(directory, 'FEAT-20'), before)
     })
 
-    it(`${command.join(' ')} refuse la clôture quand revue.md a des modifications non commitées [TEC-15 CA-9]`, () => {
+    it(`${command.join(' ')} refuse la clôture quand revue.md a des modifications non commitées [TEC-15 AC-9]`, () => {
       const directory = reviewedWithRevue(allTreated)
       writeFileSync(revuePath(directory), `${allTreated}\n- Note ajoutée après coup.\n`)
       const { status, output } = atelierRun(directory, ...command)
@@ -57,19 +57,19 @@ describe('refusing open review points in the CLI', () => {
     })
   }
 
-  it('close-check accepte la clôture avec un revue.md commité dont tous les points sont traités [TEC-15 CA-9]', () => {
+  it('close-check accepte la clôture avec un revue.md commité dont tous les points sont traités [TEC-15 AC-9]', () => {
     const { status, output } = atelierRun(reviewedWithRevue(allTreated), 'close-check')
     assert.equal(status, 0, output)
   })
 
-  it('un point reporté (tranche 2) ne bloque pas set-reviewed [TEC-15 CA-16]', () => {
+  it('un point reporté (tranche 2) ne bloque pas set-reviewed [TEC-15 AC-16]', () => {
     const { directory } = implementedSlice({ slice: 2 })
     writeFileSync(revuePath(directory), postponed)
     atelierOk(directory, 'set-reviewed')
     assert.equal(specData(directory, 'FEAT-20').slice, '3')
   })
 
-  it('un point dont la dernière occurrence est reporté (tranche 2) bloque la clôture et est listé [TEC-15 CA-16]', () => {
+  it('un point dont la dernière occurrence est reporté (tranche 2) bloque la clôture et est listé [TEC-15 AC-16]', () => {
     const { status, output } = atelierRun(reviewedWithRevue(postponed), 'close-check')
     assert.notEqual(status, 0, output)
     assert.match(output, /RD1\b.*Message d’erreur vague/)

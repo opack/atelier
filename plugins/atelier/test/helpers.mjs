@@ -70,7 +70,7 @@ function atelier(directory, ...cliArguments) {
 // Bodies that satisfy the required sections, so that only relation problems remain.
 const completeBodies = {
   TEC: '## 1. Quoi\nFaire X.\n\n## 2. Pourquoi\nParce que.\n\n## 3. Vérification\n- Lancer les tests.\n',
-  EPIC: "## 1. Vision\nUn module de gestion client.\n\n## 2. Pourquoi\nLes clients sont gérés à la main.\n\n## 3. Critères d'acceptation globaux\n- CA-1 : un client se crée et se contacte.\n\n## 4. Cadre\nAPI REST commune.\n\n## 5. Hors périmètre\nFacturation.\n",
+  EPIC: "## 1. Vision\nUn module de gestion client.\n\n## 2. Pourquoi\nLes clients sont gérés à la main.\n\n## 3. Critères d'acceptation globaux\n- AC-1 : un client se crée et se contacte.\n\n## 4. Cadre\nAPI REST commune.\n\n## 5. Hors périmètre\nFacturation.\n",
 }
 
 function specText({ id, type = id.split('-')[0], status = 'signed', tdd = 'no', relations = {}, body = completeBodies[type] ?? '' }) {
@@ -134,8 +134,8 @@ const epicPlan = { 'plan.md': '# Plan : EPIC-5\n\n## Lots\n- FEAT-6, FEAT-7\n' }
 // A plan whose « Tranches » section has first-level entries numbered `numbers` (sub-lists and
 // comments around, and a numbered list in another section, which must be ignored).
 function planOf(numbers) {
-  const entries = numbers.map((number) => `${number}. Tranche ${number} — CA couverts : CA-${number}\n   1. sous-étape`).join('\n')
-  return `# Plan : FEAT-20\n\n## Approche\nTexte.\n\n## Tranches\n<!-- 1. <tranche> — CA couverts : CA-1\n2. exemple -->\n${entries}\n\n## Risques et points d'attention\n1. pas une tranche\n2. toujours pas\n3. non\n4. non\n5. non\n`
+  const entries = numbers.map((number) => `${number}. Tranche ${number} — AC couverts : AC-${number}\n   1. sous-étape`).join('\n')
+  return `# Plan : FEAT-20\n\n## Approche\nTexte.\n\n## Tranches\n<!-- 1. <tranche> — AC couverts : AC-1\n2. exemple -->\n${entries}\n\n## Risques et points d'attention\n1. pas une tranche\n2. toujours pas\n3. non\n4. non\n5. non\n`
 }
 const threeSlices = planOf([1, 2, 3])
 

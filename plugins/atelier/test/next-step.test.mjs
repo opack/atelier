@@ -34,7 +34,7 @@ describe('next step', () => {
 describe('next step of an EPIC', () => {
   const nextStepOf = (directory) => JSON.parse(atelier(directory, 'status', '--json')).nextStep
 
-  it('concevoir le découpage sans plan, puis les enfants ouverts et leur nombre, puis la clôture ; jamais la revue [FEAT-4 CA-10]', () => {
+  it('concevoir le découpage sans plan, puis les enfants ouverts et leur nombre, puis la clôture ; jamais la revue [FEAT-4 AC-10]', () => {
     const withoutPlan = makeChantiersRepository({ branches: { 'epic/EPIC-5-x': [{ id: 'EPIC-5' }] }, checkout: 'epic/EPIC-5-x' })
     const open = makeChantiersRepository({
       main: [{ id: 'EPIC-5', files: epicPlan }, { id: 'FEAT-6', status: 'done', relations: { rel_parent: 'EPIC-5' } }],
@@ -57,7 +57,7 @@ describe('next step of an EPIC', () => {
     }
   })
 
-  it('tous les enfants clos sans aucun done : propose l’abandon, pas la clôture [FEAT-4 CA-10]', () => {
+  it('tous les enfants clos sans aucun done : propose l’abandon, pas la clôture [FEAT-4 AC-10]', () => {
     const directory = makeChantiersRepository({
       main: [
         { id: 'EPIC-5', files: epicPlan },
@@ -75,7 +75,7 @@ describe('next step of an EPIC', () => {
 })
 
 describe('relations shown by status', () => {
-  it('affiche parent, dépendances avec leur statut, origine, remplacement [FEAT-4 CA-11]', () => {
+  it('affiche parent, dépendances avec leur statut, origine, remplacement [FEAT-4 AC-11]', () => {
     const directory = makeChantiersRepository({
       main: [{ id: 'EPIC-5' }, { id: 'TEC-8' }, { id: 'TEC-10', status: 'done' }, { id: 'FEAT-3', status: 'abandoned' }],
       branches: {
@@ -98,7 +98,7 @@ describe('relations shown by status', () => {
     ])
   })
 
-  it('pour un EPIC, affiche ses enfants directs calculés avec leur statut [FEAT-4 CA-11]', () => {
+  it('pour un EPIC, affiche ses enfants directs calculés avec leur statut [FEAT-4 AC-11]', () => {
     const directory = makeChantiersRepository({
       main: [
         { id: 'EPIC-5', files: epicPlan },
@@ -114,7 +114,7 @@ describe('relations shown by status', () => {
     assert.doesNotMatch(text, /FEAT-22/, 'enfants directs seulement')
   })
 
-  it('le hook de démarrage affiche les enfants d’un EPIC et sa prochaine étape [FEAT-4 CA-10, CA-11]', () => {
+  it('le hook de démarrage affiche les enfants d’un EPIC et sa prochaine étape [FEAT-4 AC-10, AC-11]', () => {
     const directory = makeChantiersRepository({
       main: [{ id: 'EPIC-5', files: epicPlan }, { id: 'FEAT-6', status: 'done', relations: { rel_parent: 'EPIC-5' } }],
       branches: { 'feat/FEAT-7-x': [{ id: 'FEAT-7', relations: { rel_parent: 'EPIC-5' } }], 'epic/EPIC-5-x': [] },
@@ -133,19 +133,19 @@ describe('relations shown by status', () => {
 })
 
 describe('next step of a sliced chantier', () => {
-  it('la prochaine étape préfixe le message de la phase par « Tranche N/3 : » [FEAT-7 CA-24]', () => {
+  it('la prochaine étape préfixe le message de la phase par « Tranche N/3 : » [FEAT-7 AC-24]', () => {
     assert.match(nextStep(slicedChantier()), /^Tranche 1\/3 : .*\/atelier:write-tests/)
     assert.match(nextStep(slicedChantier({ slice: '2', slice_base: 'a'.repeat(40) })), /^Tranche 2\/3 : .*\/atelier:write-tests/)
     assert.match(nextStep(slicedChantier({ slice: '2', slice_base: 'a'.repeat(40), tests_commit: 'abc1234' })), /^Tranche 2\/3 : .*\/atelier:build.*\/atelier:review/)
   })
 
-  it('en revue du chantier, demande la revue de l’ensemble, puis la clôture [FEAT-7 CA-24]', () => {
+  it('en revue du chantier, demande la revue de l’ensemble, puis la clôture [FEAT-7 AC-24]', () => {
     const chantier = slicedChantier({ slice: 'chantier', last_slice: '3', slice_base: 'a'.repeat(40), tests_commit: 'abc1234' })
     assert.match(nextStep(chantier, 'none'), /^Revue du chantier : faire relire l.ensemble : \/atelier:review/)
     assert.match(nextStep(chantier, 'current'), /\/atelier:close/)
   })
 
-  it('le rappel de début de session indique la tranche, et n’en parle pas pour une tranche unique [FEAT-7 CA-26]', () => {
+  it('le rappel de début de session indique la tranche, et n’en parle pas pour une tranche unique [FEAT-7 AC-26]', () => {
     const { directory } = atSliceTwo()
     assert.match(atelierOk(directory, 'hook-session-start'), /Tranche 2\/3/)
     assert.doesNotMatch(atelierOk(makeSlicedRepository({ plan: null }), 'hook-session-start'), /tranche/i)
@@ -170,33 +170,33 @@ describe('next step once the implementation is committed', () => {
   const legacyImplementing = fix({ tdd: 'yes', tests_commit: 'abc1234' })
   const spike = { ...signedTec, id: 'SPIKE-4', spec: { data: { status: 'signed', type: 'SPIKE', tdd: 'no' } } }
 
-  it('tranche en cours sans TDD, code commité : faire relire [FIX-26 CA-1]', () => {
+  it('tranche en cours sans TDD, code commité : faire relire [FIX-26 AC-1]', () => {
     sameText(nextStep(slicedWithoutTdd, 'none', [], true), `Tranche 2/2 : ${toReview}`)
   })
 
-  it('tranche en cours sans TDD, sans code commité ou signal absent : texte actuel [FIX-26 CA-2]', () => {
+  it('tranche en cours sans TDD, sans code commité ou signal absent : texte actuel [FIX-26 AC-2]', () => {
     for (const codeCommitted of [false, null, undefined]) {
       sameText(nextStep(slicedWithoutTdd, 'none', [], codeCommitted), `Tranche 2/2 : ${buildWithoutTdd}`, String(codeCommitted))
     }
   })
 
-  it('TDD en phase implementing : faire relire si du code est commité, sinon implémenter [FIX-26 CA-3]', () => {
+  it('TDD en phase implementing : faire relire si du code est commité, sinon implémenter [FIX-26 AC-3]', () => {
     sameText(nextStep(slicedImplementing, 'none', [], true), `Tranche 2/2 : ${toReview}`)
     sameText(nextStep(singleImplementing, 'none', [], true), toReview)
     sameText(nextStep(slicedImplementing, 'none', [], false), `Tranche 2/2 : ${buildWithTdd}`)
     sameText(nextStep(singleImplementing, 'none', [], false), buildWithTdd)
   })
 
-  it('chantier single et legacy, code commité : faire relire, sans préfixe de tranche [FIX-26 CA-4]', () => {
+  it('chantier single et legacy, code commité : faire relire, sans préfixe de tranche [FIX-26 AC-4]', () => {
     sameText(nextStep(singleWithoutTdd, 'none', [], true), toReview, 'single')
     sameText(nextStep(legacyImplementing, 'none', [], true), toReview, 'legacy')
   })
 
-  it('SPIKE sans TDD, code commité : clôturer [FIX-26 CA-5]', () => {
+  it('SPIKE sans TDD, code commité : clôturer [FIX-26 AC-5]', () => {
     sameText(nextStep(spike, 'none', [], true), toClose)
   })
 
-  it('le signal ne change rien en écriture des tests, avec une revue, ni en revue du chantier [FIX-26 CA-6]', () => {
+  it('le signal ne change rien en écriture des tests, avec une revue, ni en revue du chantier [FIX-26 AC-6]', () => {
     const cases = [
       ['writing-tests', slicedChantier({ slice: '2', slice_base: base }, { plan: twoSlices }), 'none'],
       ['writing-tests single', fix({ tdd: 'yes' }), 'none'],
@@ -226,7 +226,7 @@ describe('status and session start once the implementation is committed', () => 
     return directory
   }
 
-  it('status : codeCommitted false tant que seul le dossier du chantier change, puis true après un commit de code [FIX-26 CA-7]', () => {
+  it('status : codeCommitted false tant que seul le dossier du chantier change, puis true après un commit de code [FIX-26 AC-7]', () => {
     const directory = refAtSliceTwo()
     commitFiles(directory, { 'docs/chantiers/REF-20-x/notes.md': 'notes\n' }, 'docs: notes')
     const before = status(directory)
@@ -238,13 +238,13 @@ describe('status and session start once the implementation is committed', () => 
     assert.match(plain(after.nextStep), /^Tranche 2\/2 : Implémentation commitée : faire relire : \/atelier:review \(ou reprendre \/atelier:build si elle n'est pas finie\)$/)
   })
 
-  it('le hook de début de session affiche la revue comme prochaine étape [FIX-26 CA-8]', () => {
+  it('le hook de début de session affiche la revue comme prochaine étape [FIX-26 AC-8]', () => {
     const directory = refAtSliceTwo()
     commitFiles(directory, { 'src/two.mjs': 'export const two = 2\n' }, 'refactor: two')
     assertLine(atelierOk(directory, 'hook-session-start'), [/^Prochaine étape :/, reviewPattern])
   })
 
-  it('TDD : le commit des tests et le code commité avant le gel ne comptent pas [FIX-26 CA-9]', () => {
+  it('TDD : le commit des tests et le code commité avant le gel ne comptent pas [FIX-26 AC-9]', () => {
     const frozen = (directory) => {
       commitFiles(directory, { 'test/fix.test.mjs': 'test\n' }, 'test: fix')
       setHeader(directory, 'FIX-20', { tests_commit: git(directory, 'rev-parse', '--short', 'HEAD').trim(), slice: '1' })
@@ -264,7 +264,7 @@ describe('status and session start once the implementation is committed', () => 
     assert.match(after.nextStep, reviewPattern)
   })
 
-  it('début de tranche introuvable ou hors de l’historique : null, texte actuel, sans échec [FIX-26 CA-10]', () => {
+  it('début de tranche introuvable ou hors de l’historique : null, texte actuel, sans échec [FIX-26 AC-10]', () => {
     const missing = refAtSliceTwo()
     commitFiles(missing, { 'src/two.mjs': 'export const two = 2\n' }, 'refactor: two')
     setHeader(missing, 'REF-20', { slice_base: 'f'.repeat(40) })
@@ -285,7 +285,7 @@ describe('status and session start once the implementation is committed', () => 
     }
   })
 
-  it('sans TDD ni slice_base, le code est compté depuis la base de fusion avec la branche par défaut [FIX-26 CA-4]', () => {
+  it('sans TDD ni slice_base, le code est compté depuis la base de fusion avec la branche par défaut [FIX-26 AC-4]', () => {
     const directory = makeSlicedRepository({ id: 'FIX-20', tdd: 'no', plan: null })
     const before = status(directory)
     assert.equal(before.chantier.codeCommitted, false, 'seule la spec depuis la base de fusion')
@@ -297,7 +297,7 @@ describe('status and session start once the implementation is committed', () => 
     assertLine(atelierOk(directory, 'hook-session-start'), [/^Prochaine étape :/, reviewPattern])
   })
 
-  it('SPIKE sans TDD, code commité : status propose la clôture [FIX-26 CA-5]', () => {
+  it('SPIKE sans TDD, code commité : status propose la clôture [FIX-26 AC-5]', () => {
     const directory = makeSlicedRepository({ id: 'SPIKE-20', tdd: 'no', plan: null })
     commitFiles(directory, { 'src/spike.mjs': 'export const spike = 1\n' }, 'chore: spike')
     const summary = status(directory)
@@ -305,7 +305,7 @@ describe('status and session start once the implementation is committed', () => 
     assert.match(summary.nextStep, /^Implémentation commitée : clôturer : \/atelier:close/)
   })
 
-  it('revue obsolète : codeCommitted vaut null [FIX-26 CA-11]', () => {
+  it('revue obsolète : codeCommitted vaut null [FIX-26 AC-11]', () => {
     const directory = makeSlicedRepository({ id: 'FIX-20', tdd: 'no', plan: null })
     commitFiles(directory, { 'src/fix.mjs': 'export const fix = 1\n' }, 'fix: fix')
     setHeader(directory, 'FIX-20', { reviewed_commit: headOf(directory), slice: '1' })
@@ -315,7 +315,7 @@ describe('status and session start once the implementation is committed', () => 
     assert.equal(summary.chantier.codeCommitted, null)
   })
 
-  it('revue à jour ou tests pas encore figés : codeCommitted vaut null [FIX-26 CA-11]', () => {
+  it('revue à jour ou tests pas encore figés : codeCommitted vaut null [FIX-26 AC-11]', () => {
     const reviewed = makeSlicedRepository({ id: 'FIX-20', tdd: 'no', plan: null })
     commitFiles(reviewed, { 'src/fix.mjs': 'export const fix = 1\n' }, 'fix: fix')
     setHeader(reviewed, 'FIX-20', { reviewed_commit: headOf(reviewed), slice: '1' })

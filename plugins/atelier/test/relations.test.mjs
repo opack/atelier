@@ -4,7 +4,7 @@ import { parseRelations } from '../lib/relations.mjs'
 import { temporaryDirectory, git, atelier, makeChantiersRepository, epicPlan } from './helpers.mjs'
 
 describe('relations read from the spec header', () => {
-  it('lit les relations en listes normalisées (espaces, casse, doublons), vides si absentes [FEAT-4 CA-1]', () => {
+  it('lit les relations en listes normalisées (espaces, casse, doublons), vides si absentes [FEAT-4 AC-1]', () => {
     const relations = parseRelations({
       rel_parent: 'epic-5',
       rel_depends_on: 'FEAT-12,  tec-15',
@@ -17,7 +17,7 @@ describe('relations read from the spec header', () => {
 })
 
 describe('children of an EPIC across branches', () => {
-  it('enfants découverts dans l’arbre courant et sur les autres branches, statut jugé dans l’arbre courant [FEAT-4 CA-2]', () => {
+  it('enfants découverts dans l’arbre courant et sur les autres branches, statut jugé dans l’arbre courant [FEAT-4 AC-2]', () => {
     const directory = makeChantiersRepository({
       main: [
         { id: 'EPIC-5', files: epicPlan },
@@ -36,7 +36,7 @@ describe('children of an EPIC across branches', () => {
     assert.equal(children.find((child) => child.id === 'FEAT-7').closed, false, 'done sur sa branche seulement : ouvert')
   })
 
-  it('un enfant présent seulement sur une branche distante connue est découvert [FEAT-4 CA-2]', () => {
+  it('un enfant présent seulement sur une branche distante connue est découvert [FEAT-4 AC-2]', () => {
     const origin = temporaryDirectory('atelier-feat4-origin-')
     git(origin, 'init', '-q', '--bare', '-b', 'main')
     const directory = makeChantiersRepository({

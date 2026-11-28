@@ -81,7 +81,7 @@ function amendmentEntries(directory, id) {
 }
 
 describe('freezing the tests of a slice', () => {
-  it('le premier gel écrit tests_commit et slice: 1, avec ou sans plan, SPIKE compris [FEAT-7 CA-6]', () => {
+  it('le premier gel écrit tests_commit et slice: 1, avec ou sans plan, SPIKE compris [FEAT-7 AC-6]', () => {
     for (const options of [{}, { plan: null }, { id: 'SPIKE-20' }]) {
       const id = options.id ?? 'FEAT-20'
       const directory = makeSlicedRepository(options)
@@ -97,7 +97,7 @@ describe('freezing the tests of a slice', () => {
     ['ligne modifiée', { 'test/one.test.mjs': 'ligne a\nligne B\nligne c\n' }],
     ['fichier supprimé', { 'test/one.test.mjs': null }],
   ]) {
-    it(`en tranche 2, refuse le gel quand une ligne de test antérieure a changé (${label}) [FEAT-7 CA-7]`, () => {
+    it(`en tranche 2, refuse le gel quand une ligne de test antérieure a changé (${label}) [FEAT-7 AC-7]`, () => {
       const { directory } = atSliceTwo()
       commitFiles(directory, { ...change, 'test/two.test.mjs': 'test 2\n' }, 'test: two')
       const before = specFileText(directory, 'FEAT-20')
@@ -110,7 +110,7 @@ describe('freezing the tests of a slice', () => {
     })
   }
 
-  it('en tranche 2, un fichier de test renommé compte comme supprimé [FEAT-7 CA-7]', () => {
+  it('en tranche 2, un fichier de test renommé compte comme supprimé [FEAT-7 AC-7]', () => {
     const { directory } = atSliceTwo()
     git(directory, 'mv', 'test/one.test.mjs', 'test/renamed.test.mjs')
     commit(directory, 'test: rename')
@@ -121,7 +121,7 @@ describe('freezing the tests of a slice', () => {
     assert.equal(specFileText(directory, 'FEAT-20'), before)
   })
 
-  it('extrait du diff les fichiers dont des lignes sont retirées [FEAT-7 CA-7]', () => {
+  it('extrait du diff les fichiers dont des lignes sont retirées [FEAT-7 AC-7]', () => {
     const diff = [
       'diff --git a/test/one.test.mjs b/test/one.test.mjs',
       'index 1..2 100644',
@@ -149,7 +149,7 @@ describe('freezing the tests of a slice', () => {
     assert.deepEqual(removedTestLines(''), [])
   })
 
-  it('en tranche 2, la réouverture trace le gel quitté (slice_base) ; le gel suivant accepte les modifications et trace le regel [FEAT-7 CA-8]', () => {
+  it('en tranche 2, la réouverture trace le gel quitté (slice_base) ; le gel suivant accepte les modifications et trace le regel [FEAT-7 AC-8]', () => {
     const { directory, base } = atSliceTwo()
     atelierOk(directory, 'reopen-tests', 'test', 'faux')
     assert.match(amendmentEntries(directory, 'FEAT-20').at(-1), new RegExp(`tests rouverts \\(gel quitté : ${base.slice(0, 7)}[0-9a-f]*\\) : test faux`))
@@ -160,7 +160,7 @@ describe('freezing the tests of a slice', () => {
     assert.ok(specData(directory, 'FEAT-20').tests_commit)
   })
 
-  it('une seconde réouverture avant le regel est refusée [FEAT-7 CA-8]', () => {
+  it('une seconde réouverture avant le regel est refusée [FEAT-7 AC-8]', () => {
     const { directory } = atSliceTwo()
     atelierOk(directory, 'reopen-tests', 'première')
     commitSpec(directory)
@@ -169,13 +169,13 @@ describe('freezing the tests of a slice', () => {
     assert.match(output, /tests déjà rouverts/)
   })
 
-  it('en phase « tests d’abord » de la tranche 1, la réouverture reste refusée ; en tranche 2 elle est possible [FEAT-7 CA-8]', () => {
+  it('en phase « tests d’abord » de la tranche 1, la réouverture reste refusée ; en tranche 2 elle est possible [FEAT-7 AC-8]', () => {
     assert.match(reopenTestsRefusal(slicedChantier({ slice: '1' })), /pas figés/)
     assert.match(reopenTestsRefusal(slicedChantier()), /pas figés/)
     assert.equal(reopenTestsRefusal(slicedChantier({ slice: '2', slice_base: 'a'.repeat(40) })), null)
   })
 
-  it('en tranche 2, des tests seulement ajoutés (lignes, fichiers ; espaces et fins de ligne changés) se figent sans raison [FEAT-7 CA-9]', () => {
+  it('en tranche 2, des tests seulement ajoutés (lignes, fichiers ; espaces et fins de ligne changés) se figent sans raison [FEAT-7 AC-9]', () => {
     const { directory } = atSliceTwo()
     commitFiles(directory, {
       'test/one.test.mjs': 'ligne a\r\nligne b  \r\n  ligne    c\r\nligne d\r\n',
@@ -188,23 +188,23 @@ describe('freezing the tests of a slice', () => {
     assert.deepEqual(amendmentEntries(directory, 'FEAT-20'), [], 'aucune entrée de gel')
   })
 
-  it('en revue du chantier, la réouverture vide tests_commit, garde slice: chantier ; le gel suivant accepte les modifications [FEAT-7 CA-10]', () => {
+  it('en revue du chantier, la réouverture vide tests_commit, garde slice: chantier ; le gel suivant accepte les modifications [FEAT-7 AC-10]', () => {
     const { directory } = implementedSlice({ slice: 'chantier', extra: { last_slice: '3' } })
-    atelierOk(directory, 'reopen-tests', 'CA', 'sans', 'test')
+    atelierOk(directory, 'reopen-tests', 'AC', 'sans', 'test')
     let data = specData(directory, 'FEAT-20')
     assert.equal(data.tests_commit ?? '', '')
     assert.equal(data.slice, 'chantier')
     assert.match(amendmentEntries(directory, 'FEAT-20').at(-1), /tests rouverts/)
     commitSpec(directory)
     assert.equal(JSON.parse(atelierOk(directory, 'status', '--json')).chantier.testDrivenPhase, 'writing-tests')
-    commitFiles(directory, { 'test/now.test.mjs': 'test modifié\n' }, 'test: cover CA')
+    commitFiles(directory, { 'test/now.test.mjs': 'test modifié\n' }, 'test: cover AC')
     atelierOk(directory, 'freeze-tests')
     data = specData(directory, 'FEAT-20')
     assert.ok(data.tests_commit)
     assert.equal(data.slice, 'chantier')
   })
 
-  it('refuse le gel et la revue quand slice_base n’est plus un ancêtre de HEAD [FEAT-7 CA-11]', () => {
+  it('refuse le gel et la revue quand slice_base n’est plus un ancêtre de HEAD [FEAT-7 AC-11]', () => {
     for (const command of ['freeze-tests', 'set-reviewed']) {
       const directory = makeSlicedRepository({ tdd: command === 'freeze-tests' ? 'yes' : 'no' })
       git(directory, 'switch', '-q', '-c', 'side')
@@ -245,7 +245,7 @@ describe('gel après un gros diff ou une fusion de la branche par défaut', () =
     git(directory, 'merge', '-q', '--no-edit', 'main')
   }
 
-  it('fige les tests quand le diff depuis slice_base dépasse 1 Mo hors fichiers de test [FIX-31 CA-1]', () => {
+  it('fige les tests quand le diff depuis slice_base dépasse 1 Mo hors fichiers de test [FIX-31 AC-1]', () => {
     const { directory } = atSliceTwo()
     commitFiles(directory, { 'src/big.mjs': `// ${'x'.repeat(100)}\n`.repeat(20000) }, 'feat: big')
     commitFiles(directory, { 'test/two.test.mjs': 'test\n' }, 'test: two')
@@ -254,7 +254,7 @@ describe('gel après un gros diff ou une fusion de la branche par défaut', () =
     assert.ok(specData(directory, 'FEAT-20').tests_commit)
   })
 
-  it('ne refuse pas le gel pour un test modifié par la branche par défaut et apporté par une fusion [FIX-31 CA-2]', () => {
+  it('ne refuse pas le gel pour un test modifié par la branche par défaut et apporté par une fusion [FIX-31 AC-2]', () => {
     const directory = sliceTwoWithMainTest()
     mergeMainChangingItsTest(directory)
     commitFiles(directory, { 'test/two.test.mjs': 'test\n' }, 'test: two')
@@ -263,7 +263,7 @@ describe('gel après un gros diff ou une fusion de la branche par défaut', () =
     assert.ok(specData(directory, 'FEAT-20').tests_commit)
   })
 
-  it('refuse le gel en ne citant que le test d’une tranche précédente modifié par le chantier, malgré une fusion [FIX-31 CA-3]', () => {
+  it('refuse le gel en ne citant que le test d’une tranche précédente modifié par le chantier, malgré une fusion [FIX-31 AC-3]', () => {
     const directory = sliceTwoWithMainTest()
     mergeMainChangingItsTest(directory)
     commitFiles(directory, { 'test/one.test.mjs': 'ligne a\nligne B\n', 'test/two.test.mjs': 'test\n' }, 'test: two')
@@ -297,7 +297,7 @@ describe('tests modifiés depuis le gel, après une fusion de la branche par dé
     git(directory, 'merge', '-q', '--no-edit', 'main')
   }
 
-  it('ne signale pas un test modifié par la branche par défaut et apporté par une fusion sans conflit [FIX-32 CA-1]', () => {
+  it('ne signale pas un test modifié par la branche par défaut et apporté par une fusion sans conflit [FIX-32 AC-1]', () => {
     const directory = frozenFix()
     mergeMainChangingItsTest(directory)
     const { status, output } = atelierRun(directory, 'tests-changed')
@@ -305,7 +305,7 @@ describe('tests modifiés depuis le gel, après une fusion de la branche par dé
     assert.doesNotMatch(output, /main\.test\.mjs/)
   })
 
-  it('signale le seul test figé modifié par un commit du chantier, malgré la fusion [FIX-32 CA-2]', () => {
+  it('signale le seul test figé modifié par un commit du chantier, malgré la fusion [FIX-32 AC-2]', () => {
     const directory = frozenFix()
     mergeMainChangingItsTest(directory)
     commitFiles(directory, { 'test/fix.test.mjs': 'ligne a\nligne B\n' }, 'fix: change a frozen test')
@@ -315,7 +315,7 @@ describe('tests modifiés depuis le gel, après une fusion de la branche par dé
     assert.doesNotMatch(output, /main\.test\.mjs/)
   })
 
-  it('signale un test figé auquel un commit du chantier ajoute une ligne, malgré la fusion [FIX-32 CA-2]', () => {
+  it('signale un test figé auquel un commit du chantier ajoute une ligne, malgré la fusion [FIX-32 AC-2]', () => {
     const directory = frozenFix()
     mergeMainChangingItsTest(directory)
     commitFiles(directory, { 'test/fix.test.mjs': 'ligne a\nligne b\nligne c\n' }, 'fix: extend a frozen test')
@@ -324,7 +324,7 @@ describe('tests modifiés depuis le gel, après une fusion de la branche par dé
     assert.match(output, /- test\/fix\.test\.mjs/)
   })
 
-  it('set-reviewed ne refuse pas la revue pour un test venu de la branche par défaut [FIX-32 CA-3]', () => {
+  it('set-reviewed ne refuse pas la revue pour un test venu de la branche par défaut [FIX-32 AC-3]', () => {
     const directory = frozenFix()
     commitFiles(directory, { 'src/fix.mjs': 'export const fix = 1\n' }, 'fix: fix')
     mergeMainChangingItsTest(directory)
@@ -333,7 +333,7 @@ describe('tests modifiés depuis le gel, après une fusion de la branche par dé
     assert.ok(specData(directory, 'FIX-20').reviewed_commit)
   })
 
-  it('signale un test figé modifié sans être commité [FIX-32 CA-4]', () => {
+  it('signale un test figé modifié sans être commité [FIX-32 AC-4]', () => {
     const directory = frozenFix()
     writeFileSync(join(directory, 'test/fix.test.mjs'), 'ligne a\nligne B\n')
     const { status, output } = atelierRun(directory, 'tests-changed')
@@ -341,7 +341,7 @@ describe('tests modifiés depuis le gel, après une fusion de la branche par dé
     assert.match(output, /- test\/fix\.test\.mjs/)
   })
 
-  it('ne signale pas un test figé modifié puis rétabli à l’identique par le chantier [FIX-32 CA-5]', () => {
+  it('ne signale pas un test figé modifié puis rétabli à l’identique par le chantier [FIX-32 AC-5]', () => {
     const directory = frozenFix()
     commitFiles(directory, { 'test/fix.test.mjs': 'ligne a\nligne B\n' }, 'fix: change a frozen test')
     commitFiles(directory, { 'test/fix.test.mjs': 'ligne a\nligne b\n' }, 'fix: restore it')
@@ -372,13 +372,13 @@ describe('tests modifiés depuis le gel, après une fusion de la branche par dé
     return directory
   }
 
-  it('ne signale pas un test figé dont le conflit avec la branche par défaut est résolu en gardant les deux côtés [FIX-32 CA-6]', () => {
+  it('ne signale pas un test figé dont le conflit avec la branche par défaut est résolu en gardant les deux côtés [FIX-32 AC-6]', () => {
     const directory = conflictOnSharedTest('ligne a\nligne fix\nligne main\n')
     const { status, output } = atelierRun(directory, 'tests-changed')
     assert.equal(status, 0, output)
   })
 
-  it('signale un test figé dont la résolution du conflit modifie une ligne figée [FIX-32 CA-8]', () => {
+  it('signale un test figé dont la résolution du conflit modifie une ligne figée [FIX-32 AC-8]', () => {
     const directory = conflictOnSharedTest('ligne a\nligne fix modifiée\nligne main\n')
     const { status, output } = atelierRun(directory, 'tests-changed')
     assert.equal(status, 2, output)

@@ -65,14 +65,14 @@ describe('chantiers found on other branches', () => {
     },
   })
 
-  it('absent de l’arbre courant : lu sur sa branche, qui est son emplacement, sans chemin [FEAT-35 CA-9]', () => {
+  it('absent de l’arbre courant : lu sur sa branche, qui est son emplacement, sans chemin [FEAT-35 AC-9]', () => {
     const feat = byId(listed(directory), 'FEAT-40')
     assert.equal(feat.status, 'signed')
     assert.equal(feat.location, 'feat/FEAT-40-x')
     assert.equal(feat.path, null)
   })
 
-  it('en brouillon ici, signé sur la branche qui porte son identifiant : la branche l’emporte, le chemin reste celui de l’arbre courant [FEAT-35 CA-9]', () => {
+  it('en brouillon ici, signé sur la branche qui porte son identifiant : la branche l’emporte, le chemin reste celui de l’arbre courant [FEAT-35 AC-9]', () => {
     const feat = byId(listed(directory), 'FEAT-41')
     assert.equal(feat.status, 'signed')
     assert.equal(feat.title, 'Signé sur sa branche')
@@ -80,7 +80,7 @@ describe('chantiers found on other branches', () => {
     assert.equal(realpathSync(feat.path), realpathSync(chantierDirectoryOf(directory, 'FEAT-41')))
   })
 
-  it('la sortie texte donne la branche comme emplacement [FEAT-35 CA-9]', () => {
+  it('la sortie texte donne la branche comme emplacement [FEAT-35 AC-9]', () => {
     const output = atelierOk(directory, 'list')
     const line = output.split(/\r?\n/).find((candidate) => /\bFEAT-40\b/.test(candidate))
     assert.ok(line, output)
@@ -90,7 +90,7 @@ describe('chantiers found on other branches', () => {
 })
 
 describe('the current branch carries the identifier of the chantier', () => {
-  it('la copie de travail de la branche courante l’emporte sur un commit distant plus récent [FEAT-35 CA-10]', () => {
+  it('la copie de travail de la branche courante l’emporte sur un commit distant plus récent [FEAT-35 AC-10]', () => {
     const directory = makeRepository('main')
     addOrigin(directory)
     git(directory, 'switch', '-q', '-c', 'feat/FEAT-42-z')
@@ -107,7 +107,7 @@ describe('the current branch carries the identifier of the chantier', () => {
 })
 
 describe('a chantier closed in the current tree', () => {
-  it('done ici, signed sur sa branche locale : listé done, « ici », seulement avec --all [FEAT-35 CA-11]', () => {
+  it('done ici, signed sur sa branche locale : listé done, « ici », seulement avec --all [FEAT-35 AC-11]', () => {
     const directory = makeRepository('main')
     git(directory, 'switch', '-q', '-c', 'feat/FEAT-43-w')
     writeChantier(directory, { id: 'FEAT-43', status: 'signed' })
@@ -143,24 +143,24 @@ describe('several branches carry the identifier: the most recent commit wins', (
     return directory
   }
 
-  it('origin plus récente : lu sur origin/feat/FEAT-44-v, tranche 2 [FEAT-35 CA-12]', () => {
+  it('origin plus récente : lu sur origin/feat/FEAT-44-v, tranche 2 [FEAT-35 AC-12]', () => {
     const feat = byId(listed(repository({ localDay: 3, remoteDay: 6 })), 'FEAT-44')
     assert.equal(feat.location, 'origin/feat/FEAT-44-v')
     assert.equal(feat.stepLabel, 'Tranche 2/3 : implémentation')
   })
 
-  it('branche locale plus récente : lue sur elle, tranche 1 [FEAT-35 CA-12]', () => {
+  it('branche locale plus récente : lue sur elle, tranche 1 [FEAT-35 AC-12]', () => {
     const feat = byId(listed(repository({ localDay: 8, remoteDay: 6 })), 'FEAT-44')
     assert.equal(feat.location, 'feat/FEAT-44-v')
     assert.equal(feat.stepLabel, 'Tranche 1/3 : implémentation')
   })
 
-  it('à égalité de date, la branche locale [FEAT-35 CA-12]', () => {
+  it('à égalité de date, la branche locale [FEAT-35 AC-12]', () => {
     const feat = byId(listed(repository({ localDay: 6, remoteDay: 6 })), 'FEAT-44')
     assert.equal(feat.location, 'feat/FEAT-44-v')
   })
 
-  it('les faits sont lus sur la branche : plan.md et fichiers du dossier [FEAT-35 CA-12]', () => {
+  it('les faits sont lus sur la branche : plan.md et fichiers du dossier [FEAT-35 AC-12]', () => {
     const directory = makeRepository('main')
     git(directory, 'switch', '-q', '-c', 'feat/FEAT-45-u')
     writeChantier(directory, { id: 'FEAT-45', tdd: 'yes' })
@@ -176,7 +176,7 @@ describe('several branches carry the identifier: the most recent commit wins', (
 })
 
 describe('no branch carries the identifier', () => {
-  it('dans l’arbre courant : l’arbre courant, même si une autre branche a une version plus récente [FEAT-35 CA-3]', () => {
+  it('dans l’arbre courant : l’arbre courant, même si une autre branche a une version plus récente [FEAT-35 AC-3]', () => {
     const directory = makeChantiersRepository({
       main: [{ id: 'EPIC-17', files: epicPlan }, { id: 'FEAT-24' }],
     })
@@ -188,7 +188,7 @@ describe('no branch carries the identifier', () => {
     assert.equal(byId(listed(directory), 'FEAT-24').location, null)
   })
 
-  it('absent de l’arbre courant : la branche dont le dernier commit est le plus récent [FEAT-35 CA-12]', () => {
+  it('absent de l’arbre courant : la branche dont le dernier commit est le plus récent [FEAT-35 AC-12]', () => {
     const directory = makeRepository('main')
     git(directory, 'switch', '-q', '-c', 'essais')
     writeChantier(directory, { id: 'FEAT-46', status: 'draft' })
@@ -204,7 +204,7 @@ describe('no branch carries the identifier', () => {
 })
 
 describe('cases deferred from the review of slice 2', () => {
-  it('un texte entre guillemets est découpé en mots [FEAT-35 CA-4]', () => {
+  it('un texte entre guillemets est découpé en mots [FEAT-35 AC-4]', () => {
     const directory = makeChantiersRepository({
       main: [
         { id: 'FEAT-1', relations: { title: 'Calibrer les relectures' } },
@@ -215,7 +215,7 @@ describe('cases deferred from the review of slice 2', () => {
     assert.deepEqual(listedIds(directory, ' plan  relecture '), ['FEAT-2'])
   })
 
-  it('deux dossiers du même identifiant dans l’arbre courant : une seule ligne, doublon signalé avec les deux dossiers [FEAT-35 CA-15]', () => {
+  it('deux dossiers du même identifiant dans l’arbre courant : une seule ligne, doublon signalé avec les deux dossiers [FEAT-35 AC-15]', () => {
     const directory = makeRepository('main')
     writeChantier(directory, { id: 'FEAT-1' })
     const duplicate = join(directory, 'docs', 'chantiers', 'FEAT-1-autre')

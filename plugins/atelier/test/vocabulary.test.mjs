@@ -5,7 +5,7 @@ import { isTreatment, parseReviewPoints } from '../lib/review-points.mjs'
 import { REQUIRED_SECTIONS } from '../lib/spec.mjs'
 import { VOCABULARY } from '../lib/vocabulary.mjs'
 
-test('VOCABULARY carries the sections of each type with their French titles [REF-34 CA-3]', () => {
+test('VOCABULARY carries the sections of each type with their French titles [REF-34 AC-3]', () => {
   assert.deepEqual(VOCABULARY.sections, {
     FEAT: { context: 'Contexte', description: 'Description', acceptanceCriteria: "Critères d'acceptation", nonFunctional: 'Non-fonctionnel' },
     FIX: {
@@ -30,13 +30,13 @@ test('VOCABULARY carries the sections of each type with their French titles [REF
   assert.deepEqual(VOCABULARY.criteria, { FEAT: 'acceptanceCriteria', FIX: 'nonRegressionCriterion' })
 })
 
-test('VOCABULARY carries exactly the other keys of the spec, with today\'s values [REF-34 CA-3]', () => {
+test('VOCABULARY carries exactly the other keys of the spec, with today\'s values [REF-34 AC-3]', () => {
   const { sections, criteria, ...others } = VOCABULARY
   assert.deepEqual(others, {
     amendments: 'Amendements',
     amendmentEntries: { reopened: 'tests rouverts', refrozen: 'tests regelés', leftFreeze: 'gel quitté' },
     slices: 'Tranches',
-    plan: { coverage: 'CA couverts', tdd: 'TDD', yes: 'oui', no: 'non' },
+    plan: { coverage: 'AC couverts', tdd: 'TDD', yes: 'oui', no: 'non' },
     review: {
       tables: { blocking: 'Bloquant', discuss: 'À discuter' },
       legacyRound: 'Tour',
@@ -58,18 +58,18 @@ test('VOCABULARY carries exactly the other keys of the spec, with today\'s value
   })
 })
 
-test('the treatment keywords keep their order [REF-34 CA-3]', () => {
+test('the treatment keywords keep their order [REF-34 AC-3]', () => {
   assert.deepEqual(Object.values(VOCABULARY.review.treatments), [
     'corrigé', 'test ajouté', 'spec amendée', 'exception acceptée', 'écarté', 'reporté', 'requalifié', 'sans objet',
   ])
 })
 
-test('VOCABULARY is frozen at every depth [REF-34 CA-3]', () => {
+test('VOCABULARY is frozen at every depth [REF-34 AC-3]', () => {
   const frozen = (value) => Object.isFrozen(value) && Object.values(value).every((child) => typeof child !== 'object' || frozen(child))
   assert.ok(frozen(VOCABULARY))
 })
 
-test('REQUIRED_SECTIONS keeps its values and order [REF-34 CA-3]', () => {
+test('REQUIRED_SECTIONS keeps its values and order [REF-34 AC-3]', () => {
   assert.deepEqual(REQUIRED_SECTIONS, {
     FEAT: ['Contexte', 'Description', "Critères d'acceptation", 'Non-fonctionnel'],
     FIX: ['Problème', 'Reproduction', 'Cause probable', 'Solution proposée', 'Critère de non-régression'],
@@ -86,14 +86,14 @@ test('escapeRegExp makes a RegExp match its text literally', () => {
   assert.ok(!new RegExp(`^${escapeRegExp('a.b')}$`).test('axb'))
 })
 
-test('isTreatment accepts each of the eight treatment keywords [REF-34 CA-3]', () => {
+test('isTreatment accepts each of the eight treatment keywords [REF-34 AC-3]', () => {
   for (const keyword of ['corrigé', 'test ajouté', 'spec amendée', 'exception acceptée', 'écarté', 'reporté', 'requalifié', 'sans objet']) {
     assert.ok(isTreatment(keyword), keyword)
   }
   assert.ok(!isTreatment('en cours'))
 })
 
-test('parseReviewPoints reads a point under « ### Bloquant » and under « ### À discuter » [REF-34 CA-3]', () => {
+test('parseReviewPoints reads a point under « ### Bloquant » and under « ### À discuter » [REF-34 AC-3]', () => {
   const revue = [
     '## Revue 1',
     '### Bloquant',

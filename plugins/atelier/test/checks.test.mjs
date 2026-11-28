@@ -42,7 +42,7 @@ describe('checks run once per working tree', () => {
     return { status: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` }
   }
 
-  it('le hook de fin de tour ne relance pas les contrôles que checks vient de passer [TEC-23 CA-1]', () => {
+  it('le hook de fin de tour ne relance pas les contrôles que checks vient de passer [TEC-23 AC-1]', () => {
     const { directory, runs } = closableRepository()
     writeFileSync(join(directory, 'src', 'b.mjs'), 'code non commité\n')
     atelierOk(directory, 'checks')
@@ -52,7 +52,7 @@ describe('checks run once per working tree', () => {
     assert.equal(runs(), 1, 'le hook réutilise le vert de checks')
   })
 
-  it('checks ne relance pas des contrôles déjà verts sur cet état du code, et le dit [TEC-23 CA-2]', () => {
+  it('checks ne relance pas des contrôles déjà verts sur cet état du code, et le dit [TEC-23 AC-2]', () => {
     const { directory, runs } = closableRepository()
     atelierOk(directory, 'checks')
     const output = atelierOk(directory, 'checks')
@@ -60,7 +60,7 @@ describe('checks run once per working tree', () => {
     assert.match(output, /déjà verts?/i)
   })
 
-  it('checks réutilise le vert enregistré par le hook de fin de tour [TEC-23 CA-2]', () => {
+  it('checks réutilise le vert enregistré par le hook de fin de tour [TEC-23 AC-2]', () => {
     const { directory, runs } = closableRepository()
     writeFileSync(join(directory, 'src', 'b.mjs'), 'code non commité\n')
     assert.equal(hookGate(directory).status, 0)
@@ -70,7 +70,7 @@ describe('checks run once per working tree', () => {
   })
 
   for (const command of [['checks'], ['close-check'], ['set-status', 'done']]) {
-    it(`${command.join(' ')} relance les contrôles quand un fichier a changé depuis le dernier vert [TEC-23 CA-3]`, () => {
+    it(`${command.join(' ')} relance les contrôles quand un fichier a changé depuis le dernier vert [TEC-23 AC-3]`, () => {
       const { directory, runs } = closableRepository()
       atelierOk(directory, 'checks')
       writeFileSync(join(directory, 'docs', 'notes.md'), 'note\n')
@@ -79,7 +79,7 @@ describe('checks run once per working tree', () => {
     })
   }
 
-  it('set-status done après un close-check réussi ne relance pas les contrôles [TEC-23 CA-4]', () => {
+  it('set-status done après un close-check réussi ne relance pas les contrôles [TEC-23 AC-4]', () => {
     const { directory, runs } = closableRepository()
     atelierOk(directory, 'close-check')
     assert.equal(runs(), 1)
@@ -88,7 +88,7 @@ describe('checks run once per working tree', () => {
     assert.equal(specData(directory, 'FEAT-20').status, 'done')
   })
 
-  it('set-status done refait les autres vérifications de clôture même quand les contrôles sont déjà verts [TEC-23 CA-4]', () => {
+  it('set-status done refait les autres vérifications de clôture même quand les contrôles sont déjà verts [TEC-23 AC-4]', () => {
     const { directory, runs } = closableRepository({ revue: open })
     atelierOk(directory, 'checks')
     const { status, output } = atelierRun(directory, 'set-status', 'done')
@@ -98,21 +98,21 @@ describe('checks run once per working tree', () => {
     assert.equal(specData(directory, 'FEAT-20').status, 'signed')
   })
 
-  it('checks --force relance des contrôles déjà verts [TEC-23 CA-5]', () => {
+  it('checks --force relance des contrôles déjà verts [TEC-23 AC-5]', () => {
     const { directory, runs } = closableRepository()
     atelierOk(directory, 'checks')
     atelierOk(directory, 'checks', '--force')
     assert.equal(runs(), 2)
   })
 
-  it('un échec n’est pas mémorisé, checks relance les contrôles [TEC-23 CA-6]', () => {
+  it('un échec n’est pas mémorisé, checks relance les contrôles [TEC-23 AC-6]', () => {
     const { directory, runs } = closableRepository({ fails: true })
     assert.notEqual(atelierRun(directory, 'checks').status, 0)
     assert.notEqual(atelierRun(directory, 'checks').status, 0)
     assert.equal(runs(), 2)
   })
 
-  it('sans empreinte calculable, les contrôles sont lancés comme aujourd’hui [TEC-23 CA-7]', () => {
+  it('sans empreinte calculable, les contrôles sont lancés comme aujourd’hui [TEC-23 AC-7]', () => {
     const { directory, runs } = closableRepository()
     writeFileSync(join(directory, '.atelier'), 'un fichier à la place du dossier\n')
     atelierOk(directory, 'checks')

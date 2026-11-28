@@ -37,7 +37,7 @@ function sliceTwoWithoutTdd() {
 }
 
 describe('code apporté par une fusion de la branche par défaut', () => {
-  it('une fusion sans conflit de la branche par défaut ne rend pas la revue obsolète [FIX-28 CA-1]', () => {
+  it('une fusion sans conflit de la branche par défaut ne rend pas la revue obsolète [FIX-28 AC-1]', () => {
     const directory = reviewedFix()
     advanceMain(directory, 'fix/FIX-20-x', { 'src/main.mjs': 'export const main = 1\n' })
     mergeMain(directory)
@@ -46,7 +46,7 @@ describe('code apporté par une fusion de la branche par défaut', () => {
     assert.doesNotMatch(atelierRun(directory, 'close-check').output, staleCodePattern)
   })
 
-  it('un conflit résolu après la revue la rend obsolète, en ne citant que les fichiers de la résolution [FIX-28 CA-2]', () => {
+  it('un conflit résolu après la revue la rend obsolète, en ne citant que les fichiers de la résolution [FIX-28 AC-2]', () => {
     const directory = reviewedFix({ beforeReview: { 'src/shared.mjs': 'export const shared = "fix"\n' } })
     git(directory, 'switch', '-q', 'main')
     commitFiles(directory, { 'src/shared.mjs': 'export const shared = "main"\n', 'src/main.mjs': 'export const main = 1\n' }, 'feat: main')
@@ -63,7 +63,7 @@ describe('code apporté par une fusion de la branche par défaut', () => {
     assert.doesNotMatch(problems, /src\/main\.mjs/)
   })
 
-  it('une tranche dont le seul commit est une fusion de la branche par défaut est vide [FIX-28 CA-3]', () => {
+  it('une tranche dont le seul commit est une fusion de la branche par défaut est vide [FIX-28 AC-3]', () => {
     const directory = sliceTwoWithoutTdd()
     advanceMain(directory, 'feat/FEAT-20-x', { 'src/main.mjs': 'export const main = 1\n' })
     mergeMain(directory)
@@ -75,7 +75,7 @@ describe('code apporté par une fusion de la branche par défaut', () => {
     assert.doesNotMatch(atelierRun(directory, 'set-reviewed').output, /tranche vide/i)
   })
 
-  it('en TDD, une fusion de la branche par défaut après le gel ne fait pas annoncer la revue [FIX-28 CA-4]', () => {
+  it('en TDD, une fusion de la branche par défaut après le gel ne fait pas annoncer la revue [FIX-28 AC-4]', () => {
     const directory = makeSlicedRepository({ id: 'FIX-20', tdd: 'yes', plan: null })
     commitFiles(directory, { 'test/fix.test.mjs': 'test\n' }, 'test: fix')
     setHeader(directory, 'FIX-20', { tests_commit: git(directory, 'rev-parse', '--short', 'HEAD').trim(), slice: '1' })
@@ -87,7 +87,7 @@ describe('code apporté par une fusion de la branche par défaut', () => {
     assert.match(summary.nextStep, /Implémenter/)
   })
 
-  it('les commits d’un main local en avance sur origin/main ne comptent pas [FIX-28 CA-5]', () => {
+  it('les commits d’un main local en avance sur origin/main ne comptent pas [FIX-28 AC-5]', () => {
     const withRemote = (directory, branch) => {
       git(directory, 'update-ref', 'refs/remotes/origin/main', 'main')
       advanceMain(directory, branch, { 'src/local.mjs': 'export const local = 1\n' }, 'feat: local')
@@ -105,7 +105,7 @@ describe('code apporté par une fusion de la branche par défaut', () => {
     assert.match(result.output, /tranche vide/i)
   })
 
-  it('sans référence à exclure, le calcul actuel s’applique sans erreur [FIX-28 CA-7]', () => {
+  it('sans référence à exclure, le calcul actuel s’applique sans erreur [FIX-28 AC-7]', () => {
     const noDefault = reviewedFix()
     git(noDefault, 'branch', '-m', 'main', 'trunk')
     commitFiles(noDefault, { 'src/after.mjs': 'export const after = 1\n' }, 'fix: after')
@@ -136,7 +136,7 @@ describe('code apporté par une fusion de la branche par défaut', () => {
     )
   })
 
-  it('une branche fusionnée dans main puis reprise garde le code commité après la revue [FIX-28 CA-8]', () => {
+  it('une branche fusionnée dans main puis reprise garde le code commité après la revue [FIX-28 AC-8]', () => {
     const directory = reviewedFix()
     commitFiles(directory, { 'src/after.mjs': 'export const after = 1\n' }, 'fix: after')
     git(directory, 'switch', '-q', 'main')
@@ -148,7 +148,7 @@ describe('code apporté par une fusion de la branche par défaut', () => {
     assert.match(summary.chantier.reviewProblems.join('\n'), /src\/after\.mjs/)
   })
 
-  it('une retouche sans conflit dans le commit de fusion rend la revue obsolète, sans citer le reste de main [FIX-28 CA-9]', () => {
+  it('une retouche sans conflit dans le commit de fusion rend la revue obsolète, sans citer le reste de main [FIX-28 AC-9]', () => {
     const directory = reviewedFix()
     advanceMain(directory, 'fix/FIX-20-x', { 'src/main.mjs': 'export const main = 1\n' })
     git(directory, 'merge', '-q', '--no-commit', '--no-ff', 'main')

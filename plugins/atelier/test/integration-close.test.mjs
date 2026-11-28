@@ -36,7 +36,7 @@ function closedChild(directory, { id = 'FEAT-2', type = id.split('-')[0], review
 const closeCheck = (directory) => atelierRun(directory, 'close-check')
 
 describe('close of an EPIC with an integration branch', () => {
-  it('exige une revue comme un chantier à tranche unique, et renvoie vers /atelier:review [FEAT-21 CA-8]', () => {
+  it('exige une revue comme un chantier à tranche unique, et renvoie vers /atelier:review [FEAT-21 AC-8]', () => {
     const directory = epicRepository()
     closedChild(directory)
     const result = closeCheck(directory)
@@ -46,7 +46,7 @@ describe('close of an EPIC with an integration branch', () => {
     assert.doesNotMatch(result.output, /relance la clôture : \/atelier:close/)
   })
 
-  it('revue à jour : la clôture passe ; du code commité depuis la rend obsolète [FEAT-21 CA-8]', () => {
+  it('revue à jour : la clôture passe ; du code commité depuis la rend obsolète [FEAT-21 AC-8]', () => {
     const directory = epicRepository()
     closedChild(directory)
     setHeader(directory, 'EPIC-1', { reviewed_commit: headOf(directory) })
@@ -59,7 +59,7 @@ describe('close of an EPIC with an integration branch', () => {
     assert.match(stale.output, /Revue obsolète/)
   })
 
-  it('une fusion de la branche par défaut sans conflit après la revue d’ensemble la laisse à jour (règle de FIX-28) [FEAT-21 CA-8]', () => {
+  it('une fusion de la branche par défaut sans conflit après la revue d’ensemble la laisse à jour (règle de FIX-28) [FEAT-21 AC-8]', () => {
     const directory = epicRepository()
     closedChild(directory)
     setHeader(directory, 'EPIC-1', { reviewed_commit: headOf(directory) })
@@ -71,7 +71,7 @@ describe('close of an EPIC with an integration branch', () => {
     assert.equal(result.status, 0, result.output)
   })
 
-  it('un EPIC sans l’option reste exempté de revue [FEAT-21 CA-8]', () => {
+  it('un EPIC sans l’option reste exempté de revue [FEAT-21 AC-8]', () => {
     const directory = epicRepository('no')
     closedChild(directory)
     const result = closeCheck(directory)
@@ -86,7 +86,7 @@ describe('reviews of the children of an EPIC with an integration branch', () => 
     return closeCheck(directory)
   }
 
-  it('un enfant fusionné par squash : refus qui le nomme, avec la cause et le remède [FEAT-21 CA-9]', () => {
+  it('un enfant fusionné par squash : refus qui le nomme, avec la cause et le remède [FEAT-21 AC-9]', () => {
     const directory = epicRepository()
     closedChild(directory, { squash: true })
     const result = reviewedEpic(directory)
@@ -95,7 +95,7 @@ describe('reviews of the children of an EPIC with an integration branch', () => 
     assert.match(result.output, /rétablir|rétablis/i)
   })
 
-  it('un enfant done sans reviewed_commit : refus qui le nomme [FEAT-21 CA-9]', () => {
+  it('un enfant done sans reviewed_commit : refus qui le nomme [FEAT-21 AC-9]', () => {
     const directory = epicRepository()
     closedChild(directory, { reviewed: false })
     const result = reviewedEpic(directory)
@@ -103,7 +103,7 @@ describe('reviews of the children of an EPIC with an integration branch', () => 
     assertLine(result.output, [/FEAT-2/, /reviewed_commit|revue/])
   })
 
-  it('un SPIKE sans TDD, exempté de revue, n’est pas vérifié [FEAT-21 CA-9]', () => {
+  it('un SPIKE sans TDD, exempté de revue, n’est pas vérifié [FEAT-21 AC-9]', () => {
     const directory = epicRepository()
     closedChild(directory)
     closedChild(directory, { id: 'SPIKE-3', reviewed: false })
@@ -114,7 +114,7 @@ describe('reviews of the children of an EPIC with an integration branch', () => 
 })
 
 describe('dependencies and the integration branch', () => {
-  it('enfant dont la dépendance n’est pas fusionnée : fusionner la branche d’intégration, pas la branche par défaut [FEAT-21 CA-10]', () => {
+  it('enfant dont la dépendance n’est pas fusionnée : fusionner la branche d’intégration, pas la branche par défaut [FEAT-21 AC-10]', () => {
     const directory = epicRepository()
     git(directory, 'switch', '-q', '-c', 'feat/FEAT-5-x', EPIC_BRANCH)
     writeChantier(directory, { id: 'FEAT-5', tdd: 'no', relations: { rel_parent: 'EPIC-1' } })
@@ -130,7 +130,7 @@ describe('dependencies and the integration branch', () => {
     assert.doesNotMatch(result.output.split('\n').filter((line) => /FEAT-5/.test(line)).join('\n'), /branche par défaut/)
   })
 
-  it('chantier hors de l’EPIC qui dépend d’un enfant done seulement dans la branche d’intégration : attendre la clôture de l’EPIC [FEAT-21 CA-10]', () => {
+  it('chantier hors de l’EPIC qui dépend d’un enfant done seulement dans la branche d’intégration : attendre la clôture de l’EPIC [FEAT-21 AC-10]', () => {
     const directory = epicRepository()
     closedChild(directory)
     git(directory, 'switch', '-q', '-c', 'tec/TEC-6-x', 'main')
@@ -142,7 +142,7 @@ describe('dependencies and the integration branch', () => {
     assertLine(result.output, [/FEAT-2/, /epic\/EPIC-1-x/, /clôture de l’EPIC|clôture de EPIC-1/])
   })
 
-  it('dépendance déjà livrée dans la branche par défaut, encore présente sur la branche d’intégration : pas d’attente de la clôture de l’EPIC [FEAT-21 CA-10]', () => {
+  it('dépendance déjà livrée dans la branche par défaut, encore présente sur la branche d’intégration : pas d’attente de la clôture de l’EPIC [FEAT-21 AC-10]', () => {
     const directory = epicRepository()
     closedChild(directory)
     git(directory, 'switch', '-q', '-c', 'tec/TEC-6-x', 'main')
@@ -169,7 +169,7 @@ describe('next step of an EPIC with an integration branch', () => {
   })
   const done = [{ id: 'FEAT-2', closed: true, status: 'done' }]
 
-  it('enfants ouverts : les mener à terme ; tous clos sans revue : la revue d’ensemble ; revue à jour : la clôture [FEAT-21 CA-14]', () => {
+  it('enfants ouverts : les mener à terme ; tous clos sans revue : la revue d’ensemble ; revue à jour : la clôture [FEAT-21 AC-14]', () => {
     assert.match(nextStep(epic(), 'none', [{ id: 'FEAT-2', closed: false, status: 'signed' }]), /encore ouvert/)
     const toReview = nextStep(epic(), 'none', done)
     assert.match(toReview, /\/atelier:review/)
@@ -178,7 +178,7 @@ describe('next step of an EPIC with an integration branch', () => {
     assert.match(nextStep(epic(), 'current', done), /\/atelier:close/)
   })
 
-  it('sans l’option, tous les enfants clos mènent toujours à la clôture, sans revue [FEAT-21 CA-14]', () => {
+  it('sans l’option, tous les enfants clos mènent toujours à la clôture, sans revue [FEAT-21 AC-14]', () => {
     const step = nextStep(epic({ integration_branch: 'no' }), 'none', done)
     assert.match(step, /\/atelier:close/)
     assert.doesNotMatch(step, /\/atelier:review/)

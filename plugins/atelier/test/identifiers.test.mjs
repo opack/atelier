@@ -28,14 +28,14 @@ describe('chantier identifiers', () => {
 })
 
 describe('chantier id from commit subjects', () => {
-  it('rend l’identifiant du commit le plus récent qui en porte un [TEC-6 CA-1]', () => {
+  it('rend l’identifiant du commit le plus récent qui en porte un [TEC-6 AC-1]', () => {
     assert.equal(
       chantierIdFromCommitSubjects(['wip', 'docs(chantiers): [TEC-5] spec draft', 'docs(chantiers): [TEC-4] spec draft']),
       'TEC-5',
     )
   })
 
-  it('crochets obligatoires, casse ignorée, type inconnu ignoré, liste vide [TEC-6 CA-2]', () => {
+  it('crochets obligatoires, casse ignorée, type inconnu ignoré, liste vide [TEC-6 AC-2]', () => {
     assert.equal(chantierIdFromCommitSubjects(['merge after FEAT-4']), null)
     assert.equal(chantierIdFromCommitSubjects(['fix(x): [feat-12] typo']), 'FEAT-12')
     assert.equal(chantierIdFromCommitSubjects(['chore: [JIRA-3] bump']), null)
@@ -64,7 +64,7 @@ function makeDeductionRepository() {
 describe('active chantier deduced from commits', () => {
   const config = { ...DEFAULT_CONFIG, chantiersDir: 'docs/chantiers' }
 
-  it('sur une branche non conforme, déduit le chantier du commit [<ID>] [TEC-6 CA-3]', () => {
+  it('sur une branche non conforme, déduit le chantier du commit [<ID>] [TEC-6 AC-3]', () => {
     const directory = makeDeductionRepository()
     const { branch, chantier, source } = activeChantier(directory, config)
     assert.equal(branch, 'claude/x')
@@ -74,7 +74,7 @@ describe('active chantier deduced from commits', () => {
     assert.equal(source, 'commits')
   })
 
-  it('sur la branche par défaut, aucun chantier [TEC-6 CA-3]', () => {
+  it('sur la branche par défaut, aucun chantier [TEC-6 AC-3]', () => {
     const directory = makeDeductionRepository()
     git(directory, 'switch', '-q', 'main')
     const { chantier, source } = activeChantier(directory, config)
@@ -82,7 +82,7 @@ describe('active chantier deduced from commits', () => {
     assert.equal(source, null)
   })
 
-  it('le nom de branche reste prioritaire sur les commits [TEC-6 CA-3]', () => {
+  it('le nom de branche reste prioritaire sur les commits [TEC-6 AC-3]', () => {
     const directory = makeDeductionRepository()
     git(directory, 'switch', '-q', 'tec/TEC-8-y')
     const { chantier, source } = activeChantier(directory, config)
@@ -90,7 +90,7 @@ describe('active chantier deduced from commits', () => {
     assert.equal(source, 'branch')
   })
 
-  it('sans branche par défaut identifiable, aucun chantier et aucune erreur [TEC-6 CA-4]', () => {
+  it('sans branche par défaut identifiable, aucun chantier et aucune erreur [TEC-6 AC-4]', () => {
     const directory = makeRepository('trunk')
     git(directory, 'switch', '-q', '-c', 'claude/x')
     addChantierSpec(directory, 'TEC-9', 'x')
@@ -100,14 +100,14 @@ describe('active chantier deduced from commits', () => {
     assert.equal(source, null)
   })
 
-  it('HEAD détachée, aucun chantier déduit [TEC-6 CA-4]', () => {
+  it('HEAD détachée, aucun chantier déduit [TEC-6 AC-4]', () => {
     const directory = makeDeductionRepository()
     git(directory, 'switch', '-q', '--detach', 'claude/x')
     const { chantier } = activeChantier(directory, config)
     assert.equal(chantier, null)
   })
 
-  it('un main local en avance sur origin/main n’a pas de chantier actif [TEC-6 CA-5]', () => {
+  it('un main local en avance sur origin/main n’a pas de chantier actif [TEC-6 AC-5]', () => {
     const origin = temporaryDirectory('atelier-tec6-origin-')
     git(origin, 'init', '-q', '--bare', '-b', 'main')
     const directory = makeRepository('main')
@@ -121,7 +121,7 @@ describe('active chantier deduced from commits', () => {
     assert.equal(activeChantier(directory, config).chantier, null)
   })
 
-  it('avec une origine, la base est origin/main pour une branche non conforme [TEC-6 CA-5]', () => {
+  it('avec une origine, la base est origin/main pour une branche non conforme [TEC-6 AC-5]', () => {
     const origin = temporaryDirectory('atelier-tec6-origin-')
     git(origin, 'init', '-q', '--bare', '-b', 'main')
     const directory = makeRepository('main')
@@ -137,7 +137,7 @@ describe('active chantier deduced from commits', () => {
 })
 
 describe('chantier source shown to the user', () => {
-  it('status --json expose chantierSource [TEC-6 CA-6]', () => {
+  it('status --json expose chantierSource [TEC-6 AC-6]', () => {
     const directory = makeDeductionRepository()
     assert.equal(JSON.parse(atelier(directory, 'status', '--json')).chantierSource, 'commits')
     git(directory, 'switch', '-q', 'tec/TEC-8-y')
@@ -146,13 +146,13 @@ describe('chantier source shown to the user', () => {
     assert.equal(JSON.parse(atelier(directory, 'status', '--json')).chantierSource, null)
   })
 
-  it('status et le hook de démarrage signalent un chantier déduit des commits [TEC-6 CA-6]', () => {
+  it('status et le hook de démarrage signalent un chantier déduit des commits [TEC-6 AC-6]', () => {
     const directory = makeDeductionRepository()
     assert.match(atelier(directory, 'status'), /TEC-9.*\(déduit des commits\)/)
     assert.match(atelier(directory, 'hook-session-start'), /TEC-9.*\(déduit des commits\)/)
   })
 
-  it('rien de tel quand le chantier vient du nom de branche [TEC-6 CA-6]', () => {
+  it('rien de tel quand le chantier vient du nom de branche [TEC-6 AC-6]', () => {
     const directory = makeDeductionRepository()
     git(directory, 'switch', '-q', 'tec/TEC-8-y')
     assert.doesNotMatch(atelier(directory, 'status'), /déduit des commits/)
@@ -178,7 +178,7 @@ function makeRepositoryWithOrigin(extraBranches = []) {
 describe('default branch resolved through origin/HEAD', () => {
   const config = { ...DEFAULT_CONFIG, chantiersDir: 'docs/chantiers' }
 
-  it('avec origin/HEAD vers origin/main, déduit le chantier sur une branche non conforme [TEC-6 CA-7]', () => {
+  it('avec origin/HEAD vers origin/main, déduit le chantier sur une branche non conforme [TEC-6 AC-7]', () => {
     const directory = makeRepositoryWithOrigin()
     git(directory, 'remote', 'set-head', 'origin', 'main')
     git(directory, 'switch', '-q', '-c', 'claude/x', 'main')
@@ -188,7 +188,7 @@ describe('default branch resolved through origin/HEAD', () => {
     assert.equal(source, 'commits')
   })
 
-  it('origin/HEAD vers develop : aucun chantier sur develop, déduction depuis develop ailleurs [TEC-6 CA-8]', () => {
+  it('origin/HEAD vers develop : aucun chantier sur develop, déduction depuis develop ailleurs [TEC-6 AC-8]', () => {
     // develop carries a merged chantier commit that main does not have.
     const directory = makeRepositoryWithOrigin([['develop', 'feat(x): [TEC-7] merged work']])
     git(directory, 'remote', 'set-head', 'origin', 'develop')
@@ -209,7 +209,7 @@ describe('default branch resolved through origin/HEAD', () => {
     assert.equal(source, 'commits')
   })
 
-  it('la garde d’écriture applique les règles du chantier déduit des commits [TEC-6 CA-10]', () => {
+  it('la garde d’écriture applique les règles du chantier déduit des commits [TEC-6 AC-10]', () => {
     const directory = makeDeductionRepository()
     const guard = () => execFileSync(process.execPath, [atelierBin, 'hook-guard'], {
       cwd: directory,
@@ -237,7 +237,7 @@ describe('default branch resolved through origin/HEAD', () => {
     assert.equal(guard().trim(), '')
   })
 
-  it('une branche non conforme sans commit propre n’a pas de chantier [TEC-6 CA-9]', () => {
+  it('une branche non conforme sans commit propre n’a pas de chantier [TEC-6 AC-9]', () => {
     const directory = makeDeductionRepository()
     git(directory, 'switch', '-q', '-c', 'claude/empty', 'main')
     const { branch, chantier, source } = activeChantier(directory, config)
@@ -248,7 +248,7 @@ describe('default branch resolved through origin/HEAD', () => {
 })
 
 describe('EPIC identifiers', () => {
-  it('next-id EPIC suit le compteur unique ; epic/EPIC-7-x et [EPIC-7] désignent EPIC-7 [FEAT-4 CA-6]', () => {
+  it('next-id EPIC suit le compteur unique ; epic/EPIC-7-x et [EPIC-7] désignent EPIC-7 [FEAT-4 AC-6]', () => {
     assert.equal(nextChantierId('EPIC', ['FEAT-12-x', '[BUG-421] FIX']), 'EPIC-422')
     assert.equal(chantierIdFromText('epic/EPIC-7-x'), 'EPIC-7')
     assert.equal(chantierIdFromCommitSubjects(['docs(chantiers): [EPIC-7] plan']), 'EPIC-7')
@@ -269,9 +269,9 @@ function makeCounterRepository({ folders = [], subjects = [], branches = [] }) {
 }
 
 describe('Next identifier: where the counter reads identifiers', () => {
-  it('commit subjects count only bracketed identifiers [FIX-18 CA-1]', () => {
+  it('commit subjects count only bracketed identifiers [FIX-18 AC-1]', () => {
     const subjects = [
-      'test(plugin): [FEAT-7] add failing tests for CA-13',
+      'test(plugin): [FEAT-7] add failing tests for AC-13',
       'fix: support UTF-8 and ISO-8601 dates',
       'docs: follow RFC-7231',
     ]
@@ -282,23 +282,23 @@ describe('Next identifier: where the counter reads identifiers', () => {
     assert.deepEqual(commitSubjectIdentifiers(subjects[2]), [])
   })
 
-  it('bracketed identifiers keep the counter going, legacy prefixes included [FIX-18 CA-2]', () => {
+  it('bracketed identifiers keep the counter going, legacy prefixes included [FIX-18 AC-2]', () => {
     const directory = makeCounterRepository({
-      subjects: ['feat(envelopes): [FEA-26] add', '[BUG-421] fix', 'test(plugin): [TEC-437 CA-3] cover'],
+      subjects: ['feat(envelopes): [FEA-26] add', '[BUG-421] fix', 'test(plugin): [TEC-437 AC-3] cover'],
     })
     assert.equal(atelier(directory, 'next-id', 'FIX').trim(), 'FIX-438')
   })
 
-  it('branch names and chantier folders count without any bracketed commit [FIX-18 CA-3]', () => {
+  it('branch names and chantier folders count without any bracketed commit [FIX-18 AC-3]', () => {
     const directory = makeCounterRepository({
       folders: ['FEA-26-y'],
-      subjects: ['docs: CA-900 checked'],
+      subjects: ['docs: AC-900 checked'],
       branches: ['fix/BUG-421-x'],
     })
     assert.equal(atelier(directory, 'next-id', 'FEAT').trim(), 'FEAT-422')
   })
 
-  it('branch names count only an identifier opening a segment [FIX-18 CA-4]', () => {
+  it('branch names count only an identifier opening a segment [FIX-18 AC-4]', () => {
     const botBranches = ['renovate/node-20.x', 'dependabot/npm_and_yarn/vite-5.4.12']
     const directory = makeCounterRepository({ folders: ['FEAT-7-x'], branches: botBranches })
     assert.equal(atelier(directory, 'next-id', 'FEAT').trim(), 'FEAT-8')
@@ -306,9 +306,9 @@ describe('Next identifier: where the counter reads identifiers', () => {
     assert.deepEqual(branchNameIdentifiers('origin/fix/BUG-421-x'), ['BUG-421'])
   })
 
-  it('identifiers are read whatever their case, without a closing bracket, at the end of a branch name [FIX-18 CA-1, CA-2, CA-4]', () => {
+  it('identifiers are read whatever their case, without a closing bracket, at the end of a branch name [FIX-18 AC-1, AC-2, AC-4]', () => {
     assert.deepEqual(commitSubjectIdentifiers('test(plugin): [feat-7] add'), ['FEAT-7'])
-    assert.deepEqual(commitSubjectIdentifiers('test(plugin): [TEC-437 CA-3] cover'), ['TEC-437'])
+    assert.deepEqual(commitSubjectIdentifiers('test(plugin): [TEC-437 AC-3] cover'), ['TEC-437'])
     assert.deepEqual(branchNameIdentifiers('fix/fix-18-x'), ['FIX-18'])
     assert.deepEqual(branchNameIdentifiers('feature/JIRA-123'), ['JIRA-123'])
   })

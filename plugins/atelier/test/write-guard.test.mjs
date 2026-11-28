@@ -187,7 +187,7 @@ describe('write guard on a spec that is no longer a draft', () => {
     assert.equal(setStatusRefusal(signedChantier, 'abandoned'), null)
   })
 
-  it('gèle integration_branch après la signature (changé, ajouté, retiré), le laisse libre en brouillon [FEAT-21 CA-3]', () => {
+  it('gèle integration_branch après la signature (changé, ajouté, retiré), le laisse libre en brouillon [FEAT-21 AC-3]', () => {
     const withOption = signedText.replace('type: FEAT', 'type: EPIC').replace('tdd: yes', 'tdd: no\nintegration_branch: yes')
     const withoutOption = signedText.replace('type: FEAT', 'type: EPIC').replace('tdd: yes', 'tdd: no')
     const cases = [
@@ -224,8 +224,8 @@ describe('write guard on a spec whose committed version is a draft', () => {
     })
   }
 
-  // [label, working version, tool, input, expected]; each case is checked with a committed draft (V-1, V-2)
-  // and with no committed spec at all (V-3): the committed draft must change nothing.
+  // [label, working version, tool, input, expected]; each case is checked with a committed draft (AC-1, AC-2)
+  // and with no committed spec at all (AC-3): the committed draft must change nothing.
   const reserved = [
     ['status', 'status: draft', 'status: signed'],
     ['signed_by', 'signed_by:', 'signed_by: Ana'],
@@ -235,25 +235,25 @@ describe('write guard on a spec whose committed version is a draft', () => {
     ['reviewed_commit', 'signed_at:', 'signed_at:\nreviewed_commit: abc'],
   ]
   const cases = [
-    ['draft: full rewrite [TEC-5 CA-1]', draftText, 'Write', { content: draftText.replace('Texte initial.', 'Tout réécrit.') }, true],
-    ['draft: body edit [TEC-5 CA-1]', draftText, 'Edit', body, true],
-    ['draft: tdd and title edits [TEC-5 CA-1]', draftText, 'MultiEdit', { edits: [{ old_string: 'tdd: no', new_string: 'tdd: yes' }, { old_string: 'title: Brouillon', new_string: 'title: Autre' }] }, true],
-    ...reserved.map(([field, from, to]) => [`draft: reserved field ${field} [TEC-5 CA-1]`, draftText, 'Edit', { old_string: from, new_string: to }, false]),
-    ['signed, not committed: full rewrite [TEC-5 CA-2]', signedText, 'Write', { content: signedText }, false],
-    ['signed, not committed: body edit without entry [TEC-5 CA-2]', signedText, 'Edit', body, false],
-    ['signed, not committed: body edit with a new entry [TEC-5 CA-2]', signedText, 'MultiEdit', { edits: [entry, body] }, true],
-    ['signed, not committed: back to draft [TEC-5 CA-2]', signedText, 'MultiEdit', { edits: [entry, { old_string: 'status: signed', new_string: 'status: draft' }] }, false],
+    ['draft: full rewrite [TEC-5 AC-1]', draftText, 'Write', { content: draftText.replace('Texte initial.', 'Tout réécrit.') }, true],
+    ['draft: body edit [TEC-5 AC-1]', draftText, 'Edit', body, true],
+    ['draft: tdd and title edits [TEC-5 AC-1]', draftText, 'MultiEdit', { edits: [{ old_string: 'tdd: no', new_string: 'tdd: yes' }, { old_string: 'title: Brouillon', new_string: 'title: Autre' }] }, true],
+    ...reserved.map(([field, from, to]) => [`draft: reserved field ${field} [TEC-5 AC-1]`, draftText, 'Edit', { old_string: from, new_string: to }, false]),
+    ['signed, not committed: full rewrite [TEC-5 AC-2]', signedText, 'Write', { content: signedText }, false],
+    ['signed, not committed: body edit without entry [TEC-5 AC-2]', signedText, 'Edit', body, false],
+    ['signed, not committed: body edit with a new entry [TEC-5 AC-2]', signedText, 'MultiEdit', { edits: [entry, body] }, true],
+    ['signed, not committed: back to draft [TEC-5 AC-2]', signedText, 'MultiEdit', { edits: [entry, { old_string: 'status: signed', new_string: 'status: draft' }] }, false],
   ]
 
   for (const [label, current, toolName, input, expected] of cases) {
     it(label, () => {
       const withDraft = write(current, draftText, toolName, input)
       assert.equal(withDraft.allowed, expected, 'committed draft')
-      assert.deepEqual(withDraft, write(current, null, toolName, input), 'V-3: same decision as with no committed spec')
+      assert.deepEqual(withDraft, write(current, null, toolName, input), 'AC-3: same decision as with no committed spec')
     })
   }
 
-  it('takes the signed working version as reference, not an older committed draft [TEC-5 CA-2, CA-3]', () => {
+  it('takes the signed working version as reference, not an older committed draft [TEC-5 AC-2, AC-3]', () => {
     // Draft committed, then touched up by the critical review and signed without committing in between.
     const olderDraft = draftText.replace('Texte initial.', 'Texte du premier brouillon.')
     const noChange = { old_string: 'Texte initial.', new_string: 'Texte initial.' }
@@ -281,12 +281,12 @@ describe('write guard and stop hook per slice', () => {
   const sliceTwoImplementing = slicedChantier({ slice: '2', slice_base: 'a'.repeat(40), tests_commit: 'abc1234' })
   const chantierReview = slicedChantier({ slice: 'chantier', last_slice: '3', slice_base: 'a'.repeat(40), tests_commit: 'abc1234' })
 
-  it('en tranche 2, phase « tests d’abord », refuse le code et accepte les tests [FEAT-7 CA-12]', () => {
+  it('en tranche 2, phase « tests d’abord », refuse le code et accepte les tests [FEAT-7 AC-12]', () => {
     assert.equal(decide({ chantier: sliceTwoWriting, relativePath: 'src/budget.ts' }).allowed, false)
     assert.equal(decide({ chantier: sliceTwoWriting, relativePath: 'test/budget.test.ts' }).allowed, true)
   })
 
-  it('en tranche 2, phase d’implémentation, refuse l’écriture d’un test ; le contrôle de fin signale un test modifié [FEAT-7 CA-13]', () => {
+  it('en tranche 2, phase d’implémentation, refuse l’écriture d’un test ; le contrôle de fin signale un test modifié [FEAT-7 AC-13]', () => {
     assert.equal(decide({ chantier: sliceTwoImplementing, relativePath: 'test/one.test.ts' }).allowed, false)
     const decision = decideStop({
       config: DEFAULT_CONFIG,
@@ -302,14 +302,14 @@ describe('write guard and stop hook per slice', () => {
     assert.match(decision.message, /git checkout abc1234/)
   })
 
-  it('en revue du chantier, tests figés, refuse un test et accepte le code [FEAT-7 CA-17]', () => {
+  it('en revue du chantier, tests figés, refuse un test et accepte le code [FEAT-7 AC-17]', () => {
     assert.equal(decide({ chantier: chantierReview, relativePath: 'test/one.test.ts' }).allowed, false)
     assert.equal(decide({ chantier: chantierReview, relativePath: 'src/budget.ts' }).allowed, true)
   })
 })
 
 describe('slice fields written by the command', () => {
-  it('le hook refuse que l’agent écrive ou modifie slice, slice_base ou last_slice [FEAT-7 CA-5]', () => {
+  it('le hook refuse que l’agent écrive ou modifie slice, slice_base ou last_slice [FEAT-7 AC-5]', () => {
     const relativePath = 'docs/chantiers/FEAT-20-x/spec.md'
     const signedText = '---\nid: FEAT-20\ntype: FEAT\ntitle: X\nstatus: signed\ntdd: yes\nslice: 2\n---\n# FEAT-20\n'
     for (const [field, newValue] of [['slice', 'slice: 3'], ['slice_base', 'slice: 2\nslice_base: abc'], ['last_slice', 'slice: 2\nlast_slice: 3']]) {
@@ -327,7 +327,7 @@ describe('slice fields written by the command', () => {
 })
 
 describe('slice TDD written by the command', () => {
-  it('le hook refuse que l’agent change ou retire slice_tdd d’une spec signée [FIX-20 CA-8]', () => {
+  it('le hook refuse que l’agent change ou retire slice_tdd d’une spec signée [FIX-20 AC-8]', () => {
     const relativePath = 'docs/chantiers/FIX-20-x/spec.md'
     const signedText = '---\nid: FIX-20\ntype: FIX\ntitle: X\nstatus: signed\ntdd: yes\nslice: 2\nslice_tdd: yes\n---\n# FIX-20\n'
     for (const newValue of ['slice_tdd: no', 'slice_tdd:']) {
@@ -345,7 +345,7 @@ describe('slice TDD written by the command', () => {
 })
 
 describe('write guard on an EPIC', () => {
-  it('sur un EPIC signé, aucune écriture hors des chemins libres ; docs/ et le débrayage restent permis [FEAT-4 CA-8]', () => {
+  it('sur un EPIC signé, aucune écriture hors des chemins libres ; docs/ et le débrayage restent permis [FEAT-4 AC-8]', () => {
     const epic = { id: 'EPIC-5', directory: '/p/docs/chantiers/EPIC-5-x', spec: { data: { status: 'signed', type: 'EPIC', tdd: 'no' } }, files: ['spec.md', 'plan.md'] }
     for (const relativePath of ['src/app.ts', 'src/app.test.ts']) {
       const decision = decide({ chantier: epic, relativePath })

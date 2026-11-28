@@ -8,12 +8,12 @@ import { template, makeRepository, atelier, atelierRun } from './helpers.mjs'
 describe('process section of CLAUDE.md', () => {
   const processLines = () => template('process').split(/\r?\n/).filter((line) => line.trim())
 
-  it('le template de la section Process existe et parle de l’EPIC et des relations [FEAT-4 CA-12]', () => {
+  it('le template de la section Process existe et parle de l’EPIC et des relations [FEAT-4 AC-12]', () => {
     assert.ok(processLines().includes('## Process (atelier)'))
     assert.ok(processLines().some((line) => /EPIC/.test(line) && /rel_/.test(line)))
   })
 
-  it('liste toutes les lignes quand la section est absente [FEAT-4 CA-12]', () => {
+  it('liste toutes les lignes quand la section est absente [FEAT-4 AC-12]', () => {
     const directory = makeRepository('main')
     writeFileSync(join(directory, 'CLAUDE.md'), '# Projet\n\nRien sur le process.\n')
     const { status, output } = atelierRun(directory, 'check-process')
@@ -23,7 +23,7 @@ describe('process section of CLAUDE.md', () => {
     }
   })
 
-  it('liste seulement les lignes manquantes ; rien quand tout y est, ajouts du projet compris [FEAT-4 CA-12]', () => {
+  it('liste seulement les lignes manquantes ; rien quand tout y est, ajouts du projet compris [FEAT-4 AC-12]', () => {
     const directory = makeRepository('main')
     const lines = processLines()
     const [, missing] = lines.filter((line) => line.startsWith('- '))
@@ -40,7 +40,7 @@ describe('process section of CLAUDE.md', () => {
     }
   })
 
-  it('la ligne des chantiers est attendue avec le chantiersDir du projet, sans / final [FEAT-4 CA-12]', () => {
+  it('la ligne des chantiers est attendue avec le chantiersDir du projet, sans / final [FEAT-4 AC-12]', () => {
     const directory = makeRepository('main')
     writeFileSync(join(directory, '.claude', 'atelier.json'), JSON.stringify({ chantiersDir: 'work/chantiers/' }))
     const lines = processLines()
@@ -62,7 +62,7 @@ describe('site chantier types', () => {
 
   // The build itself (`npm run build` in site/) is checked by hand at review: it needs the site's
   // dependencies and takes too long for the test suite.
-  it('six types dont l’EPIC ; templates spec-epic et plan-epic inclus [FEAT-4 CA-13]', () => {
+  it('six types dont l’EPIC ; templates spec-epic et plan-epic inclus [FEAT-4 AC-13]', () => {
     const types = site('fondations/types.md')
     assert.match(types, /Six types/)
     assert.match(types, /^## EPIC/m)
@@ -76,7 +76,7 @@ describe('vocabulary of the review', () => {
   const repositoryPath = (relativePath) => fileURLToPath(new URL(`../../../${relativePath}`, import.meta.url))
   const reviewRound = /\btours? de revue\b|\btour \d+\b|\bà chaque tour\b/i
 
-  it('plus de « tour » au sens d’un passage de revue dans les skills, l’agent, les templates, le site et le README [FEAT-7 CA-27]', () => {
+  it('plus de « tour » au sens d’un passage de revue dans les skills, l’agent, les templates, le site et le README [FEAT-7 AC-27]', () => {
     const siteFiles = readdirSync(repositoryPath('site'), { withFileTypes: true })
       .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.') && !['node_modules', 'public'].includes(entry.name))
       .flatMap((entry) => readdirSync(repositoryPath(`site/${entry.name}`)).filter((name) => name.endsWith('.md')).map((name) => `site/${entry.name}/${name}`))
@@ -110,24 +110,24 @@ describe('prefixes in agents, skills and templates', () => {
   }
 
   for (const [file, prefixes] of Object.entries(expectedPrefixes)) {
-    it(`${file} mentionne ${prefixes.join(' et ')} [TEC-15 CA-11]`, () => {
+    it(`${file} mentionne ${prefixes.join(' et ')} [TEC-15 AC-11]`, () => {
       const text = pluginText(file)
       assert.deepEqual(prefixes.filter((prefix) => !mentions(text, prefix)), [])
     })
   }
 
-  it('la skill amend cite un identifiant de point de relecture [TEC-15 CA-11]', () => {
+  it('la skill amend cite un identifiant de point de relecture [TEC-15 AC-11]', () => {
     assert.ok(['RB', 'RD', 'SB', 'SD', 'OB', 'OD'].some((prefix) => mentions(pluginText('skills/amend/SKILL.md'), prefix)))
   })
 
   for (const file of ['skills/review/SKILL.md', 'skills/sign/SKILL.md', 'skills/build/SKILL.md']) {
-    it(`${file} obtient les numéros par atelier review-ids [TEC-15 CA-11]`, () => {
+    it(`${file} obtient les numéros par atelier review-ids [TEC-15 AC-11]`, () => {
       assert.match(pluginText(file), /atelier review-ids/)
     })
   }
 
   for (const file of ['templates/revue.md', 'agents/reviewer.md', 'skills/review/SKILL.md']) {
-    it(`${file} donne la forme (repris), (ex-…) et les traitements reporté et requalifié [TEC-15 CA-11]`, () => {
+    it(`${file} donne la forme (repris), (ex-…) et les traitements reporté et requalifié [TEC-15 AC-11]`, () => {
       const text = pluginText(file)
       assert.match(text, /\(repris\)/)
       assert.match(text, /\(ex-R[BD]\d+\)/)
@@ -142,7 +142,7 @@ describe('site reference pages', () => {
   // The table row whose first cell starts with `start` (a command or a glossary term).
   const row = (text, start) => text.split(/\r?\n/).find((line) => line.startsWith(`| ${start}`)) ?? ''
 
-  it('la page des commandes documente review-ids et le refus de set-reviewed et close-check sur un point ouvert [TEC-15 CA-19]', () => {
+  it('la page des commandes documente review-ids et le refus de set-reviewed et close-check sur un point ouvert [TEC-15 AC-19]', () => {
     const commands = site('reference/commandes.md')
     const reviewIds = row(commands, '`atelier review-ids')
     for (const prefix of ['RB', 'RD', 'SB', 'SD', 'OB', 'OD']) {
@@ -153,7 +153,7 @@ describe('site reference pages', () => {
     assert.match(row(commands, '`atelier close-check`'), /points?[^|]*(ouverts?|sans traitement)/i)
   })
 
-  it('le glossaire définit le point de relecture, ses six préfixes et le traitement [TEC-15 CA-19]', () => {
+  it('le glossaire définit le point de relecture, ses six préfixes et le traitement [TEC-15 AC-19]', () => {
     const glossary = site('reference/glossaire.md')
     const point = row(glossary, '**Point de relecture**')
     for (const prefix of ['RB', 'RD', 'SB', 'SD', 'OB', 'OD']) {
@@ -173,24 +173,24 @@ describe('calibrated review points', () => {
   const missing = (text, patterns) => patterns.filter((pattern) => !pattern.test(text)).map(String)
 
   for (const file of reviewers) {
-    it(`${file} demande le bilan de chaque point : deux coûts, silencieux ou bruyant, verdict, question [FEAT-30 CA-1]`, () => {
+    it(`${file} demande le bilan de chaque point : deux coûts, silencieux ou bruyant, verdict, question [FEAT-30 AC-1]`, () => {
       assert.deepEqual(missing(pluginText(file), [/bloquant ou à discuter/, /coût de la correction/i, /coût de la non-correction/i, /silencieux/, /bruyant/, /verdict/i, /toujours à corriger/, /point qui est une question/]), [])
     })
 
-    it(`${file} tire l'usage réel de CLAUDE.md et du README [FEAT-30 CA-2]`, () => {
+    it(`${file} tire l'usage réel de CLAUDE.md et du README [FEAT-30 AC-2]`, () => {
       assert.deepEqual(missing(pluginText(file), [/usage réel/, /`CLAUDE\.md`/, /`README`/, /signale-le une fois/]), [])
     })
 
-    it(`${file} énonce la règle de proportion [FEAT-30 CA-3]`, () => {
+    it(`${file} énonce la règle de proportion [FEAT-30 AC-3]`, () => {
       assert.deepEqual(missing(pluginText(file), [/option la moins chère/, /supprimer le problème bloquant/]), [])
     })
 
-    it(`${file} distingue premier passage et relance, avec les idées sans identifiant [FEAT-30 CA-4]`, () => {
+    it(`${file} distingue premier passage et relance, avec les idées sans identifiant [FEAT-30 AC-4]`, () => {
       assert.deepEqual(missing(pluginText(file), [/premier passage/, /relance/, /causé par une correction/, /n'est retenu que s'il est bloquant/, /\*\*Idées\*\*/, /sans identifiant/]), [])
     })
   }
 
-  it('review définit la relance, transmet le commit précédent, garde les idées hors de revue.md et associe chaque issue à un traitement [FEAT-30 CA-5]', () => {
+  it('review définit la relance, transmet le commit précédent, garde les idées hors de revue.md et associe chaque issue à un traitement [FEAT-30 AC-5]', () => {
     assert.deepEqual(missing(pluginText('skills/review/SKILL.md'), [
       /\*\*relance\*\*/, /sont des premiers passages/, /commit de la revue précédente/, /liste des corrections faites depuis/, /## Revue 2 : tranche 1/, /Corrections depuis la revue 1 :/,
       /idée[^\n]*n'entre jamais dans ces tableaux/i,
@@ -199,13 +199,13 @@ describe('calibrated review points', () => {
   })
 
   for (const file of ['skills/sign/SKILL.md', 'skills/build/SKILL.md']) {
-    it(`${file} transmet la relance et traite une nouvelle session comme un premier passage [FEAT-30 CA-5]`, () => {
+    it(`${file} transmet la relance et traite une nouvelle session comme un premier passage [FEAT-30 AC-5]`, () => {
       assert.deepEqual(missing(pluginText(file), [/\*\*relance\*\*/, /points du passage précédent/, /nouvelle session est un premier passage/]), [])
     })
   }
 
   for (const file of presenters) {
-    it(`${file} présente chaque point avec un résumé, les deux coûts, le verdict et l'avis [FEAT-30 CA-6]`, () => {
+    it(`${file} présente chaque point avec un résumé, les deux coûts, le verdict et l'avis [FEAT-30 AC-6]`, () => {
       assert.deepEqual(missing(pluginText(file), [/résumé du problème/, /deux coûts/, /verdict du relecteur/, /ton avis/]), [])
     })
   }
@@ -221,7 +221,7 @@ describe('calibrated review points in the documentation', () => {
   }
 
   for (const [file, patterns] of Object.entries(pages)) {
-    it(`${file} décrit le bilan des points, la proportion et la relance [FEAT-30 CA-7]`, () => {
+    it(`${file} décrit le bilan des points, la proportion et la relance [FEAT-30 AC-7]`, () => {
       const text = repositoryText(file)
       assert.deepEqual(patterns.filter((pattern) => !pattern.test(text)).map(String), [])
     })
@@ -234,32 +234,32 @@ describe('EPIC with an integration branch in the skills, the agent, the template
   const integration = /branche d['’]intégration/
 
   for (const file of ['skills/review/SKILL.md', 'skills/close/SKILL.md']) {
-    it(`${file} : la règle « chaque commit porte [<ID>] » compte les commits en --first-parent depuis baseBranch [FEAT-21 CA-11]`, () => {
+    it(`${file} : la règle « chaque commit porte [<ID>] » compte les commits en --first-parent depuis baseBranch [FEAT-21 AC-11]`, () => {
       const rule = pluginText(file).split('\n').filter((line) => line.includes('[<ID>]') && /chaque commit/.test(line))
       assert.ok(rule.length > 0, 'règle des commits introuvable')
       assert.ok(rule.some((line) => line.includes('--first-parent') && line.includes('baseBranch')), rule.join('\n'))
     })
   }
 
-  it('review et close lisent la base dans baseBranch ; new part de atelier base --parent ; plan parle de la branche d’intégration [FEAT-21 CA-12]', () => {
+  it('review et close lisent la base dans baseBranch ; new part de atelier base --parent ; plan parle de la branche d’intégration [FEAT-21 AC-12]', () => {
     assert.match(pluginText('skills/review/SKILL.md'), /baseBranch/)
     assert.match(pluginText('skills/close/SKILL.md'), /baseBranch/)
     assert.match(pluginText('skills/new/SKILL.md'), /atelier base --parent/)
     assert.match(pluginText('skills/plan/SKILL.md'), integration)
   })
 
-  it('close : fusion par commit de fusion dans la branche d’intégration, revue d’ensemble, enfant correctif, fusion de la branche par défaut sans rebase [FEAT-21 CA-12]', () => {
+  it('close : fusion par commit de fusion dans la branche d’intégration, revue d’ensemble, enfant correctif, fusion de la branche par défaut sans rebase [FEAT-21 AC-12]', () => {
     const close = pluginText('skills/close/SKILL.md')
     assert.deepEqual([integration, /commit de fusion/, /revue d['’]ensemble/, /enfant correctif/, /rebase/].filter((pattern) => !pattern.test(close)).map(String), [])
   })
 
-  it('l’agent reviewer connaît la portée « revue d’ensemble » ; le template spec-epic propose integration_branch [FEAT-21 CA-12]', () => {
+  it('l’agent reviewer connaît la portée « revue d’ensemble » ; le template spec-epic propose integration_branch [FEAT-21 AC-12]', () => {
     assert.match(pluginText('agents/reviewer.md'), /revue d['’]ensemble/)
     assert.match(pluginText('templates/spec-epic.md'), /integration_branch/)
   })
 
   const pages = ['fondations/chantier.md', 'fondations/types.md', 'cycle/conception.md', 'cycle/revue.md', 'cycle/cloture.md', 'reference/commandes.md']
-  it('le site décrit l’EPIC à branche d’intégration, et la commande atelier base [FEAT-21 CA-12]', () => {
+  it('le site décrit l’EPIC à branche d’intégration, et la commande atelier base [FEAT-21 AC-12]', () => {
     assert.deepEqual(pages.filter((page) => !integration.test(repositoryText(`site/${page}`))), [])
     assert.match(repositoryText('site/reference/commandes.md'), /atelier base --parent/)
     assert.match(repositoryText('site/cycle/revue.md'), /revue d['’]ensemble/)

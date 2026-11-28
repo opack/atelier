@@ -19,23 +19,23 @@ const sections = {
     'Reproduction': 'Ouvrir l’app.',
     'Cause probable': 'Listener non nettoyé (trace Sentry).',
     'Solution proposée': 'Nettoyer le listener.',
-    'Critère de non-régression': '- [ ] CA-1 : Étant donné l’app ouverte, quand on la ferme, alors le listener est retiré.',
+    'Critère de non-régression': '- [ ] AC-1 : Étant donné l’app ouverte, quand on la ferme, alors le listener est retiré.',
   },
   FEAT: {
     'Contexte': 'Les utilisateurs perdent du temps.',
     'Description': 'Afficher le total.',
-    "Critères d'acceptation": '- [ ] CA-1 : Étant donné un budget, quand je l’ouvre, alors je vois le total.',
+    "Critères d'acceptation": '- [ ] AC-1 : Étant donné un budget, quand je l’ouvre, alors je vois le total.',
     'Non-fonctionnel': 'Lecture réservée au propriétaire.',
   },
   TEC: {
     'Quoi': 'Contrôler les identifiants des points de relecture.',
     'Pourquoi': 'Les points se renumérotent.',
-    'Vérification': '- CA-1 : les tests passent.',
+    'Vérification': '- AC-1 : les tests passent.',
   },
   EPIC: {
     'Vision': 'Un module de gestion client.',
     'Pourquoi': 'Les clients sont gérés à la main.',
-    "Critères d'acceptation globaux": '- CA-1 : un client se crée et se contacte.',
+    "Critères d'acceptation globaux": '- AC-1 : un client se crée et se contacte.',
     'Cadre': 'API REST commune.',
     'Hors périmètre': 'Facturation.',
   },
@@ -66,11 +66,11 @@ describe('« … » dans checkSpec', () => {
     }
   })
 
-  it('les critères de TEC-15 en code en ligne ne sont pas signalés [FIX-22 CA-1]', () => {
+  it('les critères de TEC-15 en code en ligne ne sont pas signalés [FIX-22 AC-1]', () => {
     const problems = checkSpec(spec('TEC', {
       'Vérification': [
-        "- CA-17 : Étant donné un titre `### Bloquants` suivi d'un tableau de points, quand on contrôle, alors le titre est signalé ; étant donné une ligne `| RB1. … |` sous un autre titre `###` d'une section (`### Contrôles`), alors la ligne est signalée.",
-        '- CA-18 : Étant donné un point `RD3 … requalifié (RB4)`, quand on contrôle, alors il est accepté.',
+        "- AC-17 : Étant donné un titre `### Bloquants` suivi d'un tableau de points, quand on contrôle, alors le titre est signalé ; étant donné une ligne `| RB1. … |` sous un autre titre `###` d'une section (`### Contrôles`), alors la ligne est signalée.",
+        '- AC-18 : Étant donné un point `RD3 … requalifié (RB4)`, quand on contrôle, alors il est accepté.',
       ].join('\n'),
     }))
     assert.deepEqual(unfinished(problems), [])
@@ -84,12 +84,12 @@ describe('« … » dans checkSpec', () => {
       'longer closing fence': '````\n- AAAA-MM-JJ : …\n``````',
     }
     for (const [name, block] of Object.entries(blocks)) {
-      it(`${name} [FIX-22 CA-2]`, () => {
+      it(`${name} [FIX-22 AC-2]`, () => {
         assert.deepEqual(unfinished(checkSpec(spec('FIX', { 'Solution proposée': block }))), [])
       })
     }
 
-    it('text after a closed block is still checked [FIX-22 CA-2]', () => {
+    it('text after a closed block is still checked [FIX-22 AC-2]', () => {
       const problems = checkSpec(spec('FIX', { 'Solution proposée': '```\nx\n```\nPuis …' }))
       assert.equal(unfinished(problems).length, 1)
     })
@@ -97,12 +97,12 @@ describe('« … » dans checkSpec', () => {
 
   describe('un « … » collé au caractère qui précède n’est pas signalé', () => {
     const texts = {
-      'after a word': 'Les critères CA-1, CA-2… sont repris.',
+      'after a word': 'Les critères AC-1, AC-2… sont repris.',
       'after a hyphen': 'Le point RB3 (ex-…) est renommé.',
       'right after inline code': 'Les champs `title`… sont comparés.',
     }
     for (const [name, text] of Object.entries(texts)) {
-      it(`${name} [FIX-22 CA-3]`, () => {
+      it(`${name} [FIX-22 AC-3]`, () => {
         assert.deepEqual(unfinished(checkSpec(spec('FIX', { 'Cause probable': text }))), [])
       })
     }
@@ -111,13 +111,13 @@ describe('« … » dans checkSpec', () => {
   describe('la ligne de format d’un template recopiée non remplie est signalée', () => {
     // The format line as each template writes it, taken out of its HTML comment.
     function formatLine(type) {
-      const match = readTemplate(`spec-${type.toLowerCase()}`).match(/CA-1 : Étant donné.*?alors ?…/)
+      const match = readTemplate(`spec-${type.toLowerCase()}`).match(/AC-1 : Étant donné.*?alors ?…/)
       assert.ok(match, `format line of spec-${type.toLowerCase()}`)
       return `- [ ] ${match[0]}`
     }
     const criteriaSection = { FEAT: "Critères d'acceptation", FIX: 'Critère de non-régression', EPIC: "Critères d'acceptation globaux" }
     for (const [type, title] of Object.entries(criteriaSection)) {
-      it(`${type} [FIX-22 CA-4]`, () => {
+      it(`${type} [FIX-22 AC-4]`, () => {
         const problems = unfinished(checkSpec(spec(type, { [title]: formatLine(type) })))
         assert.equal(problems.length, 1)
         assert.ok(problems[0].includes(title), problems[0])
@@ -136,7 +136,7 @@ describe('« … » dans checkSpec', () => {
       'alone in a table cell': '| Cas | Résultat |\n|---|---|\n| démarrage | … |',
     }
     for (const [name, text] of Object.entries(texts)) {
-      it(`${name} [FIX-22 CA-5]`, () => {
+      it(`${name} [FIX-22 AC-5]`, () => {
         const problems = unfinished(checkSpec(spec('FIX', { 'Cause probable': text })))
         assert.equal(problems.length, 1)
         assert.ok(problems[0].includes('Cause probable'), problems[0])
@@ -144,24 +144,24 @@ describe('« … » dans checkSpec', () => {
     }
   })
 
-  it('la ligne de format du template EPIC écrit des « … » séparés, comme FEAT et FIX [FIX-22 CA-6]', () => {
+  it('la ligne de format du template EPIC écrit des « … » séparés, comme FEAT et FIX [FIX-22 AC-6]', () => {
     for (const name of ['spec-epic', 'spec-feat', 'spec-fix']) {
       assert.ok(readTemplate(name).includes('Étant donné …, quand …, alors …'), name)
     }
   })
 
   describe('code mal formé', () => {
-    it('an unmatched backtick is text: the ellipsis after it is checked [FIX-22 CA-7]', () => {
+    it('an unmatched backtick is text: the ellipsis after it is checked [FIX-22 AC-7]', () => {
       const problems = checkSpec(spec('FIX', { 'Cause probable': 'Un accent ` orphelin, puis …' }))
       assert.equal(unfinished(problems).length, 1)
     })
 
-    it('a block never closed runs to the end of the section [FIX-22 CA-7]', () => {
+    it('a block never closed runs to the end of the section [FIX-22 AC-7]', () => {
       const problems = checkSpec(spec('FIX', { 'Cause probable': '```\n- AAAA-MM-JJ : …' }))
       assert.deepEqual(unfinished(problems), [])
     })
 
-    it('a block never closed does not hide the next sections [FIX-22 CA-7]', () => {
+    it('a block never closed does not hide the next sections [FIX-22 AC-7]', () => {
       const problems = checkSpec(spec('FIX', { 'Cause probable': '```\nx', 'Solution proposée': 'Puis …' }))
       assert.equal(unfinished(problems).length, 1)
       assert.ok(unfinished(problems)[0].includes('Solution proposée'))
@@ -169,18 +169,18 @@ describe('« … » dans checkSpec', () => {
   })
 
   describe('les contrôles « vide » et « critère numéroté » voient le code', () => {
-    it('a section holding only a code block is not empty [FIX-22 CA-8]', () => {
+    it('a section holding only a code block is not empty [FIX-22 AC-8]', () => {
       const problems = checkSpec(specWithSection('FIX', 'Reproduction', '```\nnpm test\n```'))
       assert.deepEqual(problems, [])
     })
 
-    it('a criterion written in inline code counts [FIX-22 CA-8]', () => {
-      const problems = checkSpec(specWithSection('FIX', 'Critère de non-régression', '- `CA-1` : le listener est retiré.'))
+    it('a criterion written in inline code counts [FIX-22 AC-8]', () => {
+      const problems = checkSpec(specWithSection('FIX', 'Critère de non-régression', '- `AC-1` : le listener est retiré.'))
       assert.deepEqual(problems, [])
     })
   })
 
-  it('le message est exactement celui de la spec [FIX-22 CA-4]', () => {
+  it('le message est exactement celui de la spec [FIX-22 AC-4]', () => {
     const problems = unfinished(checkSpec(spec('FIX', { 'Cause probable': 'Le crash revient quand …' })))
     assert.deepEqual(problems, ["Section « Cause probable » : texte à compléter (« … » isolé). S'il est voulu, mets-le en code en ligne."])
   })
@@ -193,13 +193,13 @@ describe('« … » dans checkSpec', () => {
       'right after an HTML comment': 'Texte <!-- note -->… suite',
     }
     for (const [name, text] of Object.entries(glued)) {
-      it(`not flagged: ${name} [FIX-22 CA-10]`, () => {
+      it(`not flagged: ${name} [FIX-22 AC-10]`, () => {
         assert.deepEqual(unfinished(checkSpec(spec('FIX', { 'Cause probable': text }))), [])
       })
     }
     const apart = { 'after a bullet and a space': '- … suite', 'after a number and a space': '1. … suite' }
     for (const [name, text] of Object.entries(apart)) {
-      it(`flagged: ${name} [FIX-22 CA-10]`, () => {
+      it(`flagged: ${name} [FIX-22 AC-10]`, () => {
         assert.equal(unfinished(checkSpec(spec('FIX', { 'Cause probable': text }))).length, 1)
       })
     }
@@ -212,7 +212,7 @@ describe('« … » dans checkSpec', () => {
       'a shorter fence does not close': '````\n```\n- A : …\n````',
     }
     for (const [name, text] of Object.entries(stillOpen)) {
-      it(`${name} [FIX-22 CA-11]`, () => {
+      it(`${name} [FIX-22 AC-11]`, () => {
         assert.deepEqual(unfinished(checkSpec(spec('FIX', { 'Cause probable': text }))), [])
       })
     }
@@ -222,27 +222,27 @@ describe('« … » dans checkSpec', () => {
       'in a quote': '> ```\n> - A : …\n> ```',
     }
     for (const [name, text] of Object.entries(prefixed)) {
-      it(`opened ${name} [FIX-22 CA-11]`, () => {
+      it(`opened ${name} [FIX-22 AC-11]`, () => {
         assert.deepEqual(unfinished(checkSpec(spec('FIX', { 'Cause probable': text }))), [])
       })
     }
   })
 
   describe('code en ligne à plusieurs accents graves, barre de tableau', () => {
-    it('a double-backtick span holding a backtick, glued ellipsis: not flagged [FIX-22 CA-12]', () => {
+    it('a double-backtick span holding a backtick, glued ellipsis: not flagged [FIX-22 AC-12]', () => {
       assert.deepEqual(unfinished(checkSpec(spec('FIX', { 'Cause probable': 'Le motif ``a`b``… est lu.' }))), [])
     })
 
-    it('two backticks closed by one is not a span: the ellipsis after a space is flagged [FIX-22 CA-12]', () => {
+    it('two backticks closed by one is not a span: the ellipsis after a space is flagged [FIX-22 AC-12]', () => {
       assert.equal(unfinished(checkSpec(spec('FIX', { 'Cause probable': 'Le motif ``a` … est lu.' }))).length, 1)
     })
 
-    it('an ellipsis glued to a table bar is flagged [FIX-22 CA-12]', () => {
+    it('an ellipsis glued to a table bar is flagged [FIX-22 AC-12]', () => {
       assert.equal(unfinished(checkSpec(spec('FIX', { 'Cause probable': '| Cas | Résultat |\n|---|---|\n| démarrage |…|' }))).length, 1)
     })
   })
 
-  it('une ligne « - ``` » dans un bloc ouvert ne le ferme pas [FIX-22 CA-11]', () => {
+  it('une ligne « - ``` » dans un bloc ouvert ne le ferme pas [FIX-22 AC-11]', () => {
     const problems = checkSpec(spec('FIX', { 'Cause probable': '```md\n- ```\n- A : …\n```' }))
     assert.deepEqual(unfinished(problems), [])
   })
