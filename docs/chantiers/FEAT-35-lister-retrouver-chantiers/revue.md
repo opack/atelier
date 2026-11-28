@@ -184,3 +184,23 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD24. Consigne ambiguë en fin de `/atelier:list` | plugins/atelier/skills/list/SKILL.md:41 | corrigé (adbf32b) |
 
 - Bilan de la revue : aucun bloquant ; build du site réussi, version 0.9.0 lue dans `plugin.json` seulement, aucun test figé modifié.
+
+## Revue 2 : tranche 5 : 2026-11-28
+- Commit revu : f8feeb5
+- Base : ee6b2ad
+- Corrections depuis la revue 1 : adbf32b
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD25. La page de référence décrit encore `git fetch --prune` pour `/atelier:list` | site/reference/commandes.md:19 | corrigé (4a3a3ae) |
+| RD26. « Valeur inconnue d'un filtre » couvre aussi `--parent`, qui ne refuse rien | site/reference/commandes.md:30 | corrigé (4a3a3ae) |
+| RD27. La règle de la demande traduisible en partie se lit de deux façons | plugins/atelier/skills/list/SKILL.md:37 | corrigé (4a3a3ae) |
+| RD28. Le journal attribue à l'en-tête du skill un repli qu'il ne prévoit pas | docs/chantiers/FEAT-35-lister-retrouver-chantiers/decisions.md:127 | corrigé (4a3a3ae) |
+
+- Bilan de la revue : RD18 à RD24 vérifiés ; la phrase sur la version lue suit `chooseVersion` règle par règle ; les quatre points sont nés des corrections, tous dans la doc.
