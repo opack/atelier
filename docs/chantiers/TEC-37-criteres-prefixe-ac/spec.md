@@ -8,7 +8,7 @@ created_at: 2026-11-26
 signed_by: Opack
 signed_at: 2026-11-26
 rel_depends_on: REF-34, FEAT-35
-tests_commit: 47d7859
+tests_commit: 
 slice: 1
 ---
 
@@ -76,3 +76,4 @@ Revert de la PR : code, tests et specs migrées reviennent ensemble à `CA-n`. U
 
 ## Amendements
 <!-- Après signature : une entrée datée par modification de la spec. -->
+- 2026-11-28 : tests rouverts (gel quitté : 47d7859) : OB1 : un nom de test cite AC-1, AC-2… hors de l'étiquette finale, ce que la règle d'AC-4 refuse ; renommer ce test, ajouter à AC-4 un cas refusé avec ellipse et un cas refusé en minuscules (OD2)
