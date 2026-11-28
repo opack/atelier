@@ -160,6 +160,8 @@ describe('architecture de lib/ et de test/', () => {
     assert.equal(nameProblems("it('lance node [TEC-5 V-1]', () => {})").length, 1)
     assert.equal(nameProblems("it('lance node [FEAT-40 CA-1, AC-2]', () => {})").length, 1, 'mélange')
     assert.equal(nameProblems("it('AC-3 : lance node', () => {})").length, 1, 'AC-3 hors de l’étiquette finale')
+    assert.equal(nameProblems("it('AC-1, AC-2… : lance node', () => {})").length, 1, 'exemple à ellipse hors de l’étiquette finale')
+    assert.equal(nameProblems("it('lance node [FEAT-40 ac-3]', () => {})").length, 1, 'étiquette en minuscules')
   })
 
   it('common.mjs qui importe un module de lib/ est signalé [REF-29 AC-4]', () => {

@@ -39,7 +39,7 @@ describe('section obligatoire de critères dans check-spec', () => {
     assert.deepEqual(noCriterionProblems(feat('- [ ] ac-1 : Étant donné un budget, quand je l’ouvre, alors je vois le total.')), [])
   })
 
-  it('une section qui ne porte que des CA-n est signalée, et le message cite AC-1, AC-2… [TEC-37 AC-2]', () => {
+  it('une section qui ne porte que des CA-n est signalée, et le message cite l’exemple en AC [TEC-37 AC-2]', () => {
     const problems = noCriterionProblems(feat('- [ ] CA-1 : Étant donné un budget, quand je l’ouvre, alors je vois le total.'))
     assert.equal(problems.length, 1)
     assert.match(problems[0], /AC-1, AC-2…/)
