@@ -35,8 +35,6 @@ atelier est un plugin Claude Code : ses commandes `/atelier:*` se lancent **dans
 
 atelier détecte vos commandes de contrôle, crée `docs/chantiers/` et `docs/decisions/`, ajoute une section « Process » au `CLAUDE.md` et déclare le plugin dans `.claude/settings.json` : vos coéquipiers se le verront proposer automatiquement (sauf en session cloud, voir [Installation](../projet/installation#dans-une-session-cloud)).
 
-Pour retrouver un chantier existant (le vôtre, celui d’un coéquipier sur une autre branche), `/atelier:list` les liste avec leur statut et leur étape, et `/atelier:open <ID>` ouvre le dossier d’un chantier.
-
 ## 3. Ouvrir un chantier
 
 ```text
@@ -44,6 +42,8 @@ Pour retrouver un chantier existant (le vôtre, celui d’un coéquipier sur une
 ```
 
 atelier choisit le prochain identifiant (`FEAT-27`), crée la branche `feat/FEAT-27-total-enveloppes` et le dossier du chantier, puis construit la spec avec vous. Il **ne pose des questions que sur ce qui manque**, et vous demande toujours : **ce chantier se fait-il en TDD ?**
+
+Pour retrouver un chantier existant (le vôtre, celui d’un coéquipier sur une autre branche), `/atelier:list` les liste avec leur statut et leur étape ; `/atelier:open <ID>` ouvre le dossier d’un chantier de l’arbre courant.
 
 ## 4. Signer
 

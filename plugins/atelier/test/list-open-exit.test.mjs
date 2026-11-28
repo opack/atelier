@@ -39,7 +39,7 @@ describe('atelier open: exit code of the explorer', linuxOnly, () => {
     assert.doesNotMatch(result.output, /Dossier ouvert/)
   })
 
-  it('code 0 : dossier ouvert [FEAT-35 CA-19]', () => {
+  it('code 0 : dossier ouvert', () => {
     const result = openWithExit(directory, 0)
     assert.equal(result.status, 0, result.output)
     assert.match(result.output, /Dossier ouvert/)
