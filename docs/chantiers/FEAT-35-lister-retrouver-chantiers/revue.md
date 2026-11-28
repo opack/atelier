@@ -226,3 +226,20 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD35. Version 0.9.0 aussi prévue par TEC-39 | plugins/atelier/.claude-plugin/plugin.json:3 | reporté (« Dette et suites » du bilan : TEC-39 passe en 0.10.0, rubrique « depuis 0.9 ») |
 
 - Bilan de la revue : aucun bloquant ; CA-1 à CA-19 couverts par des tests étiquetés, CA-20 vérifié (build, lecture) ; architecture, taille des modules et vocabulaire conformes.
+
+## Revue 2 : chantier : 2026-11-28
+- Commit revu : 2d69fa1
+- Base : d78556a
+- Corrections depuis la revue 1 : c00272f
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+- Bilan de la revue : RD29, RD31, RD32 et RD34 vérifiés ; aucune régression.
