@@ -8,8 +8,10 @@ created_at: 2026-11-26
 signed_by: Opack
 signed_at: 2026-11-26
 rel_depends_on: REF-34, FEAT-35
-tests_commit: 672edd4
-slice: 1
+tests_commit: 
+slice: 2
+slice_base: ac936fe777786f626af70967c2120c8bb03e52f6
+slice_tdd: yes
 ---
 
 # TEC-37 Préfixe AC pour les critères d'acceptation
