@@ -162,3 +162,25 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | Aucun | | |
 
 - Bilan de la revue : RD15 réglé, sans effet sur les autres consommateurs de l'index ; `list --json` rend aussi un chemin absolu quand `CLAUDE_PROJECT_DIR` est relatif.
+
+## Revue 1 : tranche 5 : 2026-11-28
+- Commit revu : eb0fcaa
+- Base : ee6b2ad
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD18. Doc de `atelier list` inexacte sur la version lue, muette sur les valeurs refusées et la limite de l'étape | site/reference/commandes.md:30 | corrigé (adbf32b) |
+| RD19. `/atelier:list` : une demande traduisible en partie peut être approchée sans le dire | plugins/atelier/skills/list/SKILL.md:37 | corrigé (adbf32b) |
+| RD20. Vérification manuelle des skills (SD14) incomplète | docs/chantiers/FEAT-35-lister-retrouver-chantiers/decisions.md:122 | corrigé (adbf32b) |
+| RD21. `git fetch --prune` sans remote nommé échoue quand le seul remote n'est pas `origin` | plugins/atelier/skills/list/SKILL.md:14 | corrigé (adbf32b) |
+| RD22. Le démarrage rapide laisse croire que `/atelier:open` ouvre le chantier d'un coéquipier sur une autre branche | site/guide/demarrage-rapide.md:38 | corrigé (adbf32b) |
+| RD23. Le test du succès de l'explorateur porte l'étiquette CA-19 | plugins/atelier/test/list-open-exit.test.mjs:42 | corrigé (adbf32b) |
+| RD24. Consigne ambiguë en fin de `/atelier:list` | plugins/atelier/skills/list/SKILL.md:41 | corrigé (adbf32b) |
+
+- Bilan de la revue : aucun bloquant ; build du site réussi, version 0.9.0 lue dans `plugin.json` seulement, aucun test figé modifié.
