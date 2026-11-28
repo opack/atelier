@@ -6,6 +6,8 @@ import { commandChecks } from './cli/checks.mjs'
 import { commandCloseCheck, commandSetStatus } from './cli/close.mjs'
 import { commandCheckProcess, commandTemplate } from './cli/docs.mjs'
 import { commandNextId } from './cli/identifiers.mjs'
+import { commandList } from './cli/list.mjs'
+import { commandOpen, commandPath } from './cli/list-open.mjs'
 import { commandBase } from './cli/integration.mjs'
 import { commandStatus, hookSessionStart } from './cli/next-step.mjs'
 import { commandReviewIds } from './cli/review-points.mjs'
@@ -19,6 +21,9 @@ import { commandBypass, hookGuard } from './cli/write-guard.mjs'
 const commands = {
   'next-id': commandNextId,
   status: commandStatus,
+  list: commandList,
+  path: commandPath,
+  open: commandOpen,
   base: commandBase,
   'check-spec': commandCheckSpec,
   'check-plan': commandCheckPlan,
@@ -48,5 +53,5 @@ export function main(argumentList) {
     console.error(`Usage : atelier <${Object.keys(commands).join(' | ')}>`)
     process.exit(1)
   }
-  command(rest)
+  return command(rest)
 }

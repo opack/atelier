@@ -243,3 +243,28 @@ export {
   planOf, threeSlices, slicedChantier, makeSlicedRepository, commitFiles, headOf, commitSpec, setHeader, specFileText, atelierOk, atSliceTwo, implementedSlice,
   revueOf,
 }
+
+// `atelier list --json <arguments>`: the listed chantiers, and their identifiers in order.
+function listed(directory, ...cliArguments) {
+  return JSON.parse(atelierOk(directory, 'list', '--json', ...cliArguments))
+}
+
+function listedIds(directory, ...cliArguments) {
+  return listed(directory, ...cliArguments).map((chantier) => chantier.id)
+}
+
+export { listed, listedIds }
+
+// Commits everything with a fixed date (day of January 2026), so that « the most recent commit »
+// does not depend on the speed of the test.
+function commitOnDay(directory, day, subject = `chore: ${day}`) {
+  git(directory, 'add', '-A')
+  const date = `2026-01-${String(day).padStart(2, '0')}T10:00:00Z`
+  execFileSync('git', [...gitIdentity, 'commit', '--allow-empty', '-q', '-m', subject], {
+    cwd: directory,
+    env: { ...process.env, GIT_AUTHOR_DATE: date, GIT_COMMITTER_DATE: date },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  })
+}
+
+export { commitOnDay }
