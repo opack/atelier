@@ -3,6 +3,7 @@
 
 import { CHANTIER_TYPES, escapeRegExp, normalize, parseFrontMatter } from './common.mjs'
 import { integrationOptionProblems } from './integration.mjs'
+import { CRITERION_EXAMPLE, CRITERION_ID } from './criteria.mjs'
 import { VOCABULARY } from './vocabulary.mjs'
 
 // ---------- Spec completeness and amendments ----------
@@ -18,7 +19,7 @@ export const REQUIRED_SECTIONS = Object.fromEntries(
   Object.entries(VOCABULARY.sections).map(([type, titles]) => [type, Object.values(titles)]),
 )
 
-// Sections that must contain at least one numbered acceptance criterion (CA-1, CA-2...).
+// Sections that must contain at least one numbered acceptance criterion (AC-1, AC-2...).
 const CRITERIA_SECTIONS = Object.fromEntries(
   Object.entries(VOCABULARY.criteria).map(([type, key]) => [type, VOCABULARY.sections[type][key]]),
 )
@@ -115,8 +116,8 @@ export function checkSpec(text) {
     if (UNFINISHED_TEXT.test(hideCode(section.lines.join('\n').replace(/<!--[\s\S]*?-->/g, 'x')))) {
       problems.push(`Section « ${title} » : texte à compléter (« … » isolé). S'il est voulu, mets-le en code en ligne.`)
     }
-    if (CRITERIA_SECTIONS[type] === title && !/\bCA-\d+\b/.test(content)) {
-      problems.push(`Section « ${title} » : aucun critère numéroté (CA-1, CA-2…).`)
+    if (CRITERIA_SECTIONS[type] === title && !CRITERION_ID.test(content)) {
+      problems.push(`Section « ${title} » : aucun critère numéroté (${CRITERION_EXAMPLE}).`)
     }
   }
   return problems

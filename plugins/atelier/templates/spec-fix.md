@@ -32,7 +32,7 @@ Question si manquant : qu'est-ce qui prouve la cause, au-delà de l'intuition ? 
 Questions si manquant : corrige-t-on la cause ou le symptôme ? Des données déjà corrompues sont-elles à réparer ? -->
 
 ## 5. Critère de non-régression
-<!-- Format : - [ ] CA-1 : Étant donné …, quand …, alors … (le test échoue avant la correction). -->
+<!-- Format : - [ ] AC-1 : Étant donné …, quand …, alors … (le test échoue avant la correction). -->
 
 ## 6. Notes complémentaires
 <!-- Hors périmètre, contournement temporaire, communication utilisateur, autres endroits où ce schéma existe. Optionnel. -->

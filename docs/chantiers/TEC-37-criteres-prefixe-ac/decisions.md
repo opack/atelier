@@ -28,3 +28,23 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Contexte : une trentaine de fichiers de test à renommer à l'étape tests de la tranche 1.
 - Écarté : remplacement à la main, parce qu'invérifiable en moins de 15 minutes.
 - Conséquence : `migrate-tests.mjs` dans le dossier du chantier, rejoué sur la base par la revue.
+
+## 2026-11-28 : ligne de format des templates de spec migrée dès la tranche 1
+- Contexte : `spec-ellipsis.test.mjs` cherche `AC-1 :` dans les templates `spec-feat.md`, `spec-fix.md` et `spec-epic.md`.
+- Écarté : attendre la tranche 3, parce que la suite resterait rouge pendant deux tranches.
+- Conséquence : seule la ligne « AC-1 : Étant donné… » de ces trois templates change ici ; le reste des textes (dont « CA globaux » de `spec-epic.md`, `plan.md`, `plan-epic.md`) reste pour la tranche 3.
+
+## 2026-11-28 : OB1, pas d'exception pour l'exemple à ellipse dans la règle d'étiquette
+- Contexte : un nom de test figé citait « AC-1, AC-2… » hors de l'étiquette finale ; l'implémentation l'avait toléré par un lookahead dans `CRITERION_ID` (relevé par le contrôle de surapprentissage).
+- Écarté : garder l'exception, parce qu'elle laissait passer tout `AC-n` suivi d'une ellipse, contre AC-4.
+- Conséquence : tests rouverts (458391e) et regelés (672edd4) : test renommé, cas refusés `AC-1, AC-2… : …` et étiquette en minuscules (OD2) ajoutés ; `CRITERION_ID` insensible à la casse, `FINAL_TAG` en majuscules.
+
+## 2026-11-28 : OD1, `criteria.mjs` importe `CHANTIER_TYPES` de `common.mjs`
+- Contexte : le plan disait « sans import de `lib/` » ; `FINAL_TAG` doit refuser un type de chantier inconnu.
+- Écarté : recopier la liste des types, parce qu'elle divergerait.
+- Conséquence : seul `common.mjs`, socle autorisé par la règle d'architecture, est importé.
+
+## 2026-11-28 : OD4 reporté, `checkSpec` accepte un `AC-n` cité n'importe où dans la section
+- Contexte : une section de critères qui ne cite qu'un « voir AC-2 de FEAT-3 » n'est pas signalée, alors que `specCriteria` n'en tire aucun critère.
+- Écarté : aligner sur `CRITERION_ITEM` ici, parce que c'est un changement de comportement antérieur au chantier, hors d'AC-2.
+- Conséquence : suite à noter au bilan.

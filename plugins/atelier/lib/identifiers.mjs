@@ -43,8 +43,8 @@ export function highestChantierNumber(names) {
   return highest
 }
 
-// Identifiers a commit subject carries: only bracketed ones (`[FEAT-7]`, `[TEC-15 CA-3]`), so that
-// prose tokens such as CA-13, UTF-8 or ISO-8601 never move the counter.
+// Identifiers a commit subject carries: only bracketed ones (`[FEAT-7]`, `[TEC-15 AC-3]`), so that
+// prose tokens such as AC-13, UTF-8 or ISO-8601 never move the counter.
 export function commitSubjectIdentifiers(subject) {
   return [...subject.matchAll(/\[([A-Z]{2,6})-(\d+)\b/gi)].map((match) => `${match[1].toUpperCase()}-${match[2]}`)
 }

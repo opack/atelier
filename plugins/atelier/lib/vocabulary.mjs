@@ -66,7 +66,7 @@ export const VOCABULARY = deepFreeze({
   },
   slices: 'Tranches',
   plan: {
-    coverage: 'CA couverts',
+    coverage: 'AC couverts',
     tdd: 'TDD',
     yes: 'oui',
     no: 'non',

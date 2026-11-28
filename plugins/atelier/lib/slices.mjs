@@ -2,6 +2,7 @@
 // Pure functions: no access to the disk, git or the environment.
 
 import { escapeRegExp } from './common.mjs'
+import { CRITERION_ID_GLOBAL, CRITERION_ITEM } from './criteria.mjs'
 import { ENTRY_START, parseAmendments } from './spec.mjs'
 import { VOCABULARY } from './vocabulary.mjs'
 
@@ -17,8 +18,8 @@ const TDD_SEGMENT = new RegExp(
 )
 
 // Slices of a plan: the first-level numbered entries of its « Tranches » section (HTML comments
-// and indented sub-lists ignored), in order. Each slice gives its number, the CA listed in its
-// « CA couverts » segment (any suffix after an identifier ignored) and its declared TDD:
+// and indented sub-lists ignored), in order. Each slice gives its number, the AC listed in its
+// « AC couverts » segment (any suffix after an identifier ignored) and its declared TDD:
 // 'yes' | 'no', or null when the entry does not declare one.
 export function planSlices(planText) {
   const lines = (planText ?? '').replace(/\r\n/g, '\n').replace(/<!--[\s\S]*?-->/g, '').split('\n')
@@ -45,7 +46,7 @@ function sliceAttributes(text) {
   const segments = text.split(/\s+[—–]\s+/)
   const coverage = segments.find((segment) => COVERAGE_SEGMENT.test(segment.trim()))
   const criteria = [
-    ...new Set((coverage?.match(/\bCA-\d+\b/gi) ?? []).map((id) => id.toUpperCase())),
+    ...new Set((coverage?.match(CRITERION_ID_GLOBAL) ?? []).map((id) => id.toUpperCase())),
   ]
   const tddSegment = segments
     .map((segment) => TDD_SEGMENT.exec(segment.trim()))
@@ -54,11 +55,11 @@ function sliceAttributes(text) {
   return { criteria, tdd }
 }
 
-// Acceptance criteria of a spec body: the `CA-n` identifiers at the head of a list item
-// (`- [ ] CA-1 :` or `- CA-1 :`, any list marker, any case), HTML comments ignored.
+// Acceptance criteria of a spec body: the `AC-n` identifiers at the head of a list item
+// (`- [ ] AC-1 :` or `- AC-1 :`, any list marker, any case), HTML comments ignored.
 function specCriteria(body) {
   const text = (body ?? '').replace(/\r\n/g, '\n').replace(/<!--[\s\S]*?-->/g, '')
-  return [...new Set([...text.matchAll(/^\s*[-*+]\s+(?:\[[ xX]\]\s+)?(CA-\d+)\b/gim)].map((match) => match[1].toUpperCase()))]
+  return [...new Set([...text.matchAll(CRITERION_ITEM)].map((match) => match[1].toUpperCase()))]
 }
 
 // Problems of the plan of a chantier, checked by `atelier check-plan` before the plan is
@@ -90,7 +91,7 @@ export function planProblems(chantier) {
     if (tdd === null) {
       problems.push(`Tranche ${number} : TDD non déclaré (« ${VOCABULARY.plan.tdd} : ${VOCABULARY.plan.yes} » ou « ${VOCABULARY.plan.tdd} : ${VOCABULARY.plan.no} »).`)
     } else if (tdd === 'yes' && !criteria.length) {
-      problems.push(`Tranche ${number} : « ${VOCABULARY.plan.tdd} : ${VOCABULARY.plan.yes} » sans CA couvert ; une tranche qui n’a rien à tester se déclare « ${VOCABULARY.plan.tdd} : ${VOCABULARY.plan.no} ».`)
+      problems.push(`Tranche ${number} : « ${VOCABULARY.plan.tdd} : ${VOCABULARY.plan.yes} » sans AC couvert ; une tranche qui n’a rien à tester se déclare « ${VOCABULARY.plan.tdd} : ${VOCABULARY.plan.no} ».`)
     }
     for (const id of criteria.filter((criterion) => !specIds.includes(criterion))) {
       problems.push(`${id} : cité par la tranche ${number}, absent de la spec.`)

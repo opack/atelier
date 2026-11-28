@@ -26,7 +26,7 @@ Questions si manquant : qu'est-ce qui est hors périmètre ? Quelle est la plus 
 <!-- Questions à trancher avant ou pendant la conception. Les réponses vont dans decisions.md. Optionnel. -->
 
 ## 5. Critères d'acceptation
-<!-- Format : - [ ] CA-1 : Étant donné …, quand …, alors …
+<!-- Format : - [ ] AC-1 : Étant donné …, quand …, alors …
 Chacun testable automatiquement. Penser aux cas limites : vide, doublon, hors-ligne, utilisateur non autorisé, grand volume.
 Questions si manquant : chaque critère peut-il devenir un test ? Que se passe-t-il si la liste est vide, très grande, si l'utilisateur n'a pas le droit, si le réseau tombe ? -->
 

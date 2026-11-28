@@ -171,7 +171,7 @@ export function isTreatment(cell) {
 }
 
 // « reporté (tranche 2) », and its loose spellings (« reporté en tranche 3 », « reporté (tranche 2, avec
-// CA-6) »): at close, a point taken for a postponement to another chantier would slip through.
+// AC-6) »): at close, a point taken for a postponement to another chantier would slip through.
 const POSTPONED_TO_SLICE = new RegExp(`^${escapeRegExp(REVIEW.treatments.postponed)}\\p{L}*[^)]*?\\b${escapeRegExp(REVIEW.postponedSlice)}\\s+\\d+`, 'iu')
 
 const isPostponedToSlice = (treatment) => POSTPONED_TO_SLICE.test(treatment.normalize('NFC').trim())

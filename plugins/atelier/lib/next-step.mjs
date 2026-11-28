@@ -53,7 +53,7 @@ export function nextStep(chantier, review = 'none', children = [], codeCommitted
     if (hasIntegrationBranch(chantier.spec.data) && review !== 'current') {
       return review === 'stale'
         ? 'Tous les enfants sont clos, mais l’EPIC a changé depuis la revue d’ensemble (code ou spec) : la refaire : /atelier:review'
-        : 'Tous les enfants sont clos : revue d’ensemble de l’EPIC (cohérence entre lots, CA globaux, résolutions de conflits) : /atelier:review'
+        : 'Tous les enfants sont clos : revue d’ensemble de l’EPIC (cohérence entre lots, AC globaux, résolutions de conflits) : /atelier:review'
     }
     return 'Tous les enfants sont clos : clôturer l’EPIC (bilan prévu / réalisé) : /atelier:close'
   }
