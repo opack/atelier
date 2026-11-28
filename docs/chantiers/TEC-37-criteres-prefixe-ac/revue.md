@@ -38,3 +38,19 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | Aucun | | |
 
 - Bilan de la revue : RD1 réglé, comportement inchangé, 600 tests verts.
+
+## Revue 3 : tranche 2 : 2026-11-28
+- Commit revu : 8172b00
+- Base : ac936fe (revue de la tranche 1)
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+- Bilan de la revue : 603 tests verts ; numéros conservés dans la spec et le plan d'EPIC-14 (AC-1 à AC-10) et d'EPIC-17 (AC-1 à AC-7), mentions historiques reformulées sans changement de sens, OD5 à OD8 corrigés, OD9 accepté par Didier. Remarque sans point : la nouvelle entrée du journal d'EPIC-17 a une ligne « Décision » au lieu d'« Écarté », comme d'autres entrées de ce journal.
