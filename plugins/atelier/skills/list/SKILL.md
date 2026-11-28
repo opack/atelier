@@ -34,7 +34,7 @@ Sans `--status` ni `--all`, seuls les chantiers ouverts sont listés. Exemples :
 - « les chantiers clos » : `atelier list --status done,abandoned`
 - « ce qui parle de relecture » : `atelier list relecture`
 
-Une demande qu'aucun de ces filtres ne sait traduire (par auteur, par date, par dépendance…) : dis ce que `atelier list` ne peut pas filtrer, et ne l'approche pas par un autre filtre. Une demande dont une partie seulement se traduit (« les FIX de Didier ») : ne lance pas la partie traduisible comme si elle répondait à la demande ; dis ce qui ne se filtre pas, et propose la partie filtrable comme suggestion.
+Une demande qu'aucun de ces filtres ne sait traduire (par auteur, par date, par dépendance…) : dis ce que `atelier list` ne peut pas filtrer, et ne l'approche pas par un autre filtre. Une demande dont une partie seulement se traduit (« les FIX de Didier ») : ne lance pas la partie traduisible : dis ce qui ne se filtre pas, et propose la commande de la partie filtrable sans la lancer.
 
 ## 3. Lancer et présenter
 
