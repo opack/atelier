@@ -204,3 +204,25 @@ Traitement d'un point, la cellule commence par l'un de ces mots-clés : corrigé
 | RD28. Le journal attribue à l'en-tête du skill un repli qu'il ne prévoit pas | docs/chantiers/FEAT-35-lister-retrouver-chantiers/decisions.md:127 | corrigé (4a3a3ae) |
 
 - Bilan de la revue : RD18 à RD24 vérifiés ; la phrase sur la version lue suit `chooseVersion` règle par règle ; les quatre points sont nés des corrections, tous dans la doc.
+
+## Revue 1 : chantier : 2026-11-28
+- Commit revu : 7a3711c
+- Base : d78556a
+
+### Bloquant
+| Point | Fichier | Traitement |
+|---|---|---|
+| Aucun | | |
+
+### À discuter
+| Point | Fichier | Traitement |
+|---|---|---|
+| RD29. Enfants d'un EPIC comptés autrement par `atelier list` et par `/atelier:close` (voulu par SB6) | plugins/atelier/lib/list.mjs:63 | corrigé (c00272f : phrase de la page Référence ; code inchangé, écart repris au bilan) |
+| RD30. Écarts spec/plan/livré consignés au journal mais pas au bilan (`fetch --all`, nombre d'appels git, fichiers du plan) | docs/chantiers/FEAT-35-lister-retrouver-chantiers/spec.md:37 | reporté (« Écarts » du bilan) |
+| RD31. Le commentaire de `chantierIndex` annonce encore trois appels git | plugins/atelier/lib/cli/relations.mjs:57 | corrigé (c00272f) |
+| RD32. Commentaires restés de la tranche 1 et exports inutiles dans `lib/list.mjs` | plugins/atelier/lib/list.mjs:1 | corrigé (c00272f) |
+| RD33. `lib/chantier-facts.mjs` sans fichier de tests à son nom | plugins/atelier/lib/chantier-facts.mjs:1 | exception acceptée (Didier, 2026-11-28 : module petit, testé à travers `list-step.test.mjs`, place justifiée par RD11 ; noté au bilan) |
+| RD34. README et page Référence : `/atelier:open` sans « de l'arbre courant » | README.md:85 | corrigé (c00272f) |
+| RD35. Version 0.9.0 aussi prévue par TEC-39 | plugins/atelier/.claude-plugin/plugin.json:3 | reporté (« Dette et suites » du bilan : TEC-39 passe en 0.10.0, rubrique « depuis 0.9 ») |
+
+- Bilan de la revue : aucun bloquant ; CA-1 à CA-19 couverts par des tests étiquetés, CA-20 vérifié (build, lecture) ; architecture, taille des modules et vocabulaire conformes.
