@@ -58,3 +58,8 @@ Une décision qui dépasse le chantier (choix de lib, convention, architecture) 
 - Contexte : contrôle de surapprentissage de la tranche 2.
 - Conséquence : AC-1 d'EPIC-17 dit « aucun identifiant de vérification ne subsiste » (OD5) ; son §4 dit que les tests de vérification deviennent des tests étiquetés par critère (OD6) ; le lot 3 de son plan renvoie à TEC-37 pour les templates (OD7) ; l'entrée précédente perd son étiquette « D1 », hors nomenclature (OD8).
 - OD9 : le test d'AC-5 ne voit ni `CA-x` ni « CA globaux », et ne vérifie pas la conservation des numéros ; la migration les traite quand même. Signalé à Didier, accepté tel quel le 2026-11-28 : test figé non renforcé.
+
+## 2026-11-28 : revue de la tranche 2 enregistrée à la main, `set-reviewed` refusant une « tranche vide »
+- Contexte : la tranche 2 (TDD : oui) ne livre que des documents de `docs/chantiers/` ; `set-reviewed` ne compte comme code ni ce dossier ni, en TDD, les tests : il refuse « tranche vide ». Revue 3 sans point, validée par Didier le 2026-11-28.
+- Écarté : ouvrir d'abord un FIX, parce qu'il casserait l'enchaînement TEC-37, TEC-39, REF ; déclarer la tranche « TDD : non » après coup, parce que ses tests sont figés.
+- Conséquence : en-tête écrit à la main comme `set-reviewed` l'aurait fait (`slice: 3`, `slice_base` sur le commit revu consigné, `tests_commit` vidé, `slice_tdd: no` d'après le plan). Suite à noter au bilan : `set-reviewed` doit accepter une tranche TDD dont le livrable est un document de chantier, ou `check-plan` doit le signaler à l'étape plan.
