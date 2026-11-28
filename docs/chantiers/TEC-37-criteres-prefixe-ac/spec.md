@@ -8,7 +8,7 @@ created_at: 2026-11-26
 signed_by: Opack
 signed_at: 2026-11-26
 rel_depends_on: REF-34, FEAT-35
-tests_commit: 
+tests_commit: 49cae1c
 slice: 2
 slice_base: ac936fe777786f626af70967c2120c8bb03e52f6
 slice_tdd: yes
